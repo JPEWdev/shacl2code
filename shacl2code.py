@@ -247,22 +247,36 @@ def main():
         choices=get_langs(),
         required=True,
     )
-    parser.add_argument("input", help="Input JSON-LD model (path or URL)")
-    parser.add_argument("output", type=Path, help="Output file")
+    parser.add_argument(
+        "input",
+        help="Input JSON-LD model (path, URL, or '-')",
+    )
+    parser.add_argument(
+        "output",
+        help="Output file name or '-' for stdout",
+    )
 
     args = parser.parse_args()
 
     if "://" in args.input:
         with urllib.request.urlopen(args.input) as url:
             model_data = json.load(url)
+    elif args.input == "-":
+        model_data = json.load(sys.stdin)
     else:
         with Path(args.input).open("r") as f:
             model_data = json.load(f)
 
     m = Model(model_data)
+    render = m.render_template(args.lang)
 
-    with args.output.open("w") as f:
-        f.write(m.render_template(args.lang))
+    if args.output == "-":
+        print(render)
+    else:
+        with Path(args.output).open("w") as f:
+            f.write(render)
+
+    return 0
 
 
 if __name__ == "__main__":

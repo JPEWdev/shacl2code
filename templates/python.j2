@@ -390,13 +390,13 @@ class SHACLObject(object):
         self._obj_written = False
         self._obj_metadata = {}
 
-        self.add_property("_id", StringProp(), json_name="@id")
+        self._add_property("_id", StringProp(), json_name="@id")
 
     def _set_init_props(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
 
-    def add_property(
+    def _add_property(
         self, pyname, prop, json_name=None, min_count=None, max_count=None
     ):
         if json_name is None:
@@ -446,6 +446,13 @@ class SHACLObject(object):
         self._obj_data[json_name] = prop.init()
 
     def walk(self, callback, path=None):
+        """
+        Walk object tree, invoking the callback for each item
+
+        Callback has the form:
+
+        def callback(object, path):
+        """
         if path is None:
             path = ["."]
 
@@ -454,6 +461,9 @@ class SHACLObject(object):
                 prop.walk(self._obj_data[json_name], callback, path + [f".{json_name}"])
 
     def child_objects(self):
+        """
+        Iterate over each object that is a child of this one
+        """
         seen = set()
 
         def _walk_callback(value, path):
@@ -509,6 +519,9 @@ class SHACLObject(object):
         return d
 
     def to_jsonld(self, f, *args, **kwargs):
+        """
+        Serialize this object to a JSON LD file
+        """
         return write_jsonld([self], f, *args, **kwargs)
 
     @classmethod
@@ -590,6 +603,11 @@ class SHACLObject(object):
 
 
 def write_jsonld(objects, f, force_graph=False, **kwargs):
+    """
+    Write a list of objects to a JSON LD file
+
+    If force_graph is True, a @graph node will always be written
+    """
     ref_counts = {}
     id_objects = set()
 
@@ -666,6 +684,14 @@ def write_jsonld(objects, f, force_graph=False, **kwargs):
 
 
 def read_jsonld(f):
+    """
+    Read objects from a JSON LD file
+
+    Returns the list of top level objects in the file, and a set of all
+    object_ids that are present in the file
+
+    The returned objects are fully linked
+    """
     data = json.load(f)
     object_ids = {}
     if not "@graph" in data:
@@ -688,6 +714,9 @@ def read_jsonld(f):
 
 
 def print_tree(objects, all_fields=False):
+    """
+    Print object tree
+    """
     seen = set()
 
     def callback(value, path):
@@ -780,7 +809,7 @@ class {{ class.clsname }}({% if class.parents -%}{{ class.parents | join(", ") }
         # {{ l }}
         {% endfor -%}
         {% endif -%}
-        self.add_property("{{ prop.varname }}", 
+        self._add_property("{{ prop.varname }}",
             {% if is_list -%}ListProp({% endif -%}
             {% if prop.clsname -%}
                 ObjectProp({{ prop.clsname }}, {% if prop.min_count and not is_list %}True{% else %}False{% endif %})

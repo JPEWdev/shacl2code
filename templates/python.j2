@@ -24,7 +24,7 @@ def check_type(obj, types):
 
 class Property(object):
     """
-    A generic SPDX object property. The different types will derive from this
+    A generic SHACL object property. The different types will derive from this
     class
     """
 
@@ -77,7 +77,7 @@ class Property(object):
 
 class StringProp(Property):
     """
-    A scalar string property for an SPDX object
+    A scalar string property for an SHACL object
     """
 
     TYPE = None
@@ -180,7 +180,7 @@ class FloatProp(Property):
 
 class ObjectProp(Property):
     """
-    A scalar SPDX object property of a SPDX object
+    A scalar SHACL object property of a SHACL object
     """
 
     def __init__(self, cls, required):
@@ -306,7 +306,7 @@ class ListProxy(object):
 
 class ListProp(Property):
     """
-    A list of SPDX properties
+    A list of SHACL properties
     """
 
     VALID_TYPES = (list, ListProxy)

@@ -1,0 +1,839 @@
+#! /usr/bin/env python3
+#
+# Generated Python bindings from a SHACL model
+#
+# {{ disclaimer }}
+#
+# SPDX-License-Identifier: MIT
+
+import functools
+import hashlib
+import json
+import re
+from datetime import datetime, timezone
+
+
+def check_type(obj, types):
+    if not isinstance(obj, types):
+        if isinstance(types, (list, tuple)):
+            raise TypeError(
+                f"Value must be one of type: {', '.join(t.__name__ for t in types)}. Got {type(obj)}"
+            )
+        raise TypeError(f"Value must be of type {types.__name__}. Got {type(obj)}")
+
+
+class Property(object):
+    """
+    A generic SPDX object property. The different types will derive from this
+    class
+    """
+
+    TYPE = None
+
+    def __init__(self):
+        pass
+
+    def init(self):
+        return None
+
+    def validate(self, value):
+        check_type(value, self.VALID_TYPES)
+
+    def set(self, value):
+        return value
+
+    def get(self, value):
+        return value
+
+    def check_min_count(self, value, min_count):
+        return min_count == 1
+
+    def check_max_count(self, value, max_count):
+        return max_count == 1
+
+    def elide(self, value):
+        return value is None
+
+    def walk(self, value, callback, path):
+        callback(value, path)
+
+    def serializer(self, value):
+        return value
+
+    def deserialize(self, data, object_ids=None):
+        if isinstance(data, dict) and "@value" in data:
+            if "@type" in data and self.TYPE and data["@type"] != self.TYPE:
+                raise TypeError(
+                    f"Value must be of type {self.TYPE}, but got {data['@type']}"
+                )
+
+            return data["@value"]
+
+        return data
+
+    def link_prop(self, value, link_cache, missing, visited):
+        return value
+
+
+class StringProp(Property):
+    """
+    A scalar string property for an SPDX object
+    """
+
+    TYPE = None
+    VALID_TYPES = str
+
+    def set(self, value):
+        return str(value)
+
+    def set(self, value):
+        return str(value)
+
+
+class AnyURIProp(StringProp):
+    TYPE = "http://www.w3.org/2001/XMLSchema#anyURI"
+
+    def validate(self, value):
+        super().validate(value)
+
+
+class MediaTypeProp(StringProp):
+    TYPE = "https://spdx.org/rdf/v3/Core/MediaType"
+
+    def validate(self, value):
+        super().validate(value)
+        if not re.match(
+            r"^([a-zA-Z0-9][-a-zA-Z0-9!#$&^_.+]{0,126})\/([a-zA-Z0-9][-a-zA-Z0-9!#$&^_.+]{0,126})(;.+)?$",
+            value,
+        ):
+            raise ValueError(f"Value is not correctly formatted. Got '{value}'")
+
+
+class SemVerProp(StringProp):
+    TYPE = "https://spdx.org/rdf/v3/Core/SemVer"
+
+    def validate(self, value):
+        super().validate(value)
+        if not re.match(
+            r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$",
+            value,
+        ):
+            raise ValueError(f"Value is not correctly formatted. Got '{value}'")
+
+
+class ExtensionProp(StringProp):
+    TYPE = "https://spdx.org/rdf/v3/Core/Extension"
+
+    def validate(self, value):
+        super().validate(value)
+
+
+class DateTimeProp(Property):
+    """
+    A Date/Time Object
+    """
+
+    TYPE = "https://spdx.org/rdf/v3/Core/DateTime"
+    VALID_TYPES = datetime
+
+    def set(self, value):
+        return value.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    def get(self, value):
+        return datetime.fromisoformat(value)
+
+
+class IntegerProp(Property):
+    VALID_TYPES = int
+
+    def set(self, value):
+        return int(value)
+
+
+class PositiveIntegerProp(IntegerProp):
+    def validate(self, value):
+        super.validate()
+        if value < 1:
+            raise ValueError(f"Value must be >=1. Got {value}")
+
+
+class NonNegativeIntegerProp(IntegerProp):
+    def validate(self, value):
+        super().validate(value)
+        if value < 0:
+            raise ValueError(f"Value must be >= 0. Got {value}")
+
+
+class BooleanProp(Property):
+    VALID_TYPES = bool
+
+    def set(self, value):
+        return bool(value)
+
+
+class FloatProp(Property):
+    VALID_TYPES = float
+
+    def set(self, value):
+        return float(value)
+
+
+class ObjectProp(Property):
+    """
+    A scalar SPDX object property of a SPDX object
+    """
+
+    def __init__(self, cls, required):
+        super().__init__()
+        self.cls = cls
+        self.required = required
+
+    def init(self):
+        if self.required:
+            return self.cls()
+        return None
+
+    def validate(self, value):
+        check_type(value, (self.cls, str))
+
+    def walk(self, value, callback, path):
+        if value is None:
+            return
+
+        if not isinstance(value, str):
+            value.walk(callback, path)
+        else:
+            callback(value, path)
+
+    def serializer(self, value):
+        if value is None:
+            return None
+
+        if isinstance(value, str):
+            return value
+
+        return value.serializer()
+
+    def deserialize(self, data, object_ids=None):
+        if data is None:
+            return data
+
+        if isinstance(data, str):
+            if data in object_ids:
+                return object_ids[data]
+
+            return data
+
+        if isinstance(data, dict) and "@id" in data and not "@type" in data:
+            return data["@id"]
+
+        return SHACLObject.deserialize(data, object_ids)
+
+    def link_prop(self, value, link_cache, missing, visited):
+        if value is None:
+            return value
+
+        if isinstance(value, str):
+            if value in link_cache:
+                return link_cache[value]
+
+            if missing is not None:
+                missing.add(value)
+
+            return value
+
+        # De-duplicate IDs
+        if value._id and value._id is not link_cache[value._id]:
+            value = link_cache[value._id]
+
+        value.link_helper(link_cache, missing, visited)
+        return value
+
+
+class ListProxy(object):
+    def __init__(self, prop, data=None):
+        if data is None:
+            self.__data = []
+        else:
+            self.__data = data
+        self.__prop = prop
+
+    def append(self, value):
+        self.__prop.validate(value)
+        self.__data.append(value)
+
+    def insert(self, idx, value):
+        self.__prop.validate(value)
+        self.__data.insert(idx, value)
+
+    def extend(self, items):
+        for i in items:
+            self.append(i)
+
+    def sort(self, *args, **kwargs):
+        self.__data.sort(*args, **kwargs)
+
+    def __getitem__(self, key):
+        return self.__data[key]
+
+    def __setitem__(self, key, value):
+        if isinstance(key, slice):
+            for v in value:
+                self.__prop.validate(v)
+        else:
+            self.__prop.validate(value)
+
+        self.__data[key] = value
+
+    def __delitem__(self, key):
+        del self.__data[key]
+
+    def __contains__(self, item):
+        return item in self.__data
+
+    def __iter__(self):
+        return iter(self.__data)
+
+    def __len__(self):
+        return len(self.__data)
+
+    def __str__(self):
+        return str(self.__data)
+
+    def __repr__(self):
+        return repr(self.__data)
+
+
+class ListProp(Property):
+    """
+    A list of SPDX properties
+    """
+
+    VALID_TYPES = (list, ListProxy)
+
+    def __init__(self, prop):
+        super().__init__()
+        self.prop = prop
+
+    def init(self):
+        return ListProxy(self.prop)
+
+    def validate(self, value):
+        super().validate(value)
+
+        for i in value:
+            self.prop.validate(i)
+
+    def set(self, value):
+        if isinstance(value, ListProxy):
+            return value
+
+        return ListProxy(self.prop, value)
+
+    def check_min_count(self, value, min_count):
+        check_type(value, ListProxy)
+        return len(value) >= min_count
+
+    def check_max_count(self, value, max_count):
+        check_type(value, ListProxy)
+        return len(value) <= max_count
+
+    def elide(self, value):
+        check_type(value, ListProxy)
+        return len(value) == 0
+
+    def walk(self, value, callback, path):
+        callback(value, path)
+        for idx, v in enumerate(value):
+            self.prop.walk(v, callback, path + [f"[{idx}]"])
+
+    def deserialize(self, data, object_ids=None):
+        if isinstance(data, (list, tuple, set)):
+            data = [self.prop.deserialize(d, object_ids) for d in data]
+        else:
+            data = [self.prop.deserialize(data, object_ids)]
+
+        return ListProxy(self.prop, data=data)
+
+    def link_prop(self, value, link_cache, missing, visited):
+        return ListProxy(
+            self.prop,
+            data=[self.prop.link_prop(v, link_cache, missing, visited) for v in value],
+        )
+
+    def serializer(self, value):
+        check_type(value, ListProxy)
+        if len(value) == 1:
+            return self.prop.serializer(value[0])
+        return [self.prop.serializer(v) for v in value]
+
+
+class EnumProp(Property):
+    VALID_TYPES = str
+
+    def validate(self, value):
+        super().validate(value)
+
+        if value not in (v for _, v in self.valid_values):
+            raise ValueError(
+                f"'{value}' is not a valid value for '{self.__class__.__name__}'"
+            )
+
+
+@functools.total_ordering
+class SHACLObject(object):
+    DESERIALIZERS = {}
+
+    def __init__(self):
+        self._obj_data = {}
+        self._obj_properties = {}
+        self._obj_written = False
+        self._obj_metadata = {}
+
+        self.add_property("_id", StringProp(), json_name="@id")
+
+    def _set_init_props(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+    def add_property(
+        self, pyname, prop, json_name=None, min_count=None, max_count=None
+    ):
+        if json_name is None:
+            json_name = pyname
+        if pyname in self._obj_properties:
+            raise KeyError(
+                f"'{pyname}' is already defined for '{self.__class__.__name__}'"
+            )
+        self._obj_properties[pyname] = (json_name, prop, min_count, max_count)
+        self._obj_data[json_name] = prop.init()
+
+    def __setattr__(self, name, value):
+        if name.startswith("_obj_"):
+            return super().__setattr__(name, value)
+
+        try:
+            (json_name, prop, _, _) = self._obj_properties[name]
+        except KeyError:
+            raise AttributeError(
+                f"'{name}' is not a valid property of {self.__class__.__name__}"
+            )
+        prop.validate(value)
+        self._obj_data[json_name] = prop.set(value)
+
+    def __getattr__(self, name):
+        if name.startswith("_obj_"):
+            return self.__dict__[name]
+
+        if name == "_metadata":
+            return self._obj_metadata
+
+        try:
+            (json_name, prop, _, _) = self._obj_properties[name]
+        except KeyError:
+            raise AttributeError(
+                f"'{name}' is not a valid property of {self.__class__.__name__}"
+            )
+        return prop.get(self._obj_data[json_name])
+
+    def __delattr__(self, name):
+        try:
+            (json_name, prop, _, _) = self._obj_properties[name]
+        except KeyError:
+            raise AttributeError(
+                f"'{name}' is not a valid property of {self.__class__.__name__}"
+            )
+        self._obj_data[json_name] = prop.init()
+
+    def walk(self, callback, path=None):
+        if path is None:
+            path = ["."]
+
+        if callback(self, path):
+            for json_name, prop, _, _ in self._obj_properties.values():
+                prop.walk(self._obj_data[json_name], callback, path + [f".{json_name}"])
+
+    def child_objects(self):
+        seen = set()
+
+        def _walk_callback(value, path):
+            nonlocal seen
+
+            if not isinstance(value, SHACLObject):
+                return False
+
+            if value in seen:
+                return False
+
+            seen.add(value)
+            return True
+
+        self.walk(_walk_callback)
+
+        for obj in seen:
+            yield obj
+
+    def serializer(self):
+        if self._id and self._obj_written:
+            return self._id
+
+        self._obj_written = True
+
+        d = {
+            "@type": self.TYPE,
+        }
+
+        for pyname, v in self._obj_properties.items():
+            json_name, prop, min_count, max_count = v
+            value = self._obj_data[json_name]
+            if prop.elide(value):
+                if min_count:
+                    raise ValueError(
+                        f"Property '{pyname}' in {self.__class__.__name__} is required (currently {value!r})"
+                    )
+                continue
+
+            if min_count is not None:
+                if not prop.check_min_count(value, min_count):
+                    raise ValueError(
+                        f"Property '{pyname}' in {self.__class__.__name__} requires a minimum of {min_count} elements"
+                    )
+
+            if max_count is not None:
+                if not prop.check_max_count(value, max_count):
+                    raise ValueError(
+                        f"Property '{pyname}' in {self.__class__.__name__} requires a maximum of {max_count} elements"
+                    )
+
+            d[json_name] = prop.serializer(value)
+        return d
+
+    def to_jsonld(self, f, *args, **kwargs):
+        return write_jsonld([self], f, *args, **kwargs)
+
+    @classmethod
+    def deserialize(cls, data, object_ids=None):
+        if not "@type" in data:
+            return None
+
+        typ = data["@type"]
+
+        if not typ in cls.DESERIALIZERS:
+            raise Exception("Unknown type f{typ}")
+
+        obj = cls.DESERIALIZERS[typ]()
+
+        if obj._id and obj._id in object_ids:
+            return object_ids[obj._id]
+
+        for pyname, v in obj._obj_properties.items():
+            json_name, prop, _, _ = v
+            if json_name in data:
+                obj._obj_data[json_name] = prop.deserialize(data[json_name], object_ids)
+
+        if obj._id:
+            object_ids[obj._id] = obj
+
+        return obj
+
+    def link_helper(self, link_cache, missing, visited):
+        if self in visited:
+            return
+
+        visited.add(self)
+
+        for pyname, v in self._obj_properties.items():
+            json_name, prop, _, _ = v
+            self._obj_data[json_name] = prop.link_prop(
+                self._obj_data[json_name],
+                link_cache,
+                missing,
+                visited,
+            )
+
+    def link(self, link_cache=None):
+        if not link_cache:
+            link_cache = {obj._id: obj for obj in self.child_objects() if obj._id}
+
+        missing = set()
+        visited = set()
+
+        self.link_helper(link_cache, missing, visited)
+
+        return missing
+
+    def __str__(self):
+        parts = [
+            f"{self.__class__.__name__}(",
+        ]
+        if self._id:
+            parts.append(f"@id='{self._id}'")
+        parts.append(")")
+        return "".join(parts)
+
+    def __hash__(self):
+        return super().__hash__()
+
+    def __eq__(self, other):
+        return super().__eq__(other)
+
+    def __lt__(self, other):
+        def sort_key(obj):
+            return (
+                obj._id or "",
+                obj.TYPE,
+                getattr(obj, "name", None) or "",
+                id(obj),
+            )
+
+        return sort_key(self) < sort_key(other)
+
+
+def write_jsonld(objects, f, force_graph=False, **kwargs):
+    ref_counts = {}
+    id_objects = set()
+
+    def walk_callback(value, path):
+        nonlocal ref_counts
+
+        if not isinstance(value, SHACLObject):
+            return True
+
+        value._obj_written = False
+
+        # Remove blank node ID for re-assignment
+        if value._id and value._id.startswith("_:"):
+            del value._id
+
+        if value._id:
+            id_objects.add(value)
+
+        ref_counts.setdefault(value, 0)
+        ref_counts[value] += 1
+        if ref_counts[value] > 1:
+            id_objects.add(value)
+            return False
+
+        return True
+
+    for o in objects:
+        o.walk(walk_callback)
+
+    for idx, o in enumerate(id_objects):
+        if not o._id:
+            o._id = f"_:{o.__class__.__name__}{idx}"
+
+    use_graph = force_graph or len(objects) > 1
+
+    objects = set(objects)
+
+    if use_graph:
+        # If we are making a graph, put all ID objects in the root
+        objects |= id_objects
+
+    objects = list(objects)
+    objects.sort()
+
+    if use_graph:
+        graph_data = []
+        # Ensure top level objects are only written in the top level graph
+        # node, and referenced by ID everywhere else. This is done by setting
+        # the flag that indicates this object has been written for all the top
+        # level objects, then clearing it right before serializing the object.
+        #
+        # In this way, if an object is referenced before it is supposed to be
+        # serialized into the @graph, it will serialize as a string instead of
+        # the actual object
+        for o in objects:
+            o._obj_written = True
+
+        for o in objects:
+            # Allow this specific object to be written now
+            o._obj_written = False
+            graph_data.append(o.serializer())
+
+        data = {"@graph": graph_data}
+    else:
+        data = objects[0].serializer()
+
+    sha1 = hashlib.sha1()
+    for chunk in json.JSONEncoder(**kwargs).iterencode(data):
+        chunk = chunk.encode("utf-8")
+        f.write(chunk)
+        sha1.update(chunk)
+
+    return sha1.hexdigest()
+
+
+def read_jsonld(f):
+    data = json.load(f)
+    object_ids = {}
+    if not "@graph" in data:
+        objects = [SHACLObject.deserialize(data, object_ids)]
+    else:
+        objects = [SHACLObject.deserialize(o, object_ids) for o in data["@graph"]]
+
+    for o in objects:
+        o.link(object_ids)
+
+    # Remove blank node IDs
+    for o in objects:
+        for c in o.child_objects():
+            if c._id and c._id.startswith("_:"):
+                del c._id
+
+    object_ids = {k: v for k, v in object_ids.items() if not k.startswith("_:")}
+
+    return objects, object_ids
+
+
+def print_tree(objects, all_fields=False):
+    seen = set()
+
+    def callback(value, path):
+        nonlocal seen
+
+        s = ("  " * (len(path) - 1)) + f"{path[-1]}"
+        if isinstance(value, SHACLObject):
+            s += f" {value} ({id(value)})"
+            is_empty = False
+        elif isinstance(value, ListProxy):
+            is_empty = len(value) == 0
+            if is_empty:
+                s += " []"
+        else:
+            s += f" {value!r}"
+            is_empty = value is None
+
+        if all_fields or not is_empty:
+            print(s)
+
+        if isinstance(value, SHACLObject):
+            if value in seen:
+                return False
+            seen.add(value)
+            return True
+
+        return True
+
+    for o in objects:
+        o.walk(callback)
+
+
+# fmt: off
+"""Format Guard{{ '"' }}{{ '"' }}{{ '"' }}
+{% set
+DATATYPE_CLASSES = {
+    "http://www.w3.org/2001/XMLSchema#string": "StringProp",
+    "http://www.w3.org/2001/XMLSchema#anyURI": "AnyURIProp",
+    "https://spdx.org/rdf/v3/Core/DateTime": "DateTimeProp",
+    "https://spdx.org/rdf/v3/Core/MediaType": "MediaTypeProp",
+    "https://spdx.org/rdf/v3/Core/SemVer": "SemVerProp",
+    "https://spdx.org/rdf/v3/Core/Extension": "ExtensionProp",
+    "http://www.w3.org/2001/XMLSchema#positiveInteger": "PositiveIntegerProp",
+    "http://www.w3.org/2001/XMLSchema#nonNegativeInteger": "NonNegativeIntegerProp",
+    "http://www.w3.org/2001/XMLSchema#boolean": "BooleanProp",
+    "http://www.w3.org/2001/XMLSchema#decimal": "FloatProp",
+}
+%}
+
+# ENUMERATIONS
+{% for enum in enums %}
+{% if enum.comment -%}
+{% for l in enum.comment.split("\n") -%}
+# {{ l }}
+{% endfor -%}
+{% endif -%}
+class {{ enum.clsname }}(EnumProp):
+    TYPE = "{{ enum.id }}"
+    valid_values = [
+        {% for value in enum.enum_values -%}
+        ("{{ value.varname }}", "{{ value.id }}"),
+        {% endfor -%}
+    ]
+    {% for value in enum.enum_values -%}
+    {% if value.comment -%}
+    {% for l in value.comment.split("\n") -%}
+    # {{ l }}
+    {% endfor -%}
+    {% endif -%}
+    {{ value.varname }} = "{{ value.id }}"
+    {% endfor -%}
+{% endfor %}
+
+# CLASSES
+{% for class in classes %}
+{% if class.comment -%}
+{% for l in class.comment.split("\n") -%}
+# {{ l }}
+{% endfor -%}
+{% endif -%}
+class {{ class.clsname }}({% if class.parents -%}{{ class.parents | join(", ") }}{% else -%}SHACLObject{% endif -%}):
+    TYPE = "{{ class.id }}"
+
+    def __init__(self, **kwargs):
+        super().__init__()
+        {% for prop in class.props -%}
+        {% set is_list = prop.max_count is none or prop.max_count != 1 -%}
+        {% if prop.comment -%}
+        {% for l in prop.comment.split("\n") -%}
+        # {{ l }}
+        {% endfor -%}
+        {% endif -%}
+        self.add_property("{{ prop.varname }}", 
+            {% if is_list -%}ListProp({% endif -%}
+            {% if prop.clsname -%}
+                ObjectProp({{ prop.clsname }}, {% if prop.min_count and not is_list %}True{% else %}False{% endif %})
+            {% elif prop.enumname -%}
+                {{ prop.enumname }}()
+            {% else -%}
+                {% if not prop.datatype in DATATYPE_CLASSES -%}
+                    {{ abort("Unknown data type " + prop.datatype) -}}
+                {% endif -%}
+                {{ DATATYPE_CLASSES[prop.datatype] }}()
+            {% endif -%}{% if is_list %}){% endif -%},
+            json_name="{{ prop.path }}",
+            {% if is_list and not prop.max_count is none -%}
+                max_count={{ prop.max_count }},
+            {% endif -%}
+            {% if not prop.min_count is none -%}
+                min_count={{ prop.min_count }},
+            {% endif -%}
+        )
+        {% endfor -%}
+        self._set_init_props(**kwargs)
+
+SHACLObject.DESERIALIZERS["{{ class.id }}"] = {{ class.clsname }}
+{% endfor %}
+{{ '"' }}{{ '"' }}{{ '"' }}Format Guard"""
+# fmt: on
+
+
+def main():
+    import argparse
+    from pathlib import Path
+
+    parser = argparse.ArgumentParser(description="Python SHACL model test")
+    parser.add_argument("infile", type=Path, help="Input file")
+    parser.add_argument("--print", action="store_true", help="Print object tree")
+    parser.add_argument("--outfile", type=Path, help="Output file")
+
+    args = parser.parse_args()
+
+    with args.infile.open("r") as f:
+        objects, _ = read_jsonld(f)
+
+    if args.print:
+        print_tree(objects)
+
+    if args.outfile:
+        with args.outfile.open("wb") as f:
+            write_jsonld(objects, f)
+
+    return 0
+
+
+if __name__ == "__main__":
+    import sys
+
+    sys.exit(main())

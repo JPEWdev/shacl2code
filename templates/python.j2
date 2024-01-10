@@ -105,16 +105,12 @@ class AnyURIProp(StringProp):
 
 class MediaTypeProp(StringProp):
     TYPE = "https://spdx.org/rdf/v3/Core/MediaType"
-    REGEX = (
-        r"^([a-zA-Z0-9][-a-zA-Z0-9!#$&^_.+]{0,126})\/([a-zA-Z0-9][-a-zA-Z0-9!#$&^_.+]{0,126})(;.+)?$",
-    )
+    REGEX = r"^([a-zA-Z0-9][-a-zA-Z0-9!#$&^_.+]{0,126})\/([a-zA-Z0-9][-a-zA-Z0-9!#$&^_.+]{0,126})(;.+)?$"
 
 
 class SemVerProp(StringProp):
     TYPE = "https://spdx.org/rdf/v3/Core/SemVer"
-    REGEX = (
-        r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$",
-    )
+    REGEX = r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"
 
 
 class ExtensionProp(StringProp):

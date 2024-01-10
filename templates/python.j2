@@ -809,25 +809,26 @@ class {{ class.clsname }}({% if class.parents -%}{{ class.parents | join(", ") }
         # {{ l }}
         {% endfor -%}
         {% endif -%}
-        self._add_property("{{ prop.varname }}",
-            {% if is_list -%}ListProp({% endif -%}
-            {% if prop.clsname -%}
+        self._add_property(
+            "{{ prop.varname }}",
+            {% if is_list -%}ListProp({% endif %}
+            {%- if prop.clsname -%}
                 ObjectProp({{ prop.clsname }}, {% if prop.min_count and not is_list %}True{% else %}False{% endif %})
-            {% elif prop.enumname -%}
+            {%- elif prop.enumname -%}
                 {{ prop.enumname }}()
-            {% else -%}
+            {%- else -%}
                 {% if not prop.datatype in DATATYPE_CLASSES -%}
                     {{ abort("Unknown data type " + prop.datatype) -}}
                 {% endif -%}
                 {{ DATATYPE_CLASSES[prop.datatype] }}()
-            {% endif -%}{% if is_list %}){% endif -%},
+            {%- endif %}{% if is_list %}){% endif %},
             json_name="{{ prop.path }}",
-            {% if is_list and not prop.max_count is none -%}
-                max_count={{ prop.max_count }},
-            {% endif -%}
-            {% if not prop.min_count is none -%}
-                min_count={{ prop.min_count }},
-            {% endif -%}
+            {%- if is_list and not prop.max_count is none %}
+            max_count={{ prop.max_count }},
+            {%- endif %}
+            {%- if not prop.min_count is none %}
+            min_count={{ prop.min_count }},
+            {%- endif %}
         )
         {% endfor -%}
         self._set_init_props(**kwargs)

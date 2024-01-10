@@ -82,12 +82,18 @@ class StringProp(Property):
 
     TYPE = None
     VALID_TYPES = str
+    REGEX = None
 
     def set(self, value):
         return str(value)
 
     def set(self, value):
         return str(value)
+
+    def validate(self, value):
+        super().validate(value)
+        if self.REGEX is not None and not re.match(self.REGEX, value):
+            raise ValueError(f"Value is not correctly formatted. Got '{value}'")
 
 
 class AnyURIProp(StringProp):
@@ -99,33 +105,20 @@ class AnyURIProp(StringProp):
 
 class MediaTypeProp(StringProp):
     TYPE = "https://spdx.org/rdf/v3/Core/MediaType"
-
-    def validate(self, value):
-        super().validate(value)
-        if not re.match(
-            r"^([a-zA-Z0-9][-a-zA-Z0-9!#$&^_.+]{0,126})\/([a-zA-Z0-9][-a-zA-Z0-9!#$&^_.+]{0,126})(;.+)?$",
-            value,
-        ):
-            raise ValueError(f"Value is not correctly formatted. Got '{value}'")
+    REGEX = (
+        r"^([a-zA-Z0-9][-a-zA-Z0-9!#$&^_.+]{0,126})\/([a-zA-Z0-9][-a-zA-Z0-9!#$&^_.+]{0,126})(;.+)?$",
+    )
 
 
 class SemVerProp(StringProp):
     TYPE = "https://spdx.org/rdf/v3/Core/SemVer"
-
-    def validate(self, value):
-        super().validate(value)
-        if not re.match(
-            r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$",
-            value,
-        ):
-            raise ValueError(f"Value is not correctly formatted. Got '{value}'")
+    REGEX = (
+        r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$",
+    )
 
 
 class ExtensionProp(StringProp):
     TYPE = "https://spdx.org/rdf/v3/Core/Extension"
-
-    def validate(self, value):
-        super().validate(value)
 
 
 class DateTimeProp(Property):

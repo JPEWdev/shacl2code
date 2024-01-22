@@ -4,24 +4,16 @@
 #
 # SPDX-License-Identifier: MIT
 
-import argparse
-import json
 import keyword
 import re
-import sys
-import tempfile
-import textwrap
-import urllib.parse
-import urllib.request
 from pathlib import Path
-import pprint
 
 from pyld import jsonld
 from jinja2 import Environment, FileSystemLoader, TemplateRuntimeError
 
+from .const import TEMPLATE_DIR
+
 THIS_FILE = Path(__file__)
-THIS_DIR = THIS_FILE.parent
-TEMPLATE_DIR = THIS_DIR / "templates"
 
 
 def get_prop(o, name, key, default=None):
@@ -36,14 +28,6 @@ def to_var_name(name):
     while keyword.iskeyword(name):
         name = name + "_"
     return name
-
-
-def get_langs():
-    langs = []
-    for child in TEMPLATE_DIR.iterdir():
-        if child.suffixes and child.suffixes[-1] == ".j2":
-            langs.append(child.stem)
-    return langs
 
 
 class Model(object):
@@ -237,47 +221,3 @@ class Model(object):
             enums=self.get_template_enums(),
             classes=self.get_template_classes(),
         )
-
-
-def main():
-    parser = argparse.ArgumentParser(description="Convert JSON-LD model to python")
-    parser.add_argument(
-        "--lang",
-        help="Output Language",
-        choices=get_langs(),
-        required=True,
-    )
-    parser.add_argument(
-        "input",
-        help="Input JSON-LD model (path, URL, or '-')",
-    )
-    parser.add_argument(
-        "output",
-        help="Output file name or '-' for stdout",
-    )
-
-    args = parser.parse_args()
-
-    if "://" in args.input:
-        with urllib.request.urlopen(args.input) as url:
-            model_data = json.load(url)
-    elif args.input == "-":
-        model_data = json.load(sys.stdin)
-    else:
-        with Path(args.input).open("r") as f:
-            model_data = json.load(f)
-
-    m = Model(model_data)
-    render = m.render_template(args.lang)
-
-    if args.output == "-":
-        print(render)
-    else:
-        with Path(args.output).open("w") as f:
-            f.write(render)
-
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())

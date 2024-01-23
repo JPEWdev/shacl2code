@@ -12,6 +12,7 @@ from pathlib import Path
 
 from . import Model
 from .const import TEMPLATE_DIR
+from .version import VERSION
 
 
 def get_langs():
@@ -23,7 +24,9 @@ def get_langs():
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Convert JSON-LD model to python")
+    parser = argparse.ArgumentParser(
+        description=f"Convert JSON-LD model to python. Version {VERSION}"
+    )
     parser.add_argument(
         "--lang",
         help="Output Language",

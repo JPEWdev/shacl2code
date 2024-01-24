@@ -6,6 +6,7 @@
 import subprocess
 
 from shacl2code.lang import LANGUAGES
+from shacl2code import VERSION
 
 
 def test_shacl2code_exists():
@@ -27,3 +28,17 @@ def test_lang_list():
     )
 
     assert sorted(p.stdout.splitlines()) == sorted(LANGUAGES.keys())
+
+
+def test_version():
+    """
+    Tests that the version subcommand works
+    """
+    p = subprocess.run(
+        ["shacl2code", "version"],
+        check=True,
+        stdout=subprocess.PIPE,
+        encoding="utf-8",
+    )
+
+    assert p.stdout.rstrip() == VERSION

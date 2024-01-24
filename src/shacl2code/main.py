@@ -40,6 +40,12 @@ def main():
             else:
                 print(f"{k:{width}} - {v.HELP}")
 
+        return 0
+
+    def handle_version(args):
+        print(VERSION)
+        return 0
+
     parser = argparse.ArgumentParser(
         description=f"Convert JSON-LD model to python. Version {VERSION}"
     )
@@ -78,6 +84,9 @@ def main():
         help="Only list languages without descriptions",
     )
     list_parser.set_defaults(func=handle_list)
+
+    version_parser = command_subparser.add_parser("version", help="Show version")
+    version_parser.set_defaults(func=handle_version)
 
     args = parser.parse_args()
 

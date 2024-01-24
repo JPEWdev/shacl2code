@@ -4,7 +4,13 @@ on:
   - push
 
 jobs:
+  test:
+    uses: ./.github/workflows/test.yaml
+
   deploy:
+    needs:
+      - test
+
     runs-on: ubuntu-latest
     permissions:
       id-token: write

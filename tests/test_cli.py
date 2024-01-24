@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import subprocess
+import sys
 
 from shacl2code.lang import LANGUAGES
 from shacl2code import VERSION
@@ -44,6 +45,10 @@ def test_lang_list():
         langs[name] = desc
 
     assert langs == {k: v.HELP for k, v in LANGUAGES.items()}
+
+
+def test_module_invocation():
+    subprocess.run([sys.executable, "-m", "shacl2code", "--help"], check=True)
 
 
 def test_version():

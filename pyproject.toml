@@ -37,4 +37,4 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.version]
-path = "shacl2code/version.py"
+path = "src/shacl2code/version.py"

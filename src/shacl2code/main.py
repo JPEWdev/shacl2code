@@ -11,17 +11,8 @@ import urllib.request
 from pathlib import Path
 
 from . import Model
-from .const import TEMPLATE_DIR
 from .version import VERSION
 from .lang import LANGUAGES
-
-
-def get_langs():
-    langs = []
-    for child in TEMPLATE_DIR.iterdir():
-        if child.suffixes and child.suffixes[-1] == ".j2":
-            langs.append(child.stem)
-    return langs
 
 
 def main():

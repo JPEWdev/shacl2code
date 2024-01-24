@@ -24,6 +24,12 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest >= 7.4",
+    "pytest-server-fixtures >= 1.7"
+]
+
 [project.urls]
 Homepage = "https://github.com/JPEWdev/shacl2code"
 Repository = "https://github.com/JPEWdev/shacl2code.git"
@@ -38,3 +44,8 @@ build-backend = "hatchling.build"
 
 [tool.hatch.version]
 path = "src/shacl2code/version.py"
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]

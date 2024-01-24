@@ -29,6 +29,22 @@ def test_lang_list():
 
     assert sorted(p.stdout.splitlines()) == sorted(LANGUAGES.keys())
 
+    p = subprocess.run(
+        ["shacl2code", "list"],
+        check=True,
+        stdout=subprocess.PIPE,
+        encoding="utf-8",
+    )
+
+    langs = {}
+    for line in p.stdout.splitlines():
+        name, desc = line.split("-")
+        name = name.rstrip()
+        desc = desc.lstrip()
+        langs[name] = desc
+
+    assert langs == {k: v.HELP for k, v in LANGUAGES.items()}
+
 
 def test_version():
     """

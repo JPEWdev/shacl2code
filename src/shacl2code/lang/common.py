@@ -40,9 +40,6 @@ class BasicJinjaRender(object):
 
     """
 
-    def __init__(self):
-        pass
-
     @classmethod
     def get_arguments(cls, parser):
         parser.add_argument(

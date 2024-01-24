@@ -42,11 +42,12 @@ def main():
         return 0
 
     def handle_list(args):
+        width = max(len(lang) for lang in LANGUAGES)
         for k, v in LANGUAGES.items():
             if args.short:
                 print(k)
             else:
-                print(f"{k}: {v.HELP}")
+                print(f"{k:{width}} - {v.HELP}")
 
     parser = argparse.ArgumentParser(
         description=f"Convert JSON-LD model to python. Version {VERSION}"

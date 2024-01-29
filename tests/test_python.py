@@ -11,7 +11,7 @@ from pathlib import Path
 THIS_FILE = Path(__file__)
 THIS_DIR = THIS_FILE.parent
 
-SPDX3_MODEL = THIS_DIR / "data" / "spdx3-model.jsonld"
+SPDX3_MODEL = THIS_DIR / "data" / "spdx3.jsonld"
 SPDX3_EXPECT = THIS_DIR / "expect" / "python" / "spdx3.py"
 
 

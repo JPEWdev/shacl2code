@@ -488,20 +488,20 @@ class SHACLObject(object):
             if prop.elide(value):
                 if min_count:
                     raise ValueError(
-                        f"Property '{pyname}' in {self.__class__.__name__} is required (currently {value!r})"
+                        f"Property '{pyname}' in {self.__class__.__name__} ({id(self)}) is required (currently {value!r})"
                     )
                 continue
 
             if min_count is not None:
                 if not prop.check_min_count(value, min_count):
                     raise ValueError(
-                        f"Property '{pyname}' in {self.__class__.__name__} requires a minimum of {min_count} elements"
+                        f"Property '{pyname}' in {self.__class__.__name__} ({id(self)}) requires a minimum of {min_count} elements"
                     )
 
             if max_count is not None:
                 if not prop.check_max_count(value, max_count):
                     raise ValueError(
-                        f"Property '{pyname}' in {self.__class__.__name__} requires a maximum of {max_count} elements"
+                        f"Property '{pyname}' in {self.__class__.__name__} ({id(self)}) requires a maximum of {max_count} elements"
                     )
 
             d[json_name] = prop.serializer(value)

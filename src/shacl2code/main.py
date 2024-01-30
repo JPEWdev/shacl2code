@@ -28,8 +28,8 @@ def main():
 
         m = Model(model_data)
 
-        render = args.lang()
-        render.output(args, m)
+        render = args.lang(args)
+        render.output(m)
         return 0
 
     def handle_list(args):

@@ -6,5 +6,5 @@
 from .lang import LANGUAGES
 
 # All renderers must be imported here to be registered
+from .jinja import JinjaRender
 from .python import PythonRender
-from .raw import RawRender

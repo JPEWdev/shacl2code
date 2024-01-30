@@ -14,6 +14,7 @@ from pathlib import Path
 THIS_FILE = Path(__file__)
 THIS_DIR = THIS_FILE.parent
 
+RAW_TEMPLATE = THIS_DIR / "data" / "raw.j2"
 SPDX3_MODEL = THIS_DIR / "data" / "spdx3.jsonld"
 SPDX3_EXPECT = THIS_DIR / "expect" / "raw" / "spdx3.txt"
 
@@ -29,9 +30,11 @@ def test_generation_file(tmpdir):
             "generate",
             "--input",
             SPDX3_MODEL,
-            "raw",
+            "jinja",
             "--output",
             outfile,
+            "--template",
+            RAW_TEMPLATE,
         ],
         check=True,
         stdout=subprocess.PIPE,
@@ -52,9 +55,11 @@ def test_generation_stdout():
             "generate",
             "--input",
             SPDX3_MODEL,
-            "raw",
+            "jinja",
             "--output",
             "-",
+            "--template",
+            RAW_TEMPLATE,
         ],
         check=True,
         stdout=subprocess.PIPE,
@@ -76,9 +81,11 @@ def test_generation_stdin():
                 "generate",
                 "--input",
                 "-",
-                "raw",
+                "jinja",
                 "--output",
                 "-",
+                "--template",
+                RAW_TEMPLATE,
             ],
             check=True,
             stdin=f,
@@ -104,9 +111,11 @@ def test_generation_url(http_server):
             "generate",
             "--input",
             f"{http_server.uri}/model.jsonld",
-            "raw",
+            "jinja",
             "--output",
             "-",
+            "--template",
+            RAW_TEMPLATE,
         ],
         check=True,
         stdout=subprocess.PIPE,

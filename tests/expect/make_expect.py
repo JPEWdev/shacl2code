@@ -25,7 +25,7 @@ def main():
         if not src.name.endswith(".jsonld"):
             continue
 
-        for lang, ext in (("python", ".py"), ("raw", ".txt")):
+        for lang, ext in (("python", ".py"),):
             subprocess.run(
                 [
                     "shacl2code",
@@ -36,6 +36,19 @@ def main():
                 ],
                 check=True,
             )
+
+        subprocess.run(
+            [
+                "shacl2code",
+                "generate",
+                f"--input={src}",
+                "jinja",
+                f"--output={make_dest(src, 'raw', '.txt.')}",
+                "--template",
+                DATA_DIR / "raw.j2",
+            ],
+            check=True,
+        )
 
 
 if __name__ == "__main__":

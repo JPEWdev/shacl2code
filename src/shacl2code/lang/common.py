@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, TemplateRuntimeError
 
-from ..const import TEMPLATE_DIR
+from .lang import TEMPLATE_DIR
 
 
 class OutputFile(object):

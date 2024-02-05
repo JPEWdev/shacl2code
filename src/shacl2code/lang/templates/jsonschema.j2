@@ -6,8 +6,14 @@
     {%- if schema_title %}
     "title": "{{ schema_title }}",
     {%- endif %}
+    "$comment": "{{ disclaimer }}",
     "type": "object",
     "properties": {
+        {%- if context.url %}
+        "@context": {
+            "const": "{{ context.url }}"
+        },
+        {%- endif %}
         "@graph": {
             "description": "Top level container for JSON-LD objects",
             "type": "array",
@@ -22,7 +28,12 @@
         }
     },
     "additionalProperties": false,
-    "required": ["@graph"],
+    "required": [
+        {%- if context.url %}
+        "@context",
+        {%- endif %}
+        "@graph"
+    ],
 
     "$defs": {
     {%- for class in classes %}
@@ -34,10 +45,10 @@
                 {
                     "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
-                        "@type": { "const": "{{ class._id }}" }
+                        "{{ context.compact("@id") }}": { "$ref": "#/$defs/idRef" },
+                        "{{ context.compact("@type") }}": { "const": "{{ context.compact(class._id) }}" }
                     },
-                    "required": ["@type"]
+                    "required": ["{{ context.compact("@type") }}"]
                 },
                 { "$ref": "#/$defs/{{ class.clsname }}_props" }
             ]
@@ -56,7 +67,7 @@
                             {{- required.append(prop.path) or "" }}
                         {%- endif %}
                         {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
-                        "{{ prop.path }}": {
+                        "{{ context.compact(prop.path) }}": {
                         {%- if is_list %}
                             "type": "array",
                             {%- if prop.max_count is not none %}
@@ -75,7 +86,7 @@
                         {%- elif prop.enum_id %}
                                 "enum": [
                                 {%- for e in enums.get(prop.enum_id).values %}
-                                    "{{ e._id }}"{% if not loop.last %},{% endif %}
+                                    "{{ context.compact(e._id, prop.path) }}"{% if not loop.last %},{% endif %}
                                 {%- endfor %}
                                 ]
                         {%- else %}
@@ -112,7 +123,7 @@
                     }{% if required %},
                     "required": [
                         {%- for r in required %}
-                        "{{ r }}"{% if not loop.last %},{% endif %}
+                        "{{ context.compact(r) }}"{% if not loop.last %},{% endif %}
                         {%- endfor %}
                     ]
                     {%- endif %}

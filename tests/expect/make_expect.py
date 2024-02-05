@@ -25,6 +25,8 @@ def main():
         if not src.name.endswith(".jsonld"):
             continue
 
+        context = src.parent / (src.stem + "-context.json")
+
         for lang, ext in (("python", ".py"), ("jsonschema", ".json")):
             subprocess.run(
                 [
@@ -49,6 +51,22 @@ def main():
             ],
             check=True,
         )
+
+        if context.is_file():
+            subprocess.run(
+                [
+                    "shacl2code",
+                    "generate",
+                    f"--input={src}",
+                    "--context-url=https://spdx.github.io/spdx-3-model/context.json",
+                    f"--context={context}",
+                    "jinja",
+                    f"--output={make_dest(context, 'raw', '.txt')}",
+                    "--template",
+                    DATA_DIR / "context.j2",
+                ],
+                check=True,
+            )
 
 
 if __name__ == "__main__":

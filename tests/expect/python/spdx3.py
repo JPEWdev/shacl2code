@@ -60,12 +60,14 @@ class Property(object):
     def serializer(self, value):
         return value
 
-    def deserialize(self, data, object_ids=None):
+    def deserialize(self, data, object_ids=None, context=None):
         if isinstance(data, dict) and "@value" in data:
-            if "@type" in data and self.TYPE and data["@type"] != self.TYPE:
-                raise TypeError(
-                    f"Value must be of type {self.TYPE}, but got {data['@type']}"
-                )
+            if self.TYPE:
+                for t in ("@type", compact("@type")):
+                    if t in data and data[t] != self.TYPE:
+                        raise TypeError(
+                            f"Value must be of type {self.TYPE}, but got {data[t]}"
+                        )
 
             return data["@value"]
 
@@ -203,7 +205,7 @@ class ObjectProp(Property):
 
         return value.serializer()
 
-    def deserialize(self, data, object_ids=None):
+    def deserialize(self, data, *, object_ids=None, context=None):
         if data is None:
             return data
 
@@ -213,10 +215,14 @@ class ObjectProp(Property):
 
             return data
 
-        if isinstance(data, dict) and "@id" in data and not "@type" in data:
-            return data["@id"]
+        if isinstance(data, dict) and not any(
+            t in data for t in ("@type", compact("@type"))
+        ):
+            for n in ("@id", compact("@id", context)):
+                if n in data:
+                    return data[n]
 
-        return SHACLObject.deserialize(data, object_ids)
+        return SHACLObject.deserialize(data, object_ids=object_ids, context=context)
 
     def link_prop(self, value, link_cache, missing, visited):
         if value is None:
@@ -336,11 +342,11 @@ class ListProp(Property):
         for idx, v in enumerate(value):
             self.prop.walk(v, callback, path + [f"[{idx}]"])
 
-    def deserialize(self, data, object_ids=None):
+    def deserialize(self, data, **kwargs):
         if isinstance(data, (list, tuple, set)):
-            data = [self.prop.deserialize(d, object_ids) for d in data]
+            data = [self.prop.deserialize(d, **kwargs) for d in data]
         else:
-            data = [self.prop.deserialize(data, object_ids)]
+            data = [self.prop.deserialize(data, **kwargs)]
 
         return ListProxy(self.prop, data=data)
 
@@ -368,6 +374,13 @@ class EnumProp(Property):
                 f"'{value}' is not a valid value for '{self.__class__.__name__}'"
             )
 
+    def deserialize(self, data, *, context=None, **kwargs):
+        value = super().deserialize(data, context=context, **kwargs)
+        return expand(value, context)
+
+    def serializer(self, value, context=None):
+        return compact(value, context=context)
+
 
 @functools.total_ordering
 class SHACLObject(object):
@@ -386,7 +399,13 @@ class SHACLObject(object):
             setattr(self, k, v)
 
     def _add_property(
-        self, pyname, prop, json_name=None, min_count=None, max_count=None
+        self,
+        pyname,
+        prop,
+        json_name=None,
+        min_count=None,
+        max_count=None,
+        context=None,
     ):
         if json_name is None:
             json_name = pyname
@@ -394,7 +413,7 @@ class SHACLObject(object):
             raise KeyError(
                 f"'{pyname}' is already defined for '{self.__class__.__name__}'"
             )
-        self._obj_properties[pyname] = (json_name, prop, min_count, max_count)
+        self._obj_properties[pyname] = (json_name, prop, min_count, max_count, context)
         self._obj_data[json_name] = prop.init()
 
     def __setattr__(self, name, value):
@@ -472,18 +491,18 @@ class SHACLObject(object):
         for obj in seen:
             yield obj
 
-    def serializer(self):
+    def serializer(self, context=None):
         if self._id and self._obj_written:
             return self._id
 
         self._obj_written = True
 
         d = {
-            "@type": self.TYPE,
+            compact("@type", context): compact(self.TYPE, context),
         }
 
         for pyname, v in self._obj_properties.items():
-            json_name, prop, min_count, max_count = v
+            json_name, prop, min_count, max_count, prop_context = v
             value = self._obj_data[json_name]
             if prop.elide(value):
                 if min_count:
@@ -504,7 +523,10 @@ class SHACLObject(object):
                         f"Property '{pyname}' in {self.__class__.__name__} ({id(self)}) requires a maximum of {max_count} elements"
                     )
 
-            d[json_name] = prop.serializer(value)
+            d[compact(json_name, context)] = prop.serializer(
+                value,
+                context=prop_context,
+            )
         return d
 
     def to_jsonld(self, f, *args, **kwargs):
@@ -514,14 +536,23 @@ class SHACLObject(object):
         return write_jsonld([self], f, *args, **kwargs)
 
     @classmethod
-    def deserialize(cls, data, object_ids=None):
-        if not "@type" in data:
+    def deserialize(cls, data, *, object_ids=None, context=None):
+        for t in ("@type", compact("@type")):
+            if not t in data:
+                continue
+
+            typ = data[t]
+
+            if typ in cls.DESERIALIZERS:
+                break
+
+            typ = expand(typ, context)
+            if typ in cls.DESERIALIZERS:
+                break
+
+            raise Exception(f"Unknown type {data[t]}")
+        else:
             return None
-
-        typ = data["@type"]
-
-        if not typ in cls.DESERIALIZERS:
-            raise Exception("Unknown type f{typ}")
 
         obj = cls.DESERIALIZERS[typ]()
 
@@ -529,9 +560,15 @@ class SHACLObject(object):
             return object_ids[obj._id]
 
         for pyname, v in obj._obj_properties.items():
-            json_name, prop, _, _ = v
-            if json_name in data:
-                obj._obj_data[json_name] = prop.deserialize(data[json_name], object_ids)
+            json_name, prop, _, _, prop_context = v
+            for n in (json_name, compact(json_name, context)):
+                if n in data:
+                    obj._obj_data[json_name] = prop.deserialize(
+                        data[n],
+                        object_ids=object_ids,
+                        context=prop_context or context,
+                    )
+                    break
 
         if obj._id:
             object_ids[obj._id] = obj
@@ -589,6 +626,25 @@ class SHACLObject(object):
             )
 
         return sort_key(self) < sort_key(other)
+
+
+def compact(_id, context=None):
+    global CONTEXT
+    if context is None:
+        context = CONTEXT[""]
+    return context[_id]
+
+
+def expand(_id, context=None):
+    global CONTEXT
+    if context is None:
+        context = CONTEXT[""]
+
+    for k, v in context.items():
+        if v == _id:
+            return k
+
+    return _id
 
 
 def write_jsonld(objects, f, force_graph=False, **kwargs):
@@ -662,6 +718,8 @@ def write_jsonld(objects, f, force_graph=False, **kwargs):
         data = {"@graph": graph_data}
     else:
         data = objects[0].serializer()
+
+    #
 
     sha1 = hashlib.sha1()
     for chunk in json.JSONEncoder(**kwargs).iterencode(data):
@@ -741,6 +799,9 @@ def print_tree(objects, all_fields=False):
 # fmt: off
 """Format Guard"""
 
+
+CONTEXT = {
+}
 
 # ENUMERATIONS
 # Lists the different safety risk type values that can be used to describe the safety risk of AI software

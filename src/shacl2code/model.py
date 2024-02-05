@@ -27,6 +27,97 @@ def to_var_name(name):
     return name
 
 
+class ContextMap(object):
+    def __init__(self, context, url):
+        self.context = context
+        self.url = url
+        self.map = {}
+        self.expanded = {}
+
+    def __expand(self, _id):
+        if _id in self.expanded:
+            return self.expanded[_id]
+
+        ctx = self.context.get("@context", {})
+        if not ctx:
+            return _id
+
+        if not ":" in _id:
+            if _id in ctx:
+                if isinstance(ctx[_id], dict):
+                    return self.__expand(ctx[_id]["@id"])
+                self.expanded[_id] = self.__expand(ctx[_id])
+                return self.expanded[_id]
+            return _id
+
+        prefix, suffix = _id.split(":", 1)
+        if prefix not in ctx:
+            return _id
+
+        self.expanded[_id] = self.__expand(prefix) + suffix
+        return self.expanded[_id]
+
+    def add_id(self, _id, vocab=""):
+        if vocab in self.map and _id in self.map[vocab]:
+            return self.map[vocab][_id]
+
+        compact = self.__compact_id(_id, vocab)
+        if compact != _id:
+            self.map.setdefault(vocab, {})[_id] = compact
+        return compact
+
+    def __compact_id(self, _id, vocab):
+        if not self.context:
+            return _id
+
+        # Check for vocabulary
+        for name, value in self.context.get("@context", {}).items():
+            if isinstance(value, dict):
+                if value["@type"] == "@vocab" and vocab == self.__expand(value["@id"]):
+                    vocab_prefix = self.__expand(value["@context"]["@vocab"])
+                    if _id.startswith(vocab_prefix):
+                        return _id[len(vocab_prefix) :]
+
+        def collect_possible(_id):
+            possible = set()
+            for name, value in self.context.get("@context", {}).items():
+                if isinstance(value, dict):
+                    value = value["@id"]
+
+                if _id == value:
+                    possible.add(name)
+                    possible |= collect_possible(name)
+                elif _id.startswith(value):
+                    tmp_id = name + ":" + _id[len(value) :].lstrip("/")
+                    possible.add(tmp_id)
+                    possible |= collect_possible(tmp_id)
+
+            return possible
+
+        possible = collect_possible(_id)
+        if not possible:
+            return _id
+
+        # To select from the possible identifiers, choose the one that has the
+        # least context (fewest ":"), then the shortest, and finally
+        # alphabetically
+        possible = list(possible)
+        possible.sort(key=lambda p: (p.count(":"), len(p), p))
+
+        return possible[0]
+
+    def compact(self, _id, context=""):
+        if context in self.map and _id in self.map[context]:
+            return self.map[context][_id]
+        return _id
+
+    def expand(self, _id, context=""):
+        for k, v in self.map[context].items():
+            if v == _id:
+                return k
+        return _id
+
+
 @dataclass
 class EnumValue:
     _id: str
@@ -64,9 +155,9 @@ class Class:
 
 
 class Model(object):
-    def __init__(self, model_data):
+    def __init__(self, model_data, context=None):
         self.model = jsonld.expand(model_data)
-        self.context = model_data.get("@context", {})
+        self.context = context
         self.compact = {}
         self.objects = {}
         self.enums = []
@@ -74,8 +165,10 @@ class Model(object):
         classes = []
         enums = []
 
+        context = model_data.get("@context", {})
+
         for obj in self.model:
-            self.compact[obj["@id"]] = jsonld.compact(obj, self.context)
+            self.compact[obj["@id"]] = jsonld.compact(obj, context)
             del self.compact[obj["@id"]]["@context"]
 
             self.objects[obj["@id"]] = obj
@@ -96,6 +189,7 @@ class Model(object):
                 comment=self.get_comment(obj),
                 values=[],
             )
+            self.context.add_id(e._id)
 
             for v in get_prop(obj, "http://www.w3.org/2002/07/owl#oneOf", "@list"):
                 e.values.append(
@@ -124,6 +218,7 @@ class Model(object):
                 comment=self.get_comment(obj),
                 properties=[],
             )
+            self.context.add_id(c._id)
 
             for prop_id in obj.get("http://www.w3.org/ns/shacl#property", []):
                 prop = self.objects[prop_id["@id"]]
@@ -151,10 +246,18 @@ class Model(object):
                         None,
                     ),
                 )
+                self.context.add_id(p.path)
+
                 prop_cls_id = get_prop(prop, "http://www.w3.org/ns/shacl#class", "@id")
                 if prop_cls_id:
                     if self.is_enum(prop_cls_id):
                         p.enum_id = prop_cls_id
+                        for e in self.enums:
+                            if e._id == prop_cls_id:
+                                for v in e.values:
+                                    self.context.add_id(v._id, prop_path)
+                                break
+
                     elif self.is_class(prop_cls_id):
                         p.class_id = prop_cls_id
                     else:
@@ -190,6 +293,9 @@ class Model(object):
 
             self.classes.append(c)
             done_ids.add(c._id)
+
+        self.context.add_id("@id")
+        self.context.add_id("@type")
 
     def is_enum(self, _id):
         return _id in self.enum_ids

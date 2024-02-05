@@ -10,7 +10,7 @@ import sys
 import urllib.request
 from pathlib import Path
 
-from . import Model
+from . import Model, ContextMap
 from .version import VERSION
 from .lang import LANGUAGES
 
@@ -26,7 +26,23 @@ def main():
             with Path(args.input).open("r") as f:
                 model_data = json.load(f)
 
-        m = Model(model_data)
+        if args.context:
+            if "://" in args.context:
+                with urllib.request.urlopen(args.context) as url:
+                    context = ContextMap(
+                        json.load(url), args.context_url or args.context
+                    )
+            else:
+                if not args.context_url:
+                    print("ERROR: Context URL is required for local path")
+                    return 1
+
+                with Path(args.context).open("r") as f:
+                    context = ContextMap(json.load(f), args.context_url)
+        else:
+            context = ContextMap(None, None)
+
+        m = Model(model_data, context)
 
         render = args.lang(args)
         render.output(m)
@@ -63,6 +79,16 @@ def main():
         "-i",
         help="Input JSON-LD model (path, URL, or '-')",
         required=True,
+    )
+    generate_parser.add_argument(
+        "--context",
+        "-x",
+        help="Require context for output (path or URL)",
+    )
+    generate_parser.add_argument(
+        "--context-url",
+        "-u",
+        help="Override URL for context (required for local file)",
     )
     generate_parser.set_defaults(func=handle_generate)
 

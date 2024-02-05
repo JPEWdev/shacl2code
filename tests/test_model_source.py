@@ -18,6 +18,11 @@ RAW_TEMPLATE = THIS_DIR / "data" / "raw.j2"
 SPDX3_MODEL = THIS_DIR / "data" / "spdx3.jsonld"
 SPDX3_EXPECT = THIS_DIR / "expect" / "raw" / "spdx3.txt"
 
+CONTEXT_TEMPLATE = THIS_DIR / "data" / "context.j2"
+SPDX3_CONTEXT = THIS_DIR / "data" / "spdx3-context.json"
+SPDX3_CONTEXT_URL = "https://spdx.github.io/spdx-3-model/context.json"
+SPDX3_CONTEXT_EXPECT = THIS_DIR / "expect" / "raw" / "spdx3-context.txt"
+
 
 def test_generation_file(tmpdir):
     """
@@ -123,4 +128,85 @@ def test_generation_url(http_server):
     )
 
     with SPDX3_EXPECT.open("r") as f:
+        assert p.stdout == f.read()
+
+
+def test_context_file():
+    """
+    Tests that a context file can be used from a file path
+    """
+    p = subprocess.run(
+        [
+            "shacl2code",
+            "generate",
+            "--input",
+            SPDX3_MODEL,
+            "--context",
+            SPDX3_CONTEXT,
+            "--context-url",
+            SPDX3_CONTEXT_URL,
+            "jinja",
+            "--output",
+            "-",
+            "--template",
+            CONTEXT_TEMPLATE,
+        ],
+        check=True,
+        stdout=subprocess.PIPE,
+        encoding="utf-8",
+    )
+
+    with SPDX3_CONTEXT_EXPECT.open("r") as f:
+        assert p.stdout == f.read()
+
+
+def test_context_file_missing_url():
+    p = subprocess.run(
+        [
+            "shacl2code",
+            "generate",
+            "--input",
+            SPDX3_MODEL,
+            "--context",
+            SPDX3_CONTEXT,
+            "jinja",
+            "--output",
+            "-",
+            "--template",
+            CONTEXT_TEMPLATE,
+        ],
+        stdout=subprocess.PIPE,
+        encoding="utf-8",
+    )
+
+    assert p.returncode != 0, "Process exited successfully when an error was expected"
+
+
+def test_context_url(http_server):
+    shutil.copyfile(
+        SPDX3_CONTEXT, os.path.join(http_server.document_root, "context.json")
+    )
+
+    p = subprocess.run(
+        [
+            "shacl2code",
+            "generate",
+            "--input",
+            SPDX3_MODEL,
+            "--context",
+            f"{http_server.uri}/context.json",
+            "--context-url",
+            SPDX3_CONTEXT_URL,
+            "jinja",
+            "--output",
+            "-",
+            "--template",
+            CONTEXT_TEMPLATE,
+        ],
+        check=True,
+        stdout=subprocess.PIPE,
+        encoding="utf-8",
+    )
+
+    with SPDX3_CONTEXT_EXPECT.open("r") as f:
         assert p.stdout == f.read()

@@ -763,19 +763,19 @@ DATATYPE_CLASSES = {
 {%- endfor %}
 {%- endif %}
 class {{ enum.clsname }}(EnumProp):
-    TYPE = "{{ enum.id }}"
+    TYPE = "{{ enum._id }}"
     valid_values = [
-        {%- for value in enum.enum_values %}
-        ("{{ value.varname }}", "{{ value.id }}"),
+        {%- for value in enum.values %}
+        ("{{ value.varname }}", "{{ value._id }}"),
         {%- endfor %}
     ]
-    {%- for value in enum.enum_values %}
+    {%- for value in enum.values %}
     {%- if value.comment %}
     {%- for l in value.comment.split("\n") %}
     #{% if l %} {% endif %}{{ l.rstrip() }}
     {%- endfor %}
     {%- endif %}
-    {{ value.varname }} = "{{ value.id }}"
+    {{ value.varname }} = "{{ value._id }}"
     {%- endfor %}
 
 {% endfor %}
@@ -788,11 +788,11 @@ class {{ enum.clsname }}(EnumProp):
 {%- endfor %}
 {%- endif %}
 class {{ class.clsname }}({% if class.parents -%}{{ class.parents | join(", ") }}{% else -%}SHACLObject{% endif -%}):
-    TYPE = "{{ class.id }}"
+    TYPE = "{{ class._id }}"
 
     def __init__(self, **kwargs):
         super().__init__()
-        {%- for prop in class.props %}
+        {%- for prop in class.properties %}
         {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
         {%- if prop.comment %}
         {%- for l in prop.comment.split("\n") %}
@@ -823,7 +823,7 @@ class {{ class.clsname }}({% if class.parents -%}{{ class.parents | join(", ") }
         {%- endfor %}
         self._set_init_props(**kwargs)
 
-SHACLObject.DESERIALIZERS["{{ class.id }}"] = {{ class.clsname }}
+SHACLObject.DESERIALIZERS["{{ class._id }}"] = {{ class.clsname }}
 
 {% endfor %}
 {{ '"' }}{{ '"' }}{{ '"' }}Format Guard"""

@@ -6,7 +6,9 @@
 
 import keyword
 import re
+import typing
 from pathlib import Path
+from dataclasses import dataclass, field
 
 from pyld import jsonld
 
@@ -25,14 +27,52 @@ def to_var_name(name):
     return name
 
 
+@dataclass
+class EnumValue:
+    _id: str
+    varname: str
+    comment: str = ""
+
+
+@dataclass
+class Enum:
+    _id: str
+    clsname: str
+    values: typing.List[EnumValue]
+    comment: str = ""
+
+
+@dataclass
+class Property:
+    path: str
+    varname: str
+    comment: str = ""
+    max_count: int = None
+    min_count: int = None
+    enumname: str = ""
+    clsname: str = ""
+    datatype: str = ""
+
+
+@dataclass
+class Class:
+    _id: str
+    clsname: str
+    parents: typing.List[str]
+    properties: typing.List[Property]
+    comment: str = ""
+
+
 class Model(object):
     def __init__(self, model_data):
         self.model = jsonld.expand(model_data)
         self.context = model_data.get("@context", {})
         self.compact = {}
         self.objects = {}
-        self.classes = []
         self.enums = []
+        self.classes = []
+        classes = []
+        enums = []
 
         for obj in self.model:
             self.compact[obj["@id"]] = jsonld.compact(obj, self.context)
@@ -41,16 +81,114 @@ class Model(object):
             self.objects[obj["@id"]] = obj
 
             if "http://www.w3.org/2002/07/owl#oneOf" in obj:
-                self.enums.append(obj)
+                enums.append(obj)
             elif "@type" in obj:
                 if "http://www.w3.org/2002/07/owl#Class" in obj["@type"]:
-                    self.classes.append(obj)
+                    classes.append(obj)
 
-        self.classes.sort(key=lambda c: c["@id"])
-        self.class_ids = set(c["@id"] for c in self.classes)
+        self.class_ids = set(c["@id"] for c in classes)
+        self.enum_ids = set(e["@id"] for e in enums)
 
-        self.enums.sort(key=lambda e: e["@id"])
-        self.enum_ids = set(e["@id"] for e in self.enums)
+        for obj in enums:
+            e = Enum(
+                _id=obj["@id"],
+                clsname=self.get_class_name(obj),
+                comment=self.get_comment(obj),
+                values=[],
+            )
+
+            for v in get_prop(obj, "http://www.w3.org/2002/07/owl#oneOf", "@list"):
+                e.values.append(
+                    EnumValue(
+                        _id=v["@id"],
+                        varname=to_var_name(v["@id"].split("/")[-1]),
+                        comment=self.get_comment(self.objects[v["@id"]]),
+                    )
+                )
+
+            e.values.sort(key=lambda v: v._id)
+
+            self.enums.append(e)
+
+        for obj in classes:
+            parents = []
+            for p in obj.get("http://www.w3.org/2000/01/rdf-schema#subClassOf", []):
+                if p["@id"] in self.objects:
+                    parents.append(self.get_class_name(self.objects[p["@id"]]))
+
+            c = Class(
+                _id=obj["@id"],
+                parents=parents,
+                clsname=self.get_class_name(obj),
+                comment=self.get_comment(obj),
+                properties=[],
+            )
+
+            for prop_id in obj.get("http://www.w3.org/ns/shacl#property", []):
+                prop = self.objects[prop_id["@id"]]
+                name = prop["http://www.w3.org/ns/shacl#name"][0]["@value"]
+                prop_path = get_prop(
+                    prop,
+                    "http://www.w3.org/ns/shacl#path",
+                    "@id",
+                )
+
+                p = Property(
+                    varname=to_var_name(name),
+                    path=prop_path,
+                    comment=self.get_comment(self.objects[prop_path]),
+                    max_count=get_prop(
+                        prop,
+                        "http://www.w3.org/ns/shacl#maxCount",
+                        "@value",
+                        None,
+                    ),
+                    min_count=get_prop(
+                        prop,
+                        "http://www.w3.org/ns/shacl#minCount",
+                        "@value",
+                        None,
+                    ),
+                )
+                prop_cls_id = get_prop(prop, "http://www.w3.org/ns/shacl#class", "@id")
+                if prop_cls_id:
+                    if self.is_enum(prop_cls_id):
+                        p.enumname = self.get_class_name(self.objects[prop_cls_id])
+                    elif self.is_class(prop_cls_id):
+                        p.clsname = self.get_class_name(self.objects[prop_cls_id])
+                    else:
+                        raise Exception(f"Unknown type '{prop_cls_id}'")
+                else:
+                    p.datatype = get_prop(
+                        prop,
+                        "http://www.w3.org/ns/shacl#datatype",
+                        "@id",
+                    )
+
+                c.properties.append(p)
+
+            self.classes.append(c)
+
+        self.enums.sort(key=lambda e: e._id)
+        self.classes.sort(key=lambda c: c._id)
+
+        tmp_classes = self.classes
+        done_classes = set()
+        seen_ids = set()
+        self.classes = []
+
+        while tmp_classes:
+            c = tmp_classes.pop(0)
+
+            # If any parent classes of this class are outstanding, then push it
+            # back on the end of the class list and try again. This ensures that
+            # derived classes are always written after any parent classes
+            if not all(p in done_classes for p in c.parents):
+                tmp_classes.append(c)
+                continue
+
+            self.classes.append(c)
+            done_classes.add(c.clsname)
 
     def is_enum(self, _id):
         return _id in self.enum_ids
@@ -87,118 +225,3 @@ class Model(object):
             return ""
 
         return comment
-
-    def get_template_enums(self):
-        """
-        Returns a list of enums suitable for passing to a Jinja template
-        """
-        template_enums = []
-        for e in self.enums:
-            values = []
-            for v in get_prop(e, "http://www.w3.org/2002/07/owl#oneOf", "@list"):
-                values.append(
-                    {
-                        "id": v["@id"],
-                        "varname": to_var_name(v["@id"].split("/")[-1]),
-                        "comment": self.get_comment(self.objects[v["@id"]]),
-                    }
-                )
-            values.sort(key=lambda v: v["id"])
-
-            template_enums.append(
-                {
-                    "id": e["@id"],
-                    "clsname": self.get_class_name(e),
-                    "enum_values": values,
-                    "comment": self.get_comment(e),
-                }
-            )
-        template_enums.sort(key=lambda e: e["id"])
-        return template_enums
-
-    def get_class_template_properties(self, cls):
-        """
-        Returns a list of properties for a class suitable for passing to a
-        Jinja template
-        """
-
-        props = []
-        for prop_id in cls.get("http://www.w3.org/ns/shacl#property", []):
-            prop = self.objects[prop_id["@id"]]
-            name = prop["http://www.w3.org/ns/shacl#name"][0]["@value"]
-            prop_path = get_prop(
-                prop,
-                "http://www.w3.org/ns/shacl#path",
-                "@id",
-            )
-
-            p = {
-                "varname": to_var_name(name),
-                "path": prop_path,
-                "comment": self.get_comment(self.objects[prop_path]),
-                "max_count": get_prop(
-                    prop,
-                    "http://www.w3.org/ns/shacl#maxCount",
-                    "@value",
-                    None,
-                ),
-                "min_count": get_prop(
-                    prop,
-                    "http://www.w3.org/ns/shacl#minCount",
-                    "@value",
-                    None,
-                ),
-            }
-
-            prop_cls_id = get_prop(prop, "http://www.w3.org/ns/shacl#class", "@id")
-            if prop_cls_id:
-                if self.is_enum(prop_cls_id):
-                    p["enumname"] = self.get_class_name(self.objects[prop_cls_id])
-                elif self.is_class(prop_cls_id):
-                    p["clsname"] = self.get_class_name(self.objects[prop_cls_id])
-                else:
-                    raise Exception(f"Unknown type '{prop_cls_id}'")
-            else:
-                p["datatype"] = get_prop(
-                    prop,
-                    "http://www.w3.org/ns/shacl#datatype",
-                    "@id",
-                )
-
-            props.append(p)
-
-        return props
-
-    def get_template_classes(self):
-        done_classes = set()
-        classes = self.classes[:]
-
-        template_classes = []
-        while classes:
-            c = classes.pop(0)
-
-            parents = []
-            for p in c.get("http://www.w3.org/2000/01/rdf-schema#subClassOf", []):
-                if p["@id"] in self.objects:
-                    parents.append(self.get_class_name(self.objects[p["@id"]]))
-
-            # If any parent classes of this class are outstanding, then push it
-            # back on the end of the class list and try again. This ensures that
-            # derived classes are always written after any parent classes
-            if not all(p in done_classes for p in parents):
-                classes.append(c)
-                continue
-
-            clsname = self.get_class_name(c)
-            template_classes.append(
-                {
-                    "id": c["@id"],
-                    "clsname": clsname,
-                    "parents": parents,
-                    "comment": self.get_comment(c),
-                    "props": self.get_class_template_properties(c),
-                }
-            )
-            done_classes.add(clsname)
-
-        return template_classes

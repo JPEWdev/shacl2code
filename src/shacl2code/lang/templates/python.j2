@@ -787,7 +787,14 @@ class {{ enum.clsname }}(EnumProp):
 #{% if l %} {% endif %}{{ l.rstrip() }}
 {%- endfor %}
 {%- endif %}
-class {{ class.clsname }}({% if class.parents -%}{{ class.parents | join(", ") }}{% else -%}SHACLObject{% endif -%}):
+class {{ class.clsname }}(
+{%- if class.parent_ids %}
+    {%- for id in class.parent_ids %}
+        {{- classes.get(id).clsname }}{% if not loop.last %}, {% endif %}
+    {%- endfor %}
+{%- else -%}
+    SHACLObject
+{%- endif -%}):
     TYPE = "{{ class._id }}"
 
     def __init__(self, **kwargs):
@@ -802,10 +809,10 @@ class {{ class.clsname }}({% if class.parents -%}{{ class.parents | join(", ") }
         self._add_property(
             "{{ prop.varname }}",
             {% if is_list -%}ListProp({% endif %}
-            {%- if prop.clsname -%}
-                ObjectProp({{ prop.clsname }}, {% if prop.min_count and not is_list %}True{% else %}False{% endif %})
-            {%- elif prop.enumname -%}
-                {{ prop.enumname }}()
+            {%- if prop.class_id -%}
+                ObjectProp({{ classes.get(prop.class_id).clsname }}, {% if prop.min_count and not is_list %}True{% else %}False{% endif %})
+            {%- elif prop.enum_id -%}
+                {{ enums.get(prop.enum_id).clsname }}()
             {%- else -%}
                 {% if not prop.datatype in DATATYPE_CLASSES -%}
                     {{ abort("Unknown data type " + prop.datatype) -}}

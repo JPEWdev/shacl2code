@@ -49,8 +49,8 @@ class Property:
     comment: str = ""
     max_count: int = None
     min_count: int = None
-    enumname: str = ""
-    clsname: str = ""
+    enum_id: str = ""
+    class_id: str = ""
     datatype: str = ""
 
 
@@ -58,7 +58,7 @@ class Property:
 class Class:
     _id: str
     clsname: str
-    parents: typing.List[str]
+    parent_ids: typing.List[str]
     properties: typing.List[Property]
     comment: str = ""
 
@@ -111,14 +111,15 @@ class Model(object):
             self.enums.append(e)
 
         for obj in classes:
-            parents = []
-            for p in obj.get("http://www.w3.org/2000/01/rdf-schema#subClassOf", []):
-                if p["@id"] in self.objects:
-                    parents.append(self.get_class_name(self.objects[p["@id"]]))
-
             c = Class(
                 _id=obj["@id"],
-                parents=parents,
+                parent_ids=[
+                    p["@id"]
+                    for p in obj.get(
+                        "http://www.w3.org/2000/01/rdf-schema#subClassOf", []
+                    )
+                    if p["@id"] in self.objects
+                ],
                 clsname=self.get_class_name(obj),
                 comment=self.get_comment(obj),
                 properties=[],
@@ -153,9 +154,9 @@ class Model(object):
                 prop_cls_id = get_prop(prop, "http://www.w3.org/ns/shacl#class", "@id")
                 if prop_cls_id:
                     if self.is_enum(prop_cls_id):
-                        p.enumname = self.get_class_name(self.objects[prop_cls_id])
+                        p.enum_id = prop_cls_id
                     elif self.is_class(prop_cls_id):
-                        p.clsname = self.get_class_name(self.objects[prop_cls_id])
+                        p.class_id = prop_cls_id
                     else:
                         raise Exception(f"Unknown type '{prop_cls_id}'")
                 else:
@@ -173,7 +174,7 @@ class Model(object):
         self.classes.sort(key=lambda c: c._id)
 
         tmp_classes = self.classes
-        done_classes = set()
+        done_ids = set()
         seen_ids = set()
         self.classes = []
 
@@ -183,12 +184,12 @@ class Model(object):
             # If any parent classes of this class are outstanding, then push it
             # back on the end of the class list and try again. This ensures that
             # derived classes are always written after any parent classes
-            if not all(p in done_classes for p in c.parents):
+            if not all(p in done_ids for p in c.parent_ids):
                 tmp_classes.append(c)
                 continue
 
             self.classes.append(c)
-            done_classes.add(c.clsname)
+            done_ids.add(c._id)
 
     def is_enum(self, _id):
         return _id in self.enum_ids

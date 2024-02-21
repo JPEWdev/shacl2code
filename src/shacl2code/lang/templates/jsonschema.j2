@@ -1,0 +1,142 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    {%- if schema_id %}
+    "$id": "{{ schema_id }}",
+    {%- endif %}
+    {%- if schema_title %}
+    "title": "{{ schema_title }}",
+    {%- endif %}
+    "type": "object",
+    "properties": {
+        "@graph": {
+            "description": "Top level container for JSON-LD objects",
+            "type": "array",
+            "items": {
+                "oneOf": [
+                    {%- for class in classes %}
+                    { "$ref": "#/$defs/{{ class.clsname }}" }{% if not loop.last %},{% endif %}
+                    {%- endfor %}
+                ],
+                "unevaluatedProperties": false
+            }
+        }
+    },
+    "additionalProperties": false,
+    "required": ["@graph"],
+
+    "$defs": {
+    {%- for class in classes %}
+        {#- Classes are divided into 2 parts. The properties are separated into a separate object #}
+        {#- so that a object can references the properties of its parent without needing the const #}
+        {#- @type tag #}
+        "{{ class.clsname }}": {
+            "allOf": [
+                {
+                    "type": "object",
+                    "properties": {
+                        "@id": { "$ref": "#/$defs/idRef" },
+                        "@type": { "const": "{{ class._id }}" }
+                    },
+                    "required": ["@type"]
+                },
+                { "$ref": "#/$defs/{{ class.clsname }}_props" }
+            ]
+        },
+        "{{ class.clsname }}_props": {
+            "allOf": [
+                {%- for parent in class.parent_ids %}
+                { "$ref": "#/$defs/{{ classes.get(parent).clsname }}_props" },
+                {%- endfor %}
+                {%- set required = [] %}
+                {
+                    "type": "object",
+                    "properties": {
+                        {%- for prop in class.properties %}
+                        {%- if not prop.min_count is none and prop.min_count > 0 %}
+                            {{- required.append(prop.path) or "" }}
+                        {%- endif %}
+                        {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
+                        "{{ prop.path }}": {
+                        {%- if is_list %}
+                            "type": "array",
+                            {%- if prop.max_count is not none %}
+                            "maxItems": {{ prop.max_count }},
+                            {%- endif %}
+                            {%- if prop.min_count is not none %}
+                            "minItems": {{ prop.min_count }},
+                            {%- endif %}
+                            "items": {
+                        {%- endif %}
+                        {%- if prop.class_id %}
+                                "oneOf": [
+                                    { "$ref": "#/$defs/idRef" },
+                                    { "$ref": "#/$defs/{{ classes.get(prop.class_id).clsname }}" }
+                                ]
+                        {%- elif prop.enum_id %}
+                                "enum": [
+                                {%- for e in enums.get(prop.enum_id).values %}
+                                    "{{ e._id }}"{% if not loop.last %},{% endif %}
+                                {%- endfor %}
+                                ]
+                        {%- else %}
+                            {%- if prop.datatype == "http://www.w3.org/2001/XMLSchema#string" %}
+                                "type": "string"
+                            {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#anyURI" %}
+                                "$ref": "#/$defs/anyURI"
+                            {%- elif prop.datatype == "https://spdx.org/rdf/v3/Core/DateTime" %}
+                                "$ref": "#/$defs/DateTime"
+                            {%- elif prop.datatype == "https://spdx.org/rdf/v3/Core/MediaType" %}
+                                "$ref": "#/$defs/MediaType"
+                            {%- elif prop.datatype == "https://spdx.org/rdf/v3/Core/SemVer" %}
+                                "$ref": "#/$defs/SemVer"
+                            {%- elif prop.datatype == "https://spdx.org/rdf/v3/Core/Extension" %}
+                                "$ref": "#/$defs/Extension"
+                            {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#positiveInteger" %}
+                                "type": "integer",
+                                "minimum": 0
+                            {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#nonNegativeInteger" %}
+                                "type": "integer"
+                            {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#boolean" %}
+                                "type": "boolean"
+                            {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#decimal" %}
+                                "type": "number"
+                            {%- else %}
+                                {{- abort("Unknown data type " + prop.datatype) }}
+                            {%- endif %}
+                        {%- endif %}
+                        {%- if is_list %}
+                            }
+                        {%- endif %}
+                        }{% if not loop.last %},{% endif %}
+                        {%- endfor %}
+                    }{% if required %},
+                    "required": [
+                        {%- for r in required %}
+                        "{{ r }}"{% if not loop.last %},{% endif %}
+                        {%- endfor %}
+                    ]
+                    {%- endif %}
+                }
+            ]
+        },
+    {%- endfor %}
+        "idRef": {
+            "type": "string"
+        },
+        "anyURI": {
+            "type": "string"
+        },
+        "DateTime": {
+            "type": "string"
+        },
+        "MediaType": {
+            "type": "string"
+        },
+        "SemVer": {
+            "type": "string"
+        },
+        "Extension": {
+            "type": "string"
+        }
+    }
+}

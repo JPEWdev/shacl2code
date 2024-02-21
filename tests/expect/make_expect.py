@@ -25,7 +25,7 @@ def main():
         if not src.name.endswith(".jsonld"):
             continue
 
-        for lang, ext in (("python", ".py"),):
+        for lang, ext in (("python", ".py"), ("jsonschema", ".json")):
             subprocess.run(
                 [
                     "shacl2code",

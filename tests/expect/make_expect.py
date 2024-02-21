@@ -43,7 +43,7 @@ def main():
                 "generate",
                 f"--input={src}",
                 "jinja",
-                f"--output={make_dest(src, 'raw', '.txt.')}",
+                f"--output={make_dest(src, 'raw', '.txt')}",
                 "--template",
                 DATA_DIR / "raw.j2",
             ],

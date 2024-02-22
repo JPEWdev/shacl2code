@@ -38,6 +38,19 @@ def main():
                 ],
                 check=True,
             )
+            if context.is_file():
+                subprocess.run(
+                    [
+                        "shacl2code",
+                        "generate",
+                        f"--input={src}",
+                        "--context-url=https://spdx.github.io/spdx-3-model/context.json",
+                        f"--context={context}",
+                        lang,
+                        f"--output={make_dest(context, lang, ext)}",
+                    ],
+                    check=True,
+                )
 
         subprocess.run(
             [

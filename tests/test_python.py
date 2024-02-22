@@ -6,16 +6,37 @@
 import re
 import subprocess
 import sys
+import pytest
 from pathlib import Path
 
 THIS_FILE = Path(__file__)
 THIS_DIR = THIS_FILE.parent
 
 SPDX3_MODEL = THIS_DIR / "data" / "spdx3.jsonld"
-SPDX3_EXPECT = THIS_DIR / "expect" / "python" / "spdx3.py"
+
+SPDX3_CONTEXT = THIS_DIR / "data" / "spdx3-context.json"
+SPDX3_CONTEXT_URL = "https://spdx.github.io/spdx-3-model/context.json"
 
 
-def test_python_generation(tmpdir):
+pytestmark = pytest.mark.parametrize(
+    "expect,args",
+    [
+        (
+            THIS_DIR / "expect" / "python" / "spdx3.py",
+            [],
+        ),
+        (
+            THIS_DIR / "expect" / "python" / "spdx3-context.py",
+            [
+                f"--context={SPDX3_CONTEXT}",
+                f"--context-url={SPDX3_CONTEXT_URL}",
+            ],
+        ),
+    ],
+)
+
+
+def test_python_generation(tmpdir, expect, args):
     """
     Tests that shacl2code generates python output that matches the expected
     output
@@ -27,6 +48,9 @@ def test_python_generation(tmpdir):
             "generate",
             "--input",
             SPDX3_MODEL,
+        ]
+        + args
+        + [
             "python",
             "--output",
             outfile,
@@ -34,11 +58,11 @@ def test_python_generation(tmpdir):
         check=True,
     )
 
-    with SPDX3_EXPECT.open("r") as f:
+    with expect.open("r") as f:
         assert outfile.read() == f.read()
 
 
-def test_output_syntax(tmpdir):
+def test_output_syntax(tmpdir, expect, args):
     """
     Checks that the output file is valid python syntax by executing it"
     """
@@ -49,6 +73,9 @@ def test_output_syntax(tmpdir):
             "generate",
             "--input",
             SPDX3_MODEL,
+        ]
+        + args
+        + [
             "python",
             "--output",
             outfile,
@@ -59,7 +86,7 @@ def test_output_syntax(tmpdir):
     subprocess.run([sys.executable, outfile, "--help"], check=True)
 
 
-def test_trailing_whitespace():
+def test_trailing_whitespace(expect, args):
     """
     Tests that the generated file does not have trailing whitespace
     """
@@ -69,6 +96,9 @@ def test_trailing_whitespace():
             "generate",
             "--input",
             SPDX3_MODEL,
+        ]
+        + args
+        + [
             "python",
             "--output",
             "-",
@@ -84,7 +114,7 @@ def test_trailing_whitespace():
         ), f"Line {num + 1} has trailing whitespace"
 
 
-def test_tabs():
+def test_tabs(expect, args):
     """
     Tests that the output file doesn't contain tabs
     """
@@ -94,6 +124,9 @@ def test_tabs():
             "generate",
             "--input",
             SPDX3_MODEL,
+        ]
+        + args
+        + [
             "python",
             "--output",
             "-",

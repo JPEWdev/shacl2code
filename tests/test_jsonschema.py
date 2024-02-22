@@ -6,6 +6,7 @@
 import re
 import subprocess
 import json
+import pytest
 from pathlib import Path
 
 THIS_FILE = Path(__file__)
@@ -14,8 +15,28 @@ THIS_DIR = THIS_FILE.parent
 SPDX3_MODEL = THIS_DIR / "data" / "spdx3.jsonld"
 SPDX3_EXPECT = THIS_DIR / "expect" / "jsonschema" / "spdx3.json"
 
+SPDX3_CONTEXT = THIS_DIR / "data" / "spdx3-context.json"
+SPDX3_CONTEXT_URL = "https://spdx.github.io/spdx-3-model/context.json"
 
-def test_generation(tmpdir):
+pytestmark = pytest.mark.parametrize(
+    "expect,args",
+    [
+        (
+            THIS_DIR / "expect" / "jsonschema" / "spdx3.json",
+            [],
+        ),
+        (
+            THIS_DIR / "expect" / "jsonschema" / "spdx3-context.json",
+            [
+                f"--context={SPDX3_CONTEXT}",
+                f"--context-url={SPDX3_CONTEXT_URL}",
+            ],
+        ),
+    ],
+)
+
+
+def test_generation(tmpdir, expect, args):
     """
     Tests that shacl2code generates json schema output that matches the
     expected output
@@ -27,6 +48,9 @@ def test_generation(tmpdir):
             "generate",
             "--input",
             SPDX3_MODEL,
+        ]
+        + args
+        + [
             "jsonschema",
             "--output",
             outfile,
@@ -34,32 +58,36 @@ def test_generation(tmpdir):
         check=True,
     )
 
-    with SPDX3_EXPECT.open("r") as f:
+    with expect.open("r") as f:
         assert outfile.read() == f.read()
 
 
-def test_output_syntax(tmpdir):
+def test_output_syntax(expect, args):
     """
     Checks that the output file is valid json syntax by parsing it with Python
     """
-    outfile = tmpdir.join("spdx3.json")
-    subprocess.run(
+    p = subprocess.run(
         [
             "shacl2code",
             "generate",
             "--input",
             SPDX3_MODEL,
+        ]
+        + args
+        + [
             "jsonschema",
             "--output",
-            outfile,
+            "-",
         ],
         check=True,
+        stdout=subprocess.PIPE,
+        encoding="utf-8",
     )
 
-    json.loads(outfile.read())
+    json.loads(p.stdout)
 
 
-def test_trailing_whitespace():
+def test_trailing_whitespace(expect, args):
     """
     Tests that the generated file does not have trailing whitespace
     """
@@ -69,6 +97,9 @@ def test_trailing_whitespace():
             "generate",
             "--input",
             SPDX3_MODEL,
+        ]
+        + args
+        + [
             "jsonschema",
             "--output",
             "-",
@@ -84,7 +115,7 @@ def test_trailing_whitespace():
         ), f"Line {num + 1} has trailing whitespace"
 
 
-def test_tabs():
+def test_tabs(expect, args):
     """
     Tests that the output file doesn't contain tabs
     """
@@ -94,6 +125,9 @@ def test_tabs():
             "generate",
             "--input",
             SPDX3_MODEL,
+        ]
+        + args
+        + [
             "jsonschema",
             "--output",
             "-",

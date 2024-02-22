@@ -9,10 +9,24 @@
     "$comment": "{{ disclaimer }}",
     "type": "object",
     "properties": {
-        {%- if context.url %}
+        {%- if context.urls %}
+        {%- if context.urls | length == 1 %}
         "@context": {
-            "const": "{{ context.url }}"
+            "const": "{{ context.urls[0] }}"
         },
+        {%- else %}
+        "@context": {
+            "type": "array",
+            "prefixItems": {
+                {%- for url in context.urls %}
+                { "const": "{{ url }}" }{% if not loop.last %},{% endif %}
+                {%- endfor %}
+            },
+            "minContains": "{{ context.urls | length }}",
+            "maxContains": "{{ context.urls | length }}",
+            "items": false
+        },
+        {%- endif %}
         {%- endif %}
         "@graph": {
             "description": "Top level container for JSON-LD objects",
@@ -29,7 +43,7 @@
     },
     "additionalProperties": false,
     "required": [
-        {%- if context.url %}
+        {%- if context.urls %}
         "@context",
         {%- endif %}
         "@graph"

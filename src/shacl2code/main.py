@@ -10,7 +10,7 @@ import sys
 import urllib.request
 from pathlib import Path
 
-from . import Model, ContextMap
+from . import Model, ContextMap, Context
 from .version import VERSION
 from .lang import LANGUAGES
 
@@ -26,23 +26,22 @@ def main():
             with Path(args.input).open("r") as f:
                 model_data = json.load(f)
 
-        if args.context:
-            if "://" in args.context:
-                with urllib.request.urlopen(args.context) as url:
-                    context = ContextMap(
-                        json.load(url), args.context_url or args.context
-                    )
+        contexts = []
+        for c in args.context:
+            with urllib.request.urlopen(c) as f:
+                data = json.load(f)
+            contexts.append(Context(data, c))
+
+        for location, url in args.context_url:
+            if "://" in location:
+                with urllib.request.urlopen(location) as f:
+                    data = json.load(f)
             else:
-                if not args.context_url:
-                    print("ERROR: Context URL is required for local path")
-                    return 1
+                with Path(location).open("r") as f:
+                    data = json.load(f)
+            contexts.append(Context(data, url))
 
-                with Path(args.context).open("r") as f:
-                    context = ContextMap(json.load(f), args.context_url)
-        else:
-            context = ContextMap(None, None)
-
-        m = Model(model_data, context)
+        m = Model(model_data, ContextMap(contexts))
 
         render = args.lang(args)
         render.output(m)
@@ -83,12 +82,18 @@ def main():
     generate_parser.add_argument(
         "--context",
         "-x",
-        help="Require context for output (path or URL)",
+        help="Require context for output (URL)",
+        action="append",
+        default=[],
     )
     generate_parser.add_argument(
         "--context-url",
         "-u",
-        help="Override URL for context (required for local file)",
+        help="Require context from LOCATION (path or URL), but report as URL in generated code",
+        nargs=2,
+        metavar=("LOCATION", "URL"),
+        action="append",
+        default=[],
     )
     generate_parser.set_defaults(func=handle_generate)
 

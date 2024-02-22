@@ -27,10 +27,7 @@ pytestmark = pytest.mark.parametrize(
         ),
         (
             THIS_DIR / "expect" / "jsonschema" / "spdx3-context.json",
-            [
-                f"--context={SPDX3_CONTEXT}",
-                f"--context-url={SPDX3_CONTEXT_URL}",
-            ],
+            ["--context-url", SPDX3_CONTEXT, SPDX3_CONTEXT_URL],
         ),
     ],
 )

@@ -719,8 +719,16 @@ def write_jsonld(objects, f, force_graph=False, **kwargs):
     else:
         data = objects[0].serializer()
 
-    # {%- if context.url %}
-    data["@context"] = "{{ context.url }}"
+    # {%- if context.urls %}
+    {%- if context.urls | length == 1 %}
+    data["@context"] = "{{ context.urls[0]}}"
+    {%- else %}
+    data["@context"] = [
+    {%- for url in context.urls %}
+        "{{ url }}",
+    {%- endfor %}
+    ]
+    {%- endif %}
     # {%- endif %}
 
     sha1 = hashlib.sha1()

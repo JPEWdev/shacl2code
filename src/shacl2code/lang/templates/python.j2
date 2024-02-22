@@ -89,7 +89,7 @@ class StringProp(Property):
     def set(self, value):
         return str(value)
 
-    def set(self, value):
+    def get(self, value):
         return str(value)
 
     def validate(self, value):
@@ -538,7 +538,7 @@ class SHACLObject(object):
     @classmethod
     def deserialize(cls, data, *, object_ids=None, context=None):
         for t in ("@type", compact("@type")):
-            if not t in data:
+            if t not in data:
                 continue
 
             typ = data[t]
@@ -743,7 +743,7 @@ def read_jsonld(f):
     """
     data = json.load(f)
     object_ids = {}
-    if not "@graph" in data:
+    if "@graph" not in data:
         objects = [SHACLObject.deserialize(data, object_ids)]
     else:
         objects = [SHACLObject.deserialize(o, object_ids) for o in data["@graph"]]
@@ -825,6 +825,7 @@ CONTEXT = {
 {%- endfor %}
 }
 
+
 # ENUMERATIONS
 {%- for enum in enums %}
 {%- if enum.comment %}
@@ -849,7 +850,6 @@ class {{ enum.clsname }}(EnumProp):
     {%- endfor %}
 
 {% endfor %}
-
 # CLASSES
 {%- for class in classes %}
 {%- if class.comment %}
@@ -902,6 +902,7 @@ class {{ class.clsname }}(
         )
         {%- endfor %}
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["{{ class._id }}"] = {{ class.clsname }}
 

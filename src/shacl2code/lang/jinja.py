@@ -6,7 +6,7 @@
 from pathlib import Path
 
 from .common import BasicJinjaRender
-from .lang import language, TEMPLATE_DIR
+from .lang import language
 
 
 @language("jinja")

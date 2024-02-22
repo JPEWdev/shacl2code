@@ -5,7 +5,6 @@
 
 import re
 import subprocess
-import sys
 import json
 from pathlib import Path
 

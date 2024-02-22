@@ -89,7 +89,7 @@ class StringProp(Property):
     def set(self, value):
         return str(value)
 
-    def set(self, value):
+    def get(self, value):
         return str(value)
 
     def validate(self, value):
@@ -538,7 +538,7 @@ class SHACLObject(object):
     @classmethod
     def deserialize(cls, data, *, object_ids=None, context=None):
         for t in ("@type", compact("@type")):
-            if not t in data:
+            if t not in data:
                 continue
 
             typ = data[t]
@@ -741,7 +741,7 @@ def read_jsonld(f):
     """
     data = json.load(f)
     object_ids = {}
-    if not "@graph" in data:
+    if "@graph" not in data:
         objects = [SHACLObject.deserialize(data, object_ids)]
     else:
         objects = [SHACLObject.deserialize(o, object_ids) for o in data["@graph"]]
@@ -802,6 +802,7 @@ def print_tree(objects, all_fields=False):
 
 CONTEXT = {
 }
+
 
 # ENUMERATIONS
 # Lists the different safety risk type values that can be used to describe the safety risk of AI software
@@ -1437,7 +1438,6 @@ class software_SoftwarePurpose(EnumProp):
     test = "https://spdx.org/rdf/v3/Software/SoftwarePurpose/test"
 
 
-
 # CLASSES
 # The CreationInfo provides information about who created the Element, and when and how it was created.
 #
@@ -1495,6 +1495,7 @@ class core_CreationInfo(SHACLObject):
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Core/CreationInfo"] = core_CreationInfo
 
 
@@ -1520,6 +1521,7 @@ class core_DictionaryEntry(SHACLObject):
             json_name="https://spdx.org/rdf/v3/Core/value",
         )
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Core/DictionaryEntry"] = core_DictionaryEntry
 
@@ -1600,6 +1602,7 @@ class core_Element(SHACLObject):
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Core/Element"] = core_Element
 
 
@@ -1643,6 +1646,7 @@ class core_ElementCollection(core_Element):
             json_name="https://spdx.org/rdf/v3/Core/profileConformance",
         )
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Core/ElementCollection"] = core_ElementCollection
 
@@ -1691,6 +1695,7 @@ class core_ExternalIdentifier(SHACLObject):
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Core/ExternalIdentifier"] = core_ExternalIdentifier
 
 
@@ -1730,6 +1735,7 @@ class core_ExternalMap(SHACLObject):
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Core/ExternalMap"] = core_ExternalMap
 
 
@@ -1767,6 +1773,7 @@ class core_ExternalRef(SHACLObject):
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Core/ExternalRef"] = core_ExternalRef
 
 
@@ -1787,6 +1794,7 @@ class core_IntegrityMethod(SHACLObject):
             json_name="https://spdx.org/rdf/v3/Core/comment",
         )
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Core/IntegrityMethod"] = core_IntegrityMethod
 
@@ -1827,6 +1835,7 @@ class core_NamespaceMap(SHACLObject):
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Core/NamespaceMap"] = core_NamespaceMap
 
 
@@ -1852,6 +1861,7 @@ class core_PositiveIntegerRange(SHACLObject):
             min_count=1,
         )
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Core/PositiveIntegerRange"] = core_PositiveIntegerRange
 
@@ -1905,6 +1915,7 @@ class core_Relationship(core_Element):
             json_name="https://spdx.org/rdf/v3/Core/endTime",
         )
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Core/Relationship"] = core_Relationship
 
@@ -1964,6 +1975,7 @@ class core_SpdxDocument(core_ElementCollection):
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Core/SpdxDocument"] = core_SpdxDocument
 
 
@@ -1974,6 +1986,7 @@ class core_Tool(core_Element):
     def __init__(self, **kwargs):
         super().__init__()
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Core/Tool"] = core_Tool
 
@@ -2073,6 +2086,7 @@ class expandedlicensing_LicenseAddition(core_Element):
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/ExpandedLicensing/LicenseAddition"] = expandedlicensing_LicenseAddition
 
 
@@ -2102,6 +2116,7 @@ class expandedlicensing_ListedLicenseException(expandedlicensing_LicenseAddition
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/deprecatedVersion",
         )
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/ExpandedLicensing/ListedLicenseException"] = expandedlicensing_ListedLicenseException
 
@@ -2148,6 +2163,7 @@ class security_VulnAssessmentRelationship(core_Relationship):
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Security/VulnAssessmentRelationship"] = security_VulnAssessmentRelationship
 
 
@@ -2163,6 +2179,7 @@ class simplelicensing_AnyLicenseInfo(core_Element):
     def __init__(self, **kwargs):
         super().__init__()
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/SimpleLicensing/AnyLicenseInfo"] = simplelicensing_AnyLicenseInfo
 
@@ -2203,6 +2220,7 @@ class simplelicensing_LicenseExpression(simplelicensing_AnyLicenseInfo):
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/SimpleLicensing/LicenseExpression"] = simplelicensing_LicenseExpression
 
 
@@ -2226,6 +2244,7 @@ class simplelicensing_SimpleLicensingText(core_Element):
             min_count=1,
         )
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/SimpleLicensing/SimpleLicensingText"] = simplelicensing_SimpleLicensingText
 
@@ -2317,6 +2336,7 @@ class build_Build(core_Element):
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Build/Build"] = build_Build
 
 
@@ -2327,6 +2347,7 @@ class core_Agent(core_Element):
     def __init__(self, **kwargs):
         super().__init__()
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Core/Agent"] = core_Agent
 
@@ -2364,6 +2385,7 @@ class core_Annotation(core_Element):
             min_count=1,
         )
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Core/Annotation"] = core_Annotation
 
@@ -2414,6 +2436,7 @@ class core_Artifact(core_Element):
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Core/Artifact"] = core_Artifact
 
 
@@ -2431,6 +2454,7 @@ class core_Bundle(core_ElementCollection):
             json_name="https://spdx.org/rdf/v3/Core/context",
         )
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Core/Bundle"] = core_Bundle
 
@@ -2462,6 +2486,7 @@ class core_Hash(core_IntegrityMethod):
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Core/Hash"] = core_Hash
 
 
@@ -2479,6 +2504,7 @@ class core_LifecycleScopedRelationship(core_Relationship):
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Core/LifecycleScopedRelationship"] = core_LifecycleScopedRelationship
 
 
@@ -2489,6 +2515,7 @@ class core_Organization(core_Agent):
     def __init__(self, **kwargs):
         super().__init__()
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Core/Organization"] = core_Organization
 
@@ -2501,6 +2528,7 @@ class core_Person(core_Agent):
         super().__init__()
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Core/Person"] = core_Person
 
 
@@ -2511,6 +2539,7 @@ class core_SoftwareAgent(core_Agent):
     def __init__(self, **kwargs):
         super().__init__()
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Core/SoftwareAgent"] = core_SoftwareAgent
 
@@ -2542,6 +2571,7 @@ class expandedlicensing_ConjunctiveLicenseSet(simplelicensing_AnyLicenseInfo):
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/ExpandedLicensing/ConjunctiveLicenseSet"] = expandedlicensing_ConjunctiveLicenseSet
 
 
@@ -2557,6 +2587,7 @@ class expandedlicensing_CustomLicenseAddition(expandedlicensing_LicenseAddition)
     def __init__(self, **kwargs):
         super().__init__()
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/ExpandedLicensing/CustomLicenseAddition"] = expandedlicensing_CustomLicenseAddition
 
@@ -2585,6 +2616,7 @@ class expandedlicensing_DisjunctiveLicenseSet(simplelicensing_AnyLicenseInfo):
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/ExpandedLicensing/DisjunctiveLicenseSet"] = expandedlicensing_DisjunctiveLicenseSet
 
 
@@ -2595,6 +2627,7 @@ class expandedlicensing_ExtendableLicense(simplelicensing_AnyLicenseInfo):
     def __init__(self, **kwargs):
         super().__init__()
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/ExpandedLicensing/ExtendableLicense"] = expandedlicensing_ExtendableLicense
 
@@ -2728,6 +2761,7 @@ class expandedlicensing_License(expandedlicensing_ExtendableLicense):
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/ExpandedLicensing/License"] = expandedlicensing_License
 
 
@@ -2756,6 +2790,7 @@ class expandedlicensing_ListedLicense(expandedlicensing_License):
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/ExpandedLicensing/ListedLicense"] = expandedlicensing_ListedLicense
 
 
@@ -2783,6 +2818,7 @@ class expandedlicensing_OrLaterOperator(expandedlicensing_ExtendableLicense):
             min_count=1,
         )
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/ExpandedLicensing/OrLaterOperator"] = expandedlicensing_OrLaterOperator
 
@@ -2814,6 +2850,7 @@ class expandedlicensing_WithAdditionOperator(simplelicensing_AnyLicenseInfo):
             min_count=1,
         )
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/ExpandedLicensing/WithAdditionOperator"] = expandedlicensing_WithAdditionOperator
 
@@ -2890,6 +2927,7 @@ class security_CvssV2VulnAssessmentRelationship(security_VulnAssessmentRelations
             min_count=1,
         )
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Security/CvssV2VulnAssessmentRelationship"] = security_CvssV2VulnAssessmentRelationship
 
@@ -2978,6 +3016,7 @@ class security_CvssV3VulnAssessmentRelationship(security_VulnAssessmentRelations
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Security/CvssV3VulnAssessmentRelationship"] = security_CvssV3VulnAssessmentRelationship
 
 
@@ -3063,6 +3102,7 @@ class security_CvssV4VulnAssessmentRelationship(security_VulnAssessmentRelations
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Security/CvssV4VulnAssessmentRelationship"] = security_CvssV4VulnAssessmentRelationship
 
 
@@ -3116,6 +3156,7 @@ class security_EpssVulnAssessmentRelationship(security_VulnAssessmentRelationshi
             min_count=1,
         )
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Security/EpssVulnAssessmentRelationship"] = security_EpssVulnAssessmentRelationship
 
@@ -3173,6 +3214,7 @@ class security_ExploitCatalogVulnAssessmentRelationship(security_VulnAssessmentR
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Security/ExploitCatalogVulnAssessmentRelationship"] = security_ExploitCatalogVulnAssessmentRelationship
 
 
@@ -3213,6 +3255,7 @@ class security_SsvcVulnAssessmentRelationship(security_VulnAssessmentRelationshi
             min_count=1,
         )
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Security/SsvcVulnAssessmentRelationship"] = security_SsvcVulnAssessmentRelationship
 
@@ -3256,6 +3299,7 @@ class security_VexVulnAssessmentRelationship(security_VulnAssessmentRelationship
             json_name="https://spdx.org/rdf/v3/Security/statusNotes",
         )
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Security/VexVulnAssessmentRelationship"] = security_VexVulnAssessmentRelationship
 
@@ -3361,6 +3405,7 @@ class security_Vulnerability(core_Artifact):
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Security/Vulnerability"] = security_Vulnerability
 
 
@@ -3444,6 +3489,7 @@ class software_SoftwareArtifact(core_Artifact):
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Software/SoftwareArtifact"] = software_SoftwareArtifact
 
 
@@ -3459,6 +3505,7 @@ class core_Bom(core_Bundle):
         super().__init__()
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Core/Bom"] = core_Bom
 
 
@@ -3471,6 +3518,7 @@ class expandedlicensing_CustomLicense(expandedlicensing_License):
     def __init__(self, **kwargs):
         super().__init__()
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/ExpandedLicensing/CustomLicense"] = expandedlicensing_CustomLicense
 
@@ -3526,6 +3574,7 @@ class security_VexAffectedVulnAssessmentRelationship(security_VexVulnAssessmentR
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Security/VexAffectedVulnAssessmentRelationship"] = security_VexAffectedVulnAssessmentRelationship
 
 
@@ -3563,6 +3612,7 @@ class security_VexFixedVulnAssessmentRelationship(security_VexVulnAssessmentRela
     def __init__(self, **kwargs):
         super().__init__()
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Security/VexFixedVulnAssessmentRelationship"] = security_VexFixedVulnAssessmentRelationship
 
@@ -3634,6 +3684,7 @@ class security_VexNotAffectedVulnAssessmentRelationship(security_VexVulnAssessme
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Security/VexNotAffectedVulnAssessmentRelationship"] = security_VexNotAffectedVulnAssessmentRelationship
 
 
@@ -3672,6 +3723,7 @@ class security_VexUnderInvestigationVulnAssessmentRelationship(security_VexVulnA
         super().__init__()
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Security/VexUnderInvestigationVulnAssessmentRelationship"] = security_VexUnderInvestigationVulnAssessmentRelationship
 
 
@@ -3691,6 +3743,7 @@ class software_File(software_SoftwareArtifact):
             json_name="https://spdx.org/rdf/v3/Software/contentType",
         )
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Software/File"] = software_File
 
@@ -3765,6 +3818,7 @@ class software_Package(software_SoftwareArtifact):
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Software/Package"] = software_Package
 
 
@@ -3786,6 +3840,7 @@ class software_Sbom(core_Bom):
             json_name="https://spdx.org/rdf/v3/Software/sbomType",
         )
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Software/Sbom"] = software_Sbom
 
@@ -3824,6 +3879,7 @@ class software_Snippet(software_SoftwareArtifact):
             min_count=1,
         )
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Software/Snippet"] = software_Snippet
 
@@ -3954,6 +4010,7 @@ class ai_AIPackage(software_Package):
         )
         self._set_init_props(**kwargs)
 
+
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/AI/AIPackage"] = ai_AIPackage
 
 
@@ -4062,6 +4119,7 @@ class dataset_Dataset(software_Package):
             json_name="https://spdx.org/rdf/v3/Dataset/datasetAvailability",
         )
         self._set_init_props(**kwargs)
+
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Dataset/Dataset"] = dataset_Dataset
 

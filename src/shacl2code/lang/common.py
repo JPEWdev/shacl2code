@@ -6,10 +6,7 @@
 import sys
 import os
 from contextlib import contextmanager
-from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, TemplateRuntimeError
-
-from .lang import TEMPLATE_DIR
 
 
 class OutputFile(object):
@@ -88,3 +85,5 @@ class BasicJinjaRender(object):
 
         with self.__output.open() as f:
             f.write(render)
+            if not render[-1] == "\n":
+                f.write("\n")

@@ -4,10 +4,8 @@
 # SPDX-License-Identifier: MIT
 
 import os
-import re
 import shutil
 import subprocess
-import sys
 from pathlib import Path
 
 
@@ -29,7 +27,7 @@ def test_generation_file(tmpdir):
     Tests that shacl2code generates output to a file when requested
     """
     outfile = tmpdir.join("spdx3.txt")
-    p = subprocess.run(
+    subprocess.run(
         [
             "shacl2code",
             "generate",

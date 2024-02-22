@@ -29,6 +29,7 @@ dev = [
     "pytest >= 7.4",
     "pytest-server-fixtures >= 1.7",
     "pytest-cov >= 4.1",
+    "flake8 >= 7.0.0",
 ]
 
 [project.urls]

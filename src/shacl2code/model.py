@@ -7,8 +7,7 @@
 import keyword
 import re
 import typing
-from pathlib import Path
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from pyld import jsonld
 
@@ -42,7 +41,7 @@ class ContextMap(object):
         if not ctx:
             return _id
 
-        if not ":" in _id:
+        if ":" not in _id:
             if _id in ctx:
                 if isinstance(ctx[_id], dict):
                     return self.__expand(ctx[_id]["@id"])
@@ -278,7 +277,6 @@ class Model(object):
 
         tmp_classes = self.classes
         done_ids = set()
-        seen_ids = set()
         self.classes = []
 
         while tmp_classes:

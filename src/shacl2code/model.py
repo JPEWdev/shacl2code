@@ -97,7 +97,6 @@ class Model(object):
                 comment=self.get_comment(obj),
                 values=[],
             )
-            self.context.add_id(e._id)
 
             for v in get_prop(obj, "http://www.w3.org/2002/07/owl#oneOf", "@list"):
                 e.values.append(
@@ -126,7 +125,6 @@ class Model(object):
                 comment=self.get_comment(obj),
                 properties=[],
             )
-            self.context.add_id(c._id)
 
             for prop_id in obj.get("http://www.w3.org/ns/shacl#property", []):
                 prop = self.objects[prop_id["@id"]]
@@ -154,17 +152,11 @@ class Model(object):
                         None,
                     ),
                 )
-                self.context.add_id(p.path)
 
                 prop_cls_id = get_prop(prop, "http://www.w3.org/ns/shacl#class", "@id")
                 if prop_cls_id:
                     if self.is_enum(prop_cls_id):
                         p.enum_id = prop_cls_id
-                        for e in self.enums:
-                            if e._id == prop_cls_id:
-                                for v in e.values:
-                                    self.context.add_id(v._id, prop_path)
-                                break
 
                     elif self.is_class(prop_cls_id):
                         p.class_id = prop_cls_id
@@ -200,9 +192,6 @@ class Model(object):
 
             self.classes.append(c)
             done_ids.add(c._id)
-
-        self.context.add_id("@id")
-        self.context.add_id("@type")
 
     def is_enum(self, _id):
         return _id in self.enum_ids

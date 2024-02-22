@@ -5,8 +5,11 @@
 
 import sys
 import os
+from pathlib import Path
 from contextlib import contextmanager
 from jinja2 import Environment, FileSystemLoader, TemplateRuntimeError
+
+THIS_DIR = Path(__file__).parent
 
 
 class OutputFile(object):
@@ -71,7 +74,9 @@ class BasicJinjaRender(object):
                         return o
                 raise KeyError(f"Object with ID {_id} not found")
 
-        env = Environment(loader=FileSystemLoader(self.__template.parent))
+        env = Environment(
+            loader=FileSystemLoader([self.__template.parent, THIS_DIR.parent])
+        )
         env.globals["abort"] = abort_helper
         template = env.get_template(self.__template.name)
 

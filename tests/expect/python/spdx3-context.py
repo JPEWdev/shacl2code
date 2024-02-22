@@ -57,13 +57,13 @@ class Property(object):
     def walk(self, value, callback, path):
         callback(value, path)
 
-    def serializer(self, value):
+    def serializer(self, value, context):
         return value
 
-    def deserialize(self, data, object_ids=None, context=None):
+    def deserialize(self, data, context, *, object_ids=None):
         if isinstance(data, dict) and "@value" in data:
             if self.TYPE:
-                for t in ("@type", compact("@type")):
+                for t in ("@type", context.compact("@type")):
                     if t in data and data[t] != self.TYPE:
                         raise TypeError(
                             f"Value must be of type {self.TYPE}, but got {data[t]}"
@@ -196,16 +196,16 @@ class ObjectProp(Property):
         else:
             callback(value, path)
 
-    def serializer(self, value):
+    def serializer(self, value, context):
         if value is None:
             return None
 
         if isinstance(value, str):
             return value
 
-        return value.serializer()
+        return value.serializer(context)
 
-    def deserialize(self, data, *, object_ids=None, context=None):
+    def deserialize(self, data, context, *, object_ids=None):
         if data is None:
             return data
 
@@ -216,13 +216,13 @@ class ObjectProp(Property):
             return data
 
         if isinstance(data, dict) and not any(
-            t in data for t in ("@type", compact("@type"))
+            t in data for t in ("@type", context.compact("@type"))
         ):
-            for n in ("@id", compact("@id", context)):
+            for n in ("@id", context.compact("@id")):
                 if n in data:
                     return data[n]
 
-        return SHACLObject.deserialize(data, object_ids=object_ids, context=context)
+        return SHACLObject.deserialize(data, context, object_ids=object_ids)
 
     def link_prop(self, value, link_cache, missing, visited):
         if value is None:
@@ -342,11 +342,11 @@ class ListProp(Property):
         for idx, v in enumerate(value):
             self.prop.walk(v, callback, path + [f"[{idx}]"])
 
-    def deserialize(self, data, **kwargs):
+    def deserialize(self, data, *args, **kwargs):
         if isinstance(data, (list, tuple, set)):
-            data = [self.prop.deserialize(d, **kwargs) for d in data]
+            data = [self.prop.deserialize(d, *args, **kwargs) for d in data]
         else:
-            data = [self.prop.deserialize(data, **kwargs)]
+            data = [self.prop.deserialize(data, *args, **kwargs)]
 
         return ListProxy(self.prop, data=data)
 
@@ -356,11 +356,11 @@ class ListProp(Property):
             data=[self.prop.link_prop(v, link_cache, missing, visited) for v in value],
         )
 
-    def serializer(self, value):
+    def serializer(self, value, context):
         check_type(value, ListProxy)
         if len(value) == 1:
-            return self.prop.serializer(value[0])
-        return [self.prop.serializer(v) for v in value]
+            return self.prop.serializer(value[0], context)
+        return [self.prop.serializer(v, context) for v in value]
 
 
 class EnumProp(Property):
@@ -374,12 +374,12 @@ class EnumProp(Property):
                 f"'{value}' is not a valid value for '{self.__class__.__name__}'"
             )
 
-    def deserialize(self, data, *, context=None, **kwargs):
-        value = super().deserialize(data, context=context, **kwargs)
-        return expand(value, context)
+    def deserialize(self, data, context, **kwargs):
+        value = super().deserialize(data, context, **kwargs)
+        return context.expand(value)
 
-    def serializer(self, value, context=None):
-        return compact(value, context=context)
+    def serializer(self, value, context):
+        return context.compact(value)
 
 
 @functools.total_ordering
@@ -405,7 +405,7 @@ class SHACLObject(object):
         json_name=None,
         min_count=None,
         max_count=None,
-        context=None,
+        vocab=None,
     ):
         if json_name is None:
             json_name = pyname
@@ -413,7 +413,7 @@ class SHACLObject(object):
             raise KeyError(
                 f"'{pyname}' is already defined for '{self.__class__.__name__}'"
             )
-        self._obj_properties[pyname] = (json_name, prop, min_count, max_count, context)
+        self._obj_properties[pyname] = (json_name, prop, min_count, max_count, vocab)
         self._obj_data[json_name] = prop.init()
 
     def __setattr__(self, name, value):
@@ -491,18 +491,18 @@ class SHACLObject(object):
         for obj in seen:
             yield obj
 
-    def serializer(self, context=None):
+    def serializer(self, context):
         if self._id and self._obj_written:
             return self._id
 
         self._obj_written = True
 
         d = {
-            compact("@type", context): compact(self.TYPE, context),
+            context.compact("@type"): context.compact(self.TYPE),
         }
 
         for pyname, v in self._obj_properties.items():
-            json_name, prop, min_count, max_count, prop_context = v
+            json_name, prop, min_count, max_count, prop_vocab = v
             value = self._obj_data[json_name]
             if prop.elide(value):
                 if min_count:
@@ -523,10 +523,8 @@ class SHACLObject(object):
                         f"Property '{pyname}' in {self.__class__.__name__} ({id(self)}) requires a maximum of {max_count} elements"
                     )
 
-            d[compact(json_name, context)] = prop.serializer(
-                value,
-                context=prop_context,
-            )
+            with context.vocab_push(prop_vocab):
+                d[context.compact(json_name)] = prop.serializer(value, context)
         return d
 
     def to_jsonld(self, f, *args, **kwargs):
@@ -536,8 +534,8 @@ class SHACLObject(object):
         return write_jsonld([self], f, *args, **kwargs)
 
     @classmethod
-    def deserialize(cls, data, *, object_ids=None, context=None):
-        for t in ("@type", compact("@type")):
+    def deserialize(cls, data, context, *, object_ids=None):
+        for t in ("@type", context.compact("@type")):
             if t not in data:
                 continue
 
@@ -546,7 +544,7 @@ class SHACLObject(object):
             if typ in cls.DESERIALIZERS:
                 break
 
-            typ = expand(typ, context)
+            typ = context.expand(typ)
             if typ in cls.DESERIALIZERS:
                 break
 
@@ -560,14 +558,15 @@ class SHACLObject(object):
             return object_ids[obj._id]
 
         for pyname, v in obj._obj_properties.items():
-            json_name, prop, _, _, prop_context = v
-            for n in (json_name, compact(json_name, context)):
+            json_name, prop, _, _, prop_vocab = v
+            for n in (json_name, context.compact(json_name)):
                 if n in data:
-                    obj._obj_data[json_name] = prop.deserialize(
-                        data[n],
-                        object_ids=object_ids,
-                        context=prop_context or context,
-                    )
+                    with context.vocab_push(prop_vocab):
+                        obj._obj_data[json_name] = prop.deserialize(
+                            data[n],
+                            context,
+                            object_ids=object_ids,
+                        )
                     break
 
         if obj._id:
@@ -628,23 +627,9 @@ class SHACLObject(object):
         return sort_key(self) < sort_key(other)
 
 
-def compact(_id, context=None):
-    global CONTEXT
-    if context is None:
-        context = CONTEXT[""]
-    return context[_id]
-
-
-def expand(_id, context=None):
-    global CONTEXT
-    if context is None:
-        context = CONTEXT[""]
-
-    for k, v in context.items():
-        if v == _id:
-            return k
-
-    return _id
+def make_context():
+    global CONTEXTS
+    return Context(CONTEXTS)
 
 
 def write_jsonld(objects, f, force_graph=False, **kwargs):
@@ -655,6 +640,7 @@ def write_jsonld(objects, f, force_graph=False, **kwargs):
     """
     ref_counts = {}
     id_objects = set()
+    context = make_context()
 
     def walk_callback(value, path):
         nonlocal ref_counts
@@ -713,15 +699,16 @@ def write_jsonld(objects, f, force_graph=False, **kwargs):
         for o in objects:
             # Allow this specific object to be written now
             o._obj_written = False
-            graph_data.append(o.serializer())
+            graph_data.append(o.serializer(context))
 
         data = {"@graph": graph_data}
     else:
-        data = objects[0].serializer()
+        data = objects[0].serializer(context)
 
-    #
-    data["@context"] = "https://spdx.github.io/spdx-3-model/context.json"
-    #
+    if len(CONTEXT_URLS) == 1:
+        data["@context"] = CONTEXT_URLS[0]
+    elif CONTEXT_URLS:
+        data["@context"] = CONTEXT_URLS
 
     sha1 = hashlib.sha1()
     for chunk in json.JSONEncoder(**kwargs).iterencode(data):
@@ -741,12 +728,16 @@ def read_jsonld(f):
 
     The returned objects are fully linked
     """
+    context = make_context()
     data = json.load(f)
     object_ids = {}
     if "@graph" not in data:
-        objects = [SHACLObject.deserialize(data, object_ids)]
+        objects = [SHACLObject.deserialize(data, context, object_ids=object_ids)]
     else:
-        objects = [SHACLObject.deserialize(o, object_ids) for o in data["@graph"]]
+        objects = [
+            SHACLObject.deserialize(o, context, object_ids=object_ids)
+            for o in data["@graph"]
+        ]
 
     for o in objects:
         o.link(object_ids)
@@ -801,556 +792,764 @@ def print_tree(objects, all_fields=False):
 # fmt: off
 """Format Guard"""
 
+CONTEXTS = [
+    {
+        "ai": "https://spdx.org/rdf/v3/AI/",
+        "build": "https://spdx.org/rdf/v3/Build/",
+        "core": "https://spdx.org/rdf/v3/Core/",
+        "dataset": "https://spdx.org/rdf/v3/Dataset/",
+        "expandedlicensing": "https://spdx.org/rdf/v3/ExpandedLicensing/",
+        "licensing": "https://spdx.org/rdf/v3/Licensing/",
+        "lite": "https://spdx.org/rdf/v3/Lite/",
+        "ns0": "http://www.w3.org/2003/06/sw-vocab-status/ns#",
+        "owl": "http://www.w3.org/2002/07/owl#",
+        "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+        "security": "https://spdx.org/rdf/v3/Security/",
+        "sh": "http://www.w3.org/ns/shacl#",
+        "simplelicensing": "https://spdx.org/rdf/v3/SimpleLicensing/",
+        "software": "https://spdx.org/rdf/v3/Software/",
+        "xsd": "http://www.w3.org/2001/XMLSchema#",
+        "probability" : {
+            "@id": "security:probability",
+            "@type": "xsd:decimal",
+        },
+        "externalRef" : {
+            "@id": "core:externalRef",
+            "@type": "core:ExternalRef",
+        },
+        "element" : {
+            "@id": "core:element",
+            "@type": "@id",
+        },
+        "PresenceType": "core:PresenceType",
+        "IntegrityMethod": "core:IntegrityMethod",
+        "actionStatement" : {
+            "@id": "security:actionStatement",
+            "@type": "xsd:string",
+        },
+        "DatasetAvailabilityType": "dataset:DatasetAvailabilityType",
+        "Hash": "core:Hash",
+        "dataCollectionProcess" : {
+            "@id": "dataset:dataCollectionProcess",
+            "@type": "xsd:string",
+        },
+        "end" : {
+            "@id": "core:end",
+            "@type": "xsd:positiveInteger",
+        },
+        "sensitivePersonalInformation" : {
+            "@id": "dataset:sensitivePersonalInformation",
+            "@type": "@vocab",
+            "@context" : {
+                "@vocab": "core:PresenceType/",
+            },
+        },
+        "attributionText" : {
+            "@id": "software:attributionText",
+            "@type": "xsd:string",
+        },
+        "CreationInfo": "core:CreationInfo",
+        "statusNotes" : {
+            "@id": "security:statusNotes",
+            "@type": "xsd:string",
+        },
+        "EpssVulnAssessmentRelationship": "security:EpssVulnAssessmentRelationship",
+        "autonomyType" : {
+            "@id": "ai:autonomyType",
+            "@type": "@vocab",
+            "@context" : {
+                "@vocab": "core:PresenceType/",
+            },
+        },
+        "VexJustificationType": "security:VexJustificationType",
+        "ExternalIdentifier": "core:ExternalIdentifier",
+        "Element": "core:Element",
+        "ListedLicense": "expandedlicensing:ListedLicense",
+        "contentType" : {
+            "@id": "core:contentType",
+            "@type": "core:MediaType",
+        },
+        "suppliedBy" : {
+            "@id": "core:suppliedBy",
+            "@type": "@id",
+        },
+        "DictionaryEntry": "core:DictionaryEntry",
+        "standard" : {
+            "@id": "core:standard",
+            "@type": "xsd:string",
+        },
+        "summary" : {
+            "@id": "core:summary",
+            "@type": "xsd:string",
+        },
+        "OrLaterOperator": "expandedlicensing:OrLaterOperator",
+        "RelationshipType": "core:RelationshipType",
+        "CustomLicenseAddition": "expandedlicensing:CustomLicenseAddition",
+        "namespaceMap" : {
+            "@id": "core:namespaceMap",
+            "@type": "core:NamespaceMap",
+        },
+        "snippetFromFile" : {
+            "@id": "software:snippetFromFile",
+            "@type": "software:File",
+        },
+        "modelExplainability" : {
+            "@id": "ai:modelExplainability",
+            "@type": "xsd:string",
+        },
+        "completeness" : {
+            "@id": "core:completeness",
+            "@type": "@vocab",
+            "@context" : {
+                "@vocab": "core:RelationshipCompleteness/",
+            },
+        },
+        "Build": "build:Build",
+        "modelDataPreprocessing" : {
+            "@id": "ai:modelDataPreprocessing",
+            "@type": "xsd:string",
+        },
+        "subjectAddition" : {
+            "@id": "expandedlicensing:subjectAddition",
+            "@type": "expandedlicensing:LicenseAddition",
+        },
+        "dataLicense" : {
+            "@id": "core:dataLicense",
+            "@type": "simplelicensing:AnyLicenseInfo",
+        },
+        "typeOfModel" : {
+            "@id": "ai:typeOfModel",
+            "@type": "xsd:string",
+        },
+        "datasetUpdateMechanism" : {
+            "@id": "dataset:datasetUpdateMechanism",
+            "@type": "xsd:string",
+        },
+        "buildStartTime" : {
+            "@id": "build:buildStartTime",
+            "@type": "core:DateTime",
+        },
+        "confidentialityLevel" : {
+            "@id": "dataset:confidentialityLevel",
+            "@type": "@vocab",
+            "@context" : {
+                "@vocab": "dataset:ConfidentialityLevelType/",
+            },
+        },
+        "endTime" : {
+            "@id": "core:endTime",
+            "@type": "core:DateTime",
+        },
+        "prefix" : {
+            "@id": "core:prefix",
+            "@type": "xsd:string",
+        },
+        "seeAlso" : {
+            "@id": "expandedlicensing:seeAlso",
+            "@type": "xsd:anyURI",
+        },
+        "Tool": "core:Tool",
+        "Person": "core:Person",
+        "byteRange" : {
+            "@id": "software:byteRange",
+            "@type": "core:PositiveIntegerRange",
+        },
+        "parameters" : {
+            "@id": "build:parameters",
+            "@type": "core:DictionaryEntry",
+        },
+        "isOsiApproved" : {
+            "@id": "expandedlicensing:isOsiApproved",
+            "@type": "xsd:boolean",
+        },
+        "intendedUse" : {
+            "@id": "dataset:intendedUse",
+            "@type": "xsd:string",
+        },
+        "licenseText" : {
+            "@id": "simplelicensing:licenseText",
+            "@type": "xsd:string",
+        },
+        "profileConformance" : {
+            "@id": "core:profileConformance",
+            "@type": "@vocab",
+            "@context" : {
+                "@vocab": "core:ProfileIdentifierType/",
+            },
+        },
+        "scope" : {
+            "@id": "core:scope",
+            "@type": "@vocab",
+            "@context" : {
+                "@vocab": "core:LifecycleScopeType/",
+            },
+        },
+        "hashValue" : {
+            "@id": "core:hashValue",
+            "@type": "xsd:string",
+        },
+        "licenseComment" : {
+            "@id": "expandedlicensing:licenseComment",
+            "@type": "xsd:string",
+        },
+        "ExtendableLicense": "expandedlicensing:ExtendableLicense",
+        "configSourceEntrypoint" : {
+            "@id": "build:configSourceEntrypoint",
+            "@type": "xsd:string",
+        },
+        "licenseExpression" : {
+            "@id": "simplelicensing:licenseExpression",
+            "@type": "xsd:string",
+        },
+        "domain" : {
+            "@id": "ai:domain",
+            "@type": "xsd:string",
+        },
+        "ConjunctiveLicenseSet": "expandedlicensing:ConjunctiveLicenseSet",
+        "licenseName" : {
+            "@id": "expandedlicensing:licenseName",
+            "@type": "xsd:string",
+        },
+        "Relationship": "core:Relationship",
+        "to" : {
+            "@id": "core:to",
+            "@type": "@id",
+        },
+        "SbomType": "software:SbomType",
+        "PositiveIntegerRange": "core:PositiveIntegerRange",
+        "informationAboutApplication" : {
+            "@id": "ai:informationAboutApplication",
+            "@type": "xsd:string",
+        },
+        "Agent": "core:Agent",
+        "description" : {
+            "@id": "core:description",
+            "@type": "xsd:string",
+        },
+        "additionComment" : {
+            "@id": "expandedlicensing:additionComment",
+            "@type": "xsd:string",
+        },
+        "LicenseAddition": "expandedlicensing:LicenseAddition",
+        "safetyRiskAssessment" : {
+            "@id": "ai:safetyRiskAssessment",
+            "@type": "@vocab",
+            "@context" : {
+                "@vocab": "ai:SafetyRiskAssessmentType/",
+            },
+        },
+        "ExternalMap": "core:ExternalMap",
+        "VexUnderInvestigationVulnAssessmentRelationship": "security:VexUnderInvestigationVulnAssessmentRelationship",
+        "member" : {
+            "@id": "expandedlicensing:member",
+            "@type": "simplelicensing:AnyLicenseInfo",
+        },
+        "algorithm" : {
+            "@id": "core:algorithm",
+            "@type": "@vocab",
+            "@context" : {
+                "@vocab": "core:HashAlgorithm/",
+            },
+        },
+        "WithAdditionOperator": "expandedlicensing:WithAdditionOperator",
+        "limitation" : {
+            "@id": "ai:limitation",
+            "@type": "xsd:string",
+        },
+        "SafetyRiskAssessmentType": "ai:SafetyRiskAssessmentType",
+        "packageVersion" : {
+            "@id": "software:packageVersion",
+            "@type": "xsd:string",
+        },
+        "ExternalIdentifierType": "core:ExternalIdentifierType",
+        "key" : {
+            "@id": "core:key",
+            "@type": "xsd:string",
+        },
+        "externalRefType" : {
+            "@id": "core:externalRefType",
+            "@type": "@vocab",
+            "@context" : {
+                "@vocab": "core:ExternalRefType/",
+            },
+        },
+        "locationHint" : {
+            "@id": "core:locationHint",
+            "@type": "xsd:anyURI",
+        },
+        "Organization": "core:Organization",
+        "hyperparameter" : {
+            "@id": "ai:hyperparameter",
+            "@type": "core:DictionaryEntry",
+        },
+        "LifecycleScopedRelationship": "core:LifecycleScopedRelationship",
+        "name" : {
+            "@id": "core:name",
+            "@type": "xsd:string",
+        },
+        "AIPackage": "ai:AIPackage",
+        "datasetNoise" : {
+            "@id": "dataset:datasetNoise",
+            "@type": "xsd:string",
+        },
+        "ElementCollection": "core:ElementCollection",
+        "subject" : {
+            "@id": "core:subject",
+            "@type": "@id",
+        },
+        "lineRange" : {
+            "@id": "software:lineRange",
+            "@type": "core:PositiveIntegerRange",
+        },
+        "assessedElement" : {
+            "@id": "security:assessedElement",
+            "@type": "@id",
+        },
+        "standardLicenseHeader" : {
+            "@id": "expandedlicensing:standardLicenseHeader",
+            "@type": "xsd:string",
+        },
+        "value" : {
+            "@id": "core:value",
+            "@type": "xsd:string",
+        },
+        "vexVersion" : {
+            "@id": "security:vexVersion",
+            "@type": "xsd:string",
+        },
+        "DisjunctiveLicenseSet": "expandedlicensing:DisjunctiveLicenseSet",
+        "Bom": "core:Bom",
+        "dataPreprocessing" : {
+            "@id": "dataset:dataPreprocessing",
+            "@type": "xsd:string",
+        },
+        "ExploitCatalogType": "security:ExploitCatalogType",
+        "creationInfo" : {
+            "@id": "core:creationInfo",
+            "@type": "@id",
+        },
+        "standardCompliance" : {
+            "@id": "ai:standardCompliance",
+            "@type": "xsd:string",
+        },
+        "SoftwareAgent": "core:SoftwareAgent",
+        "VulnAssessmentRelationship": "security:VulnAssessmentRelationship",
+        "RelationshipCompleteness": "core:RelationshipCompleteness",
+        "VexFixedVulnAssessmentRelationship": "security:VexFixedVulnAssessmentRelationship",
+        "primaryPurpose" : {
+            "@id": "software:primaryPurpose",
+            "@type": "@vocab",
+            "@context" : {
+                "@vocab": "software:SoftwarePurpose/",
+            },
+        },
+        "licenseListVersion" : {
+            "@id": "simplelicensing:licenseListVersion",
+            "@type": "core:SemVer",
+        },
+        "actionStatementTime" : {
+            "@id": "security:actionStatementTime",
+            "@type": "core:DateTime",
+        },
+        "subjectLicense" : {
+            "@id": "expandedlicensing:subjectLicense",
+            "@type": "expandedlicensing:License",
+        },
+        "severity" : {
+            "@id": "security:severity",
+            "@type": "@vocab",
+            "@context" : {
+                "@vocab": "security:CvssSeverityType/",
+            },
+        },
+        "Dataset": "dataset:Dataset",
+        "ExploitCatalogVulnAssessmentRelationship": "security:ExploitCatalogVulnAssessmentRelationship",
+        "buildId" : {
+            "@id": "build:buildId",
+            "@type": "xsd:string",
+        },
+        "issuingAuthority" : {
+            "@id": "core:issuingAuthority",
+            "@type": "xsd:anyURI",
+        },
+        "homePage" : {
+            "@id": "software:homePage",
+            "@type": "xsd:anyURI",
+        },
+        "locator" : {
+            "@id": "core:locator",
+            "@type": "xsd:string",
+        },
+        "annotationType" : {
+            "@id": "core:annotationType",
+            "@type": "@vocab",
+            "@context" : {
+                "@vocab": "core:AnnotationType/",
+            },
+        },
+        "externalIdentifier" : {
+            "@id": "core:externalIdentifier",
+            "@type": "core:ExternalIdentifier",
+        },
+        "validUntilTime" : {
+            "@id": "core:validUntilTime",
+            "@type": "core:DateTime",
+        },
+        "standardAdditionTemplate" : {
+            "@id": "expandedlicensing:standardAdditionTemplate",
+            "@type": "xsd:string",
+        },
+        "createdUsing" : {
+            "@id": "core:createdUsing",
+            "@type": "core:Tool",
+        },
+        "statement" : {
+            "@id": "core:statement",
+            "@type": "xsd:string",
+        },
+        "environment" : {
+            "@id": "build:environment",
+            "@type": "core:DictionaryEntry",
+        },
+        "additionName" : {
+            "@id": "expandedlicensing:additionName",
+            "@type": "xsd:string",
+        },
+        "ListedLicenseException": "expandedlicensing:ListedLicenseException",
+        "SsvcVulnAssessmentRelationship": "security:SsvcVulnAssessmentRelationship",
+        "downloadLocation" : {
+            "@id": "software:downloadLocation",
+            "@type": "xsd:anyURI",
+        },
+        "AnyLicenseInfo": "simplelicensing:AnyLicenseInfo",
+        "createdBy" : {
+            "@id": "core:createdBy",
+            "@type": "@id",
+        },
+        "imports" : {
+            "@id": "core:imports",
+            "@type": "core:ExternalMap",
+        },
+        "identifier" : {
+            "@id": "core:identifier",
+            "@type": "xsd:string",
+        },
+        "ProfileIdentifierType": "core:ProfileIdentifierType",
+        "buildType" : {
+            "@id": "build:buildType",
+            "@type": "xsd:anyURI",
+        },
+        "licenseId" : {
+            "@id": "expandedlicensing:licenseId",
+            "@type": "xsd:string",
+        },
+        "decisionType" : {
+            "@id": "security:decisionType",
+            "@type": "@vocab",
+            "@context" : {
+                "@vocab": "security:SsvcDecisionType/",
+            },
+        },
+        "configSourceUri" : {
+            "@id": "build:configSourceUri",
+            "@type": "xsd:anyURI",
+        },
+        "VexNotAffectedVulnAssessmentRelationship": "security:VexNotAffectedVulnAssessmentRelationship",
+        "sbomType" : {
+            "@id": "software:sbomType",
+            "@type": "@vocab",
+            "@context" : {
+                "@vocab": "software:SbomType/",
+            },
+        },
+        "License": "expandedlicensing:License",
+        "isDeprecatedAdditionId" : {
+            "@id": "expandedlicensing:isDeprecatedAdditionId",
+            "@type": "xsd:boolean",
+        },
+        "comment" : {
+            "@id": "core:comment",
+            "@type": "xsd:string",
+        },
+        "builtTime" : {
+            "@id": "core:builtTime",
+            "@type": "core:DateTime",
+        },
+        "from" : {
+            "@id": "core:from",
+            "@type": "@id",
+        },
+        "additionalPurpose" : {
+            "@id": "software:additionalPurpose",
+            "@type": "@vocab",
+            "@context" : {
+                "@vocab": "software:SoftwarePurpose/",
+            },
+        },
+        "withdrawnTime" : {
+            "@id": "security:withdrawnTime",
+            "@type": "core:DateTime",
+        },
+        "modifiedTime" : {
+            "@id": "security:modifiedTime",
+            "@type": "core:DateTime",
+        },
+        "Sbom": "software:Sbom",
+        "contentIdentifier" : {
+            "@id": "software:contentIdentifier",
+            "@type": "xsd:anyURI",
+        },
+        "informationAboutTraining" : {
+            "@id": "ai:informationAboutTraining",
+            "@type": "xsd:string",
+        },
+        "namespace" : {
+            "@id": "core:namespace",
+            "@type": "xsd:anyURI",
+        },
+        "AnnotationType": "core:AnnotationType",
+        "percentile" : {
+            "@id": "security:percentile",
+            "@type": "xsd:decimal",
+        },
+        "impactStatement" : {
+            "@id": "security:impactStatement",
+            "@type": "xsd:string",
+        },
+        "datasetType" : {
+            "@id": "dataset:datasetType",
+            "@type": "@vocab",
+            "@context" : {
+                "@vocab": "dataset:DatasetType/",
+            },
+        },
+        "originatedBy" : {
+            "@id": "core:originatedBy",
+            "@type": "@id",
+        },
+        "ExternalRef": "core:ExternalRef",
+        "customIdToUri" : {
+            "@id": "simplelicensing:customIdToUri",
+            "@type": "core:DictionaryEntry",
+        },
+        "VexVulnAssessmentRelationship": "security:VexVulnAssessmentRelationship",
+        "NamespaceMap": "core:NamespaceMap",
+        "VexAffectedVulnAssessmentRelationship": "security:VexAffectedVulnAssessmentRelationship",
+        "Snippet": "software:Snippet",
+        "impactStatementTime" : {
+            "@id": "security:impactStatementTime",
+            "@type": "core:DateTime",
+        },
+        "isFsfLibre" : {
+            "@id": "expandedlicensing:isFsfLibre",
+            "@type": "xsd:boolean",
+        },
+        "additionId" : {
+            "@id": "expandedlicensing:additionId",
+            "@type": "xsd:string",
+        },
+        "datasetAvailability" : {
+            "@id": "dataset:datasetAvailability",
+            "@type": "@vocab",
+            "@context" : {
+                "@vocab": "dataset:DatasetAvailabilityType/",
+            },
+        },
+        "catalogType" : {
+            "@id": "security:catalogType",
+            "@type": "@vocab",
+            "@context" : {
+                "@vocab": "security:ExploitCatalogType/",
+            },
+        },
+        "created" : {
+            "@id": "core:created",
+            "@type": "core:DateTime",
+        },
+        "LicenseExpression": "simplelicensing:LicenseExpression",
+        "HashAlgorithm": "core:HashAlgorithm",
+        "metric" : {
+            "@id": "ai:metric",
+            "@type": "core:DictionaryEntry",
+        },
+        "obsoletedBy" : {
+            "@id": "expandedlicensing:obsoletedBy",
+            "@type": "xsd:string",
+        },
+        "listVersionAdded" : {
+            "@id": "expandedlicensing:listVersionAdded",
+            "@type": "xsd:string",
+        },
+        "licenseXml" : {
+            "@id": "expandedlicensing:licenseXml",
+            "@type": "xsd:string",
+        },
+        "vectorString" : {
+            "@id": "security:vectorString",
+            "@type": "xsd:string",
+        },
+        "datasetSize" : {
+            "@id": "dataset:datasetSize",
+            "@type": "xsd:nonNegativeInteger",
+        },
+        "SoftwarePurpose": "software:SoftwarePurpose",
+        "score" : {
+            "@id": "security:score",
+            "@type": "xsd:decimal",
+        },
+        "ConfidentialityLevelType": "dataset:ConfidentialityLevelType",
+        "DatasetType": "dataset:DatasetType",
+        "CvssV2VulnAssessmentRelationship": "security:CvssV2VulnAssessmentRelationship",
+        "begin" : {
+            "@id": "core:begin",
+            "@type": "xsd:positiveInteger",
+        },
+        "startTime" : {
+            "@id": "core:startTime",
+            "@type": "core:DateTime",
+        },
+        "packageUrl" : {
+            "@id": "software:packageUrl",
+            "@type": "xsd:anyURI",
+        },
+        "energyConsumption" : {
+            "@id": "ai:energyConsumption",
+            "@type": "xsd:string",
+        },
+        "SoftwareArtifact": "software:SoftwareArtifact",
+        "exploited" : {
+            "@id": "security:exploited",
+            "@type": "xsd:boolean",
+        },
+        "identifierLocator" : {
+            "@id": "core:identifierLocator",
+            "@type": "xsd:anyURI",
+        },
+        "sensor" : {
+            "@id": "dataset:sensor",
+            "@type": "core:DictionaryEntry",
+        },
+        "externalSpdxId" : {
+            "@id": "core:externalSpdxId",
+            "@type": "xsd:anyURI",
+        },
+        "Package": "software:Package",
+        "context" : {
+            "@id": "core:context",
+            "@type": "xsd:string",
+        },
+        "File": "software:File",
+        "SsvcDecisionType": "security:SsvcDecisionType",
+        "justificationType" : {
+            "@id": "security:justificationType",
+            "@type": "@vocab",
+            "@context" : {
+                "@vocab": "security:VexJustificationType/",
+            },
+        },
+        "Vulnerability": "security:Vulnerability",
+        "anonymizationMethodUsed" : {
+            "@id": "dataset:anonymizationMethodUsed",
+            "@type": "xsd:string",
+        },
+        "releaseTime" : {
+            "@id": "core:releaseTime",
+            "@type": "core:DateTime",
+        },
+        "rootElement" : {
+            "@id": "core:rootElement",
+            "@type": "@id",
+        },
+        "LifecycleScopeType": "core:LifecycleScopeType",
+        "configSourceDigest" : {
+            "@id": "build:configSourceDigest",
+            "@type": "core:Hash",
+        },
+        "Artifact": "core:Artifact",
+        "sourceInfo" : {
+            "@id": "software:sourceInfo",
+            "@type": "xsd:string",
+        },
+        "CvssV3VulnAssessmentRelationship": "security:CvssV3VulnAssessmentRelationship",
+        "externalIdentifierType" : {
+            "@id": "core:externalIdentifierType",
+            "@type": "@vocab",
+            "@context" : {
+                "@vocab": "core:ExternalIdentifierType/",
+            },
+        },
+        "Bundle": "core:Bundle",
+        "verifiedUsing" : {
+            "@id": "core:verifiedUsing",
+            "@type": "core:IntegrityMethod",
+        },
+        "publishedTime" : {
+            "@id": "security:publishedTime",
+            "@type": "core:DateTime",
+        },
+        "standardLicenseTemplate" : {
+            "@id": "expandedlicensing:standardLicenseTemplate",
+            "@type": "xsd:string",
+        },
+        "CvssV4VulnAssessmentRelationship": "security:CvssV4VulnAssessmentRelationship",
+        "CustomLicense": "expandedlicensing:CustomLicense",
+        "relationshipType" : {
+            "@id": "core:relationshipType",
+            "@type": "@vocab",
+            "@context" : {
+                "@vocab": "core:RelationshipType/",
+            },
+        },
+        "buildEndTime" : {
+            "@id": "build:buildEndTime",
+            "@type": "core:DateTime",
+        },
+        "specVersion" : {
+            "@id": "core:specVersion",
+            "@type": "core:SemVer",
+        },
+        "SpdxDocument": "core:SpdxDocument",
+        "CvssSeverityType": "security:CvssSeverityType",
+        "additionText" : {
+            "@id": "expandedlicensing:additionText",
+            "@type": "xsd:string",
+        },
+        "ExternalRefType": "core:ExternalRefType",
+        "isDeprecatedLicenseId" : {
+            "@id": "expandedlicensing:isDeprecatedLicenseId",
+            "@type": "xsd:boolean",
+        },
+        "knownBias" : {
+            "@id": "dataset:knownBias",
+            "@type": "xsd:string",
+        },
+        "Annotation": "core:Annotation",
+        "definingArtifact" : {
+            "@id": "core:definingArtifact",
+            "@type": "core:Artifact",
+        },
+        "copyrightText" : {
+            "@id": "software:copyrightText",
+            "@type": "xsd:string",
+        },
+        "SimpleLicensingText": "simplelicensing:SimpleLicensingText",
+        "deprecatedVersion" : {
+            "@id": "expandedlicensing:deprecatedVersion",
+            "@type": "xsd:string",
+        },
+        "metricDecisionThreshold" : {
+            "@id": "ai:metricDecisionThreshold",
+            "@type": "core:DictionaryEntry",
+        },
+        "spdxId": "@id",
+        "type": "@type",
+    },
+]
 
-CONTEXT = {
-    "": {
-        "https://spdx.org/rdf/v3/Core/PresenceType": "PresenceType",
-        "https://spdx.org/rdf/v3/Dataset/DatasetAvailabilityType": "DatasetAvailabilityType",
-        "https://spdx.org/rdf/v3/Security/VexJustificationType": "VexJustificationType",
-        "https://spdx.org/rdf/v3/Core/RelationshipType": "RelationshipType",
-        "https://spdx.org/rdf/v3/Software/SbomType": "SbomType",
-        "https://spdx.org/rdf/v3/AI/SafetyRiskAssessmentType": "SafetyRiskAssessmentType",
-        "https://spdx.org/rdf/v3/Core/ExternalIdentifierType": "ExternalIdentifierType",
-        "https://spdx.org/rdf/v3/Security/ExploitCatalogType": "ExploitCatalogType",
-        "https://spdx.org/rdf/v3/Core/RelationshipCompleteness": "RelationshipCompleteness",
-        "https://spdx.org/rdf/v3/Core/ProfileIdentifierType": "ProfileIdentifierType",
-        "https://spdx.org/rdf/v3/Core/AnnotationType": "AnnotationType",
-        "https://spdx.org/rdf/v3/Core/HashAlgorithm": "HashAlgorithm",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose": "SoftwarePurpose",
-        "https://spdx.org/rdf/v3/Dataset/ConfidentialityLevelType": "ConfidentialityLevelType",
-        "https://spdx.org/rdf/v3/Dataset/DatasetType": "DatasetType",
-        "https://spdx.org/rdf/v3/Security/SsvcDecisionType": "SsvcDecisionType",
-        "https://spdx.org/rdf/v3/Core/LifecycleScopeType": "LifecycleScopeType",
-        "https://spdx.org/rdf/v3/Security/CvssSeverityType": "CvssSeverityType",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType": "ExternalRefType",
-        "https://spdx.org/rdf/v3/Core/IntegrityMethod": "IntegrityMethod",
-        "https://spdx.org/rdf/v3/Core/comment": "comment",
-        "https://spdx.org/rdf/v3/Core/Hash": "Hash",
-        "https://spdx.org/rdf/v3/Core/algorithm": "algorithm",
-        "https://spdx.org/rdf/v3/Core/hashValue": "hashValue",
-        "https://spdx.org/rdf/v3/Core/CreationInfo": "CreationInfo",
-        "https://spdx.org/rdf/v3/Core/specVersion": "specVersion",
-        "https://spdx.org/rdf/v3/Core/created": "created",
-        "https://spdx.org/rdf/v3/Core/createdBy": "createdBy",
-        "https://spdx.org/rdf/v3/Core/createdUsing": "createdUsing",
-        "https://spdx.org/rdf/v3/Security/EpssVulnAssessmentRelationship": "EpssVulnAssessmentRelationship",
-        "https://spdx.org/rdf/v3/Security/probability": "probability",
-        "https://spdx.org/rdf/v3/Security/percentile": "percentile",
-        "https://spdx.org/rdf/v3/Security/publishedTime": "publishedTime",
-        "https://spdx.org/rdf/v3/Core/ExternalIdentifier": "ExternalIdentifier",
-        "https://spdx.org/rdf/v3/Core/externalIdentifierType": "externalIdentifierType",
-        "https://spdx.org/rdf/v3/Core/identifier": "identifier",
-        "https://spdx.org/rdf/v3/Core/identifierLocator": "identifierLocator",
-        "https://spdx.org/rdf/v3/Core/issuingAuthority": "issuingAuthority",
-        "https://spdx.org/rdf/v3/Core/Element": "Element",
-        "https://spdx.org/rdf/v3/Core/name": "name",
-        "https://spdx.org/rdf/v3/Core/summary": "summary",
-        "https://spdx.org/rdf/v3/Core/description": "description",
-        "https://spdx.org/rdf/v3/Core/creationInfo": "creationInfo",
-        "https://spdx.org/rdf/v3/Core/verifiedUsing": "verifiedUsing",
-        "https://spdx.org/rdf/v3/Core/externalRef": "externalRef",
-        "https://spdx.org/rdf/v3/Core/externalIdentifier": "externalIdentifier",
-        "https://spdx.org/rdf/v3/Core/extension": "core:extension",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/ListedLicense": "ListedLicense",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/listVersionAdded": "listVersionAdded",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/deprecatedVersion": "deprecatedVersion",
-        "https://spdx.org/rdf/v3/Core/DictionaryEntry": "DictionaryEntry",
-        "https://spdx.org/rdf/v3/Core/key": "key",
-        "https://spdx.org/rdf/v3/Core/value": "value",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/OrLaterOperator": "OrLaterOperator",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/subjectLicense": "subjectLicense",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/CustomLicenseAddition": "CustomLicenseAddition",
-        "https://spdx.org/rdf/v3/Build/Build": "Build",
-        "https://spdx.org/rdf/v3/Build/buildType": "buildType",
-        "https://spdx.org/rdf/v3/Build/buildId": "buildId",
-        "https://spdx.org/rdf/v3/Build/configSourceEntrypoint": "configSourceEntrypoint",
-        "https://spdx.org/rdf/v3/Build/configSourceUri": "configSourceUri",
-        "https://spdx.org/rdf/v3/Build/configSourceDigest": "configSourceDigest",
-        "https://spdx.org/rdf/v3/Build/parameters": "parameters",
-        "https://spdx.org/rdf/v3/Build/buildStartTime": "buildStartTime",
-        "https://spdx.org/rdf/v3/Build/buildEndTime": "buildEndTime",
-        "https://spdx.org/rdf/v3/Build/environment": "environment",
-        "https://spdx.org/rdf/v3/Core/Tool": "Tool",
-        "https://spdx.org/rdf/v3/Core/Person": "Person",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/ExtendableLicense": "ExtendableLicense",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/ConjunctiveLicenseSet": "ConjunctiveLicenseSet",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/member": "member",
-        "https://spdx.org/rdf/v3/Core/Relationship": "Relationship",
-        "https://spdx.org/rdf/v3/Core/from": "from",
-        "https://spdx.org/rdf/v3/Core/to": "to",
-        "https://spdx.org/rdf/v3/Core/relationshipType": "relationshipType",
-        "https://spdx.org/rdf/v3/Core/completeness": "completeness",
-        "https://spdx.org/rdf/v3/Core/startTime": "startTime",
-        "https://spdx.org/rdf/v3/Core/endTime": "endTime",
-        "https://spdx.org/rdf/v3/Core/PositiveIntegerRange": "PositiveIntegerRange",
-        "https://spdx.org/rdf/v3/Core/begin": "begin",
-        "https://spdx.org/rdf/v3/Core/end": "end",
-        "https://spdx.org/rdf/v3/Core/Agent": "Agent",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/LicenseAddition": "LicenseAddition",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/additionText": "additionText",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/standardAdditionTemplate": "standardAdditionTemplate",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/isDeprecatedAdditionId": "isDeprecatedAdditionId",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/obsoletedBy": "obsoletedBy",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/licenseXml": "licenseXml",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/seeAlso": "seeAlso",
-        "https://spdx.org/rdf/v3/Core/ExternalMap": "ExternalMap",
-        "https://spdx.org/rdf/v3/Core/externalSpdxId": "externalSpdxId",
-        "https://spdx.org/rdf/v3/Core/locationHint": "locationHint",
-        "https://spdx.org/rdf/v3/Core/definingArtifact": "definingArtifact",
-        "https://spdx.org/rdf/v3/Security/VexUnderInvestigationVulnAssessmentRelationship": "VexUnderInvestigationVulnAssessmentRelationship",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/WithAdditionOperator": "WithAdditionOperator",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/subjectAddition": "subjectAddition",
-        "https://spdx.org/rdf/v3/Core/Organization": "Organization",
-        "https://spdx.org/rdf/v3/Core/LifecycleScopedRelationship": "LifecycleScopedRelationship",
-        "https://spdx.org/rdf/v3/Core/scope": "scope",
-        "https://spdx.org/rdf/v3/AI/AIPackage": "AIPackage",
-        "https://spdx.org/rdf/v3/AI/energyConsumption": "energyConsumption",
-        "https://spdx.org/rdf/v3/AI/standardCompliance": "standardCompliance",
-        "https://spdx.org/rdf/v3/AI/limitation": "limitation",
-        "https://spdx.org/rdf/v3/AI/typeOfModel": "typeOfModel",
-        "https://spdx.org/rdf/v3/AI/informationAboutTraining": "informationAboutTraining",
-        "https://spdx.org/rdf/v3/AI/informationAboutApplication": "informationAboutApplication",
-        "https://spdx.org/rdf/v3/AI/hyperparameter": "hyperparameter",
-        "https://spdx.org/rdf/v3/AI/modelDataPreprocessing": "modelDataPreprocessing",
-        "https://spdx.org/rdf/v3/AI/modelExplainability": "modelExplainability",
-        "https://spdx.org/rdf/v3/AI/sensitivePersonalInformation": "ai:sensitivePersonalInformation",
-        "https://spdx.org/rdf/v3/AI/metricDecisionThreshold": "metricDecisionThreshold",
-        "https://spdx.org/rdf/v3/AI/metric": "metric",
-        "https://spdx.org/rdf/v3/AI/domain": "domain",
-        "https://spdx.org/rdf/v3/AI/autonomyType": "autonomyType",
-        "https://spdx.org/rdf/v3/AI/safetyRiskAssessment": "safetyRiskAssessment",
-        "https://spdx.org/rdf/v3/Core/ElementCollection": "ElementCollection",
-        "https://spdx.org/rdf/v3/Core/element": "element",
-        "https://spdx.org/rdf/v3/Core/rootElement": "rootElement",
-        "https://spdx.org/rdf/v3/Core/profileConformance": "profileConformance",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/DisjunctiveLicenseSet": "DisjunctiveLicenseSet",
-        "https://spdx.org/rdf/v3/Core/Bom": "Bom",
-        "https://spdx.org/rdf/v3/Core/SoftwareAgent": "SoftwareAgent",
-        "https://spdx.org/rdf/v3/Security/VulnAssessmentRelationship": "VulnAssessmentRelationship",
-        "https://spdx.org/rdf/v3/Security/assessedElement": "assessedElement",
-        "https://spdx.org/rdf/v3/Core/suppliedBy": "suppliedBy",
-        "https://spdx.org/rdf/v3/Security/modifiedTime": "modifiedTime",
-        "https://spdx.org/rdf/v3/Security/withdrawnTime": "withdrawnTime",
-        "https://spdx.org/rdf/v3/Security/VexFixedVulnAssessmentRelationship": "VexFixedVulnAssessmentRelationship",
-        "https://spdx.org/rdf/v3/Dataset/Dataset": "Dataset",
-        "https://spdx.org/rdf/v3/Dataset/datasetType": "datasetType",
-        "https://spdx.org/rdf/v3/Dataset/dataCollectionProcess": "dataCollectionProcess",
-        "https://spdx.org/rdf/v3/Dataset/intendedUse": "intendedUse",
-        "https://spdx.org/rdf/v3/Dataset/datasetSize": "datasetSize",
-        "https://spdx.org/rdf/v3/Dataset/datasetNoise": "datasetNoise",
-        "https://spdx.org/rdf/v3/Dataset/dataPreprocessing": "dataPreprocessing",
-        "https://spdx.org/rdf/v3/Dataset/sensor": "sensor",
-        "https://spdx.org/rdf/v3/Dataset/knownBias": "knownBias",
-        "https://spdx.org/rdf/v3/Dataset/sensitivePersonalInformation": "sensitivePersonalInformation",
-        "https://spdx.org/rdf/v3/Dataset/anonymizationMethodUsed": "anonymizationMethodUsed",
-        "https://spdx.org/rdf/v3/Dataset/confidentialityLevel": "confidentialityLevel",
-        "https://spdx.org/rdf/v3/Dataset/datasetUpdateMechanism": "datasetUpdateMechanism",
-        "https://spdx.org/rdf/v3/Dataset/datasetAvailability": "datasetAvailability",
-        "https://spdx.org/rdf/v3/Security/ExploitCatalogVulnAssessmentRelationship": "ExploitCatalogVulnAssessmentRelationship",
-        "https://spdx.org/rdf/v3/Security/catalogType": "catalogType",
-        "https://spdx.org/rdf/v3/Security/exploited": "exploited",
-        "https://spdx.org/rdf/v3/Security/locator": "security:locator",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/ListedLicenseException": "ListedLicenseException",
-        "https://spdx.org/rdf/v3/Security/SsvcVulnAssessmentRelationship": "SsvcVulnAssessmentRelationship",
-        "https://spdx.org/rdf/v3/Security/decisionType": "decisionType",
-        "https://spdx.org/rdf/v3/SimpleLicensing/AnyLicenseInfo": "AnyLicenseInfo",
-        "https://spdx.org/rdf/v3/Security/VexNotAffectedVulnAssessmentRelationship": "VexNotAffectedVulnAssessmentRelationship",
-        "https://spdx.org/rdf/v3/Security/justificationType": "justificationType",
-        "https://spdx.org/rdf/v3/Security/impactStatement": "impactStatement",
-        "https://spdx.org/rdf/v3/Security/impactStatementTime": "impactStatementTime",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/License": "License",
-        "https://spdx.org/rdf/v3/SimpleLicensing/licenseText": "licenseText",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/isOsiApproved": "isOsiApproved",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/isFsfLibre": "isFsfLibre",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/standardLicenseHeader": "standardLicenseHeader",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/standardLicenseTemplate": "standardLicenseTemplate",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/isDeprecatedLicenseId": "isDeprecatedLicenseId",
-        "https://spdx.org/rdf/v3/Software/Sbom": "Sbom",
-        "https://spdx.org/rdf/v3/Software/sbomType": "sbomType",
-        "https://spdx.org/rdf/v3/Core/ExternalRef": "ExternalRef",
-        "https://spdx.org/rdf/v3/Core/externalRefType": "externalRefType",
-        "https://spdx.org/rdf/v3/Core/locator": "locator",
-        "https://spdx.org/rdf/v3/Core/contentType": "contentType",
-        "https://spdx.org/rdf/v3/Security/VexVulnAssessmentRelationship": "VexVulnAssessmentRelationship",
-        "https://spdx.org/rdf/v3/Security/vexVersion": "vexVersion",
-        "https://spdx.org/rdf/v3/Security/statusNotes": "statusNotes",
-        "https://spdx.org/rdf/v3/Core/NamespaceMap": "NamespaceMap",
-        "https://spdx.org/rdf/v3/Core/prefix": "prefix",
-        "https://spdx.org/rdf/v3/Core/namespace": "namespace",
-        "https://spdx.org/rdf/v3/Security/VexAffectedVulnAssessmentRelationship": "VexAffectedVulnAssessmentRelationship",
-        "https://spdx.org/rdf/v3/Security/actionStatement": "actionStatement",
-        "https://spdx.org/rdf/v3/Security/actionStatementTime": "actionStatementTime",
-        "https://spdx.org/rdf/v3/Software/Snippet": "Snippet",
-        "https://spdx.org/rdf/v3/Software/byteRange": "byteRange",
-        "https://spdx.org/rdf/v3/Software/lineRange": "lineRange",
-        "https://spdx.org/rdf/v3/Software/snippetFromFile": "snippetFromFile",
-        "https://spdx.org/rdf/v3/SimpleLicensing/LicenseExpression": "LicenseExpression",
-        "https://spdx.org/rdf/v3/SimpleLicensing/licenseExpression": "licenseExpression",
-        "https://spdx.org/rdf/v3/SimpleLicensing/licenseListVersion": "licenseListVersion",
-        "https://spdx.org/rdf/v3/SimpleLicensing/customIdToUri": "customIdToUri",
-        "https://spdx.org/rdf/v3/Security/CvssV2VulnAssessmentRelationship": "CvssV2VulnAssessmentRelationship",
-        "https://spdx.org/rdf/v3/Security/score": "score",
-        "https://spdx.org/rdf/v3/Security/vectorString": "vectorString",
-        "https://spdx.org/rdf/v3/Software/SoftwareArtifact": "SoftwareArtifact",
-        "https://spdx.org/rdf/v3/Software/contentIdentifier": "contentIdentifier",
-        "https://spdx.org/rdf/v3/Software/primaryPurpose": "primaryPurpose",
-        "https://spdx.org/rdf/v3/Software/additionalPurpose": "additionalPurpose",
-        "https://spdx.org/rdf/v3/Software/copyrightText": "copyrightText",
-        "https://spdx.org/rdf/v3/Software/attributionText": "attributionText",
-        "https://spdx.org/rdf/v3/Software/Package": "Package",
-        "https://spdx.org/rdf/v3/Software/packageVersion": "packageVersion",
-        "https://spdx.org/rdf/v3/Software/downloadLocation": "downloadLocation",
-        "https://spdx.org/rdf/v3/Software/packageUrl": "packageUrl",
-        "https://spdx.org/rdf/v3/Software/homePage": "homePage",
-        "https://spdx.org/rdf/v3/Software/sourceInfo": "sourceInfo",
-        "https://spdx.org/rdf/v3/Software/File": "File",
-        "https://spdx.org/rdf/v3/Software/contentType": "software:contentType",
-        "https://spdx.org/rdf/v3/Security/Vulnerability": "Vulnerability",
-        "https://spdx.org/rdf/v3/Core/Artifact": "Artifact",
-        "https://spdx.org/rdf/v3/Core/originatedBy": "originatedBy",
-        "https://spdx.org/rdf/v3/Core/builtTime": "builtTime",
-        "https://spdx.org/rdf/v3/Core/releaseTime": "releaseTime",
-        "https://spdx.org/rdf/v3/Core/validUntilTime": "validUntilTime",
-        "https://spdx.org/rdf/v3/Core/standard": "standard",
-        "https://spdx.org/rdf/v3/Security/CvssV3VulnAssessmentRelationship": "CvssV3VulnAssessmentRelationship",
-        "https://spdx.org/rdf/v3/Security/severity": "severity",
-        "https://spdx.org/rdf/v3/Core/Bundle": "Bundle",
-        "https://spdx.org/rdf/v3/Core/context": "context",
-        "https://spdx.org/rdf/v3/Security/CvssV4VulnAssessmentRelationship": "CvssV4VulnAssessmentRelationship",
-        "https://spdx.org/rdf/v3/ExpandedLicensing/CustomLicense": "CustomLicense",
-        "https://spdx.org/rdf/v3/Core/SpdxDocument": "SpdxDocument",
-        "https://spdx.org/rdf/v3/Core/imports": "imports",
-        "https://spdx.org/rdf/v3/Core/namespaceMap": "namespaceMap",
-        "https://spdx.org/rdf/v3/Core/dataLicense": "dataLicense",
-        "https://spdx.org/rdf/v3/Core/Annotation": "Annotation",
-        "https://spdx.org/rdf/v3/Core/annotationType": "annotationType",
-        "https://spdx.org/rdf/v3/Core/statement": "statement",
-        "https://spdx.org/rdf/v3/Core/subject": "subject",
-        "https://spdx.org/rdf/v3/SimpleLicensing/SimpleLicensingText": "SimpleLicensingText",
-        "@id": "spdxId",
-        "@type": "type",
-    },
-    "https://spdx.org/rdf/v3/Core/algorithm": {
-        "https://spdx.org/rdf/v3/Core/HashAlgorithm/blake2b256": "blake2b256",
-        "https://spdx.org/rdf/v3/Core/HashAlgorithm/blake2b384": "blake2b384",
-        "https://spdx.org/rdf/v3/Core/HashAlgorithm/blake2b512": "blake2b512",
-        "https://spdx.org/rdf/v3/Core/HashAlgorithm/blake3": "blake3",
-        "https://spdx.org/rdf/v3/Core/HashAlgorithm/crystalsDilithium": "crystalsDilithium",
-        "https://spdx.org/rdf/v3/Core/HashAlgorithm/crystalsKyber": "crystalsKyber",
-        "https://spdx.org/rdf/v3/Core/HashAlgorithm/falcon": "falcon",
-        "https://spdx.org/rdf/v3/Core/HashAlgorithm/md2": "md2",
-        "https://spdx.org/rdf/v3/Core/HashAlgorithm/md4": "md4",
-        "https://spdx.org/rdf/v3/Core/HashAlgorithm/md5": "md5",
-        "https://spdx.org/rdf/v3/Core/HashAlgorithm/md6": "md6",
-        "https://spdx.org/rdf/v3/Core/HashAlgorithm/other": "other",
-        "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha1": "sha1",
-        "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha224": "sha224",
-        "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha256": "sha256",
-        "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha384": "sha384",
-        "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha3_224": "sha3_224",
-        "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha3_256": "sha3_256",
-        "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha3_384": "sha3_384",
-        "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha3_512": "sha3_512",
-        "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha512": "sha512",
-        "https://spdx.org/rdf/v3/Core/HashAlgorithm/spdxPvcSha1": "spdxPvcSha1",
-        "https://spdx.org/rdf/v3/Core/HashAlgorithm/spdxPvcSha256": "spdxPvcSha256",
-        "https://spdx.org/rdf/v3/Core/HashAlgorithm/sphincsPlus": "sphincsPlus",
-    },
-    "https://spdx.org/rdf/v3/Core/externalIdentifierType": {
-        "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/cpe22": "cpe22",
-        "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/cpe23": "cpe23",
-        "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/cve": "cve",
-        "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/email": "email",
-        "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/gitoid": "gitoid",
-        "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/other": "other",
-        "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/packageUrl": "packageUrl",
-        "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/securityOther": "securityOther",
-        "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/swhid": "swhid",
-        "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/swid": "swid",
-        "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/urlScheme": "urlScheme",
-    },
-    "https://spdx.org/rdf/v3/Core/relationshipType": {
-        "https://spdx.org/rdf/v3/Core/RelationshipType/affects": "affects",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/amendedBy": "amendedBy",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/ancestorOf": "ancestorOf",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/availableFrom": "availableFrom",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/configures": "configures",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/contains": "contains",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/coordinatedBy": "coordinatedBy",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/copiedTo": "copiedTo",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/delegatedTo": "delegatedTo",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/dependsOn": "dependsOn",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/descendantOf": "descendantOf",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/describes": "describes",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/doesNotAffect": "doesNotAffect",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/expandsTo": "expandsTo",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/exploitCreatedBy": "exploitCreatedBy",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/fixedBy": "fixedBy",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/fixedIn": "fixedIn",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/foundBy": "foundBy",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/generates": "generates",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasAddedFile": "hasAddedFile",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasAssessmentFor": "hasAssessmentFor",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasAssociatedVulnerability": "hasAssociatedVulnerability",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasConcludedLicense": "hasConcludedLicense",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasDataFile": "hasDataFile",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasDeclaredLicense": "hasDeclaredLicense",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasDeletedFile": "hasDeletedFile",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasDependencyManifest": "hasDependencyManifest",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasDistributionArtifact": "hasDistributionArtifact",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasDocumentation": "hasDocumentation",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasDynamicLink": "hasDynamicLink",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasEvidence": "hasEvidence",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasExample": "hasExample",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasHost": "hasHost",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasInputs": "hasInputs",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasMetadata": "hasMetadata",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasOptionalComponent": "hasOptionalComponent",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasOptionalDependency": "hasOptionalDependency",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasOutputs": "hasOutputs",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasPrerequsite": "hasPrerequsite",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasProvidedDependency": "hasProvidedDependency",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasRequirement": "hasRequirement",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasSpecification": "hasSpecification",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasStaticLink": "hasStaticLink",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasTest": "hasTest",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasTestCase": "hasTestCase",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/hasVariant": "hasVariant",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/invokedBy": "invokedBy",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/modifiedBy": "modifiedBy",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/other": "other",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/packagedBy": "packagedBy",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/patchedBy": "patchedBy",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/publishedBy": "publishedBy",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/reportedBy": "reportedBy",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/republishedBy": "republishedBy",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/serializedInArtifact": "serializedInArtifact",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/testedOn": "testedOn",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/trainedOn": "trainedOn",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/underInvestigationFor": "underInvestigationFor",
-        "https://spdx.org/rdf/v3/Core/RelationshipType/usesTool": "usesTool",
-    },
-    "https://spdx.org/rdf/v3/Core/completeness": {
-        "https://spdx.org/rdf/v3/Core/RelationshipCompleteness/complete": "complete",
-        "https://spdx.org/rdf/v3/Core/RelationshipCompleteness/incomplete": "incomplete",
-        "https://spdx.org/rdf/v3/Core/RelationshipCompleteness/noAssertion": "noAssertion",
-    },
-    "https://spdx.org/rdf/v3/Core/scope": {
-        "https://spdx.org/rdf/v3/Core/LifecycleScopeType/build": "build",
-        "https://spdx.org/rdf/v3/Core/LifecycleScopeType/design": "design",
-        "https://spdx.org/rdf/v3/Core/LifecycleScopeType/development": "development",
-        "https://spdx.org/rdf/v3/Core/LifecycleScopeType/other": "other",
-        "https://spdx.org/rdf/v3/Core/LifecycleScopeType/runtime": "runtime",
-        "https://spdx.org/rdf/v3/Core/LifecycleScopeType/test": "test",
-    },
-    "https://spdx.org/rdf/v3/AI/sensitivePersonalInformation": {
-        "https://spdx.org/rdf/v3/Core/PresenceType/no": "PresenceType:no",
-        "https://spdx.org/rdf/v3/Core/PresenceType/noAssertion": "PresenceType:noAssertion",
-        "https://spdx.org/rdf/v3/Core/PresenceType/yes": "PresenceType:yes",
-    },
-    "https://spdx.org/rdf/v3/AI/autonomyType": {
-        "https://spdx.org/rdf/v3/Core/PresenceType/no": "no",
-        "https://spdx.org/rdf/v3/Core/PresenceType/noAssertion": "noAssertion",
-        "https://spdx.org/rdf/v3/Core/PresenceType/yes": "yes",
-    },
-    "https://spdx.org/rdf/v3/AI/safetyRiskAssessment": {
-        "https://spdx.org/rdf/v3/AI/SafetyRiskAssessmentType/high": "high",
-        "https://spdx.org/rdf/v3/AI/SafetyRiskAssessmentType/low": "low",
-        "https://spdx.org/rdf/v3/AI/SafetyRiskAssessmentType/medium": "medium",
-        "https://spdx.org/rdf/v3/AI/SafetyRiskAssessmentType/serious": "serious",
-    },
-    "https://spdx.org/rdf/v3/Core/profileConformance": {
-        "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/ai": "ai",
-        "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/build": "build",
-        "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/core": "core",
-        "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/dataset": "dataset",
-        "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/expandedLicensing": "expandedLicensing",
-        "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/extension": "extension",
-        "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/security": "security",
-        "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/simpleLicensing": "simpleLicensing",
-        "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/software": "software",
-        "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/usage": "usage",
-    },
-    "https://spdx.org/rdf/v3/Dataset/datasetType": {
-        "https://spdx.org/rdf/v3/Dataset/DatasetType/audio": "audio",
-        "https://spdx.org/rdf/v3/Dataset/DatasetType/categorical": "categorical",
-        "https://spdx.org/rdf/v3/Dataset/DatasetType/graph": "graph",
-        "https://spdx.org/rdf/v3/Dataset/DatasetType/image": "image",
-        "https://spdx.org/rdf/v3/Dataset/DatasetType/noAssertion": "noAssertion",
-        "https://spdx.org/rdf/v3/Dataset/DatasetType/numeric": "numeric",
-        "https://spdx.org/rdf/v3/Dataset/DatasetType/other": "other",
-        "https://spdx.org/rdf/v3/Dataset/DatasetType/sensor": "sensor",
-        "https://spdx.org/rdf/v3/Dataset/DatasetType/structured": "structured",
-        "https://spdx.org/rdf/v3/Dataset/DatasetType/syntactic": "syntactic",
-        "https://spdx.org/rdf/v3/Dataset/DatasetType/text": "text",
-        "https://spdx.org/rdf/v3/Dataset/DatasetType/timeseries": "timeseries",
-        "https://spdx.org/rdf/v3/Dataset/DatasetType/timestamp": "timestamp",
-        "https://spdx.org/rdf/v3/Dataset/DatasetType/video": "video",
-    },
-    "https://spdx.org/rdf/v3/Dataset/sensitivePersonalInformation": {
-        "https://spdx.org/rdf/v3/Core/PresenceType/no": "no",
-        "https://spdx.org/rdf/v3/Core/PresenceType/noAssertion": "noAssertion",
-        "https://spdx.org/rdf/v3/Core/PresenceType/yes": "yes",
-    },
-    "https://spdx.org/rdf/v3/Dataset/confidentialityLevel": {
-        "https://spdx.org/rdf/v3/Dataset/ConfidentialityLevelType/amber": "amber",
-        "https://spdx.org/rdf/v3/Dataset/ConfidentialityLevelType/clear": "clear",
-        "https://spdx.org/rdf/v3/Dataset/ConfidentialityLevelType/green": "green",
-        "https://spdx.org/rdf/v3/Dataset/ConfidentialityLevelType/red": "red",
-    },
-    "https://spdx.org/rdf/v3/Dataset/datasetAvailability": {
-        "https://spdx.org/rdf/v3/Dataset/DatasetAvailabilityType/clickthrough": "clickthrough",
-        "https://spdx.org/rdf/v3/Dataset/DatasetAvailabilityType/directDownload": "directDownload",
-        "https://spdx.org/rdf/v3/Dataset/DatasetAvailabilityType/query": "query",
-        "https://spdx.org/rdf/v3/Dataset/DatasetAvailabilityType/registration": "registration",
-        "https://spdx.org/rdf/v3/Dataset/DatasetAvailabilityType/scrapingScript": "scrapingScript",
-    },
-    "https://spdx.org/rdf/v3/Security/catalogType": {
-        "https://spdx.org/rdf/v3/Security/ExploitCatalogType/kev": "kev",
-        "https://spdx.org/rdf/v3/Security/ExploitCatalogType/other": "other",
-    },
-    "https://spdx.org/rdf/v3/Security/decisionType": {
-        "https://spdx.org/rdf/v3/Security/SsvcDecisionType/act": "act",
-        "https://spdx.org/rdf/v3/Security/SsvcDecisionType/attend": "attend",
-        "https://spdx.org/rdf/v3/Security/SsvcDecisionType/track": "track",
-        "https://spdx.org/rdf/v3/Security/SsvcDecisionType/trackStar": "trackStar",
-    },
-    "https://spdx.org/rdf/v3/Security/justificationType": {
-        "https://spdx.org/rdf/v3/Security/VexJustificationType/componentNotPresent": "componentNotPresent",
-        "https://spdx.org/rdf/v3/Security/VexJustificationType/inlineMitigationsAlreadyExist": "inlineMitigationsAlreadyExist",
-        "https://spdx.org/rdf/v3/Security/VexJustificationType/vulnerableCodeCannotBeControlledByAdversary": "vulnerableCodeCannotBeControlledByAdversary",
-        "https://spdx.org/rdf/v3/Security/VexJustificationType/vulnerableCodeNotInExecutePath": "vulnerableCodeNotInExecutePath",
-        "https://spdx.org/rdf/v3/Security/VexJustificationType/vulnerableCodeNotPresent": "vulnerableCodeNotPresent",
-    },
-    "https://spdx.org/rdf/v3/Software/sbomType": {
-        "https://spdx.org/rdf/v3/Software/SbomType/analyzed": "analyzed",
-        "https://spdx.org/rdf/v3/Software/SbomType/build": "build",
-        "https://spdx.org/rdf/v3/Software/SbomType/deployed": "deployed",
-        "https://spdx.org/rdf/v3/Software/SbomType/design": "design",
-        "https://spdx.org/rdf/v3/Software/SbomType/runtime": "runtime",
-        "https://spdx.org/rdf/v3/Software/SbomType/source": "source",
-    },
-    "https://spdx.org/rdf/v3/Core/externalRefType": {
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/altDownloadLocation": "altDownloadLocation",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/altWebPage": "altWebPage",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/binaryArtifact": "binaryArtifact",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/bower": "bower",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/buildMeta": "buildMeta",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/buildSystem": "buildSystem",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/certificationReport": "certificationReport",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/chat": "chat",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/componentAnalysisReport": "componentAnalysisReport",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/documentation": "documentation",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/dynamicAnalysisReport": "dynamicAnalysisReport",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/eolNotice": "eolNotice",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/exportControlAssessment": "exportControlAssessment",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/funding": "funding",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/issueTracker": "issueTracker",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/license": "license",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/mailingList": "mailingList",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/mavenCentral": "mavenCentral",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/metrics": "metrics",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/npm": "npm",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/nuget": "nuget",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/other": "other",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/privacyAssessment": "privacyAssessment",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/productMetadata": "productMetadata",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/purchaseOrder": "purchaseOrder",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/qualityAssessmentReport": "qualityAssessmentReport",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/releaseHistory": "releaseHistory",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/releaseNotes": "releaseNotes",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/riskAssessment": "riskAssessment",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/runtimeAnalysisReport": "runtimeAnalysisReport",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/secureSoftwareAttestation": "secureSoftwareAttestation",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/securityAdversaryModel": "securityAdversaryModel",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/securityAdvisory": "securityAdvisory",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/securityFix": "securityFix",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/securityOther": "securityOther",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/securityPenTestReport": "securityPenTestReport",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/securityPolicy": "securityPolicy",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/securityThreatModel": "securityThreatModel",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/socialMedia": "socialMedia",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/sourceArtifact": "sourceArtifact",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/staticAnalysisReport": "staticAnalysisReport",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/support": "support",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/vcs": "vcs",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/vulnerabilityDisclosureReport": "vulnerabilityDisclosureReport",
-        "https://spdx.org/rdf/v3/Core/ExternalRefType/vulnerabilityExploitabilityAssessment": "vulnerabilityExploitabilityAssessment",
-    },
-    "https://spdx.org/rdf/v3/Software/primaryPurpose": {
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/application": "application",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/archive": "archive",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/bom": "bom",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/configuration": "configuration",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/container": "container",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/data": "data",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/device": "device",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/deviceDriver": "deviceDriver",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/diskImage": "diskImage",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/documentation": "documentation",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/evidence": "evidence",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/executable": "executable",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/file": "file",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/filesystemImage": "filesystemImage",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/firmware": "firmware",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/framework": "framework",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/install": "install",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/library": "library",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/manifest": "manifest",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/model": "model",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/module": "module",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/operatingSystem": "operatingSystem",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/other": "other",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/patch": "patch",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/platform": "platform",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/requirement": "requirement",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/source": "source",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/specification": "specification",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/test": "test",
-    },
-    "https://spdx.org/rdf/v3/Software/additionalPurpose": {
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/application": "application",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/archive": "archive",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/bom": "bom",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/configuration": "configuration",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/container": "container",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/data": "data",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/device": "device",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/deviceDriver": "deviceDriver",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/diskImage": "diskImage",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/documentation": "documentation",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/evidence": "evidence",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/executable": "executable",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/file": "file",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/filesystemImage": "filesystemImage",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/firmware": "firmware",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/framework": "framework",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/install": "install",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/library": "library",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/manifest": "manifest",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/model": "model",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/module": "module",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/operatingSystem": "operatingSystem",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/other": "other",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/patch": "patch",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/platform": "platform",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/requirement": "requirement",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/source": "source",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/specification": "specification",
-        "https://spdx.org/rdf/v3/Software/SoftwarePurpose/test": "test",
-    },
-    "https://spdx.org/rdf/v3/Security/severity": {
-        "https://spdx.org/rdf/v3/Security/CvssSeverityType/critical": "critical",
-        "https://spdx.org/rdf/v3/Security/CvssSeverityType/high": "high",
-        "https://spdx.org/rdf/v3/Security/CvssSeverityType/low": "low",
-        "https://spdx.org/rdf/v3/Security/CvssSeverityType/medium": "medium",
-        "https://spdx.org/rdf/v3/Security/CvssSeverityType/none": "none",
-    },
-    "https://spdx.org/rdf/v3/Core/annotationType": {
-        "https://spdx.org/rdf/v3/Core/AnnotationType/other": "other",
-        "https://spdx.org/rdf/v3/Core/AnnotationType/review": "review",
-    },
-}
+CONTEXT_URLS = [
+    "https://spdx.github.io/spdx-3-model/context.json",
+]
 
 
 # ENUMERATIONS
@@ -2009,6 +2208,7 @@ class core_CreationInfo(SHACLObject):
             SemVerProp(),
             json_name="https://spdx.org/rdf/v3/Core/specVersion",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Core/specVersion",
         )
         # A comment is an optional field for creators of the Element to provide comments
         # to the readers/reviewers of the document.
@@ -2016,6 +2216,7 @@ class core_CreationInfo(SHACLObject):
             "comment",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/comment",
+            vocab="https://spdx.org/rdf/v3/Core/comment",
         )
         # Created is a date that identifies when the Element was originally created.
         # The time stamp can serve as an indication as to whether the analysis needs to be updated. This is often the date of last change (e.g., a git commit date), not the date when the SPDX data was created, as doing so supports reproducible builds.
@@ -2024,6 +2225,7 @@ class core_CreationInfo(SHACLObject):
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Core/created",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Core/created",
         )
         # CreatedBy identifies who or what created the Element.
         # The generation method will assist the recipient of the Element in assessing
@@ -2033,6 +2235,7 @@ class core_CreationInfo(SHACLObject):
             ListProp(ObjectProp(core_Agent, False)),
             json_name="https://spdx.org/rdf/v3/Core/createdBy",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Core/createdBy",
         )
         # CreatedUsing identifies the tooling that was used during the creation of the Element.
         # The generation method will assist the recipient of the Element in assessing
@@ -2041,6 +2244,7 @@ class core_CreationInfo(SHACLObject):
             "createdUsing",
             ListProp(ObjectProp(core_Tool, False)),
             json_name="https://spdx.org/rdf/v3/Core/createdUsing",
+            vocab="https://spdx.org/rdf/v3/Core/createdUsing",
         )
         self._set_init_props(**kwargs)
 
@@ -2061,6 +2265,7 @@ class core_DictionaryEntry(SHACLObject):
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/key",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Core/key",
         )
         # A value used in a generic key-value pair.
         # A key-value pair can be used to implement a dictionary which associates a key with a value.
@@ -2068,6 +2273,7 @@ class core_DictionaryEntry(SHACLObject):
             "value",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/value",
+            vocab="https://spdx.org/rdf/v3/Core/value",
         )
         self._set_init_props(**kwargs)
 
@@ -2092,6 +2298,7 @@ class core_Element(SHACLObject):
             "name",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/name",
+            vocab="https://spdx.org/rdf/v3/Core/name",
         )
         # A summary is a short description of an Element. Here, the intent is to allow the Element creator to
         # provide concise information about the function or use of the Element.
@@ -2099,6 +2306,7 @@ class core_Element(SHACLObject):
             "summary",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/summary",
+            vocab="https://spdx.org/rdf/v3/Core/summary",
         )
         # This field is a detailed description of the Element. It may also be extracted from the Element itself.
         # The intent is to provide recipients of the SPDX file with a detailed technical explanation
@@ -2108,6 +2316,7 @@ class core_Element(SHACLObject):
             "description",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/description",
+            vocab="https://spdx.org/rdf/v3/Core/description",
         )
         # A comment is an optional field for creators of the Element to provide comments
         # to the readers/reviewers of the document.
@@ -2115,6 +2324,7 @@ class core_Element(SHACLObject):
             "comment",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/comment",
+            vocab="https://spdx.org/rdf/v3/Core/comment",
         )
         # CreationInfo provides information about the creation of the Element.
         self._add_property(
@@ -2122,12 +2332,14 @@ class core_Element(SHACLObject):
             ObjectProp(core_CreationInfo, True),
             json_name="https://spdx.org/rdf/v3/Core/creationInfo",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Core/creationInfo",
         )
         # VerifiedUsing provides an IntegrityMethod with which the integrity of an Element can be asserted.
         self._add_property(
             "verifiedUsing",
             ListProp(ObjectProp(core_IntegrityMethod, False)),
             json_name="https://spdx.org/rdf/v3/Core/verifiedUsing",
+            vocab="https://spdx.org/rdf/v3/Core/verifiedUsing",
         )
         # This field points to a resource outside the scope of the SPDX-3.0 content
         # that provides additional characteristics of an Element.
@@ -2135,6 +2347,7 @@ class core_Element(SHACLObject):
             "externalRef",
             ListProp(ObjectProp(core_ExternalRef, False)),
             json_name="https://spdx.org/rdf/v3/Core/externalRef",
+            vocab="https://spdx.org/rdf/v3/Core/externalRef",
         )
         # ExternalIdentifier points to a resource outside the scope of SPDX-3.0 content
         # that uniquely identifies an Element.
@@ -2142,12 +2355,14 @@ class core_Element(SHACLObject):
             "externalIdentifier",
             ListProp(ObjectProp(core_ExternalIdentifier, False)),
             json_name="https://spdx.org/rdf/v3/Core/externalIdentifier",
+            vocab="https://spdx.org/rdf/v3/Core/externalIdentifier",
         )
         # TODO
         self._add_property(
             "extension",
             ListProp(ExtensionProp()),
             json_name="https://spdx.org/rdf/v3/Core/extension",
+            vocab="https://spdx.org/rdf/v3/Core/extension",
         )
         self._set_init_props(**kwargs)
 
@@ -2176,6 +2391,7 @@ class core_ElementCollection(core_Element):
             "element",
             ListProp(ObjectProp(core_Element, False)),
             json_name="https://spdx.org/rdf/v3/Core/element",
+            vocab="https://spdx.org/rdf/v3/Core/element",
         )
         # This property is used to denote the root Element(s) of a tree of elements contained in an SBOM.
         # The tree consists of other elements directly and indirectly related through properties or Relationships from the root.
@@ -2183,6 +2399,7 @@ class core_ElementCollection(core_Element):
             "rootElement",
             ListProp(ObjectProp(core_Element, False)),
             json_name="https://spdx.org/rdf/v3/Core/rootElement",
+            vocab="https://spdx.org/rdf/v3/Core/rootElement",
         )
         # Describes a profile to which the creator of this ElementCollection intends to conform.
         # The profileConformance will apply to all Elements contained within the collection as well as the collection itself.
@@ -2193,7 +2410,7 @@ class core_ElementCollection(core_Element):
             "profileConformance",
             ListProp(core_ProfileIdentifierType()),
             json_name="https://spdx.org/rdf/v3/Core/profileConformance",
-            context=CONTEXT["https://spdx.org/rdf/v3/Core/profileConformance"],
+            vocab="https://spdx.org/rdf/v3/Core/profileConformance",
         )
         self._set_init_props(**kwargs)
 
@@ -2214,7 +2431,7 @@ class core_ExternalIdentifier(SHACLObject):
             core_ExternalIdentifierType(),
             json_name="https://spdx.org/rdf/v3/Core/externalIdentifierType",
             min_count=1,
-            context=CONTEXT["https://spdx.org/rdf/v3/Core/externalIdentifierType"],
+            vocab="https://spdx.org/rdf/v3/Core/externalIdentifierType",
         )
         # An identifier uniquely identifies an external element.
         self._add_property(
@@ -2222,6 +2439,7 @@ class core_ExternalIdentifier(SHACLObject):
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/identifier",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Core/identifier",
         )
         # A comment is an optional field for creators of the Element to provide comments
         # to the readers/reviewers of the document.
@@ -2229,12 +2447,14 @@ class core_ExternalIdentifier(SHACLObject):
             "comment",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/comment",
+            vocab="https://spdx.org/rdf/v3/Core/comment",
         )
         # A identifierLocator is TODO
         self._add_property(
             "identifierLocator",
             ListProp(AnyURIProp()),
             json_name="https://spdx.org/rdf/v3/Core/identifierLocator",
+            vocab="https://spdx.org/rdf/v3/Core/identifierLocator",
         )
         # An issuingAuthority is an entity that is authorized to issue identification credentials.
         #
@@ -2243,6 +2463,7 @@ class core_ExternalIdentifier(SHACLObject):
             "issuingAuthority",
             AnyURIProp(),
             json_name="https://spdx.org/rdf/v3/Core/issuingAuthority",
+            vocab="https://spdx.org/rdf/v3/Core/issuingAuthority",
         )
         self._set_init_props(**kwargs)
 
@@ -2265,24 +2486,28 @@ class core_ExternalMap(SHACLObject):
             AnyURIProp(),
             json_name="https://spdx.org/rdf/v3/Core/externalSpdxId",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Core/externalSpdxId",
         )
         # VerifiedUsing provides an IntegrityMethod with which the integrity of an Element can be asserted.
         self._add_property(
             "verifiedUsing",
             ListProp(ObjectProp(core_IntegrityMethod, False)),
             json_name="https://spdx.org/rdf/v3/Core/verifiedUsing",
+            vocab="https://spdx.org/rdf/v3/Core/verifiedUsing",
         )
         # A locationHint provides an indication of where to retrieve an external Element.
         self._add_property(
             "locationHint",
             AnyURIProp(),
             json_name="https://spdx.org/rdf/v3/Core/locationHint",
+            vocab="https://spdx.org/rdf/v3/Core/locationHint",
         )
         # A definingArtifact property is used to link the Element identifier for an Element defined external to a given SpdxDocument to an Artifact Element representing the SPDX serialization instance which contains the definition for the Element.
         self._add_property(
             "definingArtifact",
             ObjectProp(core_Artifact, False),
             json_name="https://spdx.org/rdf/v3/Core/definingArtifact",
+            vocab="https://spdx.org/rdf/v3/Core/definingArtifact",
         )
         self._set_init_props(**kwargs)
 
@@ -2302,19 +2527,21 @@ class core_ExternalRef(SHACLObject):
             "externalRefType",
             core_ExternalRefType(),
             json_name="https://spdx.org/rdf/v3/Core/externalRefType",
-            context=CONTEXT["https://spdx.org/rdf/v3/Core/externalRefType"],
+            vocab="https://spdx.org/rdf/v3/Core/externalRefType",
         )
         # A locator provides the location of an external reference.
         self._add_property(
             "locator",
             ListProp(StringProp()),
             json_name="https://spdx.org/rdf/v3/Core/locator",
+            vocab="https://spdx.org/rdf/v3/Core/locator",
         )
         # ContentType specifies the media type of an Element or Property.
         self._add_property(
             "contentType",
             MediaTypeProp(),
             json_name="https://spdx.org/rdf/v3/Core/contentType",
+            vocab="https://spdx.org/rdf/v3/Core/contentType",
         )
         # A comment is an optional field for creators of the Element to provide comments
         # to the readers/reviewers of the document.
@@ -2322,6 +2549,7 @@ class core_ExternalRef(SHACLObject):
             "comment",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/comment",
+            vocab="https://spdx.org/rdf/v3/Core/comment",
         )
         self._set_init_props(**kwargs)
 
@@ -2344,6 +2572,7 @@ class core_IntegrityMethod(SHACLObject):
             "comment",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/comment",
+            vocab="https://spdx.org/rdf/v3/Core/comment",
         )
         self._set_init_props(**kwargs)
 
@@ -2377,6 +2606,7 @@ class core_NamespaceMap(SHACLObject):
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/prefix",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Core/prefix",
         )
         # A namespace provides an unambiguous mechanism for conveying a URI fragment portion of an ElementID.
         self._add_property(
@@ -2384,6 +2614,7 @@ class core_NamespaceMap(SHACLObject):
             AnyURIProp(),
             json_name="https://spdx.org/rdf/v3/Core/namespace",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Core/namespace",
         )
         self._set_init_props(**kwargs)
 
@@ -2404,6 +2635,7 @@ class core_PositiveIntegerRange(SHACLObject):
             PositiveIntegerProp(),
             json_name="https://spdx.org/rdf/v3/Core/begin",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Core/begin",
         )
         # end is a positive integer that defines the end of a range.
         self._add_property(
@@ -2411,6 +2643,7 @@ class core_PositiveIntegerRange(SHACLObject):
             PositiveIntegerProp(),
             json_name="https://spdx.org/rdf/v3/Core/end",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Core/end",
         )
         self._set_init_props(**kwargs)
 
@@ -2431,12 +2664,14 @@ class core_Relationship(core_Element):
             ObjectProp(core_Element, True),
             json_name="https://spdx.org/rdf/v3/Core/from",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Core/from",
         )
         # This field references an Element on the right-hand side of a relationship.
         self._add_property(
             "to",
             ListProp(ObjectProp(core_Element, False)),
             json_name="https://spdx.org/rdf/v3/Core/to",
+            vocab="https://spdx.org/rdf/v3/Core/to",
         )
         # This field provides information about the relationship between two Elements.
         # For example, you can represent a relationship between two different Files,
@@ -2446,7 +2681,7 @@ class core_Relationship(core_Element):
             core_RelationshipType(),
             json_name="https://spdx.org/rdf/v3/Core/relationshipType",
             min_count=1,
-            context=CONTEXT["https://spdx.org/rdf/v3/Core/relationshipType"],
+            vocab="https://spdx.org/rdf/v3/Core/relationshipType",
         )
         # Completeness gives information about whether the provided relationships are
         # complete, known to be incomplete or if no assertion is made either way.
@@ -2454,19 +2689,21 @@ class core_Relationship(core_Element):
             "completeness",
             core_RelationshipCompleteness(),
             json_name="https://spdx.org/rdf/v3/Core/completeness",
-            context=CONTEXT["https://spdx.org/rdf/v3/Core/completeness"],
+            vocab="https://spdx.org/rdf/v3/Core/completeness",
         )
         # A startTime specifies the time from which element is applicable / valid.
         self._add_property(
             "startTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Core/startTime",
+            vocab="https://spdx.org/rdf/v3/Core/startTime",
         )
         # A endTime specifies the time from which element is no applicable / valid.
         self._add_property(
             "endTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Core/endTime",
+            vocab="https://spdx.org/rdf/v3/Core/endTime",
         )
         self._set_init_props(**kwargs)
 
@@ -2490,12 +2727,14 @@ class core_SpdxDocument(core_ElementCollection):
             "imports",
             ListProp(ObjectProp(core_ExternalMap, False)),
             json_name="https://spdx.org/rdf/v3/Core/imports",
+            vocab="https://spdx.org/rdf/v3/Core/imports",
         )
         # This field provides a NamespaceMap of prefixes and associated namespace partial URIs applicable to an SpdxDocument and independent of any specific serialization format or instance.
         self._add_property(
             "namespaceMap",
             ListProp(ObjectProp(core_NamespaceMap, False)),
             json_name="https://spdx.org/rdf/v3/Core/namespaceMap",
+            vocab="https://spdx.org/rdf/v3/Core/namespaceMap",
         )
         # The data license provides the license under which the SPDX documentation of the Element can be used.
         # This is to alleviate any concern that content (the data or database) in an SPDX file
@@ -2526,6 +2765,7 @@ class core_SpdxDocument(core_ElementCollection):
             "dataLicense",
             ObjectProp(simplelicensing_AnyLicenseInfo, False),
             json_name="https://spdx.org/rdf/v3/Core/dataLicense",
+            vocab="https://spdx.org/rdf/v3/Core/dataLicense",
         )
         self._set_init_props(**kwargs)
 
@@ -2567,6 +2807,7 @@ class expandedlicensing_LicenseAddition(core_Element):
             StringProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/additionText",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/additionText",
         )
         # A standardAdditionTemplate contains a license addition template which describes
         # sections of the LicenseAddition text which can be varied. See the Legacy Text
@@ -2575,6 +2816,7 @@ class expandedlicensing_LicenseAddition(core_Element):
             "standardAdditionTemplate",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/standardAdditionTemplate",
+            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/standardAdditionTemplate",
         )
         # The isDeprecatedAdditionId property specifies whether an identifier for a
         # LicenseAddition has been marked as deprecated. If the property is not defined,
@@ -2595,6 +2837,7 @@ class expandedlicensing_LicenseAddition(core_Element):
             "isDeprecatedAdditionId",
             BooleanProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/isDeprecatedAdditionId",
+            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/isDeprecatedAdditionId",
         )
         # An obsoletedBy value for a deprecated License or LicenseAddition specifies
         # the licenseId of the replacement License or LicenseAddition that is preferred
@@ -2608,6 +2851,7 @@ class expandedlicensing_LicenseAddition(core_Element):
             "obsoletedBy",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/obsoletedBy",
+            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/obsoletedBy",
         )
         # The license XML format is defined and used by the SPDX legal team.
         # See the XML fields defined at https://github.com/spdx/license-list-XML/blob/main/DOCS/xml-fields.md for a text description.
@@ -2616,6 +2860,7 @@ class expandedlicensing_LicenseAddition(core_Element):
             "licenseXml",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/licenseXml",
+            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/licenseXml",
         )
         # A seeAlso defines a cross-reference with a URL where the License or
         # LicenseAddition can be found in use by one or a few projects.
@@ -2637,6 +2882,7 @@ class expandedlicensing_LicenseAddition(core_Element):
             "seeAlso",
             ListProp(AnyURIProp()),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/seeAlso",
+            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/seeAlso",
         )
         self._set_init_props(**kwargs)
 
@@ -2660,6 +2906,7 @@ class expandedlicensing_ListedLicenseException(expandedlicensing_LicenseAddition
             "listVersionAdded",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/listVersionAdded",
+            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/listVersionAdded",
         )
         # A deprecatedVersion for a ListedLicense or ListedLicenseException on the SPDX
         # License List specifies which version release of the License List was the first
@@ -2668,6 +2915,7 @@ class expandedlicensing_ListedLicenseException(expandedlicensing_LicenseAddition
             "deprecatedVersion",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/deprecatedVersion",
+            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/deprecatedVersion",
         )
         self._set_init_props(**kwargs)
 
@@ -2689,12 +2937,14 @@ class security_VulnAssessmentRelationship(core_Relationship):
             "assessedElement",
             ObjectProp(core_Element, False),
             json_name="https://spdx.org/rdf/v3/Security/assessedElement",
+            vocab="https://spdx.org/rdf/v3/Security/assessedElement",
         )
         # Specifies the time when a vulnerability was first published.
         self._add_property(
             "publishedTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Security/publishedTime",
+            vocab="https://spdx.org/rdf/v3/Security/publishedTime",
         )
         # Identify the actual distribution source for the artifact (e.g., snippet, file, package, vulnerability) or VulnAssessmentRelationship being referenced.
         # This might or might not be different from the originating distribution source for the artifact (e.g., snippet, file, package, vulnerability) or VulnAssessmentRelationship..
@@ -2702,18 +2952,21 @@ class security_VulnAssessmentRelationship(core_Relationship):
             "CoresuppliedBy",
             ObjectProp(core_Agent, False),
             json_name="https://spdx.org/rdf/v3/Core/suppliedBy",
+            vocab="https://spdx.org/rdf/v3/Core/suppliedBy",
         )
         # Specifies a time when a vulnerability assessment was last modified.
         self._add_property(
             "modifiedTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Security/modifiedTime",
+            vocab="https://spdx.org/rdf/v3/Security/modifiedTime",
         )
         # Specified the time and date when a vulnerability was withdrawn.
         self._add_property(
             "withdrawnTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Security/withdrawnTime",
+            vocab="https://spdx.org/rdf/v3/Security/withdrawnTime",
         )
         self._set_init_props(**kwargs)
 
@@ -2754,6 +3007,7 @@ class simplelicensing_LicenseExpression(simplelicensing_AnyLicenseInfo):
             StringProp(),
             json_name="https://spdx.org/rdf/v3/SimpleLicensing/licenseExpression",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/SimpleLicensing/licenseExpression",
         )
         # Recognizing that licenses are added to the SPDX License List with each subsequent version, the intent is to provide consumers with the version of the SPDX License List used.
         # This anticipates that in the future, license expression might have used a version of the SPDX License List that is older than the then current one.
@@ -2762,6 +3016,7 @@ class simplelicensing_LicenseExpression(simplelicensing_AnyLicenseInfo):
             "licenseListVersion",
             SemVerProp(),
             json_name="https://spdx.org/rdf/v3/SimpleLicensing/licenseListVersion",
+            vocab="https://spdx.org/rdf/v3/SimpleLicensing/licenseListVersion",
         )
         # Within a License Expression, references can be made to a Custom License or a Custom License Addition.
         # The License Expression syntax dictates any refence starting with a "LicenseRef-" or "AdditionRef-" refers to license or addition text not found in the SPDX list of licenses.
@@ -2771,6 +3026,7 @@ class simplelicensing_LicenseExpression(simplelicensing_AnyLicenseInfo):
             "customIdToUri",
             ListProp(ObjectProp(core_DictionaryEntry, False)),
             json_name="https://spdx.org/rdf/v3/SimpleLicensing/customIdToUri",
+            vocab="https://spdx.org/rdf/v3/SimpleLicensing/customIdToUri",
         )
         self._set_init_props(**kwargs)
 
@@ -2796,6 +3052,7 @@ class simplelicensing_SimpleLicensingText(core_Element):
             StringProp(),
             json_name="https://spdx.org/rdf/v3/SimpleLicensing/licenseText",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/SimpleLicensing/licenseText",
         )
         self._set_init_props(**kwargs)
 
@@ -2822,12 +3079,14 @@ class build_Build(core_Element):
             AnyURIProp(),
             json_name="https://spdx.org/rdf/v3/Build/buildType",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Build/buildType",
         )
         # A buildId is a locally unique identifier to identify a unique instance of a build. This identifier differs based on build toolchain, platform, or naming convention used by an organization or standard.
         self._add_property(
             "buildId",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Build/buildId",
+            vocab="https://spdx.org/rdf/v3/Build/buildId",
         )
         # A build entrypoint is the invoked executable of a build which always runs when the build is triggered. For example, when a build is triggered by running a shell script, the entrypoint is `script.sh`. In terms of a declared build, the entrypoint is the position in a configuration file or a build declaration which is always run when the build is triggered. For example, in the following configuration file, the entrypoint of the build is `publish`.
         #
@@ -2850,6 +3109,7 @@ class build_Build(core_Element):
             "configSourceEntrypoint",
             ListProp(StringProp()),
             json_name="https://spdx.org/rdf/v3/Build/configSourceEntrypoint",
+            vocab="https://spdx.org/rdf/v3/Build/configSourceEntrypoint",
         )
         # If a build configuration exists for the toolchain or platform performing the build, the configSourceUri of a build is the URI of that build configuration. For example, a build triggered by a GitHub action is defined by a build configuration YAML file. In this case, the configSourceUri is the URL of that YAML file.
         # m
@@ -2857,36 +3117,42 @@ class build_Build(core_Element):
             "configSourceUri",
             ListProp(AnyURIProp()),
             json_name="https://spdx.org/rdf/v3/Build/configSourceUri",
+            vocab="https://spdx.org/rdf/v3/Build/configSourceUri",
         )
         # configSourceDigest is the checksum of the build configuration file used by a builder to execute a build. This Property uses the Core model's [Hash](../../Core/Classes/Hash.md) class.
         self._add_property(
             "configSourceDigest",
             ListProp(ObjectProp(core_Hash, False)),
             json_name="https://spdx.org/rdf/v3/Build/configSourceDigest",
+            vocab="https://spdx.org/rdf/v3/Build/configSourceDigest",
         )
         # parameters is a key-value map of all build parameters and their values that were provided to the builder for a build instance. This is different from the [environment](environment.md) property in that the keys and values are provided as command line arguments or a configuration file to the builder.
         self._add_property(
             "parameters",
             ListProp(ObjectProp(core_DictionaryEntry, False)),
             json_name="https://spdx.org/rdf/v3/Build/parameters",
+            vocab="https://spdx.org/rdf/v3/Build/parameters",
         )
         # buildStartTime is the time at which a build is triggered. The builder typically records this value.
         self._add_property(
             "buildStartTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Build/buildStartTime",
+            vocab="https://spdx.org/rdf/v3/Build/buildStartTime",
         )
         # buildEndTime describes the time at which a build stops or finishes. This value is typically recorded by the builder.
         self._add_property(
             "buildEndTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Build/buildEndTime",
+            vocab="https://spdx.org/rdf/v3/Build/buildEndTime",
         )
         # environment is a map of environment variables and values that are set during a build session. This is different from the [parameters](parameters.md) property in that it describes the environment variables set before a build is invoked rather than the variables provided to the builder.
         self._add_property(
             "environment",
             ListProp(ObjectProp(core_DictionaryEntry, False)),
             json_name="https://spdx.org/rdf/v3/Build/environment",
+            vocab="https://spdx.org/rdf/v3/Build/environment",
         )
         self._set_init_props(**kwargs)
 
@@ -2918,19 +3184,21 @@ class core_Annotation(core_Element):
             core_AnnotationType(),
             json_name="https://spdx.org/rdf/v3/Core/annotationType",
             min_count=1,
-            context=CONTEXT["https://spdx.org/rdf/v3/Core/annotationType"],
+            vocab="https://spdx.org/rdf/v3/Core/annotationType",
         )
         # ContentType specifies the media type of an Element or Property.
         self._add_property(
             "contentType",
             MediaTypeProp(),
             json_name="https://spdx.org/rdf/v3/Core/contentType",
+            vocab="https://spdx.org/rdf/v3/Core/contentType",
         )
         # A statement is a commentary on an assertion that an annotator has made.
         self._add_property(
             "statement",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/statement",
+            vocab="https://spdx.org/rdf/v3/Core/statement",
         )
         # A subject is an Element an annotator has made an assertion about.
         self._add_property(
@@ -2938,6 +3206,7 @@ class core_Annotation(core_Element):
             ObjectProp(core_Element, True),
             json_name="https://spdx.org/rdf/v3/Core/subject",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Core/subject",
         )
         self._set_init_props(**kwargs)
 
@@ -2957,6 +3226,7 @@ class core_Artifact(core_Element):
             "originatedBy",
             ListProp(ObjectProp(core_Agent, False)),
             json_name="https://spdx.org/rdf/v3/Core/originatedBy",
+            vocab="https://spdx.org/rdf/v3/Core/originatedBy",
         )
         # Identify the actual distribution source for the artifact (e.g., snippet, file, package, vulnerability) or VulnAssessmentRelationship being referenced.
         # This might or might not be different from the originating distribution source for the artifact (e.g., snippet, file, package, vulnerability) or VulnAssessmentRelationship..
@@ -2964,30 +3234,35 @@ class core_Artifact(core_Element):
             "suppliedBy",
             ObjectProp(core_Agent, False),
             json_name="https://spdx.org/rdf/v3/Core/suppliedBy",
+            vocab="https://spdx.org/rdf/v3/Core/suppliedBy",
         )
         # A builtTime specifies the time an artifact was built.
         self._add_property(
             "builtTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Core/builtTime",
+            vocab="https://spdx.org/rdf/v3/Core/builtTime",
         )
         # A releaseTime specifies the time an artifact was released.
         self._add_property(
             "releaseTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Core/releaseTime",
+            vocab="https://spdx.org/rdf/v3/Core/releaseTime",
         )
         # A validUntilTime specifies until when the artifact can be used before its usage needs to be reassessed.
         self._add_property(
             "validUntilTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Core/validUntilTime",
+            vocab="https://spdx.org/rdf/v3/Core/validUntilTime",
         )
         # Various standards may be relevant to useful to capture for specific artifacts.
         self._add_property(
             "standard",
             ListProp(StringProp()),
             json_name="https://spdx.org/rdf/v3/Core/standard",
+            vocab="https://spdx.org/rdf/v3/Core/standard",
         )
         self._set_init_props(**kwargs)
 
@@ -3007,6 +3282,7 @@ class core_Bundle(core_ElementCollection):
             "context",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/context",
+            vocab="https://spdx.org/rdf/v3/Core/context",
         )
         self._set_init_props(**kwargs)
 
@@ -3031,7 +3307,7 @@ class core_Hash(core_IntegrityMethod):
             core_HashAlgorithm(),
             json_name="https://spdx.org/rdf/v3/Core/algorithm",
             min_count=1,
-            context=CONTEXT["https://spdx.org/rdf/v3/Core/algorithm"],
+            vocab="https://spdx.org/rdf/v3/Core/algorithm",
         )
         # HashValue is the result of applying a hash algorithm to an Element.
         self._add_property(
@@ -3039,6 +3315,7 @@ class core_Hash(core_IntegrityMethod):
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/hashValue",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Core/hashValue",
         )
         self._set_init_props(**kwargs)
 
@@ -3057,7 +3334,7 @@ class core_LifecycleScopedRelationship(core_Relationship):
             "scope",
             core_LifecycleScopeType(),
             json_name="https://spdx.org/rdf/v3/Core/scope",
-            context=CONTEXT["https://spdx.org/rdf/v3/Core/scope"],
+            vocab="https://spdx.org/rdf/v3/Core/scope",
         )
         self._set_init_props(**kwargs)
 
@@ -3125,6 +3402,7 @@ class expandedlicensing_ConjunctiveLicenseSet(simplelicensing_AnyLicenseInfo):
             ListProp(ObjectProp(simplelicensing_AnyLicenseInfo, False)),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/member",
             min_count=2,
+            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/member",
         )
         self._set_init_props(**kwargs)
 
@@ -3170,6 +3448,7 @@ class expandedlicensing_DisjunctiveLicenseSet(simplelicensing_AnyLicenseInfo):
             ListProp(ObjectProp(simplelicensing_AnyLicenseInfo, False)),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/member",
             min_count=2,
+            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/member",
         )
         self._set_init_props(**kwargs)
 
@@ -3206,6 +3485,7 @@ class expandedlicensing_License(expandedlicensing_ExtendableLicense):
             StringProp(),
             json_name="https://spdx.org/rdf/v3/SimpleLicensing/licenseText",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/SimpleLicensing/licenseText",
         )
         # isOsiApproved specifies whether the [Open Source Initiative (OSI)](https://opensource.org)
         # has listed this License as "approved" in their list of OSI Approved Licenses,
@@ -3221,6 +3501,7 @@ class expandedlicensing_License(expandedlicensing_ExtendableLicense):
             "isOsiApproved",
             BooleanProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/isOsiApproved",
+            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/isOsiApproved",
         )
         # isFsfLibre specifies whether the [Free Software Foundation FSF](https://fsf.org)
         # has listed this License as "free" in their commentary on licenses, located at
@@ -3236,6 +3517,7 @@ class expandedlicensing_License(expandedlicensing_ExtendableLicense):
             "isFsfLibre",
             BooleanProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/isFsfLibre",
+            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/isFsfLibre",
         )
         # A standardLicenseHeader contains the plain text of the License author's
         # preferred wording to be used, typically in a source code file's header
@@ -3245,6 +3527,7 @@ class expandedlicensing_License(expandedlicensing_ExtendableLicense):
             "standardLicenseHeader",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/standardLicenseHeader",
+            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/standardLicenseHeader",
         )
         # A standardLicenseTemplate contains a license template which describes
         # sections of the License text which can be varied. See the Legacy Text Template
@@ -3253,6 +3536,7 @@ class expandedlicensing_License(expandedlicensing_ExtendableLicense):
             "standardLicenseTemplate",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/standardLicenseTemplate",
+            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/standardLicenseTemplate",
         )
         # The isDeprecatedLicenseId property specifies whether an identifier for a
         # License or LicenseAddition has been marked as deprecated. If the property
@@ -3273,6 +3557,7 @@ class expandedlicensing_License(expandedlicensing_ExtendableLicense):
             "isDeprecatedLicenseId",
             BooleanProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/isDeprecatedLicenseId",
+            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/isDeprecatedLicenseId",
         )
         # An obsoletedBy value for a deprecated License or LicenseAddition specifies
         # the licenseId of the replacement License or LicenseAddition that is preferred
@@ -3286,6 +3571,7 @@ class expandedlicensing_License(expandedlicensing_ExtendableLicense):
             "obsoletedBy",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/obsoletedBy",
+            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/obsoletedBy",
         )
         # The license XML format is defined and used by the SPDX legal team.
         # See the XML fields defined at https://github.com/spdx/license-list-XML/blob/main/DOCS/xml-fields.md for a text description.
@@ -3294,6 +3580,7 @@ class expandedlicensing_License(expandedlicensing_ExtendableLicense):
             "licenseXml",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/licenseXml",
+            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/licenseXml",
         )
         # A seeAlso defines a cross-reference with a URL where the License or
         # LicenseAddition can be found in use by one or a few projects.
@@ -3315,6 +3602,7 @@ class expandedlicensing_License(expandedlicensing_ExtendableLicense):
             "seeAlso",
             ListProp(AnyURIProp()),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/seeAlso",
+            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/seeAlso",
         )
         self._set_init_props(**kwargs)
 
@@ -3336,6 +3624,7 @@ class expandedlicensing_ListedLicense(expandedlicensing_License):
             "listVersionAdded",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/listVersionAdded",
+            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/listVersionAdded",
         )
         # A deprecatedVersion for a ListedLicense or ListedLicenseException on the SPDX
         # License List specifies which version release of the License List was the first
@@ -3344,6 +3633,7 @@ class expandedlicensing_ListedLicense(expandedlicensing_License):
             "deprecatedVersion",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/deprecatedVersion",
+            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/deprecatedVersion",
         )
         self._set_init_props(**kwargs)
 
@@ -3373,6 +3663,7 @@ class expandedlicensing_OrLaterOperator(expandedlicensing_ExtendableLicense):
             ObjectProp(expandedlicensing_License, True),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/subjectLicense",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/subjectLicense",
         )
         self._set_init_props(**kwargs)
 
@@ -3397,6 +3688,7 @@ class expandedlicensing_WithAdditionOperator(simplelicensing_AnyLicenseInfo):
             ObjectProp(expandedlicensing_ExtendableLicense, True),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/subjectLicense",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/subjectLicense",
         )
         # A subjectAddition is a LicenseAddition which is subject to a 'with additional
         # text' effect (WithAdditionOperator).
@@ -3405,6 +3697,7 @@ class expandedlicensing_WithAdditionOperator(simplelicensing_AnyLicenseInfo):
             ObjectProp(expandedlicensing_LicenseAddition, True),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/subjectAddition",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/subjectAddition",
         )
         self._set_init_props(**kwargs)
 
@@ -3471,6 +3764,7 @@ class security_CvssV2VulnAssessmentRelationship(security_VulnAssessmentRelations
             FloatProp(),
             json_name="https://spdx.org/rdf/v3/Security/score",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Security/score",
         )
         # Specifies any combination of the CVSS Base, Temporal, Threat, Environmental, and/or Supplemental vector string values for a vulnerability. Supports vectorStrings specified in all CVSS versions.
         #
@@ -3482,6 +3776,7 @@ class security_CvssV2VulnAssessmentRelationship(security_VulnAssessmentRelations
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Security/vectorString",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Security/vectorString",
         )
         self._set_init_props(**kwargs)
 
@@ -3552,6 +3847,7 @@ class security_CvssV3VulnAssessmentRelationship(security_VulnAssessmentRelations
             FloatProp(),
             json_name="https://spdx.org/rdf/v3/Security/score",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Security/score",
         )
         # The severity field provides a human readable string of the resulting numerical CVSS score.
         self._add_property(
@@ -3559,7 +3855,7 @@ class security_CvssV3VulnAssessmentRelationship(security_VulnAssessmentRelations
             security_CvssSeverityType(),
             json_name="https://spdx.org/rdf/v3/Security/severity",
             min_count=1,
-            context=CONTEXT["https://spdx.org/rdf/v3/Security/severity"],
+            vocab="https://spdx.org/rdf/v3/Security/severity",
         )
         # Specifies any combination of the CVSS Base, Temporal, Threat, Environmental, and/or Supplemental vector string values for a vulnerability. Supports vectorStrings specified in all CVSS versions.
         #
@@ -3571,6 +3867,7 @@ class security_CvssV3VulnAssessmentRelationship(security_VulnAssessmentRelations
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Security/vectorString",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Security/vectorString",
         )
         self._set_init_props(**kwargs)
 
@@ -3639,6 +3936,7 @@ class security_CvssV4VulnAssessmentRelationship(security_VulnAssessmentRelations
             FloatProp(),
             json_name="https://spdx.org/rdf/v3/Security/score",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Security/score",
         )
         # The severity field provides a human readable string of the resulting numerical CVSS score.
         self._add_property(
@@ -3646,7 +3944,7 @@ class security_CvssV4VulnAssessmentRelationship(security_VulnAssessmentRelations
             security_CvssSeverityType(),
             json_name="https://spdx.org/rdf/v3/Security/severity",
             min_count=1,
-            context=CONTEXT["https://spdx.org/rdf/v3/Security/severity"],
+            vocab="https://spdx.org/rdf/v3/Security/severity",
         )
         # Specifies any combination of the CVSS Base, Temporal, Threat, Environmental, and/or Supplemental vector string values for a vulnerability. Supports vectorStrings specified in all CVSS versions.
         #
@@ -3658,6 +3956,7 @@ class security_CvssV4VulnAssessmentRelationship(security_VulnAssessmentRelations
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Security/vectorString",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Security/vectorString",
         )
         self._set_init_props(**kwargs)
 
@@ -3699,6 +3998,7 @@ class security_EpssVulnAssessmentRelationship(security_VulnAssessmentRelationshi
             FloatProp(),
             json_name="https://spdx.org/rdf/v3/Security/probability",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Security/probability",
         )
         # The percentile between 0 and 1 (0 and 100%) of the current probability score, the proportion of all scored vulnerabilities with the same or a lower EPSS score. [https://www.first.org/epss/data_stats](https://www.first.org/epss/data_stats)
         self._add_property(
@@ -3706,6 +4006,7 @@ class security_EpssVulnAssessmentRelationship(security_VulnAssessmentRelationshi
             FloatProp(),
             json_name="https://spdx.org/rdf/v3/Security/percentile",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Security/percentile",
         )
         # Specifies the time when a vulnerability was first published.
         self._add_property(
@@ -3713,6 +4014,7 @@ class security_EpssVulnAssessmentRelationship(security_VulnAssessmentRelationshi
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Security/publishedTime",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Security/publishedTime",
         )
         self._set_init_props(**kwargs)
 
@@ -3756,7 +4058,7 @@ class security_ExploitCatalogVulnAssessmentRelationship(security_VulnAssessmentR
             security_ExploitCatalogType(),
             json_name="https://spdx.org/rdf/v3/Security/catalogType",
             min_count=1,
-            context=CONTEXT["https://spdx.org/rdf/v3/Security/catalogType"],
+            vocab="https://spdx.org/rdf/v3/Security/catalogType",
         )
         # This field is set when a CVE is listed in an exploit catalog.
         self._add_property(
@@ -3764,6 +4066,7 @@ class security_ExploitCatalogVulnAssessmentRelationship(security_VulnAssessmentR
             BooleanProp(),
             json_name="https://spdx.org/rdf/v3/Security/exploited",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Security/exploited",
         )
         # A locator provides the location of an exploit catalog.
         self._add_property(
@@ -3771,6 +4074,7 @@ class security_ExploitCatalogVulnAssessmentRelationship(security_VulnAssessmentR
             AnyURIProp(),
             json_name="https://spdx.org/rdf/v3/Security/locator",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Security/locator",
         )
         self._set_init_props(**kwargs)
 
@@ -3813,7 +4117,7 @@ class security_SsvcVulnAssessmentRelationship(security_VulnAssessmentRelationshi
             security_SsvcDecisionType(),
             json_name="https://spdx.org/rdf/v3/Security/decisionType",
             min_count=1,
-            context=CONTEXT["https://spdx.org/rdf/v3/Security/decisionType"],
+            vocab="https://spdx.org/rdf/v3/Security/decisionType",
         )
         self._set_init_props(**kwargs)
 
@@ -3852,12 +4156,14 @@ class security_VexVulnAssessmentRelationship(security_VulnAssessmentRelationship
             "vexVersion",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Security/vexVersion",
+            vocab="https://spdx.org/rdf/v3/Security/vexVersion",
         )
         # TODO
         self._add_property(
             "statusNotes",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Security/statusNotes",
+            vocab="https://spdx.org/rdf/v3/Security/statusNotes",
         )
         self._set_init_props(**kwargs)
 
@@ -3951,18 +4257,21 @@ class security_Vulnerability(core_Artifact):
             "publishedTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Security/publishedTime",
+            vocab="https://spdx.org/rdf/v3/Security/publishedTime",
         )
         # Specifies a time when a vulnerability assessment was last modified.
         self._add_property(
             "modifiedTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Security/modifiedTime",
+            vocab="https://spdx.org/rdf/v3/Security/modifiedTime",
         )
         # Specified the time and date when a vulnerability was withdrawn.
         self._add_property(
             "withdrawnTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Security/withdrawnTime",
+            vocab="https://spdx.org/rdf/v3/Security/withdrawnTime",
         )
         self._set_init_props(**kwargs)
 
@@ -3992,20 +4301,21 @@ class software_SoftwareArtifact(core_Artifact):
             "contentIdentifier",
             AnyURIProp(),
             json_name="https://spdx.org/rdf/v3/Software/contentIdentifier",
+            vocab="https://spdx.org/rdf/v3/Software/contentIdentifier",
         )
         # primaryPurpose provides information about the primary purpose of the software artifact.
         self._add_property(
             "primaryPurpose",
             software_SoftwarePurpose(),
             json_name="https://spdx.org/rdf/v3/Software/primaryPurpose",
-            context=CONTEXT["https://spdx.org/rdf/v3/Software/primaryPurpose"],
+            vocab="https://spdx.org/rdf/v3/Software/primaryPurpose",
         )
         # Additional purpose provides information about the additional purposes of the software artifact in addition to the primaryPurpose.
         self._add_property(
             "additionalPurpose",
             ListProp(software_SoftwarePurpose()),
             json_name="https://spdx.org/rdf/v3/Software/additionalPurpose",
-            context=CONTEXT["https://spdx.org/rdf/v3/Software/additionalPurpose"],
+            vocab="https://spdx.org/rdf/v3/Software/additionalPurpose",
         )
         # A copyrightText consists of the text(s) of the copyright notice(s) found
         # for a software Package, File or Snippet, if any.
@@ -4028,6 +4338,7 @@ class software_SoftwareArtifact(core_Artifact):
             "copyrightText",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Software/copyrightText",
+            vocab="https://spdx.org/rdf/v3/Software/copyrightText",
         )
         # An attributionText for a software Package, File or Snippet provides a consumer
         # of SPDX data with acknowledgement content, to assist redistributors of the
@@ -4049,6 +4360,7 @@ class software_SoftwareArtifact(core_Artifact):
             "attributionText",
             ListProp(StringProp()),
             json_name="https://spdx.org/rdf/v3/Software/attributionText",
+            vocab="https://spdx.org/rdf/v3/Software/attributionText",
         )
         self._set_init_props(**kwargs)
 
@@ -4125,6 +4437,7 @@ class security_VexAffectedVulnAssessmentRelationship(security_VexVulnAssessmentR
             "actionStatement",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Security/actionStatement",
+            vocab="https://spdx.org/rdf/v3/Security/actionStatement",
         )
         # When a VEX statement communicates an affected status, the author MUST
         # include an action statement with a recommended action to help mitigate the
@@ -4134,6 +4447,7 @@ class security_VexAffectedVulnAssessmentRelationship(security_VexVulnAssessmentR
             "actionStatementTime",
             ListProp(DateTimeProp()),
             json_name="https://spdx.org/rdf/v3/Security/actionStatementTime",
+            vocab="https://spdx.org/rdf/v3/Security/actionStatementTime",
         )
         self._set_init_props(**kwargs)
 
@@ -4229,7 +4543,7 @@ class security_VexNotAffectedVulnAssessmentRelationship(security_VexVulnAssessme
             "justificationType",
             security_VexJustificationType(),
             json_name="https://spdx.org/rdf/v3/Security/justificationType",
-            context=CONTEXT["https://spdx.org/rdf/v3/Security/justificationType"],
+            vocab="https://spdx.org/rdf/v3/Security/justificationType",
         )
         # When a VEX product element is related with a VexNotAffectedVulnAssessmentRelationship
         # and a machine readable justification label is not provided, then an impactStatement
@@ -4239,12 +4553,14 @@ class security_VexNotAffectedVulnAssessmentRelationship(security_VexVulnAssessme
             "impactStatement",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Security/impactStatement",
+            vocab="https://spdx.org/rdf/v3/Security/impactStatement",
         )
         # TODO
         self._add_property(
             "impactStatementTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Security/impactStatementTime",
+            vocab="https://spdx.org/rdf/v3/Security/impactStatementTime",
         )
         self._set_init_props(**kwargs)
 
@@ -4305,6 +4621,7 @@ class software_File(software_SoftwareArtifact):
             "contentType",
             MediaTypeProp(),
             json_name="https://spdx.org/rdf/v3/Software/contentType",
+            vocab="https://spdx.org/rdf/v3/Software/contentType",
         )
         self._set_init_props(**kwargs)
 
@@ -4335,6 +4652,7 @@ class software_Package(software_SoftwareArtifact):
             "packageVersion",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Software/packageVersion",
+            vocab="https://spdx.org/rdf/v3/Software/packageVersion",
         )
         # DownloadLocation identifies the download Uniform Resource Identifier
         # for the package at the time that the document was created.
@@ -4344,6 +4662,7 @@ class software_Package(software_SoftwareArtifact):
             "downloadLocation",
             AnyURIProp(),
             json_name="https://spdx.org/rdf/v3/Software/downloadLocation",
+            vocab="https://spdx.org/rdf/v3/Software/downloadLocation",
         )
         # A packageUrl (commonly pronounced and referred to as "purl") is an attempt to standardize package representations in order to reliably identify and locate software packages. A purl is a URL string which represents a package in a mostly universal and uniform way across programming languages, package managers, packaging conventions, tools, APIs and databases.
         #
@@ -4359,6 +4678,7 @@ class software_Package(software_SoftwareArtifact):
             "packageUrl",
             AnyURIProp(),
             json_name="https://spdx.org/rdf/v3/Software/packageUrl",
+            vocab="https://spdx.org/rdf/v3/Software/packageUrl",
         )
         # HomePage is a place for the SPDX document creator to record a website that serves as the package's home page.
         # This saves the recipient of the SPDX document who is looking for more info from
@@ -4369,6 +4689,7 @@ class software_Package(software_SoftwareArtifact):
             "homePage",
             AnyURIProp(),
             json_name="https://spdx.org/rdf/v3/Software/homePage",
+            vocab="https://spdx.org/rdf/v3/Software/homePage",
         )
         # SourceInfo records any relevant background information or additional comments
         # about the origin of the package. For example, this field might include comments
@@ -4379,6 +4700,7 @@ class software_Package(software_SoftwareArtifact):
             "sourceInfo",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Software/sourceInfo",
+            vocab="https://spdx.org/rdf/v3/Software/sourceInfo",
         )
         self._set_init_props(**kwargs)
 
@@ -4402,7 +4724,7 @@ class software_Sbom(core_Bom):
             "sbomType",
             ListProp(software_SbomType()),
             json_name="https://spdx.org/rdf/v3/Software/sbomType",
-            context=CONTEXT["https://spdx.org/rdf/v3/Software/sbomType"],
+            vocab="https://spdx.org/rdf/v3/Software/sbomType",
         )
         self._set_init_props(**kwargs)
 
@@ -4426,6 +4748,7 @@ class software_Snippet(software_SoftwareArtifact):
             "byteRange",
             ObjectProp(core_PositiveIntegerRange, False),
             json_name="https://spdx.org/rdf/v3/Software/byteRange",
+            vocab="https://spdx.org/rdf/v3/Software/byteRange",
         )
         # This field defines the line range in the original host file that the snippet information applies to.
         # If there is a disagreement between the byte range and line range, the byte range values will take precedence.
@@ -4435,6 +4758,7 @@ class software_Snippet(software_SoftwareArtifact):
             "lineRange",
             ObjectProp(core_PositiveIntegerRange, False),
             json_name="https://spdx.org/rdf/v3/Software/lineRange",
+            vocab="https://spdx.org/rdf/v3/Software/lineRange",
         )
         # The field identifies the file which contains the snippet.
         self._add_property(
@@ -4442,6 +4766,7 @@ class software_Snippet(software_SoftwareArtifact):
             ObjectProp(software_File, True),
             json_name="https://spdx.org/rdf/v3/Software/snippetFromFile",
             min_count=1,
+            vocab="https://spdx.org/rdf/v3/Software/snippetFromFile",
         )
         self._set_init_props(**kwargs)
 
@@ -4466,6 +4791,7 @@ class ai_AIPackage(software_Package):
             "energyConsumption",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/AI/energyConsumption",
+            vocab="https://spdx.org/rdf/v3/AI/energyConsumption",
         )
         # StandardCompliance captures a standard that the AI software complies with.
         # This includes both published and unpublished standards, for example ISO, IEEE, ETSI etc.
@@ -4474,6 +4800,7 @@ class ai_AIPackage(software_Package):
             "standardCompliance",
             ListProp(StringProp()),
             json_name="https://spdx.org/rdf/v3/AI/standardCompliance",
+            vocab="https://spdx.org/rdf/v3/AI/standardCompliance",
         )
         # Limitation captures a limitation of the AI Package (or of the AI models present in the AI package),
         # expressed as free form text. Note that this is not guaranteed to be exhaustive.
@@ -4482,6 +4809,7 @@ class ai_AIPackage(software_Package):
             "limitation",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/AI/limitation",
+            vocab="https://spdx.org/rdf/v3/AI/limitation",
         )
         # TypeOfModel records the type of the AI model(s) used in the software.
         # For instance, if it is a supervised model, unsupervised model, reinforcement learning model or a combination of those.
@@ -4489,6 +4817,7 @@ class ai_AIPackage(software_Package):
             "typeOfModel",
             ListProp(StringProp()),
             json_name="https://spdx.org/rdf/v3/AI/typeOfModel",
+            vocab="https://spdx.org/rdf/v3/AI/typeOfModel",
         )
         # InformationAboutTraining describes the specific steps involved in the training of the AI model.
         # For example, it can be specified whether supervised fine-tuning
@@ -4497,6 +4826,7 @@ class ai_AIPackage(software_Package):
             "informationAboutTraining",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/AI/informationAboutTraining",
+            vocab="https://spdx.org/rdf/v3/AI/informationAboutTraining",
         )
         # InformationAboutApplication describes any relevant information in free form text about
         # how the AI model is used inside the software, as well as any relevant pre-processing steps, third party APIs etc.
@@ -4504,6 +4834,7 @@ class ai_AIPackage(software_Package):
             "informationAboutApplication",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/AI/informationAboutApplication",
+            vocab="https://spdx.org/rdf/v3/AI/informationAboutApplication",
         )
         # This field records a hyperparameter value.
         # Hyperparameters are parameters of the machine learning model that are used to control the learning process,
@@ -4512,6 +4843,7 @@ class ai_AIPackage(software_Package):
             "hyperparameter",
             ListProp(ObjectProp(core_DictionaryEntry, False)),
             json_name="https://spdx.org/rdf/v3/AI/hyperparameter",
+            vocab="https://spdx.org/rdf/v3/AI/hyperparameter",
         )
         # ModelDataPreprocessing is a free form text that describes the preprocessing steps
         # applied to the training data before training of the model(s) contained in the AI software.
@@ -4519,6 +4851,7 @@ class ai_AIPackage(software_Package):
             "modelDataPreprocessing",
             ListProp(StringProp()),
             json_name="https://spdx.org/rdf/v3/AI/modelDataPreprocessing",
+            vocab="https://spdx.org/rdf/v3/AI/modelDataPreprocessing",
         )
         # ModelExplainability is a free form text that lists the different explainability mechanisms
         # (such as SHAP, or other model specific explainability mechanisms) that can be used to explain the model.
@@ -4526,6 +4859,7 @@ class ai_AIPackage(software_Package):
             "modelExplainability",
             ListProp(StringProp()),
             json_name="https://spdx.org/rdf/v3/AI/modelExplainability",
+            vocab="https://spdx.org/rdf/v3/AI/modelExplainability",
         )
         # SensitivePersonalInformation notes if sensitive personal information
         # is used in the training or inference of the AI models.
@@ -4534,7 +4868,7 @@ class ai_AIPackage(software_Package):
             "sensitivePersonalInformation",
             core_PresenceType(),
             json_name="https://spdx.org/rdf/v3/AI/sensitivePersonalInformation",
-            context=CONTEXT["https://spdx.org/rdf/v3/AI/sensitivePersonalInformation"],
+            vocab="https://spdx.org/rdf/v3/AI/sensitivePersonalInformation",
         )
         # Each metric might be computed based on a decision threshold.
         # For instance, precision or recall is typically computed by checking
@@ -4544,6 +4878,7 @@ class ai_AIPackage(software_Package):
             "metricDecisionThreshold",
             ListProp(ObjectProp(core_DictionaryEntry, False)),
             json_name="https://spdx.org/rdf/v3/AI/metricDecisionThreshold",
+            vocab="https://spdx.org/rdf/v3/AI/metricDecisionThreshold",
         )
         # Metric records the measurement with which the AI model was evaluated.
         # This makes statements about the prediction quality including uncertainty,
@@ -4552,6 +4887,7 @@ class ai_AIPackage(software_Package):
             "metric",
             ListProp(ObjectProp(core_DictionaryEntry, False)),
             json_name="https://spdx.org/rdf/v3/AI/metric",
+            vocab="https://spdx.org/rdf/v3/AI/metric",
         )
         # Domain describes the domain in which the AI model contained in the AI software
         # can be expected to operate successfully. Examples include computer vision, natural language etc.
@@ -4559,6 +4895,7 @@ class ai_AIPackage(software_Package):
             "domain",
             ListProp(StringProp()),
             json_name="https://spdx.org/rdf/v3/AI/domain",
+            vocab="https://spdx.org/rdf/v3/AI/domain",
         )
         # AutonomyType indicates if a human is involved in any of the decisions of the AI software
         # or if that software is fully automatic.
@@ -4566,7 +4903,7 @@ class ai_AIPackage(software_Package):
             "autonomyType",
             core_PresenceType(),
             json_name="https://spdx.org/rdf/v3/AI/autonomyType",
-            context=CONTEXT["https://spdx.org/rdf/v3/AI/autonomyType"],
+            vocab="https://spdx.org/rdf/v3/AI/autonomyType",
         )
         # SafetyRiskAssessment categorizes the safety risk impact of the AI software
         # in accordance with Article 20 of [EC Regulation No 765/2008](https://ec.europa.eu/docsroom/documents/17107/attachments/1/translations/en/renditions/pdf).
@@ -4574,7 +4911,7 @@ class ai_AIPackage(software_Package):
             "safetyRiskAssessment",
             ai_SafetyRiskAssessmentType(),
             json_name="https://spdx.org/rdf/v3/AI/safetyRiskAssessment",
-            context=CONTEXT["https://spdx.org/rdf/v3/AI/safetyRiskAssessment"],
+            vocab="https://spdx.org/rdf/v3/AI/safetyRiskAssessment",
         )
         self._set_init_props(**kwargs)
 
@@ -4599,7 +4936,7 @@ class dataset_Dataset(software_Package):
             ListProp(dataset_DatasetType()),
             json_name="https://spdx.org/rdf/v3/Dataset/datasetType",
             min_count=1,
-            context=CONTEXT["https://spdx.org/rdf/v3/Dataset/datasetType"],
+            vocab="https://spdx.org/rdf/v3/Dataset/datasetType",
         )
         # DataCollectionProcess describes how a dataset was collected.
         # Examples include the sources from which a dataset was scrapped or
@@ -4608,6 +4945,7 @@ class dataset_Dataset(software_Package):
             "dataCollectionProcess",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Dataset/dataCollectionProcess",
+            vocab="https://spdx.org/rdf/v3/Dataset/dataCollectionProcess",
         )
         # IntendedUse describes what the given dataset should be used for.
         # Some datasets are collected to be used only for particular purposes.
@@ -4620,6 +4958,7 @@ class dataset_Dataset(software_Package):
             "intendedUse",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Dataset/intendedUse",
+            vocab="https://spdx.org/rdf/v3/Dataset/intendedUse",
         )
         # DatasetSize Captures how large a dataset is.
         # The size is to be measured in bytes.
@@ -4627,6 +4966,7 @@ class dataset_Dataset(software_Package):
             "datasetSize",
             NonNegativeIntegerProp(),
             json_name="https://spdx.org/rdf/v3/Dataset/datasetSize",
+            vocab="https://spdx.org/rdf/v3/Dataset/datasetSize",
         )
         # DatasetNoise describes what kinds of noises a dataset might encompass.
         # The field uses free form text to specify the fields or the samples that might be noisy.
@@ -4635,6 +4975,7 @@ class dataset_Dataset(software_Package):
             "datasetNoise",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Dataset/datasetNoise",
+            vocab="https://spdx.org/rdf/v3/Dataset/datasetNoise",
         )
         # DataPreprocessing describes the various preprocessing steps
         # that were applied to the raw data to create the dataset.
@@ -4642,6 +4983,7 @@ class dataset_Dataset(software_Package):
             "dataPreprocessing",
             ListProp(StringProp()),
             json_name="https://spdx.org/rdf/v3/Dataset/dataPreprocessing",
+            vocab="https://spdx.org/rdf/v3/Dataset/dataPreprocessing",
         )
         # Sensor describes a sensor that was used for collecting the data
         # and its calibration value as a key-value pair.
@@ -4649,12 +4991,14 @@ class dataset_Dataset(software_Package):
             "sensor",
             ListProp(ObjectProp(core_DictionaryEntry, False)),
             json_name="https://spdx.org/rdf/v3/Dataset/sensor",
+            vocab="https://spdx.org/rdf/v3/Dataset/sensor",
         )
         # KnownBias is a free form text field that describes the different biases that the dataset encompasses.
         self._add_property(
             "knownBias",
             ListProp(StringProp()),
             json_name="https://spdx.org/rdf/v3/Dataset/knownBias",
+            vocab="https://spdx.org/rdf/v3/Dataset/knownBias",
         )
         # SensitivePersonalInformation indicates the presence of sensitive personal data
         # or information that allows drawing conclusions about a person's identity.
@@ -4662,38 +5006,170 @@ class dataset_Dataset(software_Package):
             "sensitivePersonalInformation",
             core_PresenceType(),
             json_name="https://spdx.org/rdf/v3/Dataset/sensitivePersonalInformation",
-            context=CONTEXT["https://spdx.org/rdf/v3/Dataset/sensitivePersonalInformation"],
+            vocab="https://spdx.org/rdf/v3/Dataset/sensitivePersonalInformation",
         )
         # AnonymizationMethodUsed describes the methods used to anonymize the dataset (of fields in the dataset).
         self._add_property(
             "anonymizationMethodUsed",
             ListProp(StringProp()),
             json_name="https://spdx.org/rdf/v3/Dataset/anonymizationMethodUsed",
+            vocab="https://spdx.org/rdf/v3/Dataset/anonymizationMethodUsed",
         )
         # ConfidentialityLevel describes the levels of confidentiality of the data points contained in the dataset.
         self._add_property(
             "confidentialityLevel",
             dataset_ConfidentialityLevelType(),
             json_name="https://spdx.org/rdf/v3/Dataset/confidentialityLevel",
-            context=CONTEXT["https://spdx.org/rdf/v3/Dataset/confidentialityLevel"],
+            vocab="https://spdx.org/rdf/v3/Dataset/confidentialityLevel",
         )
         # DatasetUpdateMechanism describes a mechanism to update the dataset.
         self._add_property(
             "datasetUpdateMechanism",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Dataset/datasetUpdateMechanism",
+            vocab="https://spdx.org/rdf/v3/Dataset/datasetUpdateMechanism",
         )
         # Some datasets are publicly available and can be downloaded directly. Others are only accessible behind a clickthrough, or after filling a registration form. This field will describe the dataset availability from that perspective.
         self._add_property(
             "datasetAvailability",
             dataset_DatasetAvailabilityType(),
             json_name="https://spdx.org/rdf/v3/Dataset/datasetAvailability",
-            context=CONTEXT["https://spdx.org/rdf/v3/Dataset/datasetAvailability"],
+            vocab="https://spdx.org/rdf/v3/Dataset/datasetAvailability",
         )
         self._set_init_props(**kwargs)
 
 
 SHACLObject.DESERIALIZERS["https://spdx.org/rdf/v3/Dataset/Dataset"] = dataset_Dataset
+
+
+# Copyright (c) 2024 Joshua Watt
+#
+# SPDX-License-Identifier: MIT
+
+
+class Context(object):
+    from contextlib import contextmanager
+
+    def __init__(self, contexts=[]):
+        self.contexts = [c for c in contexts if c]
+        self.__vocabs = []
+        self.__expanded = {}
+        self.__compacted = {}
+
+    @contextmanager
+    def vocab_push(self, vocab):
+        if not vocab:
+            yield self
+            return
+
+        self.__vocabs.append(vocab)
+        try:
+            yield self
+        finally:
+            self.__vocabs.pop()
+
+    def __get_vocab_contexts(self):
+        contexts = []
+
+        for v in self.__vocabs:
+            for ctx in self.contexts:
+                # Check for vocabulary contexts
+                for name, value in ctx.items():
+                    if (
+                        isinstance(value, dict)
+                        and value["@type"] == "@vocab"
+                        and v == self.__expand(value["@id"], self.contexts)
+                    ):
+                        contexts.insert(0, value["@context"])
+
+        return contexts
+
+    def compact(self, _id, vocab=None):
+        with self.vocab_push(vocab):
+            if not self.__vocabs:
+                v = ""
+            else:
+                v = self.__vocabs[-1]
+
+            if _id not in self.__compacted:
+                self.__compacted.setdefault(v, {})[_id] = self.__compact(
+                    _id,
+                    self.__get_vocab_contexts() + self.contexts,
+                )
+            return self.__compacted[v][_id]
+
+    def __compact(self, _id, contexts):
+        def collect_possible(_id):
+            possible = set()
+            for ctx in contexts:
+                for name, value in ctx.items():
+                    if name == "@vocab":
+                        if _id.startswith(value):
+                            tmp_id = _id[len(value) :]
+                            possible.add(tmp_id)
+                            possible |= collect_possible(tmp_id)
+                    else:
+                        if isinstance(value, dict):
+                            value = value["@id"]
+
+                        if _id == value:
+                            possible.add(name)
+                            possible |= collect_possible(name)
+                        elif _id.startswith(value):
+                            tmp_id = name + ":" + _id[len(value) :].lstrip("/")
+                            possible.add(tmp_id)
+                            possible |= collect_possible(tmp_id)
+
+            return possible
+
+        possible = collect_possible(_id)
+        if not possible:
+            return _id
+
+        # To select from the possible identifiers, choose the one that has the
+        # least context (fewest ":"), then the shortest, and finally
+        # alphabetically
+        possible = list(possible)
+        possible.sort(key=lambda p: (p.count(":"), len(p), p))
+
+        return possible[0]
+
+    def expand(self, _id, vocab=""):
+        with self.vocab_push(vocab):
+            if not self.__vocabs:
+                v = ""
+            else:
+                v = self.__vocabs[-1]
+
+            if v not in self.__expanded or _id not in self.__expanded[v]:
+                contexts = self.__get_vocab_contexts() + self.contexts
+
+                # Apply contexts
+                for ctx in contexts:
+                    for name, value in ctx.items():
+                        if name == "@vocab":
+                            _id = value + _id
+
+                self.__expanded.setdefault(v, {})[_id] = self.__expand(_id, contexts)
+
+            return self.__expanded[v][_id]
+
+    def __expand(self, _id, contexts):
+        for ctx in contexts:
+            if ":" not in _id:
+                if _id in ctx:
+                    if isinstance(ctx[_id], dict):
+                        return self.__expand(ctx[_id]["@id"], contexts)
+                    return self.__expand(ctx[_id], contexts)
+                continue
+
+            prefix, suffix = _id.split(":", 1)
+            if prefix not in ctx:
+                continue
+
+            return self.__expand(prefix, contexts) + suffix
+
+        return _id
 
 
 """Format Guard"""

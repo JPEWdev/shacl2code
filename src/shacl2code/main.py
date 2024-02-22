@@ -10,7 +10,7 @@ import sys
 import urllib.request
 from pathlib import Path
 
-from . import Model, ContextMap, Context
+from . import Model, UrlContext, ContextData
 from .version import VERSION
 from .lang import LANGUAGES
 
@@ -30,7 +30,7 @@ def main():
         for c in args.context:
             with urllib.request.urlopen(c) as f:
                 data = json.load(f)
-            contexts.append(Context(data, c))
+            contexts.append(ContextData(data, c))
 
         for location, url in args.context_url:
             if "://" in location:
@@ -39,9 +39,9 @@ def main():
             else:
                 with Path(location).open("r") as f:
                     data = json.load(f)
-            contexts.append(Context(data, url))
+            contexts.append(ContextData(data, url))
 
-        m = Model(model_data, ContextMap(contexts))
+        m = Model(model_data, UrlContext(contexts))
 
         render = args.lang(args)
         render.output(m)

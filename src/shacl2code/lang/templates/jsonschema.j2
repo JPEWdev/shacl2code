@@ -8,12 +8,13 @@
     {%- endif %}
     "$comment": "{{ disclaimer }}",
     "type": "object",
+
     "properties": {
         {%- if context.urls %}
         {%- if context.urls | length == 1 %}
         "@context": {
             "const": "{{ context.urls[0] }}"
-        },
+        }
         {%- else %}
         "@context": {
             "type": "array",
@@ -25,29 +26,31 @@
             "minContains": "{{ context.urls | length }}",
             "maxContains": "{{ context.urls | length }}",
             "items": false
-        },
-        {%- endif %}
-        {%- endif %}
-        "@graph": {
-            "description": "Top level container for JSON-LD objects",
-            "type": "array",
-            "items": {
-                "oneOf": [
-                    {%- for class in classes %}
-                    { "$ref": "#/$defs/{{ class.clsname }}" }{% if not loop.last %},{% endif %}
-                    {%- endfor %}
-                ],
-                "unevaluatedProperties": false
-            }
         }
-    },
-    "additionalProperties": false,
-    "required": [
-        {%- if context.urls %}
-        "@context",
         {%- endif %}
-        "@graph"
+        {%- endif %}
+    },
+    {%- if context.urls %}
+    "required": ["@context"],
+    {%- endif %}
+
+    "oneOf": [
+        {
+            "properties": {
+                "@graph": {
+                    "description": "Top level container for JSON-LD objects",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/AnyClass",
+                        "unevaluatedProperties": false
+                    }
+                }
+            },
+            "required": ["@graph"]
+        },
+        { "$ref": "#/$defs/AnyClass" }
     ],
+    "unevaluatedProperties": false,
 
     "$defs": {
     {%- for class in classes %}
@@ -95,7 +98,10 @@
                         {%- if prop.class_id %}
                                 "oneOf": [
                                     { "$ref": "#/$defs/idRef" },
-                                    { "$ref": "#/$defs/{{ classes.get(prop.class_id).clsname }}" }
+                                    {
+                                        "$ref": "#/$defs/{{ classes.get(prop.class_id).clsname }}",
+                                        "unevaluatedProperties": false
+                                    }
                                 ]
                         {%- elif prop.enum_id %}
                                 "enum": [
@@ -162,6 +168,13 @@
         },
         "Extension": {
             "type": "string"
+        },
+        "AnyClass": {
+            "oneOf": [
+                {%- for class in classes %}
+                { "$ref": "#/$defs/{{ class.clsname }}" }{% if not loop.last %},{% endif %}
+                {%- endfor %}
+            ]
         }
     }
 }

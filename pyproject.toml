@@ -53,3 +53,6 @@ addopts = [
     "--import-mode=importlib",
     "--cov=shacl2code",
 ]
+
+[tool.coverage.run]
+relative_files = true

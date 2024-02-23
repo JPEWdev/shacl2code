@@ -1,4 +1,5 @@
 # Convert SHACL Model to code bindings
+[![Coverage Report](https://raw.githubusercontent.com/JPEWdev/shacl2code/python-coverage-comment-action-data/badge.svg)](https://htmlpreview.github.io/?https://github.com/JPEWdev/shacl2code/blob/python-coverage-comment-action-data/htmlcov/index.html)
 
 This tool can be used to convert a JSONLD SHACL model into various code
 bindings

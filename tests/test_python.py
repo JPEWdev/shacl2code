@@ -12,6 +12,8 @@ from pathlib import Path
 THIS_FILE = Path(__file__)
 THIS_DIR = THIS_FILE.parent
 
+EXPECT_DIR = THIS_DIR / "expect"
+
 SPDX3_MODEL = THIS_DIR / "data" / "spdx3.jsonld"
 
 SPDX3_CONTEXT = THIS_DIR / "data" / "spdx3-context.json"
@@ -22,11 +24,11 @@ pytestmark = pytest.mark.parametrize(
     "expect,args",
     [
         (
-            THIS_DIR / "expect" / "python" / "spdx3.py",
+            "spdx3.py",
             [],
         ),
         (
-            THIS_DIR / "expect" / "python" / "spdx3-context.py",
+            "spdx3-context.py",
             ["--context-url", SPDX3_CONTEXT, SPDX3_CONTEXT_URL],
         ),
     ],
@@ -55,7 +57,7 @@ def test_python_generation(tmpdir, expect, args):
         check=True,
     )
 
-    with expect.open("r") as f:
+    with (EXPECT_DIR / "python" / expect).open("r") as f:
         assert outfile.read() == f.read()
 
 

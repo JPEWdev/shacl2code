@@ -14,13 +14,13 @@ THIS_FILE = Path(__file__)
 THIS_DIR = THIS_FILE.parent
 
 DATA_DIR = THIS_DIR / "data"
+EXPECT_DIR = THIS_DIR / "expect"
 
 SPDX3_MODEL = DATA_DIR / "spdx3.jsonld"
 SPDX3_EXPECT = THIS_DIR / "expect" / "jsonschema" / "spdx3.json"
 
 SPDX3_CONTEXT = DATA_DIR / "spdx3-context.json"
 SPDX3_CONTEXT_URL = "https://spdx.github.io/spdx-3-model/context.json"
-SPDX3_CONTEXT_EXPECT = THIS_DIR / "expect" / "jsonschema" / "spdx3-context.json"
 
 SPDX3_CONTEXT_ARGS = ["--context-url", SPDX3_CONTEXT, SPDX3_CONTEXT_URL]
 
@@ -28,8 +28,8 @@ SPDX3_CONTEXT_ARGS = ["--context-url", SPDX3_CONTEXT, SPDX3_CONTEXT_URL]
 @pytest.mark.parametrize(
     "expect,args",
     [
-        (SPDX3_EXPECT, []),
-        (SPDX3_CONTEXT_EXPECT, SPDX3_CONTEXT_ARGS),
+        ("spdx3.json", []),
+        ("spdx3-context.json", SPDX3_CONTEXT_ARGS),
     ],
 )
 class TestOutput:
@@ -55,7 +55,7 @@ class TestOutput:
             check=True,
         )
 
-        with expect.open("r") as f:
+        with (EXPECT_DIR / "jsonschema" / expect).open("r") as f:
             assert outfile.read() == f.read()
 
     def test_output_syntax(self, expect, args):
@@ -155,7 +155,7 @@ class TestOutput:
     ],
 )
 def test_schema_validation(passes, file):
-    with SPDX3_CONTEXT_EXPECT.open("r") as f:
+    with (EXPECT_DIR / "jsonschema" / "spdx3-context.json").open("r") as f:
         schema = json.load(f)
 
     with (DATA_DIR / "jsonschema" / file).open("r") as f:

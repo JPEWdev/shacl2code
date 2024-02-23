@@ -1,0 +1,40 @@
+{
+    "@context": "https://spdx.github.io/spdx-3-model/context.json",
+    "@graph": [
+        {
+            "type": "CreationInfo",
+            "spdxId": "https://spdx.dev/test/creationinfo",
+            "specVersion": "3.0.0",
+            "created": "2022-12-01T00:00:00Z",
+            "createdBy": "https://spdx.dev/test/agent-with-link"
+        },
+        {
+            "type": "Agent",
+            "spdxId": "https://spdx.dev/test/agent-with-link",
+            "creationInfo": "https://spdx.dev/test/creationinfo"
+        },
+        {
+            "type": "Agent",
+            "spdxId": "https://spdx.dev/test/agent-with-link-2",
+            "creationInfo": "https://spdx.dev/test/creationinfo"
+        },
+
+        {
+            "type": "CreationInfo",
+            "spdxId": "_:creationinfo-blank",
+            "specVersion": "3.0.0",
+            "created": "2022-12-01T00:00:00Z",
+            "createdBy": "https://spdx.dev/test/agent-blank"
+        },
+        {
+            "type": "Agent",
+            "spdxId": "https://spdx.dev/test/agent-blank",
+            "creationInfo": "_:creationinfo-blank"
+        },
+        {
+            "type": "Agent",
+            "spdxId": "https://spdx.dev/test/agent-blank-2",
+            "creationInfo": "_:creationinfo-blank"
+        }
+    ]
+}

@@ -47,7 +47,7 @@ class Context(object):
             else:
                 v = self.__vocabs[-1]
 
-            if _id not in self.__compacted:
+            if v not in self.__compacted or _id not in self.__compacted[v]:
                 self.__compacted.setdefault(v, {})[_id] = self.__compact(
                     _id,
                     self.__get_vocab_contexts() + self.contexts,

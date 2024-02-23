@@ -89,9 +89,6 @@ class StringProp(Property):
     def set(self, value):
         return str(value)
 
-    def get(self, value):
-        return str(value)
-
     def validate(self, value):
         super().validate(value)
         if self.REGEX is not None and not re.match(self.REGEX, value):
@@ -298,6 +295,12 @@ class ListProxy(object):
     def __repr__(self):
         return repr(self.__data)
 
+    def __eq__(self, other):
+        if isinstance(other, ListProxy):
+            return self.__data == other.__data
+
+        return self.__data == other
+
 
 class ListProp(Property):
     """
@@ -421,7 +424,7 @@ class SHACLObject(object):
             return super().__setattr__(name, value)
 
         try:
-            (json_name, prop, _, _) = self._obj_properties[name]
+            (json_name, prop, _, _, _) = self._obj_properties[name]
         except KeyError:
             raise AttributeError(
                 f"'{name}' is not a valid property of {self.__class__.__name__}"
@@ -437,7 +440,7 @@ class SHACLObject(object):
             return self._obj_metadata
 
         try:
-            (json_name, prop, _, _) = self._obj_properties[name]
+            (json_name, prop, _, _, _) = self._obj_properties[name]
         except KeyError:
             raise AttributeError(
                 f"'{name}' is not a valid property of {self.__class__.__name__}"
@@ -446,7 +449,7 @@ class SHACLObject(object):
 
     def __delattr__(self, name):
         try:
-            (json_name, prop, _, _) = self._obj_properties[name]
+            (json_name, prop, _, _, _) = self._obj_properties[name]
         except KeyError:
             raise AttributeError(
                 f"'{name}' is not a valid property of {self.__class__.__name__}"
@@ -465,7 +468,7 @@ class SHACLObject(object):
             path = ["."]
 
         if callback(self, path):
-            for json_name, prop, _, _ in self._obj_properties.values():
+            for json_name, prop, _, _, _ in self._obj_properties.values():
                 prop.walk(self._obj_data[json_name], callback, path + [f".{json_name}"])
 
     def child_objects(self):
@@ -550,12 +553,13 @@ class SHACLObject(object):
 
             raise Exception(f"Unknown type {data[t]}")
         else:
-            return None
+            raise Exception("Unable to determine type for object")
 
         obj = cls.DESERIALIZERS[typ]()
 
-        if obj._id and obj._id in object_ids:
-            return object_ids[obj._id]
+        _id = data.get("@id", None) or data.get(context.compact("@id"), None)
+        if _id and _id in object_ids:
+            return object_ids[_id]
 
         for pyname, v in obj._obj_properties.items():
             json_name, prop, _, _, prop_vocab = v
@@ -581,7 +585,7 @@ class SHACLObject(object):
         visited.add(self)
 
         for pyname, v in self._obj_properties.items():
-            json_name, prop, _, _ = v
+            json_name, prop, _, _, _ = v
             self._obj_data[json_name] = prop.link_prop(
                 self._obj_data[json_name],
                 link_cache,

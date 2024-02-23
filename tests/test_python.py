@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import json
+import jsonschema
 import pytest
 import re
 import subprocess
@@ -197,6 +198,16 @@ def test_roundtrip(spdx3_import, tmp_path):
         outdata = json.load(f)
 
     assert outdata == indata
+
+
+def test_jsonschema_validation():
+    with (THIS_DIR / "expect" / "jsonschema" / "spdx3-context.json").open("r") as f:
+        schema = json.load(f)
+
+    with (DATA_DIR / "python" / "roundtrip.json").open("r") as f:
+        data = json.load(f)
+
+    jsonschema.validate(data, schema=schema)
 
 
 def test_links(spdx3_import):

@@ -86,57 +86,25 @@
                         {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
                         "{{ context.compact(prop.path) }}": {
                         {%- if is_list %}
-                            "type": "array",
-                            {%- if prop.max_count is not none %}
-                            "maxItems": {{ prop.max_count }},
-                            {%- endif %}
-                            {%- if prop.min_count is not none %}
-                            "minItems": {{ prop.min_count }},
-                            {%- endif %}
-                            "items": {
-                        {%- endif %}
-                        {%- if prop.class_id %}
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/{{ classes.get(prop.class_id).clsname }}",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    {%- if prop.max_count is not none %}
+                                    "maxItems": {{ prop.max_count }},
+                                    {%- endif %}
+                                    {%- if prop.min_count is not none %}
+                                    "minItems": {{ prop.min_count }},
+                                    {%- endif %}
+                                    "items": {
+                                        "$ref": "#/$defs/{{ prop.path | replace("/", "_") }}"
                                     }
-                                ]
-                        {%- elif prop.enum_id %}
-                                "enum": [
-                                {%- for e in enums.get(prop.enum_id).values %}
-                                    "{{ context.compact(e._id, prop.path) }}"{% if not loop.last %},{% endif %}
-                                {%- endfor %}
-                                ]
-                        {%- else %}
-                            {%- if prop.datatype == "http://www.w3.org/2001/XMLSchema#string" %}
-                                "type": "string"
-                            {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#anyURI" %}
-                                "$ref": "#/$defs/anyURI"
-                            {%- elif prop.datatype == "https://spdx.org/rdf/v3/Core/DateTime" %}
-                                "$ref": "#/$defs/DateTime"
-                            {%- elif prop.datatype == "https://spdx.org/rdf/v3/Core/MediaType" %}
-                                "$ref": "#/$defs/MediaType"
-                            {%- elif prop.datatype == "https://spdx.org/rdf/v3/Core/SemVer" %}
-                                "$ref": "#/$defs/SemVer"
-                            {%- elif prop.datatype == "https://spdx.org/rdf/v3/Core/Extension" %}
-                                "$ref": "#/$defs/Extension"
-                            {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#positiveInteger" %}
-                                "type": "integer",
-                                "minimum": 0
-                            {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#nonNegativeInteger" %}
-                                "type": "integer"
-                            {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#boolean" %}
-                                "type": "boolean"
-                            {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#decimal" %}
-                                "type": "number"
-                            {%- else %}
-                                {{- abort("Unknown data type " + prop.datatype) }}
-                            {%- endif %}
+                                },
+                                {
                         {%- endif %}
+                                    "$ref": "#/$defs/{{ prop.path | replace("/", "_") }}"
                         {%- if is_list %}
-                            }
+                                }
+                            ]
                         {%- endif %}
                         }{% if not loop.last %},{% endif %}
                         {%- endfor %}
@@ -150,6 +118,50 @@
                 }
             ]
         },
+        {%- for prop in class.properties %}
+        "{{ prop.path | replace("/", "_") }}": {
+            {%- if prop.class_id %}
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/{{ classes.get(prop.class_id).clsname }}",
+                        "unevaluatedProperties": false
+                    }
+                ]
+            {%- elif prop.enum_id %}
+                "enum": [
+                {%- for e in enums.get(prop.enum_id).values %}
+                    "{{ context.compact(e._id, prop.path) }}"{% if not loop.last %},{% endif %}
+                {%- endfor %}
+                ]
+            {%- else %}
+                {%- if prop.datatype == "http://www.w3.org/2001/XMLSchema#string" %}
+                    "type": "string"
+                {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#anyURI" %}
+                    "$ref": "#/$defs/anyURI"
+                {%- elif prop.datatype == "https://spdx.org/rdf/v3/Core/DateTime" %}
+                    "$ref": "#/$defs/DateTime"
+                {%- elif prop.datatype == "https://spdx.org/rdf/v3/Core/MediaType" %}
+                    "$ref": "#/$defs/MediaType"
+                {%- elif prop.datatype == "https://spdx.org/rdf/v3/Core/SemVer" %}
+                    "$ref": "#/$defs/SemVer"
+                {%- elif prop.datatype == "https://spdx.org/rdf/v3/Core/Extension" %}
+                    "$ref": "#/$defs/Extension"
+                {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#positiveInteger" %}
+                    "type": "integer",
+                    "minimum": 0
+                {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#nonNegativeInteger" %}
+                    "type": "integer"
+                {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#boolean" %}
+                    "type": "boolean"
+                {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#decimal" %}
+                    "type": "number"
+                {%- else %}
+                    {{- abort("Unknown data type " + prop.datatype) }}
+                {%- endif %}
+            {%- endif %}
+        },
+        {%- endfor %}
     {%- endfor %}
         "idRef": {
             "type": "string"

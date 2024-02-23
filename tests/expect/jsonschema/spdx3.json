@@ -44,38 +44,40 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/specVersion": {
-                                "$ref": "#/$defs/SemVer"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_specVersion"
                         },
                         "https://spdx.org/rdf/v3/Core/comment": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_comment"
                         },
                         "https://spdx.org/rdf/v3/Core/created": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_created"
                         },
                         "https://spdx.org/rdf/v3/Core/createdBy": {
-                            "type": "array",
-                            "minItems": 1,
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_Agent",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "minItems": 1,
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_createdBy"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_createdBy"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/Core/createdUsing": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_Tool",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_createdUsing"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_createdUsing"
+                                }
+                            ]
                         }
                     },
                     "required": [
@@ -85,6 +87,33 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_specVersion": {
+                    "$ref": "#/$defs/SemVer"
+        },
+        "https:__spdx.org_rdf_v3_Core_comment": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Core_created": {
+                    "$ref": "#/$defs/DateTime"
+        },
+        "https:__spdx.org_rdf_v3_Core_createdBy": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_Agent",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_createdUsing": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_Tool",
+                        "unevaluatedProperties": false
+                    }
+                ]
         },
         "core_DictionaryEntry": {
             "allOf": [
@@ -105,10 +134,10 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/key": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_key"
                         },
                         "https://spdx.org/rdf/v3/Core/value": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_value"
                         }
                     },
                     "required": [
@@ -116,6 +145,12 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_key": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Core_value": {
+                    "type": "string"
         },
         "core_Element": {
             "allOf": [
@@ -136,67 +171,71 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/name": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_name"
                         },
                         "https://spdx.org/rdf/v3/Core/summary": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_summary"
                         },
                         "https://spdx.org/rdf/v3/Core/description": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_description"
                         },
                         "https://spdx.org/rdf/v3/Core/comment": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_comment"
                         },
                         "https://spdx.org/rdf/v3/Core/creationInfo": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_CreationInfo",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_creationInfo"
                         },
                         "https://spdx.org/rdf/v3/Core/verifiedUsing": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_IntegrityMethod",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_verifiedUsing"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_verifiedUsing"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/Core/externalRef": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_ExternalRef",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_externalRef"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_externalRef"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/Core/externalIdentifier": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_ExternalIdentifier",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_externalIdentifier"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_externalIdentifier"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/Core/extension": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/$defs/Extension"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_extension"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_extension"
+                                }
+                            ]
                         }
                     },
                     "required": [
@@ -204,6 +243,57 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_name": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Core_summary": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Core_description": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Core_comment": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Core_creationInfo": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_CreationInfo",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_verifiedUsing": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_IntegrityMethod",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_externalRef": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_ExternalRef",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_externalIdentifier": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_ExternalIdentifier",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_extension": {
+                    "$ref": "#/$defs/Extension"
         },
         "core_ElementCollection": {
             "allOf": [
@@ -225,49 +315,79 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/element": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_Element",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_element"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_element"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/Core/rootElement": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_Element",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_rootElement"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_rootElement"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/Core/profileConformance": {
-                            "type": "array",
-                            "items": {
-                                "enum": [
-                                    "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/ai",
-                                    "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/build",
-                                    "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/core",
-                                    "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/dataset",
-                                    "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/expandedLicensing",
-                                    "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/extension",
-                                    "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/security",
-                                    "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/simpleLicensing",
-                                    "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/software",
-                                    "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/usage"
-                                ]
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_profileConformance"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_profileConformance"
+                                }
+                            ]
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_element": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_Element",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_rootElement": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_Element",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_profileConformance": {
+                "enum": [
+                    "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/ai",
+                    "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/build",
+                    "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/core",
+                    "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/dataset",
+                    "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/expandedLicensing",
+                    "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/extension",
+                    "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/security",
+                    "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/simpleLicensing",
+                    "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/software",
+                    "https://spdx.org/rdf/v3/Core/ProfileIdentifierType/usage"
+                ]
         },
         "core_ExternalIdentifier": {
             "allOf": [
@@ -288,34 +408,29 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/externalIdentifierType": {
-                                "enum": [
-                                    "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/cpe22",
-                                    "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/cpe23",
-                                    "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/cve",
-                                    "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/email",
-                                    "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/gitoid",
-                                    "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/other",
-                                    "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/packageUrl",
-                                    "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/securityOther",
-                                    "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/swhid",
-                                    "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/swid",
-                                    "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/urlScheme"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_externalIdentifierType"
                         },
                         "https://spdx.org/rdf/v3/Core/identifier": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_identifier"
                         },
                         "https://spdx.org/rdf/v3/Core/comment": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_comment"
                         },
                         "https://spdx.org/rdf/v3/Core/identifierLocator": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/$defs/anyURI"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_identifierLocator"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_identifierLocator"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/Core/issuingAuthority": {
-                                "$ref": "#/$defs/anyURI"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_issuingAuthority"
                         }
                     },
                     "required": [
@@ -324,6 +439,33 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_externalIdentifierType": {
+                "enum": [
+                    "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/cpe22",
+                    "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/cpe23",
+                    "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/cve",
+                    "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/email",
+                    "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/gitoid",
+                    "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/other",
+                    "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/packageUrl",
+                    "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/securityOther",
+                    "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/swhid",
+                    "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/swid",
+                    "https://spdx.org/rdf/v3/Core/ExternalIdentifierType/urlScheme"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_identifier": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Core_comment": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Core_identifierLocator": {
+                    "$ref": "#/$defs/anyURI"
+        },
+        "https:__spdx.org_rdf_v3_Core_issuingAuthority": {
+                    "$ref": "#/$defs/anyURI"
         },
         "core_ExternalMap": {
             "allOf": [
@@ -344,31 +486,26 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/externalSpdxId": {
-                                "$ref": "#/$defs/anyURI"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_externalSpdxId"
                         },
                         "https://spdx.org/rdf/v3/Core/verifiedUsing": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_IntegrityMethod",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_verifiedUsing"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_verifiedUsing"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/Core/locationHint": {
-                                "$ref": "#/$defs/anyURI"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_locationHint"
                         },
                         "https://spdx.org/rdf/v3/Core/definingArtifact": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_Artifact",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_definingArtifact"
                         }
                     },
                     "required": [
@@ -376,6 +513,30 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_externalSpdxId": {
+                    "$ref": "#/$defs/anyURI"
+        },
+        "https:__spdx.org_rdf_v3_Core_verifiedUsing": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_IntegrityMethod",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_locationHint": {
+                    "$ref": "#/$defs/anyURI"
+        },
+        "https:__spdx.org_rdf_v3_Core_definingArtifact": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_Artifact",
+                        "unevaluatedProperties": false
+                    }
+                ]
         },
         "core_ExternalRef": {
             "allOf": [
@@ -396,69 +557,88 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/externalRefType": {
-                                "enum": [
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/altDownloadLocation",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/altWebPage",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/binaryArtifact",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/bower",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/buildMeta",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/buildSystem",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/certificationReport",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/chat",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/componentAnalysisReport",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/documentation",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/dynamicAnalysisReport",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/eolNotice",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/exportControlAssessment",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/funding",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/issueTracker",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/license",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/mailingList",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/mavenCentral",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/metrics",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/npm",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/nuget",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/other",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/privacyAssessment",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/productMetadata",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/purchaseOrder",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/qualityAssessmentReport",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/releaseHistory",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/releaseNotes",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/riskAssessment",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/runtimeAnalysisReport",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/secureSoftwareAttestation",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/securityAdversaryModel",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/securityAdvisory",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/securityFix",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/securityOther",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/securityPenTestReport",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/securityPolicy",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/securityThreatModel",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/socialMedia",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/sourceArtifact",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/staticAnalysisReport",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/support",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/vcs",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/vulnerabilityDisclosureReport",
-                                    "https://spdx.org/rdf/v3/Core/ExternalRefType/vulnerabilityExploitabilityAssessment"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_externalRefType"
                         },
                         "https://spdx.org/rdf/v3/Core/locator": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_locator"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_locator"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/Core/contentType": {
-                                "$ref": "#/$defs/MediaType"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_contentType"
                         },
                         "https://spdx.org/rdf/v3/Core/comment": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_comment"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_externalRefType": {
+                "enum": [
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/altDownloadLocation",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/altWebPage",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/binaryArtifact",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/bower",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/buildMeta",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/buildSystem",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/certificationReport",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/chat",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/componentAnalysisReport",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/documentation",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/dynamicAnalysisReport",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/eolNotice",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/exportControlAssessment",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/funding",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/issueTracker",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/license",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/mailingList",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/mavenCentral",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/metrics",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/npm",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/nuget",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/other",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/privacyAssessment",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/productMetadata",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/purchaseOrder",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/qualityAssessmentReport",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/releaseHistory",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/releaseNotes",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/riskAssessment",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/runtimeAnalysisReport",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/secureSoftwareAttestation",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/securityAdversaryModel",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/securityAdvisory",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/securityFix",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/securityOther",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/securityPenTestReport",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/securityPolicy",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/securityThreatModel",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/socialMedia",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/sourceArtifact",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/staticAnalysisReport",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/support",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/vcs",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/vulnerabilityDisclosureReport",
+                    "https://spdx.org/rdf/v3/Core/ExternalRefType/vulnerabilityExploitabilityAssessment"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_locator": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Core_contentType": {
+                    "$ref": "#/$defs/MediaType"
+        },
+        "https:__spdx.org_rdf_v3_Core_comment": {
+                    "type": "string"
         },
         "core_IntegrityMethod": {
             "allOf": [
@@ -479,11 +659,14 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/comment": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_comment"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_comment": {
+                    "type": "string"
         },
         "core_NamespaceMap": {
             "allOf": [
@@ -504,10 +687,10 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/prefix": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_prefix"
                         },
                         "https://spdx.org/rdf/v3/Core/namespace": {
-                                "$ref": "#/$defs/anyURI"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_namespace"
                         }
                     },
                     "required": [
@@ -516,6 +699,12 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_prefix": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Core_namespace": {
+                    "$ref": "#/$defs/anyURI"
         },
         "core_PositiveIntegerRange": {
             "allOf": [
@@ -536,12 +725,10 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/begin": {
-                                "type": "integer",
-                                "minimum": 0
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_begin"
                         },
                         "https://spdx.org/rdf/v3/Core/end": {
-                                "type": "integer",
-                                "minimum": 0
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_end"
                         }
                     },
                     "required": [
@@ -550,6 +737,14 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_begin": {
+                    "type": "integer",
+                    "minimum": 0
+        },
+        "https:__spdx.org_rdf_v3_Core_end": {
+                    "type": "integer",
+                    "minimum": 0
         },
         "core_Relationship": {
             "allOf": [
@@ -571,101 +766,32 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/from": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_Element",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_from"
                         },
                         "https://spdx.org/rdf/v3/Core/to": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_Element",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_to"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_to"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/Core/relationshipType": {
-                                "enum": [
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/affects",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/amendedBy",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/ancestorOf",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/availableFrom",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/configures",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/contains",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/coordinatedBy",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/copiedTo",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/delegatedTo",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/dependsOn",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/descendantOf",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/describes",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/doesNotAffect",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/expandsTo",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/exploitCreatedBy",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/fixedBy",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/fixedIn",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/foundBy",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/generates",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasAddedFile",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasAssessmentFor",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasAssociatedVulnerability",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasConcludedLicense",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasDataFile",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasDeclaredLicense",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasDeletedFile",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasDependencyManifest",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasDistributionArtifact",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasDocumentation",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasDynamicLink",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasEvidence",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasExample",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasHost",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasInputs",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasMetadata",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasOptionalComponent",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasOptionalDependency",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasOutputs",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasPrerequsite",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasProvidedDependency",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasRequirement",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasSpecification",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasStaticLink",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasTest",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasTestCase",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasVariant",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/invokedBy",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/modifiedBy",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/other",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/packagedBy",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/patchedBy",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/publishedBy",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/reportedBy",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/republishedBy",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/serializedInArtifact",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/testedOn",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/trainedOn",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/underInvestigationFor",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipType/usesTool"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_relationshipType"
                         },
                         "https://spdx.org/rdf/v3/Core/completeness": {
-                                "enum": [
-                                    "https://spdx.org/rdf/v3/Core/RelationshipCompleteness/complete",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipCompleteness/incomplete",
-                                    "https://spdx.org/rdf/v3/Core/RelationshipCompleteness/noAssertion"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_completeness"
                         },
                         "https://spdx.org/rdf/v3/Core/startTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_startTime"
                         },
                         "https://spdx.org/rdf/v3/Core/endTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_endTime"
                         }
                     },
                     "required": [
@@ -674,6 +800,100 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_from": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_Element",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_to": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_Element",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_relationshipType": {
+                "enum": [
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/affects",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/amendedBy",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/ancestorOf",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/availableFrom",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/configures",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/contains",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/coordinatedBy",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/copiedTo",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/delegatedTo",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/dependsOn",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/descendantOf",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/describes",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/doesNotAffect",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/expandsTo",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/exploitCreatedBy",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/fixedBy",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/fixedIn",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/foundBy",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/generates",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasAddedFile",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasAssessmentFor",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasAssociatedVulnerability",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasConcludedLicense",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasDataFile",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasDeclaredLicense",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasDeletedFile",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasDependencyManifest",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasDistributionArtifact",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasDocumentation",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasDynamicLink",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasEvidence",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasExample",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasHost",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasInputs",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasMetadata",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasOptionalComponent",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasOptionalDependency",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasOutputs",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasPrerequsite",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasProvidedDependency",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasRequirement",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasSpecification",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasStaticLink",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasTest",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasTestCase",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/hasVariant",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/invokedBy",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/modifiedBy",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/other",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/packagedBy",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/patchedBy",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/publishedBy",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/reportedBy",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/republishedBy",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/serializedInArtifact",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/testedOn",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/trainedOn",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/underInvestigationFor",
+                    "https://spdx.org/rdf/v3/Core/RelationshipType/usesTool"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_completeness": {
+                "enum": [
+                    "https://spdx.org/rdf/v3/Core/RelationshipCompleteness/complete",
+                    "https://spdx.org/rdf/v3/Core/RelationshipCompleteness/incomplete",
+                    "https://spdx.org/rdf/v3/Core/RelationshipCompleteness/noAssertion"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_startTime": {
+                    "$ref": "#/$defs/DateTime"
+        },
+        "https:__spdx.org_rdf_v3_Core_endTime": {
+                    "$ref": "#/$defs/DateTime"
         },
         "core_SpdxDocument": {
             "allOf": [
@@ -695,41 +915,64 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/imports": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_ExternalMap",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_imports"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_imports"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/Core/namespaceMap": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_NamespaceMap",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_namespaceMap"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_namespaceMap"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/Core/dataLicense": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/simplelicensing_AnyLicenseInfo",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_dataLicense"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_imports": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_ExternalMap",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_namespaceMap": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_NamespaceMap",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_dataLicense": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/simplelicensing_AnyLicenseInfo",
+                        "unevaluatedProperties": false
+                    }
+                ]
         },
         "core_Tool": {
             "allOf": [
@@ -774,25 +1017,32 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/ExpandedLicensing/additionText": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_additionText"
                         },
                         "https://spdx.org/rdf/v3/ExpandedLicensing/standardAdditionTemplate": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_standardAdditionTemplate"
                         },
                         "https://spdx.org/rdf/v3/ExpandedLicensing/isDeprecatedAdditionId": {
-                                "type": "boolean"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_isDeprecatedAdditionId"
                         },
                         "https://spdx.org/rdf/v3/ExpandedLicensing/obsoletedBy": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_obsoletedBy"
                         },
                         "https://spdx.org/rdf/v3/ExpandedLicensing/licenseXml": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_licenseXml"
                         },
                         "https://spdx.org/rdf/v3/ExpandedLicensing/seeAlso": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/$defs/anyURI"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_seeAlso"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_seeAlso"
+                                }
+                            ]
                         }
                     },
                     "required": [
@@ -800,6 +1050,24 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_additionText": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_standardAdditionTemplate": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_isDeprecatedAdditionId": {
+                    "type": "boolean"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_obsoletedBy": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_licenseXml": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_seeAlso": {
+                    "$ref": "#/$defs/anyURI"
         },
         "expandedlicensing_ListedLicenseException": {
             "allOf": [
@@ -821,14 +1089,20 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/ExpandedLicensing/listVersionAdded": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_listVersionAdded"
                         },
                         "https://spdx.org/rdf/v3/ExpandedLicensing/deprecatedVersion": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_deprecatedVersion"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_listVersionAdded": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_deprecatedVersion": {
+                    "type": "string"
         },
         "security_VulnAssessmentRelationship": {
             "allOf": [
@@ -850,35 +1124,50 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Security/assessedElement": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_Element",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_assessedElement"
                         },
                         "https://spdx.org/rdf/v3/Security/publishedTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_publishedTime"
                         },
                         "https://spdx.org/rdf/v3/Core/suppliedBy": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_Agent",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_suppliedBy"
                         },
                         "https://spdx.org/rdf/v3/Security/modifiedTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_modifiedTime"
                         },
                         "https://spdx.org/rdf/v3/Security/withdrawnTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_withdrawnTime"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Security_assessedElement": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_Element",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Security_publishedTime": {
+                    "$ref": "#/$defs/DateTime"
+        },
+        "https:__spdx.org_rdf_v3_Core_suppliedBy": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_Agent",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Security_modifiedTime": {
+                    "$ref": "#/$defs/DateTime"
+        },
+        "https:__spdx.org_rdf_v3_Security_withdrawnTime": {
+                    "$ref": "#/$defs/DateTime"
         },
         "simplelicensing_AnyLicenseInfo": {
             "allOf": [
@@ -923,22 +1212,23 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/SimpleLicensing/licenseExpression": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_SimpleLicensing_licenseExpression"
                         },
                         "https://spdx.org/rdf/v3/SimpleLicensing/licenseListVersion": {
-                                "$ref": "#/$defs/SemVer"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_SimpleLicensing_licenseListVersion"
                         },
                         "https://spdx.org/rdf/v3/SimpleLicensing/customIdToUri": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_DictionaryEntry",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_SimpleLicensing_customIdToUri"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_SimpleLicensing_customIdToUri"
+                                }
+                            ]
                         }
                     },
                     "required": [
@@ -946,6 +1236,21 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_SimpleLicensing_licenseExpression": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_SimpleLicensing_licenseListVersion": {
+                    "$ref": "#/$defs/SemVer"
+        },
+        "https:__spdx.org_rdf_v3_SimpleLicensing_customIdToUri": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_DictionaryEntry",
+                        "unevaluatedProperties": false
+                    }
+                ]
         },
         "simplelicensing_SimpleLicensingText": {
             "allOf": [
@@ -967,7 +1272,7 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/SimpleLicensing/licenseText": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_SimpleLicensing_licenseText"
                         }
                     },
                     "required": [
@@ -975,6 +1280,9 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_SimpleLicensing_licenseText": {
+                    "type": "string"
         },
         "build_Build": {
             "allOf": [
@@ -996,64 +1304,81 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Build/buildType": {
-                                "$ref": "#/$defs/anyURI"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_buildType"
                         },
                         "https://spdx.org/rdf/v3/Build/buildId": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_buildId"
                         },
                         "https://spdx.org/rdf/v3/Build/configSourceEntrypoint": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_configSourceEntrypoint"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_configSourceEntrypoint"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/Build/configSourceUri": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/$defs/anyURI"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_configSourceUri"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_configSourceUri"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/Build/configSourceDigest": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_Hash",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_configSourceDigest"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_configSourceDigest"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/Build/parameters": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_DictionaryEntry",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_parameters"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_parameters"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/Build/buildStartTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_buildStartTime"
                         },
                         "https://spdx.org/rdf/v3/Build/buildEndTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_buildEndTime"
                         },
                         "https://spdx.org/rdf/v3/Build/environment": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_DictionaryEntry",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_environment"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_environment"
+                                }
+                            ]
                         }
                     },
                     "required": [
@@ -1061,6 +1386,51 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Build_buildType": {
+                    "$ref": "#/$defs/anyURI"
+        },
+        "https:__spdx.org_rdf_v3_Build_buildId": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Build_configSourceEntrypoint": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Build_configSourceUri": {
+                    "$ref": "#/$defs/anyURI"
+        },
+        "https:__spdx.org_rdf_v3_Build_configSourceDigest": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_Hash",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Build_parameters": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_DictionaryEntry",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Build_buildStartTime": {
+                    "$ref": "#/$defs/DateTime"
+        },
+        "https:__spdx.org_rdf_v3_Build_buildEndTime": {
+                    "$ref": "#/$defs/DateTime"
+        },
+        "https:__spdx.org_rdf_v3_Build_environment": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_DictionaryEntry",
+                        "unevaluatedProperties": false
+                    }
+                ]
         },
         "core_Agent": {
             "allOf": [
@@ -1105,25 +1475,16 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/annotationType": {
-                                "enum": [
-                                    "https://spdx.org/rdf/v3/Core/AnnotationType/other",
-                                    "https://spdx.org/rdf/v3/Core/AnnotationType/review"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_annotationType"
                         },
                         "https://spdx.org/rdf/v3/Core/contentType": {
-                                "$ref": "#/$defs/MediaType"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_contentType"
                         },
                         "https://spdx.org/rdf/v3/Core/statement": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_statement"
                         },
                         "https://spdx.org/rdf/v3/Core/subject": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_Element",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_subject"
                         }
                     },
                     "required": [
@@ -1132,6 +1493,27 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_annotationType": {
+                "enum": [
+                    "https://spdx.org/rdf/v3/Core/AnnotationType/other",
+                    "https://spdx.org/rdf/v3/Core/AnnotationType/review"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_contentType": {
+                    "$ref": "#/$defs/MediaType"
+        },
+        "https:__spdx.org_rdf_v3_Core_statement": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Core_subject": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_Element",
+                        "unevaluatedProperties": false
+                    }
+                ]
         },
         "core_Artifact": {
             "allOf": [
@@ -1153,44 +1535,76 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/originatedBy": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_Agent",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_originatedBy"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_originatedBy"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/Core/suppliedBy": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_Agent",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_suppliedBy"
                         },
                         "https://spdx.org/rdf/v3/Core/builtTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_builtTime"
                         },
                         "https://spdx.org/rdf/v3/Core/releaseTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_releaseTime"
                         },
                         "https://spdx.org/rdf/v3/Core/validUntilTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_validUntilTime"
                         },
                         "https://spdx.org/rdf/v3/Core/standard": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_standard"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_standard"
+                                }
+                            ]
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_originatedBy": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_Agent",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_suppliedBy": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_Agent",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_builtTime": {
+                    "$ref": "#/$defs/DateTime"
+        },
+        "https:__spdx.org_rdf_v3_Core_releaseTime": {
+                    "$ref": "#/$defs/DateTime"
+        },
+        "https:__spdx.org_rdf_v3_Core_validUntilTime": {
+                    "$ref": "#/$defs/DateTime"
+        },
+        "https:__spdx.org_rdf_v3_Core_standard": {
+                    "type": "string"
         },
         "core_Bundle": {
             "allOf": [
@@ -1212,11 +1626,14 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/context": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_context"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_context": {
+                    "type": "string"
         },
         "core_Hash": {
             "allOf": [
@@ -1238,35 +1655,10 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/algorithm": {
-                                "enum": [
-                                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/blake2b256",
-                                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/blake2b384",
-                                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/blake2b512",
-                                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/blake3",
-                                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/crystalsDilithium",
-                                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/crystalsKyber",
-                                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/falcon",
-                                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/md2",
-                                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/md4",
-                                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/md5",
-                                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/md6",
-                                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/other",
-                                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha1",
-                                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha224",
-                                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha256",
-                                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha384",
-                                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha3_224",
-                                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha3_256",
-                                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha3_384",
-                                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha3_512",
-                                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha512",
-                                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/spdxPvcSha1",
-                                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/spdxPvcSha256",
-                                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/sphincsPlus"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_algorithm"
                         },
                         "https://spdx.org/rdf/v3/Core/hashValue": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_hashValue"
                         }
                     },
                     "required": [
@@ -1275,6 +1667,37 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_algorithm": {
+                "enum": [
+                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/blake2b256",
+                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/blake2b384",
+                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/blake2b512",
+                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/blake3",
+                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/crystalsDilithium",
+                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/crystalsKyber",
+                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/falcon",
+                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/md2",
+                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/md4",
+                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/md5",
+                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/md6",
+                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/other",
+                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha1",
+                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha224",
+                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha256",
+                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha384",
+                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha3_224",
+                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha3_256",
+                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha3_384",
+                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha3_512",
+                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/sha512",
+                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/spdxPvcSha1",
+                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/spdxPvcSha256",
+                    "https://spdx.org/rdf/v3/Core/HashAlgorithm/sphincsPlus"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_hashValue": {
+                    "type": "string"
         },
         "core_LifecycleScopedRelationship": {
             "allOf": [
@@ -1296,18 +1719,21 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/scope": {
-                                "enum": [
-                                    "https://spdx.org/rdf/v3/Core/LifecycleScopeType/build",
-                                    "https://spdx.org/rdf/v3/Core/LifecycleScopeType/design",
-                                    "https://spdx.org/rdf/v3/Core/LifecycleScopeType/development",
-                                    "https://spdx.org/rdf/v3/Core/LifecycleScopeType/other",
-                                    "https://spdx.org/rdf/v3/Core/LifecycleScopeType/runtime",
-                                    "https://spdx.org/rdf/v3/Core/LifecycleScopeType/test"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_scope"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_scope": {
+                "enum": [
+                    "https://spdx.org/rdf/v3/Core/LifecycleScopeType/build",
+                    "https://spdx.org/rdf/v3/Core/LifecycleScopeType/design",
+                    "https://spdx.org/rdf/v3/Core/LifecycleScopeType/development",
+                    "https://spdx.org/rdf/v3/Core/LifecycleScopeType/other",
+                    "https://spdx.org/rdf/v3/Core/LifecycleScopeType/runtime",
+                    "https://spdx.org/rdf/v3/Core/LifecycleScopeType/test"
+                ]
         },
         "core_Organization": {
             "allOf": [
@@ -1398,17 +1824,18 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/ExpandedLicensing/member": {
-                            "type": "array",
-                            "minItems": 2,
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/simplelicensing_AnyLicenseInfo",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "minItems": 2,
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_member"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_member"
+                                }
+                            ]
                         }
                     },
                     "required": [
@@ -1416,6 +1843,15 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_member": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/simplelicensing_AnyLicenseInfo",
+                        "unevaluatedProperties": false
+                    }
+                ]
         },
         "expandedlicensing_CustomLicenseAddition": {
             "allOf": [
@@ -1460,17 +1896,18 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/ExpandedLicensing/member": {
-                            "type": "array",
-                            "minItems": 2,
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/simplelicensing_AnyLicenseInfo",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "minItems": 2,
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_member"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_member"
+                                }
+                            ]
                         }
                     },
                     "required": [
@@ -1478,6 +1915,15 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_member": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/simplelicensing_AnyLicenseInfo",
+                        "unevaluatedProperties": false
+                    }
+                ]
         },
         "expandedlicensing_ExtendableLicense": {
             "allOf": [
@@ -1522,34 +1968,41 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/SimpleLicensing/licenseText": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_SimpleLicensing_licenseText"
                         },
                         "https://spdx.org/rdf/v3/ExpandedLicensing/isOsiApproved": {
-                                "type": "boolean"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_isOsiApproved"
                         },
                         "https://spdx.org/rdf/v3/ExpandedLicensing/isFsfLibre": {
-                                "type": "boolean"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_isFsfLibre"
                         },
                         "https://spdx.org/rdf/v3/ExpandedLicensing/standardLicenseHeader": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_standardLicenseHeader"
                         },
                         "https://spdx.org/rdf/v3/ExpandedLicensing/standardLicenseTemplate": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_standardLicenseTemplate"
                         },
                         "https://spdx.org/rdf/v3/ExpandedLicensing/isDeprecatedLicenseId": {
-                                "type": "boolean"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_isDeprecatedLicenseId"
                         },
                         "https://spdx.org/rdf/v3/ExpandedLicensing/obsoletedBy": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_obsoletedBy"
                         },
                         "https://spdx.org/rdf/v3/ExpandedLicensing/licenseXml": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_licenseXml"
                         },
                         "https://spdx.org/rdf/v3/ExpandedLicensing/seeAlso": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/$defs/anyURI"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_seeAlso"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_seeAlso"
+                                }
+                            ]
                         }
                     },
                     "required": [
@@ -1557,6 +2010,33 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_SimpleLicensing_licenseText": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_isOsiApproved": {
+                    "type": "boolean"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_isFsfLibre": {
+                    "type": "boolean"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_standardLicenseHeader": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_standardLicenseTemplate": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_isDeprecatedLicenseId": {
+                    "type": "boolean"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_obsoletedBy": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_licenseXml": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_seeAlso": {
+                    "$ref": "#/$defs/anyURI"
         },
         "expandedlicensing_ListedLicense": {
             "allOf": [
@@ -1578,14 +2058,20 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/ExpandedLicensing/listVersionAdded": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_listVersionAdded"
                         },
                         "https://spdx.org/rdf/v3/ExpandedLicensing/deprecatedVersion": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_deprecatedVersion"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_listVersionAdded": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_deprecatedVersion": {
+                    "type": "string"
         },
         "expandedlicensing_OrLaterOperator": {
             "allOf": [
@@ -1607,13 +2093,7 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/ExpandedLicensing/subjectLicense": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/expandedlicensing_License",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_subjectLicense"
                         }
                     },
                     "required": [
@@ -1621,6 +2101,15 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_subjectLicense": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/expandedlicensing_License",
+                        "unevaluatedProperties": false
+                    }
+                ]
         },
         "expandedlicensing_WithAdditionOperator": {
             "allOf": [
@@ -1642,22 +2131,10 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/ExpandedLicensing/subjectLicense": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/expandedlicensing_ExtendableLicense",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_subjectLicense"
                         },
                         "https://spdx.org/rdf/v3/ExpandedLicensing/subjectAddition": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/expandedlicensing_LicenseAddition",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_subjectAddition"
                         }
                     },
                     "required": [
@@ -1666,6 +2143,24 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_subjectLicense": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/expandedlicensing_ExtendableLicense",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_subjectAddition": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/expandedlicensing_LicenseAddition",
+                        "unevaluatedProperties": false
+                    }
+                ]
         },
         "security_CvssV2VulnAssessmentRelationship": {
             "allOf": [
@@ -1687,10 +2182,10 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Security/score": {
-                                "type": "number"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_score"
                         },
                         "https://spdx.org/rdf/v3/Security/vectorString": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_vectorString"
                         }
                     },
                     "required": [
@@ -1699,6 +2194,12 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Security_score": {
+                    "type": "number"
+        },
+        "https:__spdx.org_rdf_v3_Security_vectorString": {
+                    "type": "string"
         },
         "security_CvssV3VulnAssessmentRelationship": {
             "allOf": [
@@ -1720,19 +2221,13 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Security/score": {
-                                "type": "number"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_score"
                         },
                         "https://spdx.org/rdf/v3/Security/severity": {
-                                "enum": [
-                                    "https://spdx.org/rdf/v3/Security/CvssSeverityType/critical",
-                                    "https://spdx.org/rdf/v3/Security/CvssSeverityType/high",
-                                    "https://spdx.org/rdf/v3/Security/CvssSeverityType/low",
-                                    "https://spdx.org/rdf/v3/Security/CvssSeverityType/medium",
-                                    "https://spdx.org/rdf/v3/Security/CvssSeverityType/none"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_severity"
                         },
                         "https://spdx.org/rdf/v3/Security/vectorString": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_vectorString"
                         }
                     },
                     "required": [
@@ -1742,6 +2237,21 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Security_score": {
+                    "type": "number"
+        },
+        "https:__spdx.org_rdf_v3_Security_severity": {
+                "enum": [
+                    "https://spdx.org/rdf/v3/Security/CvssSeverityType/critical",
+                    "https://spdx.org/rdf/v3/Security/CvssSeverityType/high",
+                    "https://spdx.org/rdf/v3/Security/CvssSeverityType/low",
+                    "https://spdx.org/rdf/v3/Security/CvssSeverityType/medium",
+                    "https://spdx.org/rdf/v3/Security/CvssSeverityType/none"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Security_vectorString": {
+                    "type": "string"
         },
         "security_CvssV4VulnAssessmentRelationship": {
             "allOf": [
@@ -1763,19 +2273,13 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Security/score": {
-                                "type": "number"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_score"
                         },
                         "https://spdx.org/rdf/v3/Security/severity": {
-                                "enum": [
-                                    "https://spdx.org/rdf/v3/Security/CvssSeverityType/critical",
-                                    "https://spdx.org/rdf/v3/Security/CvssSeverityType/high",
-                                    "https://spdx.org/rdf/v3/Security/CvssSeverityType/low",
-                                    "https://spdx.org/rdf/v3/Security/CvssSeverityType/medium",
-                                    "https://spdx.org/rdf/v3/Security/CvssSeverityType/none"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_severity"
                         },
                         "https://spdx.org/rdf/v3/Security/vectorString": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_vectorString"
                         }
                     },
                     "required": [
@@ -1785,6 +2289,21 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Security_score": {
+                    "type": "number"
+        },
+        "https:__spdx.org_rdf_v3_Security_severity": {
+                "enum": [
+                    "https://spdx.org/rdf/v3/Security/CvssSeverityType/critical",
+                    "https://spdx.org/rdf/v3/Security/CvssSeverityType/high",
+                    "https://spdx.org/rdf/v3/Security/CvssSeverityType/low",
+                    "https://spdx.org/rdf/v3/Security/CvssSeverityType/medium",
+                    "https://spdx.org/rdf/v3/Security/CvssSeverityType/none"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Security_vectorString": {
+                    "type": "string"
         },
         "security_EpssVulnAssessmentRelationship": {
             "allOf": [
@@ -1806,13 +2325,13 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Security/probability": {
-                                "type": "number"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_probability"
                         },
                         "https://spdx.org/rdf/v3/Security/percentile": {
-                                "type": "number"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_percentile"
                         },
                         "https://spdx.org/rdf/v3/Security/publishedTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_publishedTime"
                         }
                     },
                     "required": [
@@ -1822,6 +2341,15 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Security_probability": {
+                    "type": "number"
+        },
+        "https:__spdx.org_rdf_v3_Security_percentile": {
+                    "type": "number"
+        },
+        "https:__spdx.org_rdf_v3_Security_publishedTime": {
+                    "$ref": "#/$defs/DateTime"
         },
         "security_ExploitCatalogVulnAssessmentRelationship": {
             "allOf": [
@@ -1843,16 +2371,13 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Security/catalogType": {
-                                "enum": [
-                                    "https://spdx.org/rdf/v3/Security/ExploitCatalogType/kev",
-                                    "https://spdx.org/rdf/v3/Security/ExploitCatalogType/other"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_catalogType"
                         },
                         "https://spdx.org/rdf/v3/Security/exploited": {
-                                "type": "boolean"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_exploited"
                         },
                         "https://spdx.org/rdf/v3/Security/locator": {
-                                "$ref": "#/$defs/anyURI"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_locator"
                         }
                     },
                     "required": [
@@ -1862,6 +2387,18 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Security_catalogType": {
+                "enum": [
+                    "https://spdx.org/rdf/v3/Security/ExploitCatalogType/kev",
+                    "https://spdx.org/rdf/v3/Security/ExploitCatalogType/other"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Security_exploited": {
+                    "type": "boolean"
+        },
+        "https:__spdx.org_rdf_v3_Security_locator": {
+                    "$ref": "#/$defs/anyURI"
         },
         "security_SsvcVulnAssessmentRelationship": {
             "allOf": [
@@ -1883,12 +2420,7 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Security/decisionType": {
-                                "enum": [
-                                    "https://spdx.org/rdf/v3/Security/SsvcDecisionType/act",
-                                    "https://spdx.org/rdf/v3/Security/SsvcDecisionType/attend",
-                                    "https://spdx.org/rdf/v3/Security/SsvcDecisionType/track",
-                                    "https://spdx.org/rdf/v3/Security/SsvcDecisionType/trackStar"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_decisionType"
                         }
                     },
                     "required": [
@@ -1896,6 +2428,14 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Security_decisionType": {
+                "enum": [
+                    "https://spdx.org/rdf/v3/Security/SsvcDecisionType/act",
+                    "https://spdx.org/rdf/v3/Security/SsvcDecisionType/attend",
+                    "https://spdx.org/rdf/v3/Security/SsvcDecisionType/track",
+                    "https://spdx.org/rdf/v3/Security/SsvcDecisionType/trackStar"
+                ]
         },
         "security_VexVulnAssessmentRelationship": {
             "allOf": [
@@ -1917,14 +2457,20 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Security/vexVersion": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_vexVersion"
                         },
                         "https://spdx.org/rdf/v3/Security/statusNotes": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_statusNotes"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Security_vexVersion": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Security_statusNotes": {
+                    "type": "string"
         },
         "security_Vulnerability": {
             "allOf": [
@@ -1946,17 +2492,26 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Security/publishedTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_publishedTime"
                         },
                         "https://spdx.org/rdf/v3/Security/modifiedTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_modifiedTime"
                         },
                         "https://spdx.org/rdf/v3/Security/withdrawnTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_withdrawnTime"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Security_publishedTime": {
+                    "$ref": "#/$defs/DateTime"
+        },
+        "https:__spdx.org_rdf_v3_Security_modifiedTime": {
+                    "$ref": "#/$defs/DateTime"
+        },
+        "https:__spdx.org_rdf_v3_Security_withdrawnTime": {
+                    "$ref": "#/$defs/DateTime"
         },
         "software_SoftwareArtifact": {
             "allOf": [
@@ -1978,89 +2533,118 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Software/contentIdentifier": {
-                                "$ref": "#/$defs/anyURI"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_contentIdentifier"
                         },
                         "https://spdx.org/rdf/v3/Software/primaryPurpose": {
-                                "enum": [
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/application",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/archive",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/bom",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/configuration",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/container",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/data",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/device",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/deviceDriver",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/diskImage",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/documentation",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/evidence",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/executable",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/file",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/filesystemImage",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/firmware",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/framework",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/install",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/library",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/manifest",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/model",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/module",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/operatingSystem",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/other",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/patch",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/platform",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/requirement",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/source",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/specification",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/test"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_primaryPurpose"
                         },
                         "https://spdx.org/rdf/v3/Software/additionalPurpose": {
-                            "type": "array",
-                            "items": {
-                                "enum": [
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/application",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/archive",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/bom",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/configuration",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/container",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/data",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/device",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/deviceDriver",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/diskImage",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/documentation",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/evidence",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/executable",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/file",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/filesystemImage",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/firmware",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/framework",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/install",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/library",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/manifest",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/model",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/module",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/operatingSystem",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/other",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/patch",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/platform",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/requirement",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/source",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/specification",
-                                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/test"
-                                ]
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_additionalPurpose"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_additionalPurpose"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/Software/copyrightText": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_copyrightText"
                         },
                         "https://spdx.org/rdf/v3/Software/attributionText": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_attributionText"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_attributionText"
+                                }
+                            ]
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Software_contentIdentifier": {
+                    "$ref": "#/$defs/anyURI"
+        },
+        "https:__spdx.org_rdf_v3_Software_primaryPurpose": {
+                "enum": [
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/application",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/archive",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/bom",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/configuration",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/container",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/data",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/device",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/deviceDriver",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/diskImage",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/documentation",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/evidence",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/executable",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/file",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/filesystemImage",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/firmware",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/framework",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/install",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/library",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/manifest",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/model",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/module",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/operatingSystem",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/other",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/patch",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/platform",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/requirement",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/source",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/specification",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/test"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Software_additionalPurpose": {
+                "enum": [
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/application",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/archive",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/bom",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/configuration",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/container",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/data",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/device",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/deviceDriver",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/diskImage",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/documentation",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/evidence",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/executable",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/file",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/filesystemImage",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/firmware",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/framework",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/install",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/library",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/manifest",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/model",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/module",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/operatingSystem",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/other",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/patch",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/platform",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/requirement",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/source",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/specification",
+                    "https://spdx.org/rdf/v3/Software/SoftwarePurpose/test"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Software_copyrightText": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Software_attributionText": {
+                    "type": "string"
         },
         "core_Bom": {
             "allOf": [
@@ -2128,17 +2712,30 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Security/actionStatement": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_actionStatement"
                         },
                         "https://spdx.org/rdf/v3/Security/actionStatementTime": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/$defs/DateTime"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_actionStatementTime"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_actionStatementTime"
+                                }
+                            ]
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Security_actionStatement": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Security_actionStatementTime": {
+                    "$ref": "#/$defs/DateTime"
         },
         "security_VexFixedVulnAssessmentRelationship": {
             "allOf": [
@@ -2183,23 +2780,32 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Security/justificationType": {
-                                "enum": [
-                                    "https://spdx.org/rdf/v3/Security/VexJustificationType/componentNotPresent",
-                                    "https://spdx.org/rdf/v3/Security/VexJustificationType/inlineMitigationsAlreadyExist",
-                                    "https://spdx.org/rdf/v3/Security/VexJustificationType/vulnerableCodeCannotBeControlledByAdversary",
-                                    "https://spdx.org/rdf/v3/Security/VexJustificationType/vulnerableCodeNotInExecutePath",
-                                    "https://spdx.org/rdf/v3/Security/VexJustificationType/vulnerableCodeNotPresent"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_justificationType"
                         },
                         "https://spdx.org/rdf/v3/Security/impactStatement": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_impactStatement"
                         },
                         "https://spdx.org/rdf/v3/Security/impactStatementTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_impactStatementTime"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Security_justificationType": {
+                "enum": [
+                    "https://spdx.org/rdf/v3/Security/VexJustificationType/componentNotPresent",
+                    "https://spdx.org/rdf/v3/Security/VexJustificationType/inlineMitigationsAlreadyExist",
+                    "https://spdx.org/rdf/v3/Security/VexJustificationType/vulnerableCodeCannotBeControlledByAdversary",
+                    "https://spdx.org/rdf/v3/Security/VexJustificationType/vulnerableCodeNotInExecutePath",
+                    "https://spdx.org/rdf/v3/Security/VexJustificationType/vulnerableCodeNotPresent"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Security_impactStatement": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Security_impactStatementTime": {
+                    "$ref": "#/$defs/DateTime"
         },
         "security_VexUnderInvestigationVulnAssessmentRelationship": {
             "allOf": [
@@ -2244,11 +2850,14 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Software/contentType": {
-                                "$ref": "#/$defs/MediaType"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_contentType"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Software_contentType": {
+                    "$ref": "#/$defs/MediaType"
         },
         "software_Package": {
             "allOf": [
@@ -2270,23 +2879,38 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Software/packageVersion": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_packageVersion"
                         },
                         "https://spdx.org/rdf/v3/Software/downloadLocation": {
-                                "$ref": "#/$defs/anyURI"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_downloadLocation"
                         },
                         "https://spdx.org/rdf/v3/Software/packageUrl": {
-                                "$ref": "#/$defs/anyURI"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_packageUrl"
                         },
                         "https://spdx.org/rdf/v3/Software/homePage": {
-                                "$ref": "#/$defs/anyURI"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_homePage"
                         },
                         "https://spdx.org/rdf/v3/Software/sourceInfo": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_sourceInfo"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Software_packageVersion": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Software_downloadLocation": {
+                    "$ref": "#/$defs/anyURI"
+        },
+        "https:__spdx.org_rdf_v3_Software_packageUrl": {
+                    "$ref": "#/$defs/anyURI"
+        },
+        "https:__spdx.org_rdf_v3_Software_homePage": {
+                    "$ref": "#/$defs/anyURI"
+        },
+        "https:__spdx.org_rdf_v3_Software_sourceInfo": {
+                    "type": "string"
         },
         "software_Sbom": {
             "allOf": [
@@ -2308,21 +2932,31 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Software/sbomType": {
-                            "type": "array",
-                            "items": {
-                                "enum": [
-                                    "https://spdx.org/rdf/v3/Software/SbomType/analyzed",
-                                    "https://spdx.org/rdf/v3/Software/SbomType/build",
-                                    "https://spdx.org/rdf/v3/Software/SbomType/deployed",
-                                    "https://spdx.org/rdf/v3/Software/SbomType/design",
-                                    "https://spdx.org/rdf/v3/Software/SbomType/runtime",
-                                    "https://spdx.org/rdf/v3/Software/SbomType/source"
-                                ]
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_sbomType"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_sbomType"
+                                }
+                            ]
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Software_sbomType": {
+                "enum": [
+                    "https://spdx.org/rdf/v3/Software/SbomType/analyzed",
+                    "https://spdx.org/rdf/v3/Software/SbomType/build",
+                    "https://spdx.org/rdf/v3/Software/SbomType/deployed",
+                    "https://spdx.org/rdf/v3/Software/SbomType/design",
+                    "https://spdx.org/rdf/v3/Software/SbomType/runtime",
+                    "https://spdx.org/rdf/v3/Software/SbomType/source"
+                ]
         },
         "software_Snippet": {
             "allOf": [
@@ -2344,31 +2978,13 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Software/byteRange": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_PositiveIntegerRange",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_byteRange"
                         },
                         "https://spdx.org/rdf/v3/Software/lineRange": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_PositiveIntegerRange",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_lineRange"
                         },
                         "https://spdx.org/rdf/v3/Software/snippetFromFile": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/software_File",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_snippetFromFile"
                         }
                     },
                     "required": [
@@ -2376,6 +2992,33 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Software_byteRange": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_PositiveIntegerRange",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Software_lineRange": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_PositiveIntegerRange",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Software_snippetFromFile": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/software_File",
+                        "unevaluatedProperties": false
+                    }
+                ]
         },
         "ai_AIPackage": {
             "allOf": [
@@ -2397,108 +3040,209 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/AI/energyConsumption": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_energyConsumption"
                         },
                         "https://spdx.org/rdf/v3/AI/standardCompliance": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_standardCompliance"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_standardCompliance"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/AI/limitation": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_limitation"
                         },
                         "https://spdx.org/rdf/v3/AI/typeOfModel": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_typeOfModel"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_typeOfModel"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/AI/informationAboutTraining": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_informationAboutTraining"
                         },
                         "https://spdx.org/rdf/v3/AI/informationAboutApplication": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_informationAboutApplication"
                         },
                         "https://spdx.org/rdf/v3/AI/hyperparameter": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_DictionaryEntry",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_hyperparameter"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_hyperparameter"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/AI/modelDataPreprocessing": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_modelDataPreprocessing"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_modelDataPreprocessing"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/AI/modelExplainability": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_modelExplainability"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_modelExplainability"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/AI/sensitivePersonalInformation": {
-                                "enum": [
-                                    "https://spdx.org/rdf/v3/Core/PresenceType/no",
-                                    "https://spdx.org/rdf/v3/Core/PresenceType/noAssertion",
-                                    "https://spdx.org/rdf/v3/Core/PresenceType/yes"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_sensitivePersonalInformation"
                         },
                         "https://spdx.org/rdf/v3/AI/metricDecisionThreshold": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_DictionaryEntry",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_metricDecisionThreshold"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_metricDecisionThreshold"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/AI/metric": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_DictionaryEntry",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_metric"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_metric"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/AI/domain": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_domain"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_domain"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/AI/autonomyType": {
-                                "enum": [
-                                    "https://spdx.org/rdf/v3/Core/PresenceType/no",
-                                    "https://spdx.org/rdf/v3/Core/PresenceType/noAssertion",
-                                    "https://spdx.org/rdf/v3/Core/PresenceType/yes"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_autonomyType"
                         },
                         "https://spdx.org/rdf/v3/AI/safetyRiskAssessment": {
-                                "enum": [
-                                    "https://spdx.org/rdf/v3/AI/SafetyRiskAssessmentType/high",
-                                    "https://spdx.org/rdf/v3/AI/SafetyRiskAssessmentType/low",
-                                    "https://spdx.org/rdf/v3/AI/SafetyRiskAssessmentType/medium",
-                                    "https://spdx.org/rdf/v3/AI/SafetyRiskAssessmentType/serious"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_safetyRiskAssessment"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_AI_energyConsumption": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_AI_standardCompliance": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_AI_limitation": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_AI_typeOfModel": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_AI_informationAboutTraining": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_AI_informationAboutApplication": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_AI_hyperparameter": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_DictionaryEntry",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_AI_modelDataPreprocessing": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_AI_modelExplainability": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_AI_sensitivePersonalInformation": {
+                "enum": [
+                    "https://spdx.org/rdf/v3/Core/PresenceType/no",
+                    "https://spdx.org/rdf/v3/Core/PresenceType/noAssertion",
+                    "https://spdx.org/rdf/v3/Core/PresenceType/yes"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_AI_metricDecisionThreshold": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_DictionaryEntry",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_AI_metric": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_DictionaryEntry",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_AI_domain": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_AI_autonomyType": {
+                "enum": [
+                    "https://spdx.org/rdf/v3/Core/PresenceType/no",
+                    "https://spdx.org/rdf/v3/Core/PresenceType/noAssertion",
+                    "https://spdx.org/rdf/v3/Core/PresenceType/yes"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_AI_safetyRiskAssessment": {
+                "enum": [
+                    "https://spdx.org/rdf/v3/AI/SafetyRiskAssessmentType/high",
+                    "https://spdx.org/rdf/v3/AI/SafetyRiskAssessmentType/low",
+                    "https://spdx.org/rdf/v3/AI/SafetyRiskAssessmentType/medium",
+                    "https://spdx.org/rdf/v3/AI/SafetyRiskAssessmentType/serious"
+                ]
         },
         "dataset_Dataset": {
             "allOf": [
@@ -2520,95 +3264,94 @@
                     "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Dataset/datasetType": {
-                            "type": "array",
-                            "minItems": 1,
-                            "items": {
-                                "enum": [
-                                    "https://spdx.org/rdf/v3/Dataset/DatasetType/audio",
-                                    "https://spdx.org/rdf/v3/Dataset/DatasetType/categorical",
-                                    "https://spdx.org/rdf/v3/Dataset/DatasetType/graph",
-                                    "https://spdx.org/rdf/v3/Dataset/DatasetType/image",
-                                    "https://spdx.org/rdf/v3/Dataset/DatasetType/noAssertion",
-                                    "https://spdx.org/rdf/v3/Dataset/DatasetType/numeric",
-                                    "https://spdx.org/rdf/v3/Dataset/DatasetType/other",
-                                    "https://spdx.org/rdf/v3/Dataset/DatasetType/sensor",
-                                    "https://spdx.org/rdf/v3/Dataset/DatasetType/structured",
-                                    "https://spdx.org/rdf/v3/Dataset/DatasetType/syntactic",
-                                    "https://spdx.org/rdf/v3/Dataset/DatasetType/text",
-                                    "https://spdx.org/rdf/v3/Dataset/DatasetType/timeseries",
-                                    "https://spdx.org/rdf/v3/Dataset/DatasetType/timestamp",
-                                    "https://spdx.org/rdf/v3/Dataset/DatasetType/video"
-                                ]
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "minItems": 1,
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_datasetType"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_datasetType"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/Dataset/dataCollectionProcess": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_dataCollectionProcess"
                         },
                         "https://spdx.org/rdf/v3/Dataset/intendedUse": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_intendedUse"
                         },
                         "https://spdx.org/rdf/v3/Dataset/datasetSize": {
-                                "type": "integer"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_datasetSize"
                         },
                         "https://spdx.org/rdf/v3/Dataset/datasetNoise": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_datasetNoise"
                         },
                         "https://spdx.org/rdf/v3/Dataset/dataPreprocessing": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_dataPreprocessing"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_dataPreprocessing"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/Dataset/sensor": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_DictionaryEntry",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_sensor"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_sensor"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/Dataset/knownBias": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_knownBias"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_knownBias"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/Dataset/sensitivePersonalInformation": {
-                                "enum": [
-                                    "https://spdx.org/rdf/v3/Core/PresenceType/no",
-                                    "https://spdx.org/rdf/v3/Core/PresenceType/noAssertion",
-                                    "https://spdx.org/rdf/v3/Core/PresenceType/yes"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_sensitivePersonalInformation"
                         },
                         "https://spdx.org/rdf/v3/Dataset/anonymizationMethodUsed": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_anonymizationMethodUsed"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_anonymizationMethodUsed"
+                                }
+                            ]
                         },
                         "https://spdx.org/rdf/v3/Dataset/confidentialityLevel": {
-                                "enum": [
-                                    "https://spdx.org/rdf/v3/Dataset/ConfidentialityLevelType/amber",
-                                    "https://spdx.org/rdf/v3/Dataset/ConfidentialityLevelType/clear",
-                                    "https://spdx.org/rdf/v3/Dataset/ConfidentialityLevelType/green",
-                                    "https://spdx.org/rdf/v3/Dataset/ConfidentialityLevelType/red"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_confidentialityLevel"
                         },
                         "https://spdx.org/rdf/v3/Dataset/datasetUpdateMechanism": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_datasetUpdateMechanism"
                         },
                         "https://spdx.org/rdf/v3/Dataset/datasetAvailability": {
-                                "enum": [
-                                    "https://spdx.org/rdf/v3/Dataset/DatasetAvailabilityType/clickthrough",
-                                    "https://spdx.org/rdf/v3/Dataset/DatasetAvailabilityType/directDownload",
-                                    "https://spdx.org/rdf/v3/Dataset/DatasetAvailabilityType/query",
-                                    "https://spdx.org/rdf/v3/Dataset/DatasetAvailabilityType/registration",
-                                    "https://spdx.org/rdf/v3/Dataset/DatasetAvailabilityType/scrapingScript"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_datasetAvailability"
                         }
                     },
                     "required": [
@@ -2616,6 +3359,81 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Dataset_datasetType": {
+                "enum": [
+                    "https://spdx.org/rdf/v3/Dataset/DatasetType/audio",
+                    "https://spdx.org/rdf/v3/Dataset/DatasetType/categorical",
+                    "https://spdx.org/rdf/v3/Dataset/DatasetType/graph",
+                    "https://spdx.org/rdf/v3/Dataset/DatasetType/image",
+                    "https://spdx.org/rdf/v3/Dataset/DatasetType/noAssertion",
+                    "https://spdx.org/rdf/v3/Dataset/DatasetType/numeric",
+                    "https://spdx.org/rdf/v3/Dataset/DatasetType/other",
+                    "https://spdx.org/rdf/v3/Dataset/DatasetType/sensor",
+                    "https://spdx.org/rdf/v3/Dataset/DatasetType/structured",
+                    "https://spdx.org/rdf/v3/Dataset/DatasetType/syntactic",
+                    "https://spdx.org/rdf/v3/Dataset/DatasetType/text",
+                    "https://spdx.org/rdf/v3/Dataset/DatasetType/timeseries",
+                    "https://spdx.org/rdf/v3/Dataset/DatasetType/timestamp",
+                    "https://spdx.org/rdf/v3/Dataset/DatasetType/video"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Dataset_dataCollectionProcess": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Dataset_intendedUse": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Dataset_datasetSize": {
+                    "type": "integer"
+        },
+        "https:__spdx.org_rdf_v3_Dataset_datasetNoise": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Dataset_dataPreprocessing": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Dataset_sensor": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_DictionaryEntry",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Dataset_knownBias": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Dataset_sensitivePersonalInformation": {
+                "enum": [
+                    "https://spdx.org/rdf/v3/Core/PresenceType/no",
+                    "https://spdx.org/rdf/v3/Core/PresenceType/noAssertion",
+                    "https://spdx.org/rdf/v3/Core/PresenceType/yes"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Dataset_anonymizationMethodUsed": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Dataset_confidentialityLevel": {
+                "enum": [
+                    "https://spdx.org/rdf/v3/Dataset/ConfidentialityLevelType/amber",
+                    "https://spdx.org/rdf/v3/Dataset/ConfidentialityLevelType/clear",
+                    "https://spdx.org/rdf/v3/Dataset/ConfidentialityLevelType/green",
+                    "https://spdx.org/rdf/v3/Dataset/ConfidentialityLevelType/red"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Dataset_datasetUpdateMechanism": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Dataset_datasetAvailability": {
+                "enum": [
+                    "https://spdx.org/rdf/v3/Dataset/DatasetAvailabilityType/clickthrough",
+                    "https://spdx.org/rdf/v3/Dataset/DatasetAvailabilityType/directDownload",
+                    "https://spdx.org/rdf/v3/Dataset/DatasetAvailabilityType/query",
+                    "https://spdx.org/rdf/v3/Dataset/DatasetAvailabilityType/registration",
+                    "https://spdx.org/rdf/v3/Dataset/DatasetAvailabilityType/scrapingScript"
+                ]
         },
         "idRef": {
             "type": "string"

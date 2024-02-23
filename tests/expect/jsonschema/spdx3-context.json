@@ -48,38 +48,40 @@
                     "type": "object",
                     "properties": {
                         "specVersion": {
-                                "$ref": "#/$defs/SemVer"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_specVersion"
                         },
                         "comment": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_comment"
                         },
                         "created": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_created"
                         },
                         "createdBy": {
-                            "type": "array",
-                            "minItems": 1,
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_Agent",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "minItems": 1,
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_createdBy"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_createdBy"
+                                }
+                            ]
                         },
                         "createdUsing": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_Tool",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_createdUsing"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_createdUsing"
+                                }
+                            ]
                         }
                     },
                     "required": [
@@ -89,6 +91,33 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_specVersion": {
+                    "$ref": "#/$defs/SemVer"
+        },
+        "https:__spdx.org_rdf_v3_Core_comment": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Core_created": {
+                    "$ref": "#/$defs/DateTime"
+        },
+        "https:__spdx.org_rdf_v3_Core_createdBy": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_Agent",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_createdUsing": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_Tool",
+                        "unevaluatedProperties": false
+                    }
+                ]
         },
         "core_DictionaryEntry": {
             "allOf": [
@@ -109,10 +138,10 @@
                     "type": "object",
                     "properties": {
                         "key": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_key"
                         },
                         "value": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_value"
                         }
                     },
                     "required": [
@@ -120,6 +149,12 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_key": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Core_value": {
+                    "type": "string"
         },
         "core_Element": {
             "allOf": [
@@ -140,67 +175,71 @@
                     "type": "object",
                     "properties": {
                         "name": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_name"
                         },
                         "summary": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_summary"
                         },
                         "description": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_description"
                         },
                         "comment": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_comment"
                         },
                         "creationInfo": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_CreationInfo",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_creationInfo"
                         },
                         "verifiedUsing": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_IntegrityMethod",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_verifiedUsing"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_verifiedUsing"
+                                }
+                            ]
                         },
                         "externalRef": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_ExternalRef",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_externalRef"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_externalRef"
+                                }
+                            ]
                         },
                         "externalIdentifier": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_ExternalIdentifier",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_externalIdentifier"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_externalIdentifier"
+                                }
+                            ]
                         },
                         "core:extension": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/$defs/Extension"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_extension"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_extension"
+                                }
+                            ]
                         }
                     },
                     "required": [
@@ -208,6 +247,57 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_name": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Core_summary": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Core_description": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Core_comment": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Core_creationInfo": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_CreationInfo",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_verifiedUsing": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_IntegrityMethod",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_externalRef": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_ExternalRef",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_externalIdentifier": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_ExternalIdentifier",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_extension": {
+                    "$ref": "#/$defs/Extension"
         },
         "core_ElementCollection": {
             "allOf": [
@@ -229,49 +319,79 @@
                     "type": "object",
                     "properties": {
                         "element": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_Element",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_element"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_element"
+                                }
+                            ]
                         },
                         "rootElement": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_Element",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_rootElement"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_rootElement"
+                                }
+                            ]
                         },
                         "profileConformance": {
-                            "type": "array",
-                            "items": {
-                                "enum": [
-                                    "ai",
-                                    "build",
-                                    "core",
-                                    "dataset",
-                                    "expandedLicensing",
-                                    "extension",
-                                    "security",
-                                    "simpleLicensing",
-                                    "software",
-                                    "usage"
-                                ]
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_profileConformance"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_profileConformance"
+                                }
+                            ]
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_element": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_Element",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_rootElement": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_Element",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_profileConformance": {
+                "enum": [
+                    "ai",
+                    "build",
+                    "core",
+                    "dataset",
+                    "expandedLicensing",
+                    "extension",
+                    "security",
+                    "simpleLicensing",
+                    "software",
+                    "usage"
+                ]
         },
         "core_ExternalIdentifier": {
             "allOf": [
@@ -292,34 +412,29 @@
                     "type": "object",
                     "properties": {
                         "externalIdentifierType": {
-                                "enum": [
-                                    "cpe22",
-                                    "cpe23",
-                                    "cve",
-                                    "email",
-                                    "gitoid",
-                                    "other",
-                                    "packageUrl",
-                                    "securityOther",
-                                    "swhid",
-                                    "swid",
-                                    "urlScheme"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_externalIdentifierType"
                         },
                         "identifier": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_identifier"
                         },
                         "comment": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_comment"
                         },
                         "identifierLocator": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/$defs/anyURI"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_identifierLocator"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_identifierLocator"
+                                }
+                            ]
                         },
                         "issuingAuthority": {
-                                "$ref": "#/$defs/anyURI"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_issuingAuthority"
                         }
                     },
                     "required": [
@@ -328,6 +443,33 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_externalIdentifierType": {
+                "enum": [
+                    "cpe22",
+                    "cpe23",
+                    "cve",
+                    "email",
+                    "gitoid",
+                    "other",
+                    "packageUrl",
+                    "securityOther",
+                    "swhid",
+                    "swid",
+                    "urlScheme"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_identifier": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Core_comment": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Core_identifierLocator": {
+                    "$ref": "#/$defs/anyURI"
+        },
+        "https:__spdx.org_rdf_v3_Core_issuingAuthority": {
+                    "$ref": "#/$defs/anyURI"
         },
         "core_ExternalMap": {
             "allOf": [
@@ -348,31 +490,26 @@
                     "type": "object",
                     "properties": {
                         "externalSpdxId": {
-                                "$ref": "#/$defs/anyURI"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_externalSpdxId"
                         },
                         "verifiedUsing": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_IntegrityMethod",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_verifiedUsing"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_verifiedUsing"
+                                }
+                            ]
                         },
                         "locationHint": {
-                                "$ref": "#/$defs/anyURI"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_locationHint"
                         },
                         "definingArtifact": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_Artifact",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_definingArtifact"
                         }
                     },
                     "required": [
@@ -380,6 +517,30 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_externalSpdxId": {
+                    "$ref": "#/$defs/anyURI"
+        },
+        "https:__spdx.org_rdf_v3_Core_verifiedUsing": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_IntegrityMethod",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_locationHint": {
+                    "$ref": "#/$defs/anyURI"
+        },
+        "https:__spdx.org_rdf_v3_Core_definingArtifact": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_Artifact",
+                        "unevaluatedProperties": false
+                    }
+                ]
         },
         "core_ExternalRef": {
             "allOf": [
@@ -400,69 +561,88 @@
                     "type": "object",
                     "properties": {
                         "externalRefType": {
-                                "enum": [
-                                    "altDownloadLocation",
-                                    "altWebPage",
-                                    "binaryArtifact",
-                                    "bower",
-                                    "buildMeta",
-                                    "buildSystem",
-                                    "certificationReport",
-                                    "chat",
-                                    "componentAnalysisReport",
-                                    "documentation",
-                                    "dynamicAnalysisReport",
-                                    "eolNotice",
-                                    "exportControlAssessment",
-                                    "funding",
-                                    "issueTracker",
-                                    "license",
-                                    "mailingList",
-                                    "mavenCentral",
-                                    "metrics",
-                                    "npm",
-                                    "nuget",
-                                    "other",
-                                    "privacyAssessment",
-                                    "productMetadata",
-                                    "purchaseOrder",
-                                    "qualityAssessmentReport",
-                                    "releaseHistory",
-                                    "releaseNotes",
-                                    "riskAssessment",
-                                    "runtimeAnalysisReport",
-                                    "secureSoftwareAttestation",
-                                    "securityAdversaryModel",
-                                    "securityAdvisory",
-                                    "securityFix",
-                                    "securityOther",
-                                    "securityPenTestReport",
-                                    "securityPolicy",
-                                    "securityThreatModel",
-                                    "socialMedia",
-                                    "sourceArtifact",
-                                    "staticAnalysisReport",
-                                    "support",
-                                    "vcs",
-                                    "vulnerabilityDisclosureReport",
-                                    "vulnerabilityExploitabilityAssessment"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_externalRefType"
                         },
                         "locator": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_locator"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_locator"
+                                }
+                            ]
                         },
                         "contentType": {
-                                "$ref": "#/$defs/MediaType"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_contentType"
                         },
                         "comment": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_comment"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_externalRefType": {
+                "enum": [
+                    "altDownloadLocation",
+                    "altWebPage",
+                    "binaryArtifact",
+                    "bower",
+                    "buildMeta",
+                    "buildSystem",
+                    "certificationReport",
+                    "chat",
+                    "componentAnalysisReport",
+                    "documentation",
+                    "dynamicAnalysisReport",
+                    "eolNotice",
+                    "exportControlAssessment",
+                    "funding",
+                    "issueTracker",
+                    "license",
+                    "mailingList",
+                    "mavenCentral",
+                    "metrics",
+                    "npm",
+                    "nuget",
+                    "other",
+                    "privacyAssessment",
+                    "productMetadata",
+                    "purchaseOrder",
+                    "qualityAssessmentReport",
+                    "releaseHistory",
+                    "releaseNotes",
+                    "riskAssessment",
+                    "runtimeAnalysisReport",
+                    "secureSoftwareAttestation",
+                    "securityAdversaryModel",
+                    "securityAdvisory",
+                    "securityFix",
+                    "securityOther",
+                    "securityPenTestReport",
+                    "securityPolicy",
+                    "securityThreatModel",
+                    "socialMedia",
+                    "sourceArtifact",
+                    "staticAnalysisReport",
+                    "support",
+                    "vcs",
+                    "vulnerabilityDisclosureReport",
+                    "vulnerabilityExploitabilityAssessment"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_locator": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Core_contentType": {
+                    "$ref": "#/$defs/MediaType"
+        },
+        "https:__spdx.org_rdf_v3_Core_comment": {
+                    "type": "string"
         },
         "core_IntegrityMethod": {
             "allOf": [
@@ -483,11 +663,14 @@
                     "type": "object",
                     "properties": {
                         "comment": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_comment"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_comment": {
+                    "type": "string"
         },
         "core_NamespaceMap": {
             "allOf": [
@@ -508,10 +691,10 @@
                     "type": "object",
                     "properties": {
                         "prefix": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_prefix"
                         },
                         "namespace": {
-                                "$ref": "#/$defs/anyURI"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_namespace"
                         }
                     },
                     "required": [
@@ -520,6 +703,12 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_prefix": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Core_namespace": {
+                    "$ref": "#/$defs/anyURI"
         },
         "core_PositiveIntegerRange": {
             "allOf": [
@@ -540,12 +729,10 @@
                     "type": "object",
                     "properties": {
                         "begin": {
-                                "type": "integer",
-                                "minimum": 0
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_begin"
                         },
                         "end": {
-                                "type": "integer",
-                                "minimum": 0
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_end"
                         }
                     },
                     "required": [
@@ -554,6 +741,14 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_begin": {
+                    "type": "integer",
+                    "minimum": 0
+        },
+        "https:__spdx.org_rdf_v3_Core_end": {
+                    "type": "integer",
+                    "minimum": 0
         },
         "core_Relationship": {
             "allOf": [
@@ -575,101 +770,32 @@
                     "type": "object",
                     "properties": {
                         "from": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_Element",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_from"
                         },
                         "to": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_Element",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_to"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_to"
+                                }
+                            ]
                         },
                         "relationshipType": {
-                                "enum": [
-                                    "affects",
-                                    "amendedBy",
-                                    "ancestorOf",
-                                    "availableFrom",
-                                    "configures",
-                                    "contains",
-                                    "coordinatedBy",
-                                    "copiedTo",
-                                    "delegatedTo",
-                                    "dependsOn",
-                                    "descendantOf",
-                                    "describes",
-                                    "doesNotAffect",
-                                    "expandsTo",
-                                    "exploitCreatedBy",
-                                    "fixedBy",
-                                    "fixedIn",
-                                    "foundBy",
-                                    "generates",
-                                    "hasAddedFile",
-                                    "hasAssessmentFor",
-                                    "hasAssociatedVulnerability",
-                                    "hasConcludedLicense",
-                                    "hasDataFile",
-                                    "hasDeclaredLicense",
-                                    "hasDeletedFile",
-                                    "hasDependencyManifest",
-                                    "hasDistributionArtifact",
-                                    "hasDocumentation",
-                                    "hasDynamicLink",
-                                    "hasEvidence",
-                                    "hasExample",
-                                    "hasHost",
-                                    "hasInputs",
-                                    "hasMetadata",
-                                    "hasOptionalComponent",
-                                    "hasOptionalDependency",
-                                    "hasOutputs",
-                                    "hasPrerequsite",
-                                    "hasProvidedDependency",
-                                    "hasRequirement",
-                                    "hasSpecification",
-                                    "hasStaticLink",
-                                    "hasTest",
-                                    "hasTestCase",
-                                    "hasVariant",
-                                    "invokedBy",
-                                    "modifiedBy",
-                                    "other",
-                                    "packagedBy",
-                                    "patchedBy",
-                                    "publishedBy",
-                                    "reportedBy",
-                                    "republishedBy",
-                                    "serializedInArtifact",
-                                    "testedOn",
-                                    "trainedOn",
-                                    "underInvestigationFor",
-                                    "usesTool"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_relationshipType"
                         },
                         "completeness": {
-                                "enum": [
-                                    "complete",
-                                    "incomplete",
-                                    "noAssertion"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_completeness"
                         },
                         "startTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_startTime"
                         },
                         "endTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_endTime"
                         }
                     },
                     "required": [
@@ -678,6 +804,100 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_from": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_Element",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_to": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_Element",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_relationshipType": {
+                "enum": [
+                    "affects",
+                    "amendedBy",
+                    "ancestorOf",
+                    "availableFrom",
+                    "configures",
+                    "contains",
+                    "coordinatedBy",
+                    "copiedTo",
+                    "delegatedTo",
+                    "dependsOn",
+                    "descendantOf",
+                    "describes",
+                    "doesNotAffect",
+                    "expandsTo",
+                    "exploitCreatedBy",
+                    "fixedBy",
+                    "fixedIn",
+                    "foundBy",
+                    "generates",
+                    "hasAddedFile",
+                    "hasAssessmentFor",
+                    "hasAssociatedVulnerability",
+                    "hasConcludedLicense",
+                    "hasDataFile",
+                    "hasDeclaredLicense",
+                    "hasDeletedFile",
+                    "hasDependencyManifest",
+                    "hasDistributionArtifact",
+                    "hasDocumentation",
+                    "hasDynamicLink",
+                    "hasEvidence",
+                    "hasExample",
+                    "hasHost",
+                    "hasInputs",
+                    "hasMetadata",
+                    "hasOptionalComponent",
+                    "hasOptionalDependency",
+                    "hasOutputs",
+                    "hasPrerequsite",
+                    "hasProvidedDependency",
+                    "hasRequirement",
+                    "hasSpecification",
+                    "hasStaticLink",
+                    "hasTest",
+                    "hasTestCase",
+                    "hasVariant",
+                    "invokedBy",
+                    "modifiedBy",
+                    "other",
+                    "packagedBy",
+                    "patchedBy",
+                    "publishedBy",
+                    "reportedBy",
+                    "republishedBy",
+                    "serializedInArtifact",
+                    "testedOn",
+                    "trainedOn",
+                    "underInvestigationFor",
+                    "usesTool"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_completeness": {
+                "enum": [
+                    "complete",
+                    "incomplete",
+                    "noAssertion"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_startTime": {
+                    "$ref": "#/$defs/DateTime"
+        },
+        "https:__spdx.org_rdf_v3_Core_endTime": {
+                    "$ref": "#/$defs/DateTime"
         },
         "core_SpdxDocument": {
             "allOf": [
@@ -699,41 +919,64 @@
                     "type": "object",
                     "properties": {
                         "imports": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_ExternalMap",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_imports"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_imports"
+                                }
+                            ]
                         },
                         "namespaceMap": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_NamespaceMap",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_namespaceMap"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_namespaceMap"
+                                }
+                            ]
                         },
                         "dataLicense": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/simplelicensing_AnyLicenseInfo",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_dataLicense"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_imports": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_ExternalMap",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_namespaceMap": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_NamespaceMap",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_dataLicense": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/simplelicensing_AnyLicenseInfo",
+                        "unevaluatedProperties": false
+                    }
+                ]
         },
         "core_Tool": {
             "allOf": [
@@ -778,25 +1021,32 @@
                     "type": "object",
                     "properties": {
                         "additionText": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_additionText"
                         },
                         "standardAdditionTemplate": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_standardAdditionTemplate"
                         },
                         "isDeprecatedAdditionId": {
-                                "type": "boolean"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_isDeprecatedAdditionId"
                         },
                         "obsoletedBy": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_obsoletedBy"
                         },
                         "licenseXml": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_licenseXml"
                         },
                         "seeAlso": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/$defs/anyURI"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_seeAlso"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_seeAlso"
+                                }
+                            ]
                         }
                     },
                     "required": [
@@ -804,6 +1054,24 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_additionText": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_standardAdditionTemplate": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_isDeprecatedAdditionId": {
+                    "type": "boolean"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_obsoletedBy": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_licenseXml": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_seeAlso": {
+                    "$ref": "#/$defs/anyURI"
         },
         "expandedlicensing_ListedLicenseException": {
             "allOf": [
@@ -825,14 +1093,20 @@
                     "type": "object",
                     "properties": {
                         "listVersionAdded": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_listVersionAdded"
                         },
                         "deprecatedVersion": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_deprecatedVersion"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_listVersionAdded": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_deprecatedVersion": {
+                    "type": "string"
         },
         "security_VulnAssessmentRelationship": {
             "allOf": [
@@ -854,35 +1128,50 @@
                     "type": "object",
                     "properties": {
                         "assessedElement": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_Element",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_assessedElement"
                         },
                         "publishedTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_publishedTime"
                         },
                         "suppliedBy": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_Agent",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_suppliedBy"
                         },
                         "modifiedTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_modifiedTime"
                         },
                         "withdrawnTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_withdrawnTime"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Security_assessedElement": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_Element",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Security_publishedTime": {
+                    "$ref": "#/$defs/DateTime"
+        },
+        "https:__spdx.org_rdf_v3_Core_suppliedBy": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_Agent",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Security_modifiedTime": {
+                    "$ref": "#/$defs/DateTime"
+        },
+        "https:__spdx.org_rdf_v3_Security_withdrawnTime": {
+                    "$ref": "#/$defs/DateTime"
         },
         "simplelicensing_AnyLicenseInfo": {
             "allOf": [
@@ -927,22 +1216,23 @@
                     "type": "object",
                     "properties": {
                         "licenseExpression": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_SimpleLicensing_licenseExpression"
                         },
                         "licenseListVersion": {
-                                "$ref": "#/$defs/SemVer"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_SimpleLicensing_licenseListVersion"
                         },
                         "customIdToUri": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_DictionaryEntry",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_SimpleLicensing_customIdToUri"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_SimpleLicensing_customIdToUri"
+                                }
+                            ]
                         }
                     },
                     "required": [
@@ -950,6 +1240,21 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_SimpleLicensing_licenseExpression": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_SimpleLicensing_licenseListVersion": {
+                    "$ref": "#/$defs/SemVer"
+        },
+        "https:__spdx.org_rdf_v3_SimpleLicensing_customIdToUri": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_DictionaryEntry",
+                        "unevaluatedProperties": false
+                    }
+                ]
         },
         "simplelicensing_SimpleLicensingText": {
             "allOf": [
@@ -971,7 +1276,7 @@
                     "type": "object",
                     "properties": {
                         "licenseText": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_SimpleLicensing_licenseText"
                         }
                     },
                     "required": [
@@ -979,6 +1284,9 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_SimpleLicensing_licenseText": {
+                    "type": "string"
         },
         "build_Build": {
             "allOf": [
@@ -1000,64 +1308,81 @@
                     "type": "object",
                     "properties": {
                         "buildType": {
-                                "$ref": "#/$defs/anyURI"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_buildType"
                         },
                         "buildId": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_buildId"
                         },
                         "configSourceEntrypoint": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_configSourceEntrypoint"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_configSourceEntrypoint"
+                                }
+                            ]
                         },
                         "configSourceUri": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/$defs/anyURI"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_configSourceUri"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_configSourceUri"
+                                }
+                            ]
                         },
                         "configSourceDigest": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_Hash",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_configSourceDigest"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_configSourceDigest"
+                                }
+                            ]
                         },
                         "parameters": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_DictionaryEntry",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_parameters"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_parameters"
+                                }
+                            ]
                         },
                         "buildStartTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_buildStartTime"
                         },
                         "buildEndTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_buildEndTime"
                         },
                         "environment": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_DictionaryEntry",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_environment"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_environment"
+                                }
+                            ]
                         }
                     },
                     "required": [
@@ -1065,6 +1390,51 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Build_buildType": {
+                    "$ref": "#/$defs/anyURI"
+        },
+        "https:__spdx.org_rdf_v3_Build_buildId": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Build_configSourceEntrypoint": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Build_configSourceUri": {
+                    "$ref": "#/$defs/anyURI"
+        },
+        "https:__spdx.org_rdf_v3_Build_configSourceDigest": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_Hash",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Build_parameters": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_DictionaryEntry",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Build_buildStartTime": {
+                    "$ref": "#/$defs/DateTime"
+        },
+        "https:__spdx.org_rdf_v3_Build_buildEndTime": {
+                    "$ref": "#/$defs/DateTime"
+        },
+        "https:__spdx.org_rdf_v3_Build_environment": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_DictionaryEntry",
+                        "unevaluatedProperties": false
+                    }
+                ]
         },
         "core_Agent": {
             "allOf": [
@@ -1109,25 +1479,16 @@
                     "type": "object",
                     "properties": {
                         "annotationType": {
-                                "enum": [
-                                    "other",
-                                    "review"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_annotationType"
                         },
                         "contentType": {
-                                "$ref": "#/$defs/MediaType"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_contentType"
                         },
                         "statement": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_statement"
                         },
                         "subject": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_Element",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_subject"
                         }
                     },
                     "required": [
@@ -1136,6 +1497,27 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_annotationType": {
+                "enum": [
+                    "other",
+                    "review"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_contentType": {
+                    "$ref": "#/$defs/MediaType"
+        },
+        "https:__spdx.org_rdf_v3_Core_statement": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Core_subject": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_Element",
+                        "unevaluatedProperties": false
+                    }
+                ]
         },
         "core_Artifact": {
             "allOf": [
@@ -1157,44 +1539,76 @@
                     "type": "object",
                     "properties": {
                         "originatedBy": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_Agent",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_originatedBy"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_originatedBy"
+                                }
+                            ]
                         },
                         "suppliedBy": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_Agent",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_suppliedBy"
                         },
                         "builtTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_builtTime"
                         },
                         "releaseTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_releaseTime"
                         },
                         "validUntilTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_validUntilTime"
                         },
                         "standard": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_standard"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_standard"
+                                }
+                            ]
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_originatedBy": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_Agent",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_suppliedBy": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_Agent",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_builtTime": {
+                    "$ref": "#/$defs/DateTime"
+        },
+        "https:__spdx.org_rdf_v3_Core_releaseTime": {
+                    "$ref": "#/$defs/DateTime"
+        },
+        "https:__spdx.org_rdf_v3_Core_validUntilTime": {
+                    "$ref": "#/$defs/DateTime"
+        },
+        "https:__spdx.org_rdf_v3_Core_standard": {
+                    "type": "string"
         },
         "core_Bundle": {
             "allOf": [
@@ -1216,11 +1630,14 @@
                     "type": "object",
                     "properties": {
                         "context": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_context"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_context": {
+                    "type": "string"
         },
         "core_Hash": {
             "allOf": [
@@ -1242,35 +1659,10 @@
                     "type": "object",
                     "properties": {
                         "algorithm": {
-                                "enum": [
-                                    "blake2b256",
-                                    "blake2b384",
-                                    "blake2b512",
-                                    "blake3",
-                                    "crystalsDilithium",
-                                    "crystalsKyber",
-                                    "falcon",
-                                    "md2",
-                                    "md4",
-                                    "md5",
-                                    "md6",
-                                    "other",
-                                    "sha1",
-                                    "sha224",
-                                    "sha256",
-                                    "sha384",
-                                    "sha3_224",
-                                    "sha3_256",
-                                    "sha3_384",
-                                    "sha3_512",
-                                    "sha512",
-                                    "spdxPvcSha1",
-                                    "spdxPvcSha256",
-                                    "sphincsPlus"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_algorithm"
                         },
                         "hashValue": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_hashValue"
                         }
                     },
                     "required": [
@@ -1279,6 +1671,37 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_algorithm": {
+                "enum": [
+                    "blake2b256",
+                    "blake2b384",
+                    "blake2b512",
+                    "blake3",
+                    "crystalsDilithium",
+                    "crystalsKyber",
+                    "falcon",
+                    "md2",
+                    "md4",
+                    "md5",
+                    "md6",
+                    "other",
+                    "sha1",
+                    "sha224",
+                    "sha256",
+                    "sha384",
+                    "sha3_224",
+                    "sha3_256",
+                    "sha3_384",
+                    "sha3_512",
+                    "sha512",
+                    "spdxPvcSha1",
+                    "spdxPvcSha256",
+                    "sphincsPlus"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Core_hashValue": {
+                    "type": "string"
         },
         "core_LifecycleScopedRelationship": {
             "allOf": [
@@ -1300,18 +1723,21 @@
                     "type": "object",
                     "properties": {
                         "scope": {
-                                "enum": [
-                                    "build",
-                                    "design",
-                                    "development",
-                                    "other",
-                                    "runtime",
-                                    "test"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_scope"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Core_scope": {
+                "enum": [
+                    "build",
+                    "design",
+                    "development",
+                    "other",
+                    "runtime",
+                    "test"
+                ]
         },
         "core_Organization": {
             "allOf": [
@@ -1402,17 +1828,18 @@
                     "type": "object",
                     "properties": {
                         "member": {
-                            "type": "array",
-                            "minItems": 2,
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/simplelicensing_AnyLicenseInfo",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "minItems": 2,
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_member"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_member"
+                                }
+                            ]
                         }
                     },
                     "required": [
@@ -1420,6 +1847,15 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_member": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/simplelicensing_AnyLicenseInfo",
+                        "unevaluatedProperties": false
+                    }
+                ]
         },
         "expandedlicensing_CustomLicenseAddition": {
             "allOf": [
@@ -1464,17 +1900,18 @@
                     "type": "object",
                     "properties": {
                         "member": {
-                            "type": "array",
-                            "minItems": 2,
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/simplelicensing_AnyLicenseInfo",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "minItems": 2,
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_member"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_member"
+                                }
+                            ]
                         }
                     },
                     "required": [
@@ -1482,6 +1919,15 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_member": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/simplelicensing_AnyLicenseInfo",
+                        "unevaluatedProperties": false
+                    }
+                ]
         },
         "expandedlicensing_ExtendableLicense": {
             "allOf": [
@@ -1526,34 +1972,41 @@
                     "type": "object",
                     "properties": {
                         "licenseText": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_SimpleLicensing_licenseText"
                         },
                         "isOsiApproved": {
-                                "type": "boolean"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_isOsiApproved"
                         },
                         "isFsfLibre": {
-                                "type": "boolean"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_isFsfLibre"
                         },
                         "standardLicenseHeader": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_standardLicenseHeader"
                         },
                         "standardLicenseTemplate": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_standardLicenseTemplate"
                         },
                         "isDeprecatedLicenseId": {
-                                "type": "boolean"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_isDeprecatedLicenseId"
                         },
                         "obsoletedBy": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_obsoletedBy"
                         },
                         "licenseXml": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_licenseXml"
                         },
                         "seeAlso": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/$defs/anyURI"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_seeAlso"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_seeAlso"
+                                }
+                            ]
                         }
                     },
                     "required": [
@@ -1561,6 +2014,33 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_SimpleLicensing_licenseText": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_isOsiApproved": {
+                    "type": "boolean"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_isFsfLibre": {
+                    "type": "boolean"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_standardLicenseHeader": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_standardLicenseTemplate": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_isDeprecatedLicenseId": {
+                    "type": "boolean"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_obsoletedBy": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_licenseXml": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_seeAlso": {
+                    "$ref": "#/$defs/anyURI"
         },
         "expandedlicensing_ListedLicense": {
             "allOf": [
@@ -1582,14 +2062,20 @@
                     "type": "object",
                     "properties": {
                         "listVersionAdded": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_listVersionAdded"
                         },
                         "deprecatedVersion": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_deprecatedVersion"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_listVersionAdded": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_deprecatedVersion": {
+                    "type": "string"
         },
         "expandedlicensing_OrLaterOperator": {
             "allOf": [
@@ -1611,13 +2097,7 @@
                     "type": "object",
                     "properties": {
                         "subjectLicense": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/expandedlicensing_License",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_subjectLicense"
                         }
                     },
                     "required": [
@@ -1625,6 +2105,15 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_subjectLicense": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/expandedlicensing_License",
+                        "unevaluatedProperties": false
+                    }
+                ]
         },
         "expandedlicensing_WithAdditionOperator": {
             "allOf": [
@@ -1646,22 +2135,10 @@
                     "type": "object",
                     "properties": {
                         "subjectLicense": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/expandedlicensing_ExtendableLicense",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_subjectLicense"
                         },
                         "subjectAddition": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/expandedlicensing_LicenseAddition",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_subjectAddition"
                         }
                     },
                     "required": [
@@ -1670,6 +2147,24 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_subjectLicense": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/expandedlicensing_ExtendableLicense",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_ExpandedLicensing_subjectAddition": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/expandedlicensing_LicenseAddition",
+                        "unevaluatedProperties": false
+                    }
+                ]
         },
         "security_CvssV2VulnAssessmentRelationship": {
             "allOf": [
@@ -1691,10 +2186,10 @@
                     "type": "object",
                     "properties": {
                         "score": {
-                                "type": "number"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_score"
                         },
                         "vectorString": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_vectorString"
                         }
                     },
                     "required": [
@@ -1703,6 +2198,12 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Security_score": {
+                    "type": "number"
+        },
+        "https:__spdx.org_rdf_v3_Security_vectorString": {
+                    "type": "string"
         },
         "security_CvssV3VulnAssessmentRelationship": {
             "allOf": [
@@ -1724,19 +2225,13 @@
                     "type": "object",
                     "properties": {
                         "score": {
-                                "type": "number"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_score"
                         },
                         "severity": {
-                                "enum": [
-                                    "critical",
-                                    "high",
-                                    "low",
-                                    "medium",
-                                    "none"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_severity"
                         },
                         "vectorString": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_vectorString"
                         }
                     },
                     "required": [
@@ -1746,6 +2241,21 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Security_score": {
+                    "type": "number"
+        },
+        "https:__spdx.org_rdf_v3_Security_severity": {
+                "enum": [
+                    "critical",
+                    "high",
+                    "low",
+                    "medium",
+                    "none"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Security_vectorString": {
+                    "type": "string"
         },
         "security_CvssV4VulnAssessmentRelationship": {
             "allOf": [
@@ -1767,19 +2277,13 @@
                     "type": "object",
                     "properties": {
                         "score": {
-                                "type": "number"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_score"
                         },
                         "severity": {
-                                "enum": [
-                                    "critical",
-                                    "high",
-                                    "low",
-                                    "medium",
-                                    "none"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_severity"
                         },
                         "vectorString": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_vectorString"
                         }
                     },
                     "required": [
@@ -1789,6 +2293,21 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Security_score": {
+                    "type": "number"
+        },
+        "https:__spdx.org_rdf_v3_Security_severity": {
+                "enum": [
+                    "critical",
+                    "high",
+                    "low",
+                    "medium",
+                    "none"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Security_vectorString": {
+                    "type": "string"
         },
         "security_EpssVulnAssessmentRelationship": {
             "allOf": [
@@ -1810,13 +2329,13 @@
                     "type": "object",
                     "properties": {
                         "probability": {
-                                "type": "number"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_probability"
                         },
                         "percentile": {
-                                "type": "number"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_percentile"
                         },
                         "publishedTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_publishedTime"
                         }
                     },
                     "required": [
@@ -1826,6 +2345,15 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Security_probability": {
+                    "type": "number"
+        },
+        "https:__spdx.org_rdf_v3_Security_percentile": {
+                    "type": "number"
+        },
+        "https:__spdx.org_rdf_v3_Security_publishedTime": {
+                    "$ref": "#/$defs/DateTime"
         },
         "security_ExploitCatalogVulnAssessmentRelationship": {
             "allOf": [
@@ -1847,16 +2375,13 @@
                     "type": "object",
                     "properties": {
                         "catalogType": {
-                                "enum": [
-                                    "kev",
-                                    "other"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_catalogType"
                         },
                         "exploited": {
-                                "type": "boolean"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_exploited"
                         },
                         "security:locator": {
-                                "$ref": "#/$defs/anyURI"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_locator"
                         }
                     },
                     "required": [
@@ -1866,6 +2391,18 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Security_catalogType": {
+                "enum": [
+                    "kev",
+                    "other"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Security_exploited": {
+                    "type": "boolean"
+        },
+        "https:__spdx.org_rdf_v3_Security_locator": {
+                    "$ref": "#/$defs/anyURI"
         },
         "security_SsvcVulnAssessmentRelationship": {
             "allOf": [
@@ -1887,12 +2424,7 @@
                     "type": "object",
                     "properties": {
                         "decisionType": {
-                                "enum": [
-                                    "act",
-                                    "attend",
-                                    "track",
-                                    "trackStar"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_decisionType"
                         }
                     },
                     "required": [
@@ -1900,6 +2432,14 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Security_decisionType": {
+                "enum": [
+                    "act",
+                    "attend",
+                    "track",
+                    "trackStar"
+                ]
         },
         "security_VexVulnAssessmentRelationship": {
             "allOf": [
@@ -1921,14 +2461,20 @@
                     "type": "object",
                     "properties": {
                         "vexVersion": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_vexVersion"
                         },
                         "statusNotes": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_statusNotes"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Security_vexVersion": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Security_statusNotes": {
+                    "type": "string"
         },
         "security_Vulnerability": {
             "allOf": [
@@ -1950,17 +2496,26 @@
                     "type": "object",
                     "properties": {
                         "publishedTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_publishedTime"
                         },
                         "modifiedTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_modifiedTime"
                         },
                         "withdrawnTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_withdrawnTime"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Security_publishedTime": {
+                    "$ref": "#/$defs/DateTime"
+        },
+        "https:__spdx.org_rdf_v3_Security_modifiedTime": {
+                    "$ref": "#/$defs/DateTime"
+        },
+        "https:__spdx.org_rdf_v3_Security_withdrawnTime": {
+                    "$ref": "#/$defs/DateTime"
         },
         "software_SoftwareArtifact": {
             "allOf": [
@@ -1982,89 +2537,118 @@
                     "type": "object",
                     "properties": {
                         "contentIdentifier": {
-                                "$ref": "#/$defs/anyURI"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_contentIdentifier"
                         },
                         "primaryPurpose": {
-                                "enum": [
-                                    "application",
-                                    "archive",
-                                    "bom",
-                                    "configuration",
-                                    "container",
-                                    "data",
-                                    "device",
-                                    "deviceDriver",
-                                    "diskImage",
-                                    "documentation",
-                                    "evidence",
-                                    "executable",
-                                    "file",
-                                    "filesystemImage",
-                                    "firmware",
-                                    "framework",
-                                    "install",
-                                    "library",
-                                    "manifest",
-                                    "model",
-                                    "module",
-                                    "operatingSystem",
-                                    "other",
-                                    "patch",
-                                    "platform",
-                                    "requirement",
-                                    "source",
-                                    "specification",
-                                    "test"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_primaryPurpose"
                         },
                         "additionalPurpose": {
-                            "type": "array",
-                            "items": {
-                                "enum": [
-                                    "application",
-                                    "archive",
-                                    "bom",
-                                    "configuration",
-                                    "container",
-                                    "data",
-                                    "device",
-                                    "deviceDriver",
-                                    "diskImage",
-                                    "documentation",
-                                    "evidence",
-                                    "executable",
-                                    "file",
-                                    "filesystemImage",
-                                    "firmware",
-                                    "framework",
-                                    "install",
-                                    "library",
-                                    "manifest",
-                                    "model",
-                                    "module",
-                                    "operatingSystem",
-                                    "other",
-                                    "patch",
-                                    "platform",
-                                    "requirement",
-                                    "source",
-                                    "specification",
-                                    "test"
-                                ]
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_additionalPurpose"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_additionalPurpose"
+                                }
+                            ]
                         },
                         "copyrightText": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_copyrightText"
                         },
                         "attributionText": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_attributionText"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_attributionText"
+                                }
+                            ]
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Software_contentIdentifier": {
+                    "$ref": "#/$defs/anyURI"
+        },
+        "https:__spdx.org_rdf_v3_Software_primaryPurpose": {
+                "enum": [
+                    "application",
+                    "archive",
+                    "bom",
+                    "configuration",
+                    "container",
+                    "data",
+                    "device",
+                    "deviceDriver",
+                    "diskImage",
+                    "documentation",
+                    "evidence",
+                    "executable",
+                    "file",
+                    "filesystemImage",
+                    "firmware",
+                    "framework",
+                    "install",
+                    "library",
+                    "manifest",
+                    "model",
+                    "module",
+                    "operatingSystem",
+                    "other",
+                    "patch",
+                    "platform",
+                    "requirement",
+                    "source",
+                    "specification",
+                    "test"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Software_additionalPurpose": {
+                "enum": [
+                    "application",
+                    "archive",
+                    "bom",
+                    "configuration",
+                    "container",
+                    "data",
+                    "device",
+                    "deviceDriver",
+                    "diskImage",
+                    "documentation",
+                    "evidence",
+                    "executable",
+                    "file",
+                    "filesystemImage",
+                    "firmware",
+                    "framework",
+                    "install",
+                    "library",
+                    "manifest",
+                    "model",
+                    "module",
+                    "operatingSystem",
+                    "other",
+                    "patch",
+                    "platform",
+                    "requirement",
+                    "source",
+                    "specification",
+                    "test"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Software_copyrightText": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Software_attributionText": {
+                    "type": "string"
         },
         "core_Bom": {
             "allOf": [
@@ -2132,17 +2716,30 @@
                     "type": "object",
                     "properties": {
                         "actionStatement": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_actionStatement"
                         },
                         "actionStatementTime": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/$defs/DateTime"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_actionStatementTime"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_actionStatementTime"
+                                }
+                            ]
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Security_actionStatement": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Security_actionStatementTime": {
+                    "$ref": "#/$defs/DateTime"
         },
         "security_VexFixedVulnAssessmentRelationship": {
             "allOf": [
@@ -2187,23 +2784,32 @@
                     "type": "object",
                     "properties": {
                         "justificationType": {
-                                "enum": [
-                                    "componentNotPresent",
-                                    "inlineMitigationsAlreadyExist",
-                                    "vulnerableCodeCannotBeControlledByAdversary",
-                                    "vulnerableCodeNotInExecutePath",
-                                    "vulnerableCodeNotPresent"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_justificationType"
                         },
                         "impactStatement": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_impactStatement"
                         },
                         "impactStatementTime": {
-                                "$ref": "#/$defs/DateTime"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_impactStatementTime"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Security_justificationType": {
+                "enum": [
+                    "componentNotPresent",
+                    "inlineMitigationsAlreadyExist",
+                    "vulnerableCodeCannotBeControlledByAdversary",
+                    "vulnerableCodeNotInExecutePath",
+                    "vulnerableCodeNotPresent"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Security_impactStatement": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Security_impactStatementTime": {
+                    "$ref": "#/$defs/DateTime"
         },
         "security_VexUnderInvestigationVulnAssessmentRelationship": {
             "allOf": [
@@ -2248,11 +2854,14 @@
                     "type": "object",
                     "properties": {
                         "software:contentType": {
-                                "$ref": "#/$defs/MediaType"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_contentType"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Software_contentType": {
+                    "$ref": "#/$defs/MediaType"
         },
         "software_Package": {
             "allOf": [
@@ -2274,23 +2883,38 @@
                     "type": "object",
                     "properties": {
                         "packageVersion": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_packageVersion"
                         },
                         "downloadLocation": {
-                                "$ref": "#/$defs/anyURI"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_downloadLocation"
                         },
                         "packageUrl": {
-                                "$ref": "#/$defs/anyURI"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_packageUrl"
                         },
                         "homePage": {
-                                "$ref": "#/$defs/anyURI"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_homePage"
                         },
                         "sourceInfo": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_sourceInfo"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Software_packageVersion": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Software_downloadLocation": {
+                    "$ref": "#/$defs/anyURI"
+        },
+        "https:__spdx.org_rdf_v3_Software_packageUrl": {
+                    "$ref": "#/$defs/anyURI"
+        },
+        "https:__spdx.org_rdf_v3_Software_homePage": {
+                    "$ref": "#/$defs/anyURI"
+        },
+        "https:__spdx.org_rdf_v3_Software_sourceInfo": {
+                    "type": "string"
         },
         "software_Sbom": {
             "allOf": [
@@ -2312,21 +2936,31 @@
                     "type": "object",
                     "properties": {
                         "sbomType": {
-                            "type": "array",
-                            "items": {
-                                "enum": [
-                                    "analyzed",
-                                    "build",
-                                    "deployed",
-                                    "design",
-                                    "runtime",
-                                    "source"
-                                ]
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_sbomType"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_sbomType"
+                                }
+                            ]
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Software_sbomType": {
+                "enum": [
+                    "analyzed",
+                    "build",
+                    "deployed",
+                    "design",
+                    "runtime",
+                    "source"
+                ]
         },
         "software_Snippet": {
             "allOf": [
@@ -2348,31 +2982,13 @@
                     "type": "object",
                     "properties": {
                         "byteRange": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_PositiveIntegerRange",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_byteRange"
                         },
                         "lineRange": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_PositiveIntegerRange",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_lineRange"
                         },
                         "snippetFromFile": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/software_File",
-                                        "unevaluatedProperties": false
-                                    }
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_snippetFromFile"
                         }
                     },
                     "required": [
@@ -2380,6 +2996,33 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Software_byteRange": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_PositiveIntegerRange",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Software_lineRange": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_PositiveIntegerRange",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Software_snippetFromFile": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/software_File",
+                        "unevaluatedProperties": false
+                    }
+                ]
         },
         "ai_AIPackage": {
             "allOf": [
@@ -2401,108 +3044,209 @@
                     "type": "object",
                     "properties": {
                         "energyConsumption": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_energyConsumption"
                         },
                         "standardCompliance": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_standardCompliance"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_standardCompliance"
+                                }
+                            ]
                         },
                         "limitation": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_limitation"
                         },
                         "typeOfModel": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_typeOfModel"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_typeOfModel"
+                                }
+                            ]
                         },
                         "informationAboutTraining": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_informationAboutTraining"
                         },
                         "informationAboutApplication": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_informationAboutApplication"
                         },
                         "hyperparameter": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_DictionaryEntry",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_hyperparameter"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_hyperparameter"
+                                }
+                            ]
                         },
                         "modelDataPreprocessing": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_modelDataPreprocessing"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_modelDataPreprocessing"
+                                }
+                            ]
                         },
                         "modelExplainability": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_modelExplainability"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_modelExplainability"
+                                }
+                            ]
                         },
                         "ai:sensitivePersonalInformation": {
-                                "enum": [
-                                    "PresenceType:no",
-                                    "PresenceType:noAssertion",
-                                    "PresenceType:yes"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_sensitivePersonalInformation"
                         },
                         "metricDecisionThreshold": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_DictionaryEntry",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_metricDecisionThreshold"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_metricDecisionThreshold"
+                                }
+                            ]
                         },
                         "metric": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_DictionaryEntry",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_metric"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_metric"
+                                }
+                            ]
                         },
                         "domain": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_domain"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_domain"
+                                }
+                            ]
                         },
                         "autonomyType": {
-                                "enum": [
-                                    "no",
-                                    "noAssertion",
-                                    "yes"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_autonomyType"
                         },
                         "safetyRiskAssessment": {
-                                "enum": [
-                                    "high",
-                                    "low",
-                                    "medium",
-                                    "serious"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_safetyRiskAssessment"
                         }
                     }
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_AI_energyConsumption": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_AI_standardCompliance": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_AI_limitation": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_AI_typeOfModel": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_AI_informationAboutTraining": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_AI_informationAboutApplication": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_AI_hyperparameter": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_DictionaryEntry",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_AI_modelDataPreprocessing": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_AI_modelExplainability": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_AI_sensitivePersonalInformation": {
+                "enum": [
+                    "PresenceType:no",
+                    "PresenceType:noAssertion",
+                    "PresenceType:yes"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_AI_metricDecisionThreshold": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_DictionaryEntry",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_AI_metric": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_DictionaryEntry",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_AI_domain": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_AI_autonomyType": {
+                "enum": [
+                    "no",
+                    "noAssertion",
+                    "yes"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_AI_safetyRiskAssessment": {
+                "enum": [
+                    "high",
+                    "low",
+                    "medium",
+                    "serious"
+                ]
         },
         "dataset_Dataset": {
             "allOf": [
@@ -2524,95 +3268,94 @@
                     "type": "object",
                     "properties": {
                         "datasetType": {
-                            "type": "array",
-                            "minItems": 1,
-                            "items": {
-                                "enum": [
-                                    "audio",
-                                    "categorical",
-                                    "graph",
-                                    "image",
-                                    "noAssertion",
-                                    "numeric",
-                                    "other",
-                                    "sensor",
-                                    "structured",
-                                    "syntactic",
-                                    "text",
-                                    "timeseries",
-                                    "timestamp",
-                                    "video"
-                                ]
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "minItems": 1,
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_datasetType"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_datasetType"
+                                }
+                            ]
                         },
                         "dataCollectionProcess": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_dataCollectionProcess"
                         },
                         "intendedUse": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_intendedUse"
                         },
                         "datasetSize": {
-                                "type": "integer"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_datasetSize"
                         },
                         "datasetNoise": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_datasetNoise"
                         },
                         "dataPreprocessing": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_dataPreprocessing"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_dataPreprocessing"
+                                }
+                            ]
                         },
                         "sensor": {
-                            "type": "array",
-                            "items": {
-                                "oneOf": [
-                                    { "$ref": "#/$defs/idRef" },
-                                    {
-                                        "$ref": "#/$defs/core_DictionaryEntry",
-                                        "unevaluatedProperties": false
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_sensor"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_sensor"
+                                }
+                            ]
                         },
                         "knownBias": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_knownBias"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_knownBias"
+                                }
+                            ]
                         },
                         "sensitivePersonalInformation": {
-                                "enum": [
-                                    "no",
-                                    "noAssertion",
-                                    "yes"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_sensitivePersonalInformation"
                         },
                         "anonymizationMethodUsed": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_anonymizationMethodUsed"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_anonymizationMethodUsed"
+                                }
+                            ]
                         },
                         "confidentialityLevel": {
-                                "enum": [
-                                    "amber",
-                                    "clear",
-                                    "green",
-                                    "red"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_confidentialityLevel"
                         },
                         "datasetUpdateMechanism": {
-                                "type": "string"
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_datasetUpdateMechanism"
                         },
                         "datasetAvailability": {
-                                "enum": [
-                                    "clickthrough",
-                                    "directDownload",
-                                    "query",
-                                    "registration",
-                                    "scrapingScript"
-                                ]
+                                    "$ref": "#/$defs/https:__spdx.org_rdf_v3_Dataset_datasetAvailability"
                         }
                     },
                     "required": [
@@ -2620,6 +3363,81 @@
                     ]
                 }
             ]
+        },
+        "https:__spdx.org_rdf_v3_Dataset_datasetType": {
+                "enum": [
+                    "audio",
+                    "categorical",
+                    "graph",
+                    "image",
+                    "noAssertion",
+                    "numeric",
+                    "other",
+                    "sensor",
+                    "structured",
+                    "syntactic",
+                    "text",
+                    "timeseries",
+                    "timestamp",
+                    "video"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Dataset_dataCollectionProcess": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Dataset_intendedUse": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Dataset_datasetSize": {
+                    "type": "integer"
+        },
+        "https:__spdx.org_rdf_v3_Dataset_datasetNoise": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Dataset_dataPreprocessing": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Dataset_sensor": {
+                "oneOf": [
+                    { "$ref": "#/$defs/idRef" },
+                    {
+                        "$ref": "#/$defs/core_DictionaryEntry",
+                        "unevaluatedProperties": false
+                    }
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Dataset_knownBias": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Dataset_sensitivePersonalInformation": {
+                "enum": [
+                    "no",
+                    "noAssertion",
+                    "yes"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Dataset_anonymizationMethodUsed": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Dataset_confidentialityLevel": {
+                "enum": [
+                    "amber",
+                    "clear",
+                    "green",
+                    "red"
+                ]
+        },
+        "https:__spdx.org_rdf_v3_Dataset_datasetUpdateMechanism": {
+                    "type": "string"
+        },
+        "https:__spdx.org_rdf_v3_Dataset_datasetAvailability": {
+                "enum": [
+                    "clickthrough",
+                    "directDownload",
+                    "query",
+                    "registration",
+                    "scrapingScript"
+                ]
         },
         "idRef": {
             "type": "string"

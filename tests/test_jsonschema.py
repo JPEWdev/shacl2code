@@ -152,6 +152,7 @@ class TestOutput:
         (False, "root-unknown-field-nested.json"),
         (False, "root-unknown-type.json"),
         (False, "context-only.json"),
+        (True, "compact-array.json"),
     ],
 )
 def test_schema_validation(passes, file):

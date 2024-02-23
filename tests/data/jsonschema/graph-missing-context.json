@@ -1,0 +1,13 @@
+{
+  "@graph": [
+    {
+      "type": "Element",
+      "creationInfo": {
+        "type": "CreationInfo",
+        "specVersion": "3.0.0",
+        "created": "2022-12-01T00:00:00Z",
+        "createdBy": ["https://my_namespace.com/creator1"]
+      }
+    }
+  ]
+}

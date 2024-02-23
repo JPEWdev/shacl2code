@@ -43,7 +43,7 @@ TEST_CONTEXTS = [
         ("http://bar/vocab", "v", None),
     ],
 )
-def test_compact_expand(in_id, out_id, vocab):
+def test_compact(in_id, out_id, vocab):
     ctx = Context(TEST_CONTEXTS)
 
     result = ctx.compact(in_id, vocab)

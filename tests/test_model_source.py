@@ -17,6 +17,7 @@ SPDX3_MODEL = THIS_DIR / "data" / "spdx3.jsonld"
 SPDX3_EXPECT = THIS_DIR / "expect" / "raw" / "spdx3.txt"
 
 CONTEXT_TEMPLATE = THIS_DIR / "data" / "context.j2"
+CONTEXT_URL_TEMPLATE = THIS_DIR / "data" / "context-url.j2"
 SPDX3_CONTEXT = THIS_DIR / "data" / "spdx3-context.json"
 SPDX3_CONTEXT_URL = "https://spdx.github.io/spdx-3-model/context.json"
 SPDX3_CONTEXT_EXPECT = THIS_DIR / "expect" / "raw" / "spdx3-context.txt"
@@ -206,3 +207,84 @@ def test_context_url(http_server):
 
     with SPDX3_CONTEXT_EXPECT.open("r") as f:
         assert p.stdout == f.read()
+
+
+def test_context_args(http_server):
+    shutil.copyfile(
+        SPDX3_CONTEXT, os.path.join(http_server.document_root, "context.json")
+    )
+    shutil.copyfile(
+        SPDX3_CONTEXT, os.path.join(http_server.document_root, "context2.json")
+    )
+
+    def do_test(*, contexts=[], url_contexts=[]):
+        cmd = [
+            "shacl2code",
+            "generate",
+            "--input",
+            SPDX3_MODEL,
+        ]
+
+        expect = []
+        for c in contexts:
+            cmd.extend(["--context", c])
+            expect.append(c)
+
+        for c, url in url_contexts:
+            cmd.extend(["--context-url", c, url])
+            expect.append(url)
+
+        cmd += [
+            "jinja",
+            "--output",
+            "-",
+            "--template",
+            CONTEXT_URL_TEMPLATE,
+        ]
+
+        p = subprocess.run(
+            cmd,
+            check=True,
+            stdout=subprocess.PIPE,
+            encoding="utf-8",
+        )
+
+        assert p.stdout.splitlines() == expect
+
+    # Single URL
+    do_test(contexts=[f"{http_server.uri}/context.json"])
+
+    # Multiple URLs
+    do_test(
+        contexts=[
+            f"{http_server.uri}/context.json",
+            f"{http_server.uri}/context2.json",
+        ]
+    )
+
+    # URL rewriting
+    do_test(
+        url_contexts=[
+            (f"{http_server.uri}/context.json", "http://foo/A.json"),
+        ]
+    )
+
+    # Multiple URL rewriting
+    do_test(
+        url_contexts=[
+            (f"{http_server.uri}/context.json", "http://foo/A.json"),
+            (f"{http_server.uri}/context2.json", "http://foo/B.json"),
+        ]
+    )
+
+    # Mixed
+    do_test(
+        contexts=[
+            f"{http_server.uri}/context.json",
+            f"{http_server.uri}/context2.json",
+        ],
+        url_contexts=[
+            (f"{http_server.uri}/context.json", "http://foo/A.json"),
+            (f"{http_server.uri}/context2.json", "http://foo/B.json"),
+        ],
+    )

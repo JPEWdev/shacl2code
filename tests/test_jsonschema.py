@@ -19,7 +19,7 @@ EXPECT_DIR = THIS_DIR / "expect"
 SPDX3_MODEL = DATA_DIR / "model" / "spdx3.jsonld"
 SPDX3_EXPECT = THIS_DIR / "expect" / "jsonschema" / "spdx3.json"
 
-SPDX3_CONTEXT = DATA_DIR / "spdx3-context.json"
+SPDX3_CONTEXT = DATA_DIR / "model" / "spdx3-context.json"
 SPDX3_CONTEXT_URL = "https://spdx.github.io/spdx-3-model/context.json"
 
 SPDX3_CONTEXT_ARGS = ["--context-url", SPDX3_CONTEXT, SPDX3_CONTEXT_URL]

@@ -13,10 +13,11 @@ THIS_FILE = Path(__file__)
 THIS_DIR = THIS_FILE.parent
 
 EXPECT_DIR = THIS_DIR / "expect"
+DATA_DIR = THIS_DIR / "data"
 
 SPDX3_MODEL = THIS_DIR / "data" / "model" / "spdx3.jsonld"
 
-SPDX3_CONTEXT = THIS_DIR / "data" / "spdx3-context.json"
+SPDX3_CONTEXT = THIS_DIR / "data" / "model" / "spdx3-context.json"
 SPDX3_CONTEXT_URL = "https://spdx.github.io/spdx-3-model/context.json"
 
 

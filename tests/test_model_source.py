@@ -18,11 +18,11 @@ THIS_DIR = THIS_FILE.parent
 RAW_TEMPLATE = THIS_DIR / "data" / "raw.j2"
 SPDX3_MODEL = THIS_DIR / "data" / "model" / "spdx3.jsonld"
 SPDX3_EXPECT = THIS_DIR / "expect" / "raw" / "spdx3.txt"
-BAD_REFERENCE_MODEL = THIS_DIR / "data" / "model" / "bad-reference.jsonld"
+BAD_REFERENCE_MODEL = THIS_DIR / "data" / "bad-reference.jsonld"
 
 CONTEXT_TEMPLATE = THIS_DIR / "data" / "context.j2"
 CONTEXT_URL_TEMPLATE = THIS_DIR / "data" / "context-url.j2"
-SPDX3_CONTEXT = THIS_DIR / "data" / "spdx3-context.json"
+SPDX3_CONTEXT = THIS_DIR / "data" / "model" / "spdx3-context.json"
 SPDX3_CONTEXT_URL = "https://spdx.github.io/spdx-3-model/context.json"
 SPDX3_CONTEXT_EXPECT = THIS_DIR / "expect" / "raw" / "spdx3-context.txt"
 

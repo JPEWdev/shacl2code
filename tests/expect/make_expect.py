@@ -11,6 +11,7 @@ from pathlib import Path
 
 THIS_DIR = Path(__file__).parent
 DATA_DIR = THIS_DIR.parent / "data"
+MODEL_DIR = DATA_DIR / "model"
 
 
 def make_dest(src, lang, ext):
@@ -18,7 +19,8 @@ def make_dest(src, lang, ext):
 
 
 def main():
-    for src in DATA_DIR.iterdir():
+    found = False
+    for src in MODEL_DIR.iterdir():
         if not src.is_file():
             continue
 
@@ -82,6 +84,11 @@ def main():
                 ],
                 check=True,
             )
+        found = True
+
+    if not found:
+        print("No files generated")
+        return 1
 
 
 if __name__ == "__main__":

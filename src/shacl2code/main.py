@@ -15,7 +15,7 @@ from .version import VERSION
 from .lang import LANGUAGES
 
 
-def main():
+def main(args=None):
     def handle_generate(args):
         if "://" in args.input:
             with urllib.request.urlopen(args.input) as url:
@@ -119,6 +119,6 @@ def main():
     version_parser = command_subparser.add_parser("version", help="Show version")
     version_parser.set_defaults(func=handle_version)
 
-    args = parser.parse_args()
+    parsed_args = parser.parse_args(args)
 
-    return args.func(args)
+    return parsed_args.func(parsed_args)

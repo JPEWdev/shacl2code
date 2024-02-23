@@ -12,6 +12,10 @@ from dataclasses import dataclass
 from pyld import jsonld
 
 
+class ModelException(Exception):
+    pass
+
+
 def get_prop(o, name, key, default=None):
     if name in o:
         return o[name][0][key]
@@ -161,7 +165,7 @@ class Model(object):
                     elif self.is_class(prop_cls_id):
                         p.class_id = prop_cls_id
                     else:
-                        raise Exception(f"Unknown type '{prop_cls_id}'")
+                        raise ModelException(f"Unknown type '{prop_cls_id}'")
                 else:
                     p.datatype = get_prop(
                         prop,

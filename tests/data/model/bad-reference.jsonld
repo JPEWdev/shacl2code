@@ -1,0 +1,53 @@
+{
+  "@context": {
+    "core": "https://spdx.org/rdf/v3/Core/",
+    "ns0": "http://www.w3.org/2003/06/sw-vocab-status/ns#",
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "sh": "http://www.w3.org/ns/shacl#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#"
+  },
+  "@graph": [
+    {
+      "@id": "core:Element",
+      "@type": [
+        "owl:Class",
+        "sh:NodeShape"
+      ],
+      "ns0:term_status": "Stable",
+      "rdfs:comment": "An Element is a representation of a fundamental concept either directly inherent\nto the Bill of Materials (BOM) domain or indirectly related to the BOM domain\nand necessary for contextually characterizing BOM concepts and relationships.\nWithin SPDX-3.0 structure this is the base class acting as a consistent,\nunifying, and interoperable foundation for all explicit\nand inter-relatable content objects.",
+      "rdfs:subClassOf": {
+        "@id": "owl:Thing"
+      },
+      "sh:property": [
+        {
+          "@id": "_:N2e692ad92ed54242a8aa3ecb57879233"
+        }
+      ]
+    },
+    {
+      "@id": "_:N2e692ad92ed54242a8aa3ecb57879233",
+      "sh:class": {
+        "@id": "core:CreationInfo"
+      },
+      "sh:maxCount": 1,
+      "sh:minCount": 1,
+      "sh:name": "creationInfo",
+      "sh:path": {
+        "@id": "core:creationInfo"
+      }
+    },
+    {
+      "@id": "core:creationInfo",
+      "@type": "owl:ObjectProperty",
+      "ns0:term_status": "Stable",
+      "rdfs:comment": "CreationInfo provides information about the creation of the Element.",
+      "rdfs:domain": {
+        "@id": "core:Element"
+      },
+      "rdfs:range": {
+        "@id": "core:CreationInfo"
+      }
+    }
+  ]
+}

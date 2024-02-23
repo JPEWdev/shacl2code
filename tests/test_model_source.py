@@ -6,15 +6,19 @@
 import os
 import shutil
 import subprocess
+import pytest
 from pathlib import Path
+
+import shacl2code
 
 
 THIS_FILE = Path(__file__)
 THIS_DIR = THIS_FILE.parent
 
 RAW_TEMPLATE = THIS_DIR / "data" / "raw.j2"
-SPDX3_MODEL = THIS_DIR / "data" / "spdx3.jsonld"
+SPDX3_MODEL = THIS_DIR / "data" / "model" / "spdx3.jsonld"
 SPDX3_EXPECT = THIS_DIR / "expect" / "raw" / "spdx3.txt"
+BAD_REFERENCE_MODEL = THIS_DIR / "data" / "model" / "bad-reference.jsonld"
 
 CONTEXT_TEMPLATE = THIS_DIR / "data" / "context.j2"
 CONTEXT_URL_TEMPLATE = THIS_DIR / "data" / "context-url.j2"
@@ -288,3 +292,19 @@ def test_context_args(http_server):
             (f"{http_server.uri}/context2.json", "http://foo/B.json"),
         ],
     )
+
+
+def test_bad_model_class():
+    with pytest.raises(shacl2code.ModelException):
+        shacl2code.main(
+            [
+                "generate",
+                "--input",
+                str(BAD_REFERENCE_MODEL),
+                "jinja",
+                "--output",
+                "-",
+                "--template",
+                str(CONTEXT_TEMPLATE),
+            ]
+        )

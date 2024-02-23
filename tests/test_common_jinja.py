@@ -9,7 +9,7 @@ from pathlib import Path
 
 THIS_DIR = Path(__file__).parent
 
-SPDX3_MODEL = THIS_DIR / "data" / "spdx3.jsonld"
+SPDX3_MODEL = THIS_DIR / "data" / "model" / "spdx3.jsonld"
 ABORT_TEMPLATE = THIS_DIR / "data" / "abort.j2"
 BAD_ID_TEMPLATE = THIS_DIR / "data" / "bad-id.j2"
 

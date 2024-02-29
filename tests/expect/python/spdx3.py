@@ -408,7 +408,6 @@ class SHACLObject(object):
         json_name=None,
         min_count=None,
         max_count=None,
-        vocab=None,
     ):
         if json_name is None:
             json_name = pyname
@@ -416,7 +415,7 @@ class SHACLObject(object):
             raise KeyError(
                 f"'{pyname}' is already defined for '{self.__class__.__name__}'"
             )
-        self._obj_properties[pyname] = (json_name, prop, min_count, max_count, vocab)
+        self._obj_properties[pyname] = (json_name, prop, min_count, max_count)
         self._obj_data[json_name] = prop.init()
 
     def __setattr__(self, name, value):
@@ -424,7 +423,7 @@ class SHACLObject(object):
             return super().__setattr__(name, value)
 
         try:
-            (json_name, prop, _, _, _) = self._obj_properties[name]
+            (json_name, prop, _, _) = self._obj_properties[name]
         except KeyError:
             raise AttributeError(
                 f"'{name}' is not a valid property of {self.__class__.__name__}"
@@ -440,7 +439,7 @@ class SHACLObject(object):
             return self._obj_metadata
 
         try:
-            (json_name, prop, _, _, _) = self._obj_properties[name]
+            (json_name, prop, _, _) = self._obj_properties[name]
         except KeyError:
             raise AttributeError(
                 f"'{name}' is not a valid property of {self.__class__.__name__}"
@@ -449,7 +448,7 @@ class SHACLObject(object):
 
     def __delattr__(self, name):
         try:
-            (json_name, prop, _, _, _) = self._obj_properties[name]
+            (json_name, prop, _, _) = self._obj_properties[name]
         except KeyError:
             raise AttributeError(
                 f"'{name}' is not a valid property of {self.__class__.__name__}"
@@ -468,7 +467,7 @@ class SHACLObject(object):
             path = ["."]
 
         if callback(self, path):
-            for json_name, prop, _, _, _ in self._obj_properties.values():
+            for json_name, prop, _, _ in self._obj_properties.values():
                 prop.walk(self._obj_data[json_name], callback, path + [f".{json_name}"])
 
     def child_objects(self):
@@ -505,7 +504,7 @@ class SHACLObject(object):
         }
 
         for pyname, v in self._obj_properties.items():
-            json_name, prop, min_count, max_count, prop_vocab = v
+            json_name, prop, min_count, max_count = v
             value = self._obj_data[json_name]
             if prop.elide(value):
                 if min_count:
@@ -526,7 +525,7 @@ class SHACLObject(object):
                         f"Property '{pyname}' in {self.__class__.__name__} ({id(self)}) requires a maximum of {max_count} elements"
                     )
 
-            with context.vocab_push(prop_vocab):
+            with context.vocab_push(json_name):
                 d[context.compact(json_name)] = prop.serializer(value, context)
         return d
 
@@ -562,10 +561,10 @@ class SHACLObject(object):
             return object_ids[_id]
 
         for pyname, v in obj._obj_properties.items():
-            json_name, prop, _, _, prop_vocab = v
+            json_name, prop, _, _ = v
             for n in (json_name, context.compact(json_name)):
                 if n in data:
-                    with context.vocab_push(prop_vocab):
+                    with context.vocab_push(json_name):
                         obj._obj_data[json_name] = prop.deserialize(
                             data[n],
                             context,
@@ -585,7 +584,7 @@ class SHACLObject(object):
         visited.add(self)
 
         for pyname, v in self._obj_properties.items():
-            json_name, prop, _, _, _ = v
+            json_name, prop, _, _ = v
             self._obj_data[json_name] = prop.link_prop(
                 self._obj_data[json_name],
                 link_cache,
@@ -1459,7 +1458,6 @@ class core_CreationInfo(SHACLObject):
             SemVerProp(),
             json_name="https://spdx.org/rdf/v3/Core/specVersion",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Core/specVersion",
         )
         # A comment is an optional field for creators of the Element to provide comments
         # to the readers/reviewers of the document.
@@ -1467,7 +1465,6 @@ class core_CreationInfo(SHACLObject):
             "comment",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/comment",
-            vocab="https://spdx.org/rdf/v3/Core/comment",
         )
         # Created is a date that identifies when the Element was originally created.
         # The time stamp can serve as an indication as to whether the analysis needs to be updated. This is often the date of last change (e.g., a git commit date), not the date when the SPDX data was created, as doing so supports reproducible builds.
@@ -1476,7 +1473,6 @@ class core_CreationInfo(SHACLObject):
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Core/created",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Core/created",
         )
         # CreatedBy identifies who or what created the Element.
         # The generation method will assist the recipient of the Element in assessing
@@ -1486,7 +1482,6 @@ class core_CreationInfo(SHACLObject):
             ListProp(ObjectProp(core_Agent, False)),
             json_name="https://spdx.org/rdf/v3/Core/createdBy",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Core/createdBy",
         )
         # CreatedUsing identifies the tooling that was used during the creation of the Element.
         # The generation method will assist the recipient of the Element in assessing
@@ -1495,7 +1490,6 @@ class core_CreationInfo(SHACLObject):
             "createdUsing",
             ListProp(ObjectProp(core_Tool, False)),
             json_name="https://spdx.org/rdf/v3/Core/createdUsing",
-            vocab="https://spdx.org/rdf/v3/Core/createdUsing",
         )
         self._set_init_props(**kwargs)
 
@@ -1516,7 +1510,6 @@ class core_DictionaryEntry(SHACLObject):
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/key",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Core/key",
         )
         # A value used in a generic key-value pair.
         # A key-value pair can be used to implement a dictionary which associates a key with a value.
@@ -1524,7 +1517,6 @@ class core_DictionaryEntry(SHACLObject):
             "value",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/value",
-            vocab="https://spdx.org/rdf/v3/Core/value",
         )
         self._set_init_props(**kwargs)
 
@@ -1549,7 +1541,6 @@ class core_Element(SHACLObject):
             "name",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/name",
-            vocab="https://spdx.org/rdf/v3/Core/name",
         )
         # A summary is a short description of an Element. Here, the intent is to allow the Element creator to
         # provide concise information about the function or use of the Element.
@@ -1557,7 +1548,6 @@ class core_Element(SHACLObject):
             "summary",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/summary",
-            vocab="https://spdx.org/rdf/v3/Core/summary",
         )
         # This field is a detailed description of the Element. It may also be extracted from the Element itself.
         # The intent is to provide recipients of the SPDX file with a detailed technical explanation
@@ -1567,7 +1557,6 @@ class core_Element(SHACLObject):
             "description",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/description",
-            vocab="https://spdx.org/rdf/v3/Core/description",
         )
         # A comment is an optional field for creators of the Element to provide comments
         # to the readers/reviewers of the document.
@@ -1575,7 +1564,6 @@ class core_Element(SHACLObject):
             "comment",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/comment",
-            vocab="https://spdx.org/rdf/v3/Core/comment",
         )
         # CreationInfo provides information about the creation of the Element.
         self._add_property(
@@ -1583,14 +1571,12 @@ class core_Element(SHACLObject):
             ObjectProp(core_CreationInfo, True),
             json_name="https://spdx.org/rdf/v3/Core/creationInfo",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Core/creationInfo",
         )
         # VerifiedUsing provides an IntegrityMethod with which the integrity of an Element can be asserted.
         self._add_property(
             "verifiedUsing",
             ListProp(ObjectProp(core_IntegrityMethod, False)),
             json_name="https://spdx.org/rdf/v3/Core/verifiedUsing",
-            vocab="https://spdx.org/rdf/v3/Core/verifiedUsing",
         )
         # This field points to a resource outside the scope of the SPDX-3.0 content
         # that provides additional characteristics of an Element.
@@ -1598,7 +1584,6 @@ class core_Element(SHACLObject):
             "externalRef",
             ListProp(ObjectProp(core_ExternalRef, False)),
             json_name="https://spdx.org/rdf/v3/Core/externalRef",
-            vocab="https://spdx.org/rdf/v3/Core/externalRef",
         )
         # ExternalIdentifier points to a resource outside the scope of SPDX-3.0 content
         # that uniquely identifies an Element.
@@ -1606,14 +1591,12 @@ class core_Element(SHACLObject):
             "externalIdentifier",
             ListProp(ObjectProp(core_ExternalIdentifier, False)),
             json_name="https://spdx.org/rdf/v3/Core/externalIdentifier",
-            vocab="https://spdx.org/rdf/v3/Core/externalIdentifier",
         )
         # TODO
         self._add_property(
             "extension",
             ListProp(ExtensionProp()),
             json_name="https://spdx.org/rdf/v3/Core/extension",
-            vocab="https://spdx.org/rdf/v3/Core/extension",
         )
         self._set_init_props(**kwargs)
 
@@ -1642,7 +1625,6 @@ class core_ElementCollection(core_Element):
             "element",
             ListProp(ObjectProp(core_Element, False)),
             json_name="https://spdx.org/rdf/v3/Core/element",
-            vocab="https://spdx.org/rdf/v3/Core/element",
         )
         # This property is used to denote the root Element(s) of a tree of elements contained in an SBOM.
         # The tree consists of other elements directly and indirectly related through properties or Relationships from the root.
@@ -1650,7 +1632,6 @@ class core_ElementCollection(core_Element):
             "rootElement",
             ListProp(ObjectProp(core_Element, False)),
             json_name="https://spdx.org/rdf/v3/Core/rootElement",
-            vocab="https://spdx.org/rdf/v3/Core/rootElement",
         )
         # Describes a profile to which the creator of this ElementCollection intends to conform.
         # The profileConformance will apply to all Elements contained within the collection as well as the collection itself.
@@ -1661,7 +1642,6 @@ class core_ElementCollection(core_Element):
             "profileConformance",
             ListProp(core_ProfileIdentifierType()),
             json_name="https://spdx.org/rdf/v3/Core/profileConformance",
-            vocab="https://spdx.org/rdf/v3/Core/profileConformance",
         )
         self._set_init_props(**kwargs)
 
@@ -1682,7 +1662,6 @@ class core_ExternalIdentifier(SHACLObject):
             core_ExternalIdentifierType(),
             json_name="https://spdx.org/rdf/v3/Core/externalIdentifierType",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Core/externalIdentifierType",
         )
         # An identifier uniquely identifies an external element.
         self._add_property(
@@ -1690,7 +1669,6 @@ class core_ExternalIdentifier(SHACLObject):
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/identifier",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Core/identifier",
         )
         # A comment is an optional field for creators of the Element to provide comments
         # to the readers/reviewers of the document.
@@ -1698,14 +1676,12 @@ class core_ExternalIdentifier(SHACLObject):
             "comment",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/comment",
-            vocab="https://spdx.org/rdf/v3/Core/comment",
         )
         # A identifierLocator is TODO
         self._add_property(
             "identifierLocator",
             ListProp(AnyURIProp()),
             json_name="https://spdx.org/rdf/v3/Core/identifierLocator",
-            vocab="https://spdx.org/rdf/v3/Core/identifierLocator",
         )
         # An issuingAuthority is an entity that is authorized to issue identification credentials.
         #
@@ -1714,7 +1690,6 @@ class core_ExternalIdentifier(SHACLObject):
             "issuingAuthority",
             AnyURIProp(),
             json_name="https://spdx.org/rdf/v3/Core/issuingAuthority",
-            vocab="https://spdx.org/rdf/v3/Core/issuingAuthority",
         )
         self._set_init_props(**kwargs)
 
@@ -1737,28 +1712,24 @@ class core_ExternalMap(SHACLObject):
             AnyURIProp(),
             json_name="https://spdx.org/rdf/v3/Core/externalSpdxId",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Core/externalSpdxId",
         )
         # VerifiedUsing provides an IntegrityMethod with which the integrity of an Element can be asserted.
         self._add_property(
             "verifiedUsing",
             ListProp(ObjectProp(core_IntegrityMethod, False)),
             json_name="https://spdx.org/rdf/v3/Core/verifiedUsing",
-            vocab="https://spdx.org/rdf/v3/Core/verifiedUsing",
         )
         # A locationHint provides an indication of where to retrieve an external Element.
         self._add_property(
             "locationHint",
             AnyURIProp(),
             json_name="https://spdx.org/rdf/v3/Core/locationHint",
-            vocab="https://spdx.org/rdf/v3/Core/locationHint",
         )
         # A definingArtifact property is used to link the Element identifier for an Element defined external to a given SpdxDocument to an Artifact Element representing the SPDX serialization instance which contains the definition for the Element.
         self._add_property(
             "definingArtifact",
             ObjectProp(core_Artifact, False),
             json_name="https://spdx.org/rdf/v3/Core/definingArtifact",
-            vocab="https://spdx.org/rdf/v3/Core/definingArtifact",
         )
         self._set_init_props(**kwargs)
 
@@ -1778,21 +1749,18 @@ class core_ExternalRef(SHACLObject):
             "externalRefType",
             core_ExternalRefType(),
             json_name="https://spdx.org/rdf/v3/Core/externalRefType",
-            vocab="https://spdx.org/rdf/v3/Core/externalRefType",
         )
         # A locator provides the location of an external reference.
         self._add_property(
             "locator",
             ListProp(StringProp()),
             json_name="https://spdx.org/rdf/v3/Core/locator",
-            vocab="https://spdx.org/rdf/v3/Core/locator",
         )
         # ContentType specifies the media type of an Element or Property.
         self._add_property(
             "contentType",
             MediaTypeProp(),
             json_name="https://spdx.org/rdf/v3/Core/contentType",
-            vocab="https://spdx.org/rdf/v3/Core/contentType",
         )
         # A comment is an optional field for creators of the Element to provide comments
         # to the readers/reviewers of the document.
@@ -1800,7 +1768,6 @@ class core_ExternalRef(SHACLObject):
             "comment",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/comment",
-            vocab="https://spdx.org/rdf/v3/Core/comment",
         )
         self._set_init_props(**kwargs)
 
@@ -1823,7 +1790,6 @@ class core_IntegrityMethod(SHACLObject):
             "comment",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/comment",
-            vocab="https://spdx.org/rdf/v3/Core/comment",
         )
         self._set_init_props(**kwargs)
 
@@ -1857,7 +1823,6 @@ class core_NamespaceMap(SHACLObject):
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/prefix",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Core/prefix",
         )
         # A namespace provides an unambiguous mechanism for conveying a URI fragment portion of an ElementID.
         self._add_property(
@@ -1865,7 +1830,6 @@ class core_NamespaceMap(SHACLObject):
             AnyURIProp(),
             json_name="https://spdx.org/rdf/v3/Core/namespace",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Core/namespace",
         )
         self._set_init_props(**kwargs)
 
@@ -1886,7 +1850,6 @@ class core_PositiveIntegerRange(SHACLObject):
             PositiveIntegerProp(),
             json_name="https://spdx.org/rdf/v3/Core/begin",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Core/begin",
         )
         # end is a positive integer that defines the end of a range.
         self._add_property(
@@ -1894,7 +1857,6 @@ class core_PositiveIntegerRange(SHACLObject):
             PositiveIntegerProp(),
             json_name="https://spdx.org/rdf/v3/Core/end",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Core/end",
         )
         self._set_init_props(**kwargs)
 
@@ -1915,14 +1877,12 @@ class core_Relationship(core_Element):
             ObjectProp(core_Element, True),
             json_name="https://spdx.org/rdf/v3/Core/from",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Core/from",
         )
         # This field references an Element on the right-hand side of a relationship.
         self._add_property(
             "to",
             ListProp(ObjectProp(core_Element, False)),
             json_name="https://spdx.org/rdf/v3/Core/to",
-            vocab="https://spdx.org/rdf/v3/Core/to",
         )
         # This field provides information about the relationship between two Elements.
         # For example, you can represent a relationship between two different Files,
@@ -1932,7 +1892,6 @@ class core_Relationship(core_Element):
             core_RelationshipType(),
             json_name="https://spdx.org/rdf/v3/Core/relationshipType",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Core/relationshipType",
         )
         # Completeness gives information about whether the provided relationships are
         # complete, known to be incomplete or if no assertion is made either way.
@@ -1940,21 +1899,18 @@ class core_Relationship(core_Element):
             "completeness",
             core_RelationshipCompleteness(),
             json_name="https://spdx.org/rdf/v3/Core/completeness",
-            vocab="https://spdx.org/rdf/v3/Core/completeness",
         )
         # A startTime specifies the time from which element is applicable / valid.
         self._add_property(
             "startTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Core/startTime",
-            vocab="https://spdx.org/rdf/v3/Core/startTime",
         )
         # A endTime specifies the time from which element is no applicable / valid.
         self._add_property(
             "endTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Core/endTime",
-            vocab="https://spdx.org/rdf/v3/Core/endTime",
         )
         self._set_init_props(**kwargs)
 
@@ -1978,14 +1934,12 @@ class core_SpdxDocument(core_ElementCollection):
             "imports",
             ListProp(ObjectProp(core_ExternalMap, False)),
             json_name="https://spdx.org/rdf/v3/Core/imports",
-            vocab="https://spdx.org/rdf/v3/Core/imports",
         )
         # This field provides a NamespaceMap of prefixes and associated namespace partial URIs applicable to an SpdxDocument and independent of any specific serialization format or instance.
         self._add_property(
             "namespaceMap",
             ListProp(ObjectProp(core_NamespaceMap, False)),
             json_name="https://spdx.org/rdf/v3/Core/namespaceMap",
-            vocab="https://spdx.org/rdf/v3/Core/namespaceMap",
         )
         # The data license provides the license under which the SPDX documentation of the Element can be used.
         # This is to alleviate any concern that content (the data or database) in an SPDX file
@@ -2016,7 +1970,6 @@ class core_SpdxDocument(core_ElementCollection):
             "dataLicense",
             ObjectProp(simplelicensing_AnyLicenseInfo, False),
             json_name="https://spdx.org/rdf/v3/Core/dataLicense",
-            vocab="https://spdx.org/rdf/v3/Core/dataLicense",
         )
         self._set_init_props(**kwargs)
 
@@ -2058,7 +2011,6 @@ class expandedlicensing_LicenseAddition(core_Element):
             StringProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/additionText",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/additionText",
         )
         # A standardAdditionTemplate contains a license addition template which describes
         # sections of the LicenseAddition text which can be varied. See the Legacy Text
@@ -2067,7 +2019,6 @@ class expandedlicensing_LicenseAddition(core_Element):
             "standardAdditionTemplate",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/standardAdditionTemplate",
-            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/standardAdditionTemplate",
         )
         # The isDeprecatedAdditionId property specifies whether an identifier for a
         # LicenseAddition has been marked as deprecated. If the property is not defined,
@@ -2088,7 +2039,6 @@ class expandedlicensing_LicenseAddition(core_Element):
             "isDeprecatedAdditionId",
             BooleanProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/isDeprecatedAdditionId",
-            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/isDeprecatedAdditionId",
         )
         # An obsoletedBy value for a deprecated License or LicenseAddition specifies
         # the licenseId of the replacement License or LicenseAddition that is preferred
@@ -2102,7 +2052,6 @@ class expandedlicensing_LicenseAddition(core_Element):
             "obsoletedBy",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/obsoletedBy",
-            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/obsoletedBy",
         )
         # The license XML format is defined and used by the SPDX legal team.
         # See the XML fields defined at https://github.com/spdx/license-list-XML/blob/main/DOCS/xml-fields.md for a text description.
@@ -2111,7 +2060,6 @@ class expandedlicensing_LicenseAddition(core_Element):
             "licenseXml",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/licenseXml",
-            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/licenseXml",
         )
         # A seeAlso defines a cross-reference with a URL where the License or
         # LicenseAddition can be found in use by one or a few projects.
@@ -2133,7 +2081,6 @@ class expandedlicensing_LicenseAddition(core_Element):
             "seeAlso",
             ListProp(AnyURIProp()),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/seeAlso",
-            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/seeAlso",
         )
         self._set_init_props(**kwargs)
 
@@ -2157,7 +2104,6 @@ class expandedlicensing_ListedLicenseException(expandedlicensing_LicenseAddition
             "listVersionAdded",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/listVersionAdded",
-            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/listVersionAdded",
         )
         # A deprecatedVersion for a ListedLicense or ListedLicenseException on the SPDX
         # License List specifies which version release of the License List was the first
@@ -2166,7 +2112,6 @@ class expandedlicensing_ListedLicenseException(expandedlicensing_LicenseAddition
             "deprecatedVersion",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/deprecatedVersion",
-            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/deprecatedVersion",
         )
         self._set_init_props(**kwargs)
 
@@ -2188,14 +2133,12 @@ class security_VulnAssessmentRelationship(core_Relationship):
             "assessedElement",
             ObjectProp(core_Element, False),
             json_name="https://spdx.org/rdf/v3/Security/assessedElement",
-            vocab="https://spdx.org/rdf/v3/Security/assessedElement",
         )
         # Specifies the time when a vulnerability was first published.
         self._add_property(
             "publishedTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Security/publishedTime",
-            vocab="https://spdx.org/rdf/v3/Security/publishedTime",
         )
         # Identify the actual distribution source for the artifact (e.g., snippet, file, package, vulnerability) or VulnAssessmentRelationship being referenced.
         # This might or might not be different from the originating distribution source for the artifact (e.g., snippet, file, package, vulnerability) or VulnAssessmentRelationship..
@@ -2203,21 +2146,18 @@ class security_VulnAssessmentRelationship(core_Relationship):
             "CoresuppliedBy",
             ObjectProp(core_Agent, False),
             json_name="https://spdx.org/rdf/v3/Core/suppliedBy",
-            vocab="https://spdx.org/rdf/v3/Core/suppliedBy",
         )
         # Specifies a time when a vulnerability assessment was last modified.
         self._add_property(
             "modifiedTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Security/modifiedTime",
-            vocab="https://spdx.org/rdf/v3/Security/modifiedTime",
         )
         # Specified the time and date when a vulnerability was withdrawn.
         self._add_property(
             "withdrawnTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Security/withdrawnTime",
-            vocab="https://spdx.org/rdf/v3/Security/withdrawnTime",
         )
         self._set_init_props(**kwargs)
 
@@ -2258,7 +2198,6 @@ class simplelicensing_LicenseExpression(simplelicensing_AnyLicenseInfo):
             StringProp(),
             json_name="https://spdx.org/rdf/v3/SimpleLicensing/licenseExpression",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/SimpleLicensing/licenseExpression",
         )
         # Recognizing that licenses are added to the SPDX License List with each subsequent version, the intent is to provide consumers with the version of the SPDX License List used.
         # This anticipates that in the future, license expression might have used a version of the SPDX License List that is older than the then current one.
@@ -2267,7 +2206,6 @@ class simplelicensing_LicenseExpression(simplelicensing_AnyLicenseInfo):
             "licenseListVersion",
             SemVerProp(),
             json_name="https://spdx.org/rdf/v3/SimpleLicensing/licenseListVersion",
-            vocab="https://spdx.org/rdf/v3/SimpleLicensing/licenseListVersion",
         )
         # Within a License Expression, references can be made to a Custom License or a Custom License Addition.
         # The License Expression syntax dictates any refence starting with a "LicenseRef-" or "AdditionRef-" refers to license or addition text not found in the SPDX list of licenses.
@@ -2277,7 +2215,6 @@ class simplelicensing_LicenseExpression(simplelicensing_AnyLicenseInfo):
             "customIdToUri",
             ListProp(ObjectProp(core_DictionaryEntry, False)),
             json_name="https://spdx.org/rdf/v3/SimpleLicensing/customIdToUri",
-            vocab="https://spdx.org/rdf/v3/SimpleLicensing/customIdToUri",
         )
         self._set_init_props(**kwargs)
 
@@ -2303,7 +2240,6 @@ class simplelicensing_SimpleLicensingText(core_Element):
             StringProp(),
             json_name="https://spdx.org/rdf/v3/SimpleLicensing/licenseText",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/SimpleLicensing/licenseText",
         )
         self._set_init_props(**kwargs)
 
@@ -2330,14 +2266,12 @@ class build_Build(core_Element):
             AnyURIProp(),
             json_name="https://spdx.org/rdf/v3/Build/buildType",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Build/buildType",
         )
         # A buildId is a locally unique identifier to identify a unique instance of a build. This identifier differs based on build toolchain, platform, or naming convention used by an organization or standard.
         self._add_property(
             "buildId",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Build/buildId",
-            vocab="https://spdx.org/rdf/v3/Build/buildId",
         )
         # A build entrypoint is the invoked executable of a build which always runs when the build is triggered. For example, when a build is triggered by running a shell script, the entrypoint is `script.sh`. In terms of a declared build, the entrypoint is the position in a configuration file or a build declaration which is always run when the build is triggered. For example, in the following configuration file, the entrypoint of the build is `publish`.
         #
@@ -2360,7 +2294,6 @@ class build_Build(core_Element):
             "configSourceEntrypoint",
             ListProp(StringProp()),
             json_name="https://spdx.org/rdf/v3/Build/configSourceEntrypoint",
-            vocab="https://spdx.org/rdf/v3/Build/configSourceEntrypoint",
         )
         # If a build configuration exists for the toolchain or platform performing the build, the configSourceUri of a build is the URI of that build configuration. For example, a build triggered by a GitHub action is defined by a build configuration YAML file. In this case, the configSourceUri is the URL of that YAML file.
         # m
@@ -2368,42 +2301,36 @@ class build_Build(core_Element):
             "configSourceUri",
             ListProp(AnyURIProp()),
             json_name="https://spdx.org/rdf/v3/Build/configSourceUri",
-            vocab="https://spdx.org/rdf/v3/Build/configSourceUri",
         )
         # configSourceDigest is the checksum of the build configuration file used by a builder to execute a build. This Property uses the Core model's [Hash](../../Core/Classes/Hash.md) class.
         self._add_property(
             "configSourceDigest",
             ListProp(ObjectProp(core_Hash, False)),
             json_name="https://spdx.org/rdf/v3/Build/configSourceDigest",
-            vocab="https://spdx.org/rdf/v3/Build/configSourceDigest",
         )
         # parameters is a key-value map of all build parameters and their values that were provided to the builder for a build instance. This is different from the [environment](environment.md) property in that the keys and values are provided as command line arguments or a configuration file to the builder.
         self._add_property(
             "parameters",
             ListProp(ObjectProp(core_DictionaryEntry, False)),
             json_name="https://spdx.org/rdf/v3/Build/parameters",
-            vocab="https://spdx.org/rdf/v3/Build/parameters",
         )
         # buildStartTime is the time at which a build is triggered. The builder typically records this value.
         self._add_property(
             "buildStartTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Build/buildStartTime",
-            vocab="https://spdx.org/rdf/v3/Build/buildStartTime",
         )
         # buildEndTime describes the time at which a build stops or finishes. This value is typically recorded by the builder.
         self._add_property(
             "buildEndTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Build/buildEndTime",
-            vocab="https://spdx.org/rdf/v3/Build/buildEndTime",
         )
         # environment is a map of environment variables and values that are set during a build session. This is different from the [parameters](parameters.md) property in that it describes the environment variables set before a build is invoked rather than the variables provided to the builder.
         self._add_property(
             "environment",
             ListProp(ObjectProp(core_DictionaryEntry, False)),
             json_name="https://spdx.org/rdf/v3/Build/environment",
-            vocab="https://spdx.org/rdf/v3/Build/environment",
         )
         self._set_init_props(**kwargs)
 
@@ -2435,21 +2362,18 @@ class core_Annotation(core_Element):
             core_AnnotationType(),
             json_name="https://spdx.org/rdf/v3/Core/annotationType",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Core/annotationType",
         )
         # ContentType specifies the media type of an Element or Property.
         self._add_property(
             "contentType",
             MediaTypeProp(),
             json_name="https://spdx.org/rdf/v3/Core/contentType",
-            vocab="https://spdx.org/rdf/v3/Core/contentType",
         )
         # A statement is a commentary on an assertion that an annotator has made.
         self._add_property(
             "statement",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/statement",
-            vocab="https://spdx.org/rdf/v3/Core/statement",
         )
         # A subject is an Element an annotator has made an assertion about.
         self._add_property(
@@ -2457,7 +2381,6 @@ class core_Annotation(core_Element):
             ObjectProp(core_Element, True),
             json_name="https://spdx.org/rdf/v3/Core/subject",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Core/subject",
         )
         self._set_init_props(**kwargs)
 
@@ -2477,7 +2400,6 @@ class core_Artifact(core_Element):
             "originatedBy",
             ListProp(ObjectProp(core_Agent, False)),
             json_name="https://spdx.org/rdf/v3/Core/originatedBy",
-            vocab="https://spdx.org/rdf/v3/Core/originatedBy",
         )
         # Identify the actual distribution source for the artifact (e.g., snippet, file, package, vulnerability) or VulnAssessmentRelationship being referenced.
         # This might or might not be different from the originating distribution source for the artifact (e.g., snippet, file, package, vulnerability) or VulnAssessmentRelationship..
@@ -2485,35 +2407,30 @@ class core_Artifact(core_Element):
             "suppliedBy",
             ObjectProp(core_Agent, False),
             json_name="https://spdx.org/rdf/v3/Core/suppliedBy",
-            vocab="https://spdx.org/rdf/v3/Core/suppliedBy",
         )
         # A builtTime specifies the time an artifact was built.
         self._add_property(
             "builtTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Core/builtTime",
-            vocab="https://spdx.org/rdf/v3/Core/builtTime",
         )
         # A releaseTime specifies the time an artifact was released.
         self._add_property(
             "releaseTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Core/releaseTime",
-            vocab="https://spdx.org/rdf/v3/Core/releaseTime",
         )
         # A validUntilTime specifies until when the artifact can be used before its usage needs to be reassessed.
         self._add_property(
             "validUntilTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Core/validUntilTime",
-            vocab="https://spdx.org/rdf/v3/Core/validUntilTime",
         )
         # Various standards may be relevant to useful to capture for specific artifacts.
         self._add_property(
             "standard",
             ListProp(StringProp()),
             json_name="https://spdx.org/rdf/v3/Core/standard",
-            vocab="https://spdx.org/rdf/v3/Core/standard",
         )
         self._set_init_props(**kwargs)
 
@@ -2533,7 +2450,6 @@ class core_Bundle(core_ElementCollection):
             "context",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/context",
-            vocab="https://spdx.org/rdf/v3/Core/context",
         )
         self._set_init_props(**kwargs)
 
@@ -2558,7 +2474,6 @@ class core_Hash(core_IntegrityMethod):
             core_HashAlgorithm(),
             json_name="https://spdx.org/rdf/v3/Core/algorithm",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Core/algorithm",
         )
         # HashValue is the result of applying a hash algorithm to an Element.
         self._add_property(
@@ -2566,7 +2481,6 @@ class core_Hash(core_IntegrityMethod):
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Core/hashValue",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Core/hashValue",
         )
         self._set_init_props(**kwargs)
 
@@ -2585,7 +2499,6 @@ class core_LifecycleScopedRelationship(core_Relationship):
             "scope",
             core_LifecycleScopeType(),
             json_name="https://spdx.org/rdf/v3/Core/scope",
-            vocab="https://spdx.org/rdf/v3/Core/scope",
         )
         self._set_init_props(**kwargs)
 
@@ -2653,7 +2566,6 @@ class expandedlicensing_ConjunctiveLicenseSet(simplelicensing_AnyLicenseInfo):
             ListProp(ObjectProp(simplelicensing_AnyLicenseInfo, False)),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/member",
             min_count=2,
-            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/member",
         )
         self._set_init_props(**kwargs)
 
@@ -2699,7 +2611,6 @@ class expandedlicensing_DisjunctiveLicenseSet(simplelicensing_AnyLicenseInfo):
             ListProp(ObjectProp(simplelicensing_AnyLicenseInfo, False)),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/member",
             min_count=2,
-            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/member",
         )
         self._set_init_props(**kwargs)
 
@@ -2736,7 +2647,6 @@ class expandedlicensing_License(expandedlicensing_ExtendableLicense):
             StringProp(),
             json_name="https://spdx.org/rdf/v3/SimpleLicensing/licenseText",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/SimpleLicensing/licenseText",
         )
         # isOsiApproved specifies whether the [Open Source Initiative (OSI)](https://opensource.org)
         # has listed this License as "approved" in their list of OSI Approved Licenses,
@@ -2752,7 +2662,6 @@ class expandedlicensing_License(expandedlicensing_ExtendableLicense):
             "isOsiApproved",
             BooleanProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/isOsiApproved",
-            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/isOsiApproved",
         )
         # isFsfLibre specifies whether the [Free Software Foundation FSF](https://fsf.org)
         # has listed this License as "free" in their commentary on licenses, located at
@@ -2768,7 +2677,6 @@ class expandedlicensing_License(expandedlicensing_ExtendableLicense):
             "isFsfLibre",
             BooleanProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/isFsfLibre",
-            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/isFsfLibre",
         )
         # A standardLicenseHeader contains the plain text of the License author's
         # preferred wording to be used, typically in a source code file's header
@@ -2778,7 +2686,6 @@ class expandedlicensing_License(expandedlicensing_ExtendableLicense):
             "standardLicenseHeader",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/standardLicenseHeader",
-            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/standardLicenseHeader",
         )
         # A standardLicenseTemplate contains a license template which describes
         # sections of the License text which can be varied. See the Legacy Text Template
@@ -2787,7 +2694,6 @@ class expandedlicensing_License(expandedlicensing_ExtendableLicense):
             "standardLicenseTemplate",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/standardLicenseTemplate",
-            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/standardLicenseTemplate",
         )
         # The isDeprecatedLicenseId property specifies whether an identifier for a
         # License or LicenseAddition has been marked as deprecated. If the property
@@ -2808,7 +2714,6 @@ class expandedlicensing_License(expandedlicensing_ExtendableLicense):
             "isDeprecatedLicenseId",
             BooleanProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/isDeprecatedLicenseId",
-            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/isDeprecatedLicenseId",
         )
         # An obsoletedBy value for a deprecated License or LicenseAddition specifies
         # the licenseId of the replacement License or LicenseAddition that is preferred
@@ -2822,7 +2727,6 @@ class expandedlicensing_License(expandedlicensing_ExtendableLicense):
             "obsoletedBy",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/obsoletedBy",
-            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/obsoletedBy",
         )
         # The license XML format is defined and used by the SPDX legal team.
         # See the XML fields defined at https://github.com/spdx/license-list-XML/blob/main/DOCS/xml-fields.md for a text description.
@@ -2831,7 +2735,6 @@ class expandedlicensing_License(expandedlicensing_ExtendableLicense):
             "licenseXml",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/licenseXml",
-            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/licenseXml",
         )
         # A seeAlso defines a cross-reference with a URL where the License or
         # LicenseAddition can be found in use by one or a few projects.
@@ -2853,7 +2756,6 @@ class expandedlicensing_License(expandedlicensing_ExtendableLicense):
             "seeAlso",
             ListProp(AnyURIProp()),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/seeAlso",
-            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/seeAlso",
         )
         self._set_init_props(**kwargs)
 
@@ -2875,7 +2777,6 @@ class expandedlicensing_ListedLicense(expandedlicensing_License):
             "listVersionAdded",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/listVersionAdded",
-            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/listVersionAdded",
         )
         # A deprecatedVersion for a ListedLicense or ListedLicenseException on the SPDX
         # License List specifies which version release of the License List was the first
@@ -2884,7 +2785,6 @@ class expandedlicensing_ListedLicense(expandedlicensing_License):
             "deprecatedVersion",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/deprecatedVersion",
-            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/deprecatedVersion",
         )
         self._set_init_props(**kwargs)
 
@@ -2914,7 +2814,6 @@ class expandedlicensing_OrLaterOperator(expandedlicensing_ExtendableLicense):
             ObjectProp(expandedlicensing_License, True),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/subjectLicense",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/subjectLicense",
         )
         self._set_init_props(**kwargs)
 
@@ -2939,7 +2838,6 @@ class expandedlicensing_WithAdditionOperator(simplelicensing_AnyLicenseInfo):
             ObjectProp(expandedlicensing_ExtendableLicense, True),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/subjectLicense",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/subjectLicense",
         )
         # A subjectAddition is a LicenseAddition which is subject to a 'with additional
         # text' effect (WithAdditionOperator).
@@ -2948,7 +2846,6 @@ class expandedlicensing_WithAdditionOperator(simplelicensing_AnyLicenseInfo):
             ObjectProp(expandedlicensing_LicenseAddition, True),
             json_name="https://spdx.org/rdf/v3/ExpandedLicensing/subjectAddition",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/ExpandedLicensing/subjectAddition",
         )
         self._set_init_props(**kwargs)
 
@@ -3015,7 +2912,6 @@ class security_CvssV2VulnAssessmentRelationship(security_VulnAssessmentRelations
             FloatProp(),
             json_name="https://spdx.org/rdf/v3/Security/score",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Security/score",
         )
         # Specifies any combination of the CVSS Base, Temporal, Threat, Environmental, and/or Supplemental vector string values for a vulnerability. Supports vectorStrings specified in all CVSS versions.
         #
@@ -3027,7 +2923,6 @@ class security_CvssV2VulnAssessmentRelationship(security_VulnAssessmentRelations
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Security/vectorString",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Security/vectorString",
         )
         self._set_init_props(**kwargs)
 
@@ -3098,7 +2993,6 @@ class security_CvssV3VulnAssessmentRelationship(security_VulnAssessmentRelations
             FloatProp(),
             json_name="https://spdx.org/rdf/v3/Security/score",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Security/score",
         )
         # The severity field provides a human readable string of the resulting numerical CVSS score.
         self._add_property(
@@ -3106,7 +3000,6 @@ class security_CvssV3VulnAssessmentRelationship(security_VulnAssessmentRelations
             security_CvssSeverityType(),
             json_name="https://spdx.org/rdf/v3/Security/severity",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Security/severity",
         )
         # Specifies any combination of the CVSS Base, Temporal, Threat, Environmental, and/or Supplemental vector string values for a vulnerability. Supports vectorStrings specified in all CVSS versions.
         #
@@ -3118,7 +3011,6 @@ class security_CvssV3VulnAssessmentRelationship(security_VulnAssessmentRelations
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Security/vectorString",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Security/vectorString",
         )
         self._set_init_props(**kwargs)
 
@@ -3187,7 +3079,6 @@ class security_CvssV4VulnAssessmentRelationship(security_VulnAssessmentRelations
             FloatProp(),
             json_name="https://spdx.org/rdf/v3/Security/score",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Security/score",
         )
         # The severity field provides a human readable string of the resulting numerical CVSS score.
         self._add_property(
@@ -3195,7 +3086,6 @@ class security_CvssV4VulnAssessmentRelationship(security_VulnAssessmentRelations
             security_CvssSeverityType(),
             json_name="https://spdx.org/rdf/v3/Security/severity",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Security/severity",
         )
         # Specifies any combination of the CVSS Base, Temporal, Threat, Environmental, and/or Supplemental vector string values for a vulnerability. Supports vectorStrings specified in all CVSS versions.
         #
@@ -3207,7 +3097,6 @@ class security_CvssV4VulnAssessmentRelationship(security_VulnAssessmentRelations
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Security/vectorString",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Security/vectorString",
         )
         self._set_init_props(**kwargs)
 
@@ -3249,7 +3138,6 @@ class security_EpssVulnAssessmentRelationship(security_VulnAssessmentRelationshi
             FloatProp(),
             json_name="https://spdx.org/rdf/v3/Security/probability",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Security/probability",
         )
         # The percentile between 0 and 1 (0 and 100%) of the current probability score, the proportion of all scored vulnerabilities with the same or a lower EPSS score. [https://www.first.org/epss/data_stats](https://www.first.org/epss/data_stats)
         self._add_property(
@@ -3257,7 +3145,6 @@ class security_EpssVulnAssessmentRelationship(security_VulnAssessmentRelationshi
             FloatProp(),
             json_name="https://spdx.org/rdf/v3/Security/percentile",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Security/percentile",
         )
         # Specifies the time when a vulnerability was first published.
         self._add_property(
@@ -3265,7 +3152,6 @@ class security_EpssVulnAssessmentRelationship(security_VulnAssessmentRelationshi
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Security/publishedTime",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Security/publishedTime",
         )
         self._set_init_props(**kwargs)
 
@@ -3309,7 +3195,6 @@ class security_ExploitCatalogVulnAssessmentRelationship(security_VulnAssessmentR
             security_ExploitCatalogType(),
             json_name="https://spdx.org/rdf/v3/Security/catalogType",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Security/catalogType",
         )
         # This field is set when a CVE is listed in an exploit catalog.
         self._add_property(
@@ -3317,7 +3202,6 @@ class security_ExploitCatalogVulnAssessmentRelationship(security_VulnAssessmentR
             BooleanProp(),
             json_name="https://spdx.org/rdf/v3/Security/exploited",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Security/exploited",
         )
         # A locator provides the location of an exploit catalog.
         self._add_property(
@@ -3325,7 +3209,6 @@ class security_ExploitCatalogVulnAssessmentRelationship(security_VulnAssessmentR
             AnyURIProp(),
             json_name="https://spdx.org/rdf/v3/Security/locator",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Security/locator",
         )
         self._set_init_props(**kwargs)
 
@@ -3368,7 +3251,6 @@ class security_SsvcVulnAssessmentRelationship(security_VulnAssessmentRelationshi
             security_SsvcDecisionType(),
             json_name="https://spdx.org/rdf/v3/Security/decisionType",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Security/decisionType",
         )
         self._set_init_props(**kwargs)
 
@@ -3407,14 +3289,12 @@ class security_VexVulnAssessmentRelationship(security_VulnAssessmentRelationship
             "vexVersion",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Security/vexVersion",
-            vocab="https://spdx.org/rdf/v3/Security/vexVersion",
         )
         # TODO
         self._add_property(
             "statusNotes",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Security/statusNotes",
-            vocab="https://spdx.org/rdf/v3/Security/statusNotes",
         )
         self._set_init_props(**kwargs)
 
@@ -3508,21 +3388,18 @@ class security_Vulnerability(core_Artifact):
             "publishedTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Security/publishedTime",
-            vocab="https://spdx.org/rdf/v3/Security/publishedTime",
         )
         # Specifies a time when a vulnerability assessment was last modified.
         self._add_property(
             "modifiedTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Security/modifiedTime",
-            vocab="https://spdx.org/rdf/v3/Security/modifiedTime",
         )
         # Specified the time and date when a vulnerability was withdrawn.
         self._add_property(
             "withdrawnTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Security/withdrawnTime",
-            vocab="https://spdx.org/rdf/v3/Security/withdrawnTime",
         )
         self._set_init_props(**kwargs)
 
@@ -3552,21 +3429,18 @@ class software_SoftwareArtifact(core_Artifact):
             "contentIdentifier",
             AnyURIProp(),
             json_name="https://spdx.org/rdf/v3/Software/contentIdentifier",
-            vocab="https://spdx.org/rdf/v3/Software/contentIdentifier",
         )
         # primaryPurpose provides information about the primary purpose of the software artifact.
         self._add_property(
             "primaryPurpose",
             software_SoftwarePurpose(),
             json_name="https://spdx.org/rdf/v3/Software/primaryPurpose",
-            vocab="https://spdx.org/rdf/v3/Software/primaryPurpose",
         )
         # Additional purpose provides information about the additional purposes of the software artifact in addition to the primaryPurpose.
         self._add_property(
             "additionalPurpose",
             ListProp(software_SoftwarePurpose()),
             json_name="https://spdx.org/rdf/v3/Software/additionalPurpose",
-            vocab="https://spdx.org/rdf/v3/Software/additionalPurpose",
         )
         # A copyrightText consists of the text(s) of the copyright notice(s) found
         # for a software Package, File or Snippet, if any.
@@ -3589,7 +3463,6 @@ class software_SoftwareArtifact(core_Artifact):
             "copyrightText",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Software/copyrightText",
-            vocab="https://spdx.org/rdf/v3/Software/copyrightText",
         )
         # An attributionText for a software Package, File or Snippet provides a consumer
         # of SPDX data with acknowledgement content, to assist redistributors of the
@@ -3611,7 +3484,6 @@ class software_SoftwareArtifact(core_Artifact):
             "attributionText",
             ListProp(StringProp()),
             json_name="https://spdx.org/rdf/v3/Software/attributionText",
-            vocab="https://spdx.org/rdf/v3/Software/attributionText",
         )
         self._set_init_props(**kwargs)
 
@@ -3688,7 +3560,6 @@ class security_VexAffectedVulnAssessmentRelationship(security_VexVulnAssessmentR
             "actionStatement",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Security/actionStatement",
-            vocab="https://spdx.org/rdf/v3/Security/actionStatement",
         )
         # When a VEX statement communicates an affected status, the author MUST
         # include an action statement with a recommended action to help mitigate the
@@ -3698,7 +3569,6 @@ class security_VexAffectedVulnAssessmentRelationship(security_VexVulnAssessmentR
             "actionStatementTime",
             ListProp(DateTimeProp()),
             json_name="https://spdx.org/rdf/v3/Security/actionStatementTime",
-            vocab="https://spdx.org/rdf/v3/Security/actionStatementTime",
         )
         self._set_init_props(**kwargs)
 
@@ -3794,7 +3664,6 @@ class security_VexNotAffectedVulnAssessmentRelationship(security_VexVulnAssessme
             "justificationType",
             security_VexJustificationType(),
             json_name="https://spdx.org/rdf/v3/Security/justificationType",
-            vocab="https://spdx.org/rdf/v3/Security/justificationType",
         )
         # When a VEX product element is related with a VexNotAffectedVulnAssessmentRelationship
         # and a machine readable justification label is not provided, then an impactStatement
@@ -3804,14 +3673,12 @@ class security_VexNotAffectedVulnAssessmentRelationship(security_VexVulnAssessme
             "impactStatement",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Security/impactStatement",
-            vocab="https://spdx.org/rdf/v3/Security/impactStatement",
         )
         # TODO
         self._add_property(
             "impactStatementTime",
             DateTimeProp(),
             json_name="https://spdx.org/rdf/v3/Security/impactStatementTime",
-            vocab="https://spdx.org/rdf/v3/Security/impactStatementTime",
         )
         self._set_init_props(**kwargs)
 
@@ -3872,7 +3739,6 @@ class software_File(software_SoftwareArtifact):
             "contentType",
             MediaTypeProp(),
             json_name="https://spdx.org/rdf/v3/Software/contentType",
-            vocab="https://spdx.org/rdf/v3/Software/contentType",
         )
         self._set_init_props(**kwargs)
 
@@ -3903,7 +3769,6 @@ class software_Package(software_SoftwareArtifact):
             "packageVersion",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Software/packageVersion",
-            vocab="https://spdx.org/rdf/v3/Software/packageVersion",
         )
         # DownloadLocation identifies the download Uniform Resource Identifier
         # for the package at the time that the document was created.
@@ -3913,7 +3778,6 @@ class software_Package(software_SoftwareArtifact):
             "downloadLocation",
             AnyURIProp(),
             json_name="https://spdx.org/rdf/v3/Software/downloadLocation",
-            vocab="https://spdx.org/rdf/v3/Software/downloadLocation",
         )
         # A packageUrl (commonly pronounced and referred to as "purl") is an attempt to standardize package representations in order to reliably identify and locate software packages. A purl is a URL string which represents a package in a mostly universal and uniform way across programming languages, package managers, packaging conventions, tools, APIs and databases.
         #
@@ -3929,7 +3793,6 @@ class software_Package(software_SoftwareArtifact):
             "packageUrl",
             AnyURIProp(),
             json_name="https://spdx.org/rdf/v3/Software/packageUrl",
-            vocab="https://spdx.org/rdf/v3/Software/packageUrl",
         )
         # HomePage is a place for the SPDX document creator to record a website that serves as the package's home page.
         # This saves the recipient of the SPDX document who is looking for more info from
@@ -3940,7 +3803,6 @@ class software_Package(software_SoftwareArtifact):
             "homePage",
             AnyURIProp(),
             json_name="https://spdx.org/rdf/v3/Software/homePage",
-            vocab="https://spdx.org/rdf/v3/Software/homePage",
         )
         # SourceInfo records any relevant background information or additional comments
         # about the origin of the package. For example, this field might include comments
@@ -3951,7 +3813,6 @@ class software_Package(software_SoftwareArtifact):
             "sourceInfo",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Software/sourceInfo",
-            vocab="https://spdx.org/rdf/v3/Software/sourceInfo",
         )
         self._set_init_props(**kwargs)
 
@@ -3975,7 +3836,6 @@ class software_Sbom(core_Bom):
             "sbomType",
             ListProp(software_SbomType()),
             json_name="https://spdx.org/rdf/v3/Software/sbomType",
-            vocab="https://spdx.org/rdf/v3/Software/sbomType",
         )
         self._set_init_props(**kwargs)
 
@@ -3999,7 +3859,6 @@ class software_Snippet(software_SoftwareArtifact):
             "byteRange",
             ObjectProp(core_PositiveIntegerRange, False),
             json_name="https://spdx.org/rdf/v3/Software/byteRange",
-            vocab="https://spdx.org/rdf/v3/Software/byteRange",
         )
         # This field defines the line range in the original host file that the snippet information applies to.
         # If there is a disagreement between the byte range and line range, the byte range values will take precedence.
@@ -4009,7 +3868,6 @@ class software_Snippet(software_SoftwareArtifact):
             "lineRange",
             ObjectProp(core_PositiveIntegerRange, False),
             json_name="https://spdx.org/rdf/v3/Software/lineRange",
-            vocab="https://spdx.org/rdf/v3/Software/lineRange",
         )
         # The field identifies the file which contains the snippet.
         self._add_property(
@@ -4017,7 +3875,6 @@ class software_Snippet(software_SoftwareArtifact):
             ObjectProp(software_File, True),
             json_name="https://spdx.org/rdf/v3/Software/snippetFromFile",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Software/snippetFromFile",
         )
         self._set_init_props(**kwargs)
 
@@ -4042,7 +3899,6 @@ class ai_AIPackage(software_Package):
             "energyConsumption",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/AI/energyConsumption",
-            vocab="https://spdx.org/rdf/v3/AI/energyConsumption",
         )
         # StandardCompliance captures a standard that the AI software complies with.
         # This includes both published and unpublished standards, for example ISO, IEEE, ETSI etc.
@@ -4051,7 +3907,6 @@ class ai_AIPackage(software_Package):
             "standardCompliance",
             ListProp(StringProp()),
             json_name="https://spdx.org/rdf/v3/AI/standardCompliance",
-            vocab="https://spdx.org/rdf/v3/AI/standardCompliance",
         )
         # Limitation captures a limitation of the AI Package (or of the AI models present in the AI package),
         # expressed as free form text. Note that this is not guaranteed to be exhaustive.
@@ -4060,7 +3915,6 @@ class ai_AIPackage(software_Package):
             "limitation",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/AI/limitation",
-            vocab="https://spdx.org/rdf/v3/AI/limitation",
         )
         # TypeOfModel records the type of the AI model(s) used in the software.
         # For instance, if it is a supervised model, unsupervised model, reinforcement learning model or a combination of those.
@@ -4068,7 +3922,6 @@ class ai_AIPackage(software_Package):
             "typeOfModel",
             ListProp(StringProp()),
             json_name="https://spdx.org/rdf/v3/AI/typeOfModel",
-            vocab="https://spdx.org/rdf/v3/AI/typeOfModel",
         )
         # InformationAboutTraining describes the specific steps involved in the training of the AI model.
         # For example, it can be specified whether supervised fine-tuning
@@ -4077,7 +3930,6 @@ class ai_AIPackage(software_Package):
             "informationAboutTraining",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/AI/informationAboutTraining",
-            vocab="https://spdx.org/rdf/v3/AI/informationAboutTraining",
         )
         # InformationAboutApplication describes any relevant information in free form text about
         # how the AI model is used inside the software, as well as any relevant pre-processing steps, third party APIs etc.
@@ -4085,7 +3937,6 @@ class ai_AIPackage(software_Package):
             "informationAboutApplication",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/AI/informationAboutApplication",
-            vocab="https://spdx.org/rdf/v3/AI/informationAboutApplication",
         )
         # This field records a hyperparameter value.
         # Hyperparameters are parameters of the machine learning model that are used to control the learning process,
@@ -4094,7 +3945,6 @@ class ai_AIPackage(software_Package):
             "hyperparameter",
             ListProp(ObjectProp(core_DictionaryEntry, False)),
             json_name="https://spdx.org/rdf/v3/AI/hyperparameter",
-            vocab="https://spdx.org/rdf/v3/AI/hyperparameter",
         )
         # ModelDataPreprocessing is a free form text that describes the preprocessing steps
         # applied to the training data before training of the model(s) contained in the AI software.
@@ -4102,7 +3952,6 @@ class ai_AIPackage(software_Package):
             "modelDataPreprocessing",
             ListProp(StringProp()),
             json_name="https://spdx.org/rdf/v3/AI/modelDataPreprocessing",
-            vocab="https://spdx.org/rdf/v3/AI/modelDataPreprocessing",
         )
         # ModelExplainability is a free form text that lists the different explainability mechanisms
         # (such as SHAP, or other model specific explainability mechanisms) that can be used to explain the model.
@@ -4110,7 +3959,6 @@ class ai_AIPackage(software_Package):
             "modelExplainability",
             ListProp(StringProp()),
             json_name="https://spdx.org/rdf/v3/AI/modelExplainability",
-            vocab="https://spdx.org/rdf/v3/AI/modelExplainability",
         )
         # SensitivePersonalInformation notes if sensitive personal information
         # is used in the training or inference of the AI models.
@@ -4119,7 +3967,6 @@ class ai_AIPackage(software_Package):
             "sensitivePersonalInformation",
             core_PresenceType(),
             json_name="https://spdx.org/rdf/v3/AI/sensitivePersonalInformation",
-            vocab="https://spdx.org/rdf/v3/AI/sensitivePersonalInformation",
         )
         # Each metric might be computed based on a decision threshold.
         # For instance, precision or recall is typically computed by checking
@@ -4129,7 +3976,6 @@ class ai_AIPackage(software_Package):
             "metricDecisionThreshold",
             ListProp(ObjectProp(core_DictionaryEntry, False)),
             json_name="https://spdx.org/rdf/v3/AI/metricDecisionThreshold",
-            vocab="https://spdx.org/rdf/v3/AI/metricDecisionThreshold",
         )
         # Metric records the measurement with which the AI model was evaluated.
         # This makes statements about the prediction quality including uncertainty,
@@ -4138,7 +3984,6 @@ class ai_AIPackage(software_Package):
             "metric",
             ListProp(ObjectProp(core_DictionaryEntry, False)),
             json_name="https://spdx.org/rdf/v3/AI/metric",
-            vocab="https://spdx.org/rdf/v3/AI/metric",
         )
         # Domain describes the domain in which the AI model contained in the AI software
         # can be expected to operate successfully. Examples include computer vision, natural language etc.
@@ -4146,7 +3991,6 @@ class ai_AIPackage(software_Package):
             "domain",
             ListProp(StringProp()),
             json_name="https://spdx.org/rdf/v3/AI/domain",
-            vocab="https://spdx.org/rdf/v3/AI/domain",
         )
         # AutonomyType indicates if a human is involved in any of the decisions of the AI software
         # or if that software is fully automatic.
@@ -4154,7 +3998,6 @@ class ai_AIPackage(software_Package):
             "autonomyType",
             core_PresenceType(),
             json_name="https://spdx.org/rdf/v3/AI/autonomyType",
-            vocab="https://spdx.org/rdf/v3/AI/autonomyType",
         )
         # SafetyRiskAssessment categorizes the safety risk impact of the AI software
         # in accordance with Article 20 of [EC Regulation No 765/2008](https://ec.europa.eu/docsroom/documents/17107/attachments/1/translations/en/renditions/pdf).
@@ -4162,7 +4005,6 @@ class ai_AIPackage(software_Package):
             "safetyRiskAssessment",
             ai_SafetyRiskAssessmentType(),
             json_name="https://spdx.org/rdf/v3/AI/safetyRiskAssessment",
-            vocab="https://spdx.org/rdf/v3/AI/safetyRiskAssessment",
         )
         self._set_init_props(**kwargs)
 
@@ -4187,7 +4029,6 @@ class dataset_Dataset(software_Package):
             ListProp(dataset_DatasetType()),
             json_name="https://spdx.org/rdf/v3/Dataset/datasetType",
             min_count=1,
-            vocab="https://spdx.org/rdf/v3/Dataset/datasetType",
         )
         # DataCollectionProcess describes how a dataset was collected.
         # Examples include the sources from which a dataset was scrapped or
@@ -4196,7 +4037,6 @@ class dataset_Dataset(software_Package):
             "dataCollectionProcess",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Dataset/dataCollectionProcess",
-            vocab="https://spdx.org/rdf/v3/Dataset/dataCollectionProcess",
         )
         # IntendedUse describes what the given dataset should be used for.
         # Some datasets are collected to be used only for particular purposes.
@@ -4209,7 +4049,6 @@ class dataset_Dataset(software_Package):
             "intendedUse",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Dataset/intendedUse",
-            vocab="https://spdx.org/rdf/v3/Dataset/intendedUse",
         )
         # DatasetSize Captures how large a dataset is.
         # The size is to be measured in bytes.
@@ -4217,7 +4056,6 @@ class dataset_Dataset(software_Package):
             "datasetSize",
             NonNegativeIntegerProp(),
             json_name="https://spdx.org/rdf/v3/Dataset/datasetSize",
-            vocab="https://spdx.org/rdf/v3/Dataset/datasetSize",
         )
         # DatasetNoise describes what kinds of noises a dataset might encompass.
         # The field uses free form text to specify the fields or the samples that might be noisy.
@@ -4226,7 +4064,6 @@ class dataset_Dataset(software_Package):
             "datasetNoise",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Dataset/datasetNoise",
-            vocab="https://spdx.org/rdf/v3/Dataset/datasetNoise",
         )
         # DataPreprocessing describes the various preprocessing steps
         # that were applied to the raw data to create the dataset.
@@ -4234,7 +4071,6 @@ class dataset_Dataset(software_Package):
             "dataPreprocessing",
             ListProp(StringProp()),
             json_name="https://spdx.org/rdf/v3/Dataset/dataPreprocessing",
-            vocab="https://spdx.org/rdf/v3/Dataset/dataPreprocessing",
         )
         # Sensor describes a sensor that was used for collecting the data
         # and its calibration value as a key-value pair.
@@ -4242,14 +4078,12 @@ class dataset_Dataset(software_Package):
             "sensor",
             ListProp(ObjectProp(core_DictionaryEntry, False)),
             json_name="https://spdx.org/rdf/v3/Dataset/sensor",
-            vocab="https://spdx.org/rdf/v3/Dataset/sensor",
         )
         # KnownBias is a free form text field that describes the different biases that the dataset encompasses.
         self._add_property(
             "knownBias",
             ListProp(StringProp()),
             json_name="https://spdx.org/rdf/v3/Dataset/knownBias",
-            vocab="https://spdx.org/rdf/v3/Dataset/knownBias",
         )
         # SensitivePersonalInformation indicates the presence of sensitive personal data
         # or information that allows drawing conclusions about a person's identity.
@@ -4257,35 +4091,30 @@ class dataset_Dataset(software_Package):
             "sensitivePersonalInformation",
             core_PresenceType(),
             json_name="https://spdx.org/rdf/v3/Dataset/sensitivePersonalInformation",
-            vocab="https://spdx.org/rdf/v3/Dataset/sensitivePersonalInformation",
         )
         # AnonymizationMethodUsed describes the methods used to anonymize the dataset (of fields in the dataset).
         self._add_property(
             "anonymizationMethodUsed",
             ListProp(StringProp()),
             json_name="https://spdx.org/rdf/v3/Dataset/anonymizationMethodUsed",
-            vocab="https://spdx.org/rdf/v3/Dataset/anonymizationMethodUsed",
         )
         # ConfidentialityLevel describes the levels of confidentiality of the data points contained in the dataset.
         self._add_property(
             "confidentialityLevel",
             dataset_ConfidentialityLevelType(),
             json_name="https://spdx.org/rdf/v3/Dataset/confidentialityLevel",
-            vocab="https://spdx.org/rdf/v3/Dataset/confidentialityLevel",
         )
         # DatasetUpdateMechanism describes a mechanism to update the dataset.
         self._add_property(
             "datasetUpdateMechanism",
             StringProp(),
             json_name="https://spdx.org/rdf/v3/Dataset/datasetUpdateMechanism",
-            vocab="https://spdx.org/rdf/v3/Dataset/datasetUpdateMechanism",
         )
         # Some datasets are publicly available and can be downloaded directly. Others are only accessible behind a clickthrough, or after filling a registration form. This field will describe the dataset availability from that perspective.
         self._add_property(
             "datasetAvailability",
             dataset_DatasetAvailabilityType(),
             json_name="https://spdx.org/rdf/v3/Dataset/datasetAvailability",
-            vocab="https://spdx.org/rdf/v3/Dataset/datasetAvailability",
         )
         self._set_init_props(**kwargs)
 

@@ -2,22 +2,22 @@
 
 [Full report](https://htmlpreview.github.io/?https://github.com/JPEWdev/shacl2code/blob/python-coverage-comment-action-data/htmlcov/index.html)
 
-| Name                                |    Stmts |     Miss |    Cover |   Missing |
-|------------------------------------ | -------: | -------: | -------: | --------: |
-| src/shacl2code/\_\_init\_\_.py      |        4 |        0 |     100% |           |
-| src/shacl2code/\_\_main\_\_.py      |        4 |        0 |     100% |           |
-| src/shacl2code/context.py           |       84 |        0 |     100% |           |
-| src/shacl2code/lang/\_\_init\_\_.py |        4 |        0 |     100% |           |
-| src/shacl2code/lang/common.py       |       45 |        0 |     100% |           |
-| src/shacl2code/lang/jinja.py        |       12 |        0 |     100% |           |
-| src/shacl2code/lang/jsonschema.py   |       16 |        0 |     100% |           |
-| src/shacl2code/lang/lang.py         |        8 |        0 |     100% |           |
-| src/shacl2code/lang/python.py       |        7 |        0 |     100% |           |
-| src/shacl2code/main.py              |       62 |        0 |     100% |           |
-| src/shacl2code/model.py             |      118 |        0 |     100% |           |
-| src/shacl2code/urlcontext.py        |       13 |        0 |     100% |           |
-| src/shacl2code/version.py           |        1 |        0 |     100% |           |
-|                           **TOTAL** |  **378** |    **0** | **100%** |           |
+| Name                                |    Stmts |     Miss |   Cover |   Missing |
+|------------------------------------ | -------: | -------: | ------: | --------: |
+| src/shacl2code/\_\_init\_\_.py      |        4 |        0 |    100% |           |
+| src/shacl2code/\_\_main\_\_.py      |        4 |        0 |    100% |           |
+| src/shacl2code/context.py           |       84 |        0 |    100% |           |
+| src/shacl2code/lang/\_\_init\_\_.py |        4 |        0 |    100% |           |
+| src/shacl2code/lang/common.py       |       45 |        0 |    100% |           |
+| src/shacl2code/lang/jinja.py        |       12 |        0 |    100% |           |
+| src/shacl2code/lang/jsonschema.py   |       16 |        0 |    100% |           |
+| src/shacl2code/lang/lang.py         |        8 |        0 |    100% |           |
+| src/shacl2code/lang/python.py       |        7 |        0 |    100% |           |
+| src/shacl2code/main.py              |       62 |        0 |    100% |           |
+| src/shacl2code/model.py             |      150 |        6 |     96% |40, 187-188, 228, 231, 277 |
+| src/shacl2code/urlcontext.py        |       13 |        0 |    100% |           |
+| src/shacl2code/version.py           |        1 |        0 |    100% |           |
+|                           **TOTAL** |  **410** |    **6** | **99%** |           |
 
 
 ## Setup coverage badge

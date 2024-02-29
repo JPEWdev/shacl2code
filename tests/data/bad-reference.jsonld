@@ -44,9 +44,6 @@
       "rdfs:comment": "CreationInfo provides information about the creation of the Element.",
       "rdfs:domain": {
         "@id": "core:Element"
-      },
-      "rdfs:range": {
-        "@id": "core:CreationInfo"
       }
     }
   ]

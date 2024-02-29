@@ -8,6 +8,7 @@ import argparse
 import json
 import sys
 import urllib.request
+import rdflib
 from pathlib import Path
 
 from . import Model, UrlContext, ContextData
@@ -16,15 +17,20 @@ from .lang import LANGUAGES
 
 
 def main(args=None):
-    def handle_generate(args):
-        if "://" in args.input:
-            with urllib.request.urlopen(args.input) as url:
-                model_data = json.load(url)
-        elif args.input == "-":
-            model_data = json.load(sys.stdin)
+    def handle_generate(parser, args):
+        graph = rdflib.Graph()
+        if args.input == "-":
+            if args.input_format == "auto":
+                print("ERROR: Input format must be specified with stdin")
+                parser.print_help()
+                return 1
+
+            graph.parse(sys.stdin, format=args.input_format)
         else:
-            with Path(args.input).open("r") as f:
-                model_data = json.load(f)
+            if args.input_format == "auto":
+                graph.parse(args.input)
+            else:
+                graph.parse(args.input, format=args.input_format)
 
         contexts = []
         for c in args.context:
@@ -41,13 +47,13 @@ def main(args=None):
                     data = json.load(f)
             contexts.append(ContextData(data, url))
 
-        m = Model(model_data, UrlContext(contexts))
+        m = Model(graph, UrlContext(contexts))
 
         render = args.lang(args)
         render.output(m)
         return 0
 
-    def handle_list(args):
+    def handle_list(parser, args):
         width = max(len(lang) for lang in LANGUAGES)
         for k, v in LANGUAGES.items():
             if args.short:
@@ -57,7 +63,7 @@ def main(args=None):
 
         return 0
 
-    def handle_version(args):
+    def handle_version(parser, args):
         print(VERSION)
         return 0
 
@@ -76,8 +82,14 @@ def main(args=None):
     generate_parser.add_argument(
         "--input",
         "-i",
-        help="Input JSON-LD model (path, URL, or '-')",
+        help="Input model (path, URL, or '-')",
         required=True,
+    )
+    generate_parser.add_argument(
+        "--input-format",
+        "-t",
+        help="Input file format, or 'auto' to attempt to determine automatically. Default is %(default)s",
+        default="auto",
     )
     generate_parser.add_argument(
         "--context",
@@ -121,4 +133,4 @@ def main(args=None):
 
     parsed_args = parser.parse_args(args)
 
-    return parsed_args.func(parsed_args)
+    return parsed_args.func(parser, parsed_args)

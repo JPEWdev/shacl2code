@@ -78,6 +78,55 @@ def test_generation_stdout():
         assert p.stdout == f.read()
 
 
+def test_generation_input_format(tmp_path):
+    """
+    Tests that shacl2code generates output correctly with an explicit input
+    format
+    """
+    # File has no extension
+    dest = tmp_path / "model"
+    shutil.copy(SPDX3_MODEL, dest)
+
+    # Not passing the input format should fail
+    p = subprocess.run(
+        [
+            "shacl2code",
+            "generate",
+            "--input",
+            dest,
+            "jinja",
+            "--output",
+            "-",
+            "--template",
+            RAW_TEMPLATE,
+        ],
+        stdout=subprocess.PIPE,
+        encoding="utf-8",
+    )
+    assert p.returncode != 0
+
+    p = subprocess.run(
+        [
+            "shacl2code",
+            "generate",
+            "--input",
+            dest,
+            "--input-format",
+            "json-ld",
+            "jinja",
+            "--output",
+            "-",
+            "--template",
+            RAW_TEMPLATE,
+        ],
+        check=True,
+        stdout=subprocess.PIPE,
+        encoding="utf-8",
+    )
+    with SPDX3_EXPECT.open("r") as f:
+        assert p.stdout == f.read()
+
+
 def test_generation_stdin():
     """
     Tests that shacl2code generates output from a model on stdin
@@ -89,6 +138,8 @@ def test_generation_stdin():
                 "generate",
                 "--input",
                 "-",
+                "--input-format",
+                "json-ld",
                 "jinja",
                 "--output",
                 "-",
@@ -103,6 +154,33 @@ def test_generation_stdin():
 
     with SPDX3_EXPECT.open("r") as f:
         assert p.stdout == f.read()
+
+
+def test_generation_stdin_auto_format():
+    """
+    Tests that shacl2code doesn't allow 'auto' format on stdin
+    """
+    with SPDX3_MODEL.open("r") as f:
+        p = subprocess.run(
+            [
+                "shacl2code",
+                "generate",
+                "--input",
+                "-",
+                "--input-format",
+                "auto",
+                "jinja",
+                "--output",
+                "-",
+                "--template",
+                RAW_TEMPLATE,
+            ],
+            stdin=f,
+            stdout=subprocess.PIPE,
+            encoding="utf-8",
+        )
+
+    assert p.returncode != 0
 
 
 def test_generation_url(http_server):

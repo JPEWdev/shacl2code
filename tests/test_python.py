@@ -216,20 +216,18 @@ def test_links(spdx3_import):
     with (DATA_DIR / "python" / "links.json").open("r") as f:
         d = ObjectSet(*spdx3.read_jsonld(f))
 
-    agent = d.get_obj("https://spdx.dev/test/agent-with-link", spdx3.core_Agent)
-    agent_2 = d.get_obj("https://spdx.dev/test/agent-with-link-2", spdx3.core_Agent)
-    creationinfo = d.get_obj(
-        "https://spdx.dev/test/creationinfo", spdx3.core_CreationInfo
-    )
+    agent = d.get_obj("https://spdx.dev/test/agent-with-link", spdx3.Agent)
+    agent_2 = d.get_obj("https://spdx.dev/test/agent-with-link-2", spdx3.Agent)
+    creationinfo = d.get_obj("https://spdx.dev/test/creationinfo", spdx3.CreationInfo)
 
     assert agent.creationInfo is creationinfo
     assert agent_2.creationInfo is creationinfo
     assert creationinfo.createdBy == [agent]
 
-    agent_blank = d.get_obj("https://spdx.dev/test/agent-blank", spdx3.core_Agent)
-    agent_blank_2 = d.get_obj("https://spdx.dev/test/agent-blank-2", spdx3.core_Agent)
+    agent_blank = d.get_obj("https://spdx.dev/test/agent-blank", spdx3.Agent)
+    agent_blank_2 = d.get_obj("https://spdx.dev/test/agent-blank-2", spdx3.Agent)
 
-    assert isinstance(agent_blank.creationInfo, spdx3.core_CreationInfo)
+    assert isinstance(agent_blank.creationInfo, spdx3.CreationInfo)
     assert agent_blank.creationInfo is agent_blank_2.creationInfo
     assert agent_blank.creationInfo.createdBy == [agent_blank]
 
@@ -240,10 +238,8 @@ def test_property_validation(spdx3_import):
     with (DATA_DIR / "python" / "roundtrip.json").open("r") as f:
         d = ObjectSet(*spdx3.read_jsonld(f))
 
-    agent = d.get_obj("https://spdx.dev/test/agent", spdx3.core_Agent)
-    creationinfo = d.get_obj(
-        "https://spdx.dev/test/creationinfo", spdx3.core_CreationInfo
-    )
+    agent = d.get_obj("https://spdx.dev/test/agent", spdx3.Agent)
+    creationinfo = d.get_obj("https://spdx.dev/test/creationinfo", spdx3.CreationInfo)
 
     # Setting an unknown property
     with pytest.raises(AttributeError):
@@ -296,20 +292,20 @@ def test_property_validation(spdx3_import):
         creationinfo.createdBy.foo
 
     # Enum
-    h = spdx3.core_Hash()
+    h = spdx3.Hash()
     with pytest.raises(TypeError):
         h.algorithm = 1
 
     with pytest.raises(ValueError):
         h.algorithm = "sha1"
 
-    h.algorithm = spdx3.core_HashAlgorithm.sha1
-    assert isinstance(spdx3.core_HashAlgorithm.sha1, str)
+    h.algorithm = spdx3.HashAlgorithm.sha1
+    assert isinstance(spdx3.HashAlgorithm.sha1, str)
 
     # Check valid values
-    for name, value in spdx3.core_HashAlgorithm.valid_values:
+    for name, value in spdx3.HashAlgorithm.valid_values:
         h.algorithm = value
-        getattr(spdx3.core_HashAlgorithm, name)
+        getattr(spdx3.HashAlgorithm, name)
 
 
 def test_mandatory_properties(spdx3_import, tmp_path):
@@ -322,7 +318,7 @@ def test_mandatory_properties(spdx3_import, tmp_path):
     outfile = tmp_path / "test.json"
 
     def base_obj():
-        c = spdx3.core_CreationInfo()
+        c = spdx3.CreationInfo()
         c.specVersion = "3.0.0"
         c.created = datetime.now()
         c.createdBy = ["https://spdx.dev/test/agent"]

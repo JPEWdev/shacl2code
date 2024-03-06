@@ -389,6 +389,23 @@ class EnumProp(Property):
 class SHACLObject(object):
     DESERIALIZERS = {}
 
+    class IRIMap(object):
+        def __init__(self, obj):
+            self.obj = obj
+
+        def __getattr__(self, name):
+            try:
+                return self[name]
+            except KeyError as e:
+                raise AttributeError(str(e))
+
+        def __getitem__(self, name):
+            (json_name, _, _, _) = self.obj._obj_properties[name]
+            return json_name
+
+        def __contains__(self, name):
+            return name in self.obj._obj_properties
+
     def __init__(self):
         self._obj_data = {}
         self._obj_properties = {}
@@ -396,6 +413,7 @@ class SHACLObject(object):
         self._obj_metadata = {}
 
         self._add_property("_id", StringProp(), json_name="@id")
+        self._obj_IRI = self.IRIMap(self)
 
     def _set_init_props(self, **kwargs):
         for k, v in kwargs.items():
@@ -437,6 +455,9 @@ class SHACLObject(object):
 
         if name == "_metadata":
             return self._obj_metadata
+
+        if name == "_IRI":
+            return self._obj_IRI
 
         try:
             (json_name, prop, _, _) = self._obj_properties[name]

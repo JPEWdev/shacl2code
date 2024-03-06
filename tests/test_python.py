@@ -351,3 +351,21 @@ def test_mandatory_properties(spdx3_import, tmp_path):
             spdx3.write_jsonld([c], f)
 
     # TODO: Need to test max count, but there aren't any in the SPDX model currently
+
+
+def test_iri(spdx3_import):
+    import spdx3
+
+    c = spdx3.CreationInfo()
+
+    assert c._IRI.specVersion == "https://spdx.org/rdf/v3/Core/specVersion"
+    assert c._IRI["specVersion"] == "https://spdx.org/rdf/v3/Core/specVersion"
+    assert "specVersion" in c._IRI
+
+    with pytest.raises(AttributeError):
+        c._IRI.foo
+
+    with pytest.raises(KeyError):
+        c._IRI["foo"]
+
+    assert "foo" not in c._IRI

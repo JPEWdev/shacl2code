@@ -60,24 +60,24 @@
         "{{ class.clsname }}": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "{{ context.compact("@id") }}": { "$ref": "#/$defs/idRef" },
                         "{{ context.compact("@type") }}": { "const": "{{ context.compact(class._id) }}" }
-                    },
-                    "required": ["{{ context.compact("@type") }}"]
+                    }
                 },
                 { "$ref": "#/$defs/{{ class.clsname }}_props" }
             ]
         },
         "{{ class.clsname }}_props": {
             "allOf": [
+                {%- if class.parent_ids %}
                 {%- for parent in class.parent_ids %}
                 { "$ref": "#/$defs/{{ classes.get(parent).clsname }}_props" },
                 {%- endfor %}
+                {%- else %}
+                { "$ref": "#/$defs/SHACLClass" },
+                {%- endif %}
                 {%- set required = [] %}
                 {
-                    "type": "object",
                     "properties": {
                         {%- for prop in class.properties %}
                         {%- if not prop.min_count is none and prop.min_count > 0 %}
@@ -124,6 +124,10 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
+                        {#- There is a bit of a hole here in that it doesn't #}
+                        {#- specify that the class @type is the exact class (or #}
+                        {#- a derived subclass), but that's a difficult check to #}
+                        {#- do in a schema, so let the SHACL take care of it #}
                         "$ref": "#/$defs/{{ classes.get(prop.class_id).clsname }}",
                         "unevaluatedProperties": false
                     }
@@ -188,6 +192,20 @@
         },
         "Extension": {
             "type": "string"
+        },
+        "SHACLClass": {
+            "type": "object",
+            "properties": {
+                "{{ context.compact("@id") }}": { "$ref": "#/$defs/idRef" },
+                "{{ context.compact("@type") }}": {
+                    "enum": [
+                    {%- for class in classes %}
+                        "{{ context.compact(class._id) }}"{% if not loop.last %},{% endif %}
+                    {%- endfor %}
+                    ]
+                }
+            },
+            "required": ["{{ context.compact("@type") }}"]
         },
         "AnyClass": {
             "oneOf": [

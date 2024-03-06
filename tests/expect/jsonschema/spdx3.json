@@ -28,20 +28,17 @@
         "https_spdxorgrdfv3CoreCreationInfo": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Core/CreationInfo" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreCreationInfo_props" }
             ]
         },
         "https_spdxorgrdfv3CoreCreationInfo_props": {
             "allOf": [
+                { "$ref": "#/$defs/SHACLClass" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/specVersion": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_specVersion"
@@ -118,20 +115,17 @@
         "https_spdxorgrdfv3CoreDictionaryEntry": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Core/DictionaryEntry" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreDictionaryEntry_props" }
             ]
         },
         "https_spdxorgrdfv3CoreDictionaryEntry_props": {
             "allOf": [
+                { "$ref": "#/$defs/SHACLClass" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/key": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_key"
@@ -155,20 +149,17 @@
         "https_spdxorgrdfv3CoreElement": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Core/Element" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreElement_props" }
             ]
         },
         "https_spdxorgrdfv3CoreElement_props": {
             "allOf": [
+                { "$ref": "#/$defs/SHACLClass" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/name": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_name"
@@ -298,12 +289,9 @@
         "https_spdxorgrdfv3CoreElementCollection": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Core/ElementCollection" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreElementCollection_props" }
             ]
@@ -312,7 +300,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreElement_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/element": {
                             "oneOf": [
@@ -392,20 +379,17 @@
         "https_spdxorgrdfv3CoreExternalIdentifier": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Core/ExternalIdentifier" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreExternalIdentifier_props" }
             ]
         },
         "https_spdxorgrdfv3CoreExternalIdentifier_props": {
             "allOf": [
+                { "$ref": "#/$defs/SHACLClass" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/externalIdentifierType": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_externalIdentifierType"
@@ -470,20 +454,17 @@
         "https_spdxorgrdfv3CoreExternalMap": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Core/ExternalMap" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreExternalMap_props" }
             ]
         },
         "https_spdxorgrdfv3CoreExternalMap_props": {
             "allOf": [
+                { "$ref": "#/$defs/SHACLClass" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/externalSpdxId": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_externalSpdxId"
@@ -541,20 +522,17 @@
         "https_spdxorgrdfv3CoreExternalRef": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Core/ExternalRef" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreExternalRef_props" }
             ]
         },
         "https_spdxorgrdfv3CoreExternalRef_props": {
             "allOf": [
+                { "$ref": "#/$defs/SHACLClass" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/externalRefType": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_externalRefType"
@@ -643,20 +621,17 @@
         "https_spdxorgrdfv3CoreIntegrityMethod": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Core/IntegrityMethod" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreIntegrityMethod_props" }
             ]
         },
         "https_spdxorgrdfv3CoreIntegrityMethod_props": {
             "allOf": [
+                { "$ref": "#/$defs/SHACLClass" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/comment": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_comment"
@@ -671,20 +646,17 @@
         "https_spdxorgrdfv3CoreNamespaceMap": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Core/NamespaceMap" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreNamespaceMap_props" }
             ]
         },
         "https_spdxorgrdfv3CoreNamespaceMap_props": {
             "allOf": [
+                { "$ref": "#/$defs/SHACLClass" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/prefix": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_prefix"
@@ -709,20 +681,17 @@
         "https_spdxorgrdfv3CorePositiveIntegerRange": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Core/PositiveIntegerRange" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3CorePositiveIntegerRange_props" }
             ]
         },
         "https_spdxorgrdfv3CorePositiveIntegerRange_props": {
             "allOf": [
+                { "$ref": "#/$defs/SHACLClass" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/begin": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_begin"
@@ -749,12 +718,9 @@
         "https_spdxorgrdfv3CoreRelationship": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Core/Relationship" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreRelationship_props" }
             ]
@@ -763,7 +729,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreElement_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/from": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_from"
@@ -898,12 +863,9 @@
         "https_spdxorgrdfv3CoreSpdxDocument": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Core/SpdxDocument" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreSpdxDocument_props" }
             ]
@@ -912,7 +874,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreElementCollection_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/imports": {
                             "oneOf": [
@@ -977,12 +938,9 @@
         "https_spdxorgrdfv3CoreTool": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Core/Tool" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreTool_props" }
             ]
@@ -991,7 +949,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreElement_props" },
                 {
-                    "type": "object",
                     "properties": {
                     }
                 }
@@ -1000,12 +957,9 @@
         "https_spdxorgrdfv3ExpandedLicensingLicenseAddition": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/ExpandedLicensing/LicenseAddition" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3ExpandedLicensingLicenseAddition_props" }
             ]
@@ -1014,7 +968,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreElement_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/ExpandedLicensing/additionText": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_additionText"
@@ -1072,12 +1025,9 @@
         "https_spdxorgrdfv3ExpandedLicensingListedLicenseException": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/ExpandedLicensing/ListedLicenseException" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3ExpandedLicensingListedLicenseException_props" }
             ]
@@ -1086,7 +1036,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3ExpandedLicensingLicenseAddition_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/ExpandedLicensing/listVersionAdded": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_listVersionAdded"
@@ -1107,12 +1056,9 @@
         "https_spdxorgrdfv3SecurityVulnAssessmentRelationship": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Security/VulnAssessmentRelationship" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3SecurityVulnAssessmentRelationship_props" }
             ]
@@ -1121,7 +1067,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreRelationship_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Security/assessedElement": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_assessedElement"
@@ -1172,12 +1117,9 @@
         "https_spdxorgrdfv3SimpleLicensingAnyLicenseInfo": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/SimpleLicensing/AnyLicenseInfo" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3SimpleLicensingAnyLicenseInfo_props" }
             ]
@@ -1186,7 +1128,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreElement_props" },
                 {
-                    "type": "object",
                     "properties": {
                     }
                 }
@@ -1195,12 +1136,9 @@
         "https_spdxorgrdfv3SimpleLicensingLicenseExpression": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/SimpleLicensing/LicenseExpression" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3SimpleLicensingLicenseExpression_props" }
             ]
@@ -1209,7 +1147,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3SimpleLicensingAnyLicenseInfo_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/SimpleLicensing/licenseExpression": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_SimpleLicensing_licenseExpression"
@@ -1255,12 +1192,9 @@
         "https_spdxorgrdfv3SimpleLicensingSimpleLicensingText": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/SimpleLicensing/SimpleLicensingText" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3SimpleLicensingSimpleLicensingText_props" }
             ]
@@ -1269,7 +1203,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreElement_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/SimpleLicensing/licenseText": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_SimpleLicensing_licenseText"
@@ -1287,12 +1220,9 @@
         "https_spdxorgrdfv3BuildBuild": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Build/Build" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3BuildBuild_props" }
             ]
@@ -1301,7 +1231,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreElement_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Build/buildType": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Build_buildType"
@@ -1435,12 +1364,9 @@
         "https_spdxorgrdfv3CoreAgent": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Core/Agent" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreAgent_props" }
             ]
@@ -1449,7 +1375,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreElement_props" },
                 {
-                    "type": "object",
                     "properties": {
                     }
                 }
@@ -1458,12 +1383,9 @@
         "https_spdxorgrdfv3CoreAnnotation": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Core/Annotation" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreAnnotation_props" }
             ]
@@ -1472,7 +1394,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreElement_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/annotationType": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_annotationType"
@@ -1518,12 +1439,9 @@
         "https_spdxorgrdfv3CoreArtifact": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Core/Artifact" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreArtifact_props" }
             ]
@@ -1532,7 +1450,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreElement_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/originatedBy": {
                             "oneOf": [
@@ -1609,12 +1526,9 @@
         "https_spdxorgrdfv3CoreBundle": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Core/Bundle" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreBundle_props" }
             ]
@@ -1623,7 +1537,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreElementCollection_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/context": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_context"
@@ -1638,12 +1551,9 @@
         "https_spdxorgrdfv3CoreHash": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Core/Hash" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreHash_props" }
             ]
@@ -1652,7 +1562,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreIntegrityMethod_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/algorithm": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_algorithm"
@@ -1702,12 +1611,9 @@
         "https_spdxorgrdfv3CoreLifecycleScopedRelationship": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Core/LifecycleScopedRelationship" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreLifecycleScopedRelationship_props" }
             ]
@@ -1716,7 +1622,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreRelationship_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Core/scope": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Core_scope"
@@ -1738,12 +1643,9 @@
         "https_spdxorgrdfv3CoreOrganization": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Core/Organization" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreOrganization_props" }
             ]
@@ -1752,7 +1654,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreAgent_props" },
                 {
-                    "type": "object",
                     "properties": {
                     }
                 }
@@ -1761,12 +1662,9 @@
         "https_spdxorgrdfv3CorePerson": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Core/Person" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3CorePerson_props" }
             ]
@@ -1775,7 +1673,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreAgent_props" },
                 {
-                    "type": "object",
                     "properties": {
                     }
                 }
@@ -1784,12 +1681,9 @@
         "https_spdxorgrdfv3CoreSoftwareAgent": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Core/SoftwareAgent" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreSoftwareAgent_props" }
             ]
@@ -1798,7 +1692,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreAgent_props" },
                 {
-                    "type": "object",
                     "properties": {
                     }
                 }
@@ -1807,12 +1700,9 @@
         "https_spdxorgrdfv3ExpandedLicensingConjunctiveLicenseSet": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/ExpandedLicensing/ConjunctiveLicenseSet" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3ExpandedLicensingConjunctiveLicenseSet_props" }
             ]
@@ -1821,7 +1711,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3SimpleLicensingAnyLicenseInfo_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/ExpandedLicensing/member": {
                             "oneOf": [
@@ -1856,12 +1745,9 @@
         "https_spdxorgrdfv3ExpandedLicensingCustomLicenseAddition": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/ExpandedLicensing/CustomLicenseAddition" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3ExpandedLicensingCustomLicenseAddition_props" }
             ]
@@ -1870,7 +1756,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3ExpandedLicensingLicenseAddition_props" },
                 {
-                    "type": "object",
                     "properties": {
                     }
                 }
@@ -1879,12 +1764,9 @@
         "https_spdxorgrdfv3ExpandedLicensingDisjunctiveLicenseSet": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/ExpandedLicensing/DisjunctiveLicenseSet" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3ExpandedLicensingDisjunctiveLicenseSet_props" }
             ]
@@ -1893,7 +1775,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3SimpleLicensingAnyLicenseInfo_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/ExpandedLicensing/member": {
                             "oneOf": [
@@ -1928,12 +1809,9 @@
         "https_spdxorgrdfv3ExpandedLicensingExtendableLicense": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/ExpandedLicensing/ExtendableLicense" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3ExpandedLicensingExtendableLicense_props" }
             ]
@@ -1942,7 +1820,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3SimpleLicensingAnyLicenseInfo_props" },
                 {
-                    "type": "object",
                     "properties": {
                     }
                 }
@@ -1951,12 +1828,9 @@
         "https_spdxorgrdfv3ExpandedLicensingLicense": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/ExpandedLicensing/License" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3ExpandedLicensingLicense_props" }
             ]
@@ -1965,7 +1839,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3ExpandedLicensingExtendableLicense_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/SimpleLicensing/licenseText": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_SimpleLicensing_licenseText"
@@ -2041,12 +1914,9 @@
         "https_spdxorgrdfv3ExpandedLicensingListedLicense": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/ExpandedLicensing/ListedLicense" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3ExpandedLicensingListedLicense_props" }
             ]
@@ -2055,7 +1925,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3ExpandedLicensingLicense_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/ExpandedLicensing/listVersionAdded": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_listVersionAdded"
@@ -2076,12 +1945,9 @@
         "https_spdxorgrdfv3ExpandedLicensingOrLaterOperator": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/ExpandedLicensing/OrLaterOperator" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3ExpandedLicensingOrLaterOperator_props" }
             ]
@@ -2090,7 +1956,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3ExpandedLicensingExtendableLicense_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/ExpandedLicensing/subjectLicense": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_subjectLicense"
@@ -2114,12 +1979,9 @@
         "https_spdxorgrdfv3ExpandedLicensingWithAdditionOperator": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/ExpandedLicensing/WithAdditionOperator" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3ExpandedLicensingWithAdditionOperator_props" }
             ]
@@ -2128,7 +1990,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3SimpleLicensingAnyLicenseInfo_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/ExpandedLicensing/subjectLicense": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_ExpandedLicensing_subjectLicense"
@@ -2165,12 +2026,9 @@
         "https_spdxorgrdfv3SecurityCvssV2VulnAssessmentRelationship": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Security/CvssV2VulnAssessmentRelationship" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3SecurityCvssV2VulnAssessmentRelationship_props" }
             ]
@@ -2179,7 +2037,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3SecurityVulnAssessmentRelationship_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Security/score": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_score"
@@ -2204,12 +2061,9 @@
         "https_spdxorgrdfv3SecurityCvssV3VulnAssessmentRelationship": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Security/CvssV3VulnAssessmentRelationship" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3SecurityCvssV3VulnAssessmentRelationship_props" }
             ]
@@ -2218,7 +2072,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3SecurityVulnAssessmentRelationship_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Security/score": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_score"
@@ -2256,12 +2109,9 @@
         "https_spdxorgrdfv3SecurityCvssV4VulnAssessmentRelationship": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Security/CvssV4VulnAssessmentRelationship" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3SecurityCvssV4VulnAssessmentRelationship_props" }
             ]
@@ -2270,7 +2120,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3SecurityVulnAssessmentRelationship_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Security/score": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_score"
@@ -2308,12 +2157,9 @@
         "https_spdxorgrdfv3SecurityEpssVulnAssessmentRelationship": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Security/EpssVulnAssessmentRelationship" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3SecurityEpssVulnAssessmentRelationship_props" }
             ]
@@ -2322,7 +2168,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3SecurityVulnAssessmentRelationship_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Security/probability": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_probability"
@@ -2354,12 +2199,9 @@
         "https_spdxorgrdfv3SecurityExploitCatalogVulnAssessmentRelationship": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Security/ExploitCatalogVulnAssessmentRelationship" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3SecurityExploitCatalogVulnAssessmentRelationship_props" }
             ]
@@ -2368,7 +2210,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3SecurityVulnAssessmentRelationship_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Security/catalogType": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_catalogType"
@@ -2403,12 +2244,9 @@
         "https_spdxorgrdfv3SecuritySsvcVulnAssessmentRelationship": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Security/SsvcVulnAssessmentRelationship" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3SecuritySsvcVulnAssessmentRelationship_props" }
             ]
@@ -2417,7 +2255,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3SecurityVulnAssessmentRelationship_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Security/decisionType": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_decisionType"
@@ -2440,12 +2277,9 @@
         "https_spdxorgrdfv3SecurityVexVulnAssessmentRelationship": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Security/VexVulnAssessmentRelationship" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3SecurityVexVulnAssessmentRelationship_props" }
             ]
@@ -2454,7 +2288,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3SecurityVulnAssessmentRelationship_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Security/vexVersion": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_vexVersion"
@@ -2475,12 +2308,9 @@
         "https_spdxorgrdfv3SecurityVulnerability": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Security/Vulnerability" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3SecurityVulnerability_props" }
             ]
@@ -2489,7 +2319,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreArtifact_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Security/publishedTime": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_publishedTime"
@@ -2516,12 +2345,9 @@
         "https_spdxorgrdfv3SoftwareSoftwareArtifact": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Software/SoftwareArtifact" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3SoftwareSoftwareArtifact_props" }
             ]
@@ -2530,7 +2356,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreArtifact_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Software/contentIdentifier": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_contentIdentifier"
@@ -2649,12 +2474,9 @@
         "https_spdxorgrdfv3CoreBom": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Core/Bom" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreBom_props" }
             ]
@@ -2663,7 +2485,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreBundle_props" },
                 {
-                    "type": "object",
                     "properties": {
                     }
                 }
@@ -2672,12 +2493,9 @@
         "https_spdxorgrdfv3ExpandedLicensingCustomLicense": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/ExpandedLicensing/CustomLicense" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3ExpandedLicensingCustomLicense_props" }
             ]
@@ -2686,7 +2504,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3ExpandedLicensingLicense_props" },
                 {
-                    "type": "object",
                     "properties": {
                     }
                 }
@@ -2695,12 +2512,9 @@
         "https_spdxorgrdfv3SecurityVexAffectedVulnAssessmentRelationship": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Security/VexAffectedVulnAssessmentRelationship" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3SecurityVexAffectedVulnAssessmentRelationship_props" }
             ]
@@ -2709,7 +2523,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3SecurityVexVulnAssessmentRelationship_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Security/actionStatement": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_actionStatement"
@@ -2740,12 +2553,9 @@
         "https_spdxorgrdfv3SecurityVexFixedVulnAssessmentRelationship": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Security/VexFixedVulnAssessmentRelationship" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3SecurityVexFixedVulnAssessmentRelationship_props" }
             ]
@@ -2754,7 +2564,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3SecurityVexVulnAssessmentRelationship_props" },
                 {
-                    "type": "object",
                     "properties": {
                     }
                 }
@@ -2763,12 +2572,9 @@
         "https_spdxorgrdfv3SecurityVexNotAffectedVulnAssessmentRelationship": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Security/VexNotAffectedVulnAssessmentRelationship" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3SecurityVexNotAffectedVulnAssessmentRelationship_props" }
             ]
@@ -2777,7 +2583,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3SecurityVexVulnAssessmentRelationship_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Security/justificationType": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Security_justificationType"
@@ -2810,12 +2615,9 @@
         "https_spdxorgrdfv3SecurityVexUnderInvestigationVulnAssessmentRelationship": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Security/VexUnderInvestigationVulnAssessmentRelationship" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3SecurityVexUnderInvestigationVulnAssessmentRelationship_props" }
             ]
@@ -2824,7 +2626,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3SecurityVexVulnAssessmentRelationship_props" },
                 {
-                    "type": "object",
                     "properties": {
                     }
                 }
@@ -2833,12 +2634,9 @@
         "https_spdxorgrdfv3SoftwareFile": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Software/File" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3SoftwareFile_props" }
             ]
@@ -2847,7 +2645,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3SoftwareSoftwareArtifact_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Software/contentType": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_contentType"
@@ -2862,12 +2659,9 @@
         "https_spdxorgrdfv3SoftwarePackage": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Software/Package" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3SoftwarePackage_props" }
             ]
@@ -2876,7 +2670,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3SoftwareSoftwareArtifact_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Software/packageVersion": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_packageVersion"
@@ -2915,12 +2708,9 @@
         "https_spdxorgrdfv3SoftwareSbom": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Software/Sbom" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3SoftwareSbom_props" }
             ]
@@ -2929,7 +2719,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3CoreBom_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Software/sbomType": {
                             "oneOf": [
@@ -2961,12 +2750,9 @@
         "https_spdxorgrdfv3SoftwareSnippet": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Software/Snippet" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3SoftwareSnippet_props" }
             ]
@@ -2975,7 +2761,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3SoftwareSoftwareArtifact_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Software/byteRange": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_Software_byteRange"
@@ -3023,12 +2808,9 @@
         "https_spdxorgrdfv3AIAIPackage": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/AI/AIPackage" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3AIAIPackage_props" }
             ]
@@ -3037,7 +2819,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3SoftwarePackage_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/AI/energyConsumption": {
                                     "$ref": "#/$defs/https:__spdx.org_rdf_v3_AI_energyConsumption"
@@ -3247,12 +3028,9 @@
         "https_spdxorgrdfv3DatasetDataset": {
             "allOf": [
                 {
-                    "type": "object",
                     "properties": {
-                        "@id": { "$ref": "#/$defs/idRef" },
                         "@type": { "const": "https://spdx.org/rdf/v3/Dataset/Dataset" }
-                    },
-                    "required": ["@type"]
+                    }
                 },
                 { "$ref": "#/$defs/https_spdxorgrdfv3DatasetDataset_props" }
             ]
@@ -3261,7 +3039,6 @@
             "allOf": [
                 { "$ref": "#/$defs/https_spdxorgrdfv3SoftwarePackage_props" },
                 {
-                    "type": "object",
                     "properties": {
                         "https://spdx.org/rdf/v3/Dataset/datasetType": {
                             "oneOf": [
@@ -3452,6 +3229,75 @@
         },
         "Extension": {
             "type": "string"
+        },
+        "SHACLClass": {
+            "type": "object",
+            "properties": {
+                "@id": { "$ref": "#/$defs/idRef" },
+                "@type": {
+                    "enum": [
+                        "https://spdx.org/rdf/v3/Core/CreationInfo",
+                        "https://spdx.org/rdf/v3/Core/DictionaryEntry",
+                        "https://spdx.org/rdf/v3/Core/Element",
+                        "https://spdx.org/rdf/v3/Core/ElementCollection",
+                        "https://spdx.org/rdf/v3/Core/ExternalIdentifier",
+                        "https://spdx.org/rdf/v3/Core/ExternalMap",
+                        "https://spdx.org/rdf/v3/Core/ExternalRef",
+                        "https://spdx.org/rdf/v3/Core/IntegrityMethod",
+                        "https://spdx.org/rdf/v3/Core/NamespaceMap",
+                        "https://spdx.org/rdf/v3/Core/PositiveIntegerRange",
+                        "https://spdx.org/rdf/v3/Core/Relationship",
+                        "https://spdx.org/rdf/v3/Core/SpdxDocument",
+                        "https://spdx.org/rdf/v3/Core/Tool",
+                        "https://spdx.org/rdf/v3/ExpandedLicensing/LicenseAddition",
+                        "https://spdx.org/rdf/v3/ExpandedLicensing/ListedLicenseException",
+                        "https://spdx.org/rdf/v3/Security/VulnAssessmentRelationship",
+                        "https://spdx.org/rdf/v3/SimpleLicensing/AnyLicenseInfo",
+                        "https://spdx.org/rdf/v3/SimpleLicensing/LicenseExpression",
+                        "https://spdx.org/rdf/v3/SimpleLicensing/SimpleLicensingText",
+                        "https://spdx.org/rdf/v3/Build/Build",
+                        "https://spdx.org/rdf/v3/Core/Agent",
+                        "https://spdx.org/rdf/v3/Core/Annotation",
+                        "https://spdx.org/rdf/v3/Core/Artifact",
+                        "https://spdx.org/rdf/v3/Core/Bundle",
+                        "https://spdx.org/rdf/v3/Core/Hash",
+                        "https://spdx.org/rdf/v3/Core/LifecycleScopedRelationship",
+                        "https://spdx.org/rdf/v3/Core/Organization",
+                        "https://spdx.org/rdf/v3/Core/Person",
+                        "https://spdx.org/rdf/v3/Core/SoftwareAgent",
+                        "https://spdx.org/rdf/v3/ExpandedLicensing/ConjunctiveLicenseSet",
+                        "https://spdx.org/rdf/v3/ExpandedLicensing/CustomLicenseAddition",
+                        "https://spdx.org/rdf/v3/ExpandedLicensing/DisjunctiveLicenseSet",
+                        "https://spdx.org/rdf/v3/ExpandedLicensing/ExtendableLicense",
+                        "https://spdx.org/rdf/v3/ExpandedLicensing/License",
+                        "https://spdx.org/rdf/v3/ExpandedLicensing/ListedLicense",
+                        "https://spdx.org/rdf/v3/ExpandedLicensing/OrLaterOperator",
+                        "https://spdx.org/rdf/v3/ExpandedLicensing/WithAdditionOperator",
+                        "https://spdx.org/rdf/v3/Security/CvssV2VulnAssessmentRelationship",
+                        "https://spdx.org/rdf/v3/Security/CvssV3VulnAssessmentRelationship",
+                        "https://spdx.org/rdf/v3/Security/CvssV4VulnAssessmentRelationship",
+                        "https://spdx.org/rdf/v3/Security/EpssVulnAssessmentRelationship",
+                        "https://spdx.org/rdf/v3/Security/ExploitCatalogVulnAssessmentRelationship",
+                        "https://spdx.org/rdf/v3/Security/SsvcVulnAssessmentRelationship",
+                        "https://spdx.org/rdf/v3/Security/VexVulnAssessmentRelationship",
+                        "https://spdx.org/rdf/v3/Security/Vulnerability",
+                        "https://spdx.org/rdf/v3/Software/SoftwareArtifact",
+                        "https://spdx.org/rdf/v3/Core/Bom",
+                        "https://spdx.org/rdf/v3/ExpandedLicensing/CustomLicense",
+                        "https://spdx.org/rdf/v3/Security/VexAffectedVulnAssessmentRelationship",
+                        "https://spdx.org/rdf/v3/Security/VexFixedVulnAssessmentRelationship",
+                        "https://spdx.org/rdf/v3/Security/VexNotAffectedVulnAssessmentRelationship",
+                        "https://spdx.org/rdf/v3/Security/VexUnderInvestigationVulnAssessmentRelationship",
+                        "https://spdx.org/rdf/v3/Software/File",
+                        "https://spdx.org/rdf/v3/Software/Package",
+                        "https://spdx.org/rdf/v3/Software/Sbom",
+                        "https://spdx.org/rdf/v3/Software/Snippet",
+                        "https://spdx.org/rdf/v3/AI/AIPackage",
+                        "https://spdx.org/rdf/v3/Dataset/Dataset"
+                    ]
+                }
+            },
+            "required": ["@type"]
         },
         "AnyClass": {
             "oneOf": [

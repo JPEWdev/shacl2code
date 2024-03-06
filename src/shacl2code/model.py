@@ -68,26 +68,26 @@ class Model(object):
         self.objects = {}
         self.enums = []
         self.classes = []
-        class_ids = set()
-        enum_ids = set()
+        class_iris = set()
+        enum_iris = set()
 
-        for cls_id, _, _ in self.model.triples((None, RDF.type, OWL.Class)):
+        for cls_iri in self.model.subjects(RDF.type, OWL.Class):
             enum_values = []
 
-            for subject, predicate, obj in self.model.triples((None, RDF.type, cls_id)):
-                if (subject, RDF.type, OWL.NamedIndividual) not in self.model:
+            for value_iri in self.model.subjects(RDF.type, cls_iri):
+                if (value_iri, RDF.type, OWL.NamedIndividual) not in self.model:
                     continue
 
                 v = EnumValue(
-                    _id=str(subject),
+                    _id=str(value_iri),
                     varname=str(
                         self.model.value(
-                            subject,
+                            value_iri,
                             RDFS.label,
-                            default=to_var_name(str(subject).split("/")[-1]),
+                            default=to_var_name(str(value_iri).split("/")[-1]),
                         )
                     ),
-                    comment=str(self.model.value(subject, RDFS.comment, default="")),
+                    comment=str(self.model.value(value_iri, RDFS.comment, default="")),
                 )
                 enum_values.append(v)
 
@@ -95,42 +95,45 @@ class Model(object):
                 enum_values.sort(key=lambda v: v._id)
 
                 e = Enum(
-                    _id=str(cls_id),
-                    clsname=self.get_class_name(cls_id),
-                    comment=str(self.model.value(cls_id, RDFS.comment, default="")),
+                    _id=str(cls_iri),
+                    clsname=self.get_class_name(cls_iri),
+                    comment=str(self.model.value(cls_iri, RDFS.comment, default="")),
                     values=enum_values,
                 )
                 self.enums.append(e)
-                enum_ids.add(cls_id)
+                enum_iris.add(cls_iri)
             else:
-                class_ids.add(cls_id)
+                class_iris.add(cls_iri)
 
         def int_val(v):
             if not v:
                 return None
             return int(v)
 
-        for cls_id in class_ids:
+        for cls_iri in class_iris:
             c = Class(
-                _id=str(cls_id),
+                _id=str(cls_iri),
                 parent_ids=[
-                    str(p)
-                    for _, _, p in self.model.triples((cls_id, RDFS.subClassOf, None))
-                    if p in class_ids
+                    str(parent_iri)
+                    for parent_iri in self.model.objects(cls_iri, RDFS.subClassOf)
+                    if parent_iri in class_iris
                 ],
-                clsname=self.get_class_name(cls_id),
-                comment=str(self.model.value(cls_id, RDFS.comment, default="")),
+                clsname=self.get_class_name(cls_iri),
+                comment=str(self.model.value(cls_iri, RDFS.comment, default="")),
                 properties=[],
             )
 
-            for _, _, obj_prop in self.model.triples((cls_id, SH.property, None)):
+            for obj_prop in self.model.objects(cls_iri, SH.property):
                 prop = self.model.value(obj_prop, SH.path)
-                name = str(
-                    self.model.value(prop, SH.name, default=self.get_compact_id(prop))
-                )
 
                 p = Property(
-                    varname=to_var_name(name),
+                    varname=to_var_name(
+                        self.model.value(
+                            prop,
+                            SH.name,
+                            default=self.get_compact_id(prop),
+                        )
+                    ),
                     path=str(prop),
                     comment=str(self.model.value(prop, RDFS.comment, default="")),
                     max_count=int_val(self.model.value(obj_prop, SH.maxCount)),
@@ -145,10 +148,10 @@ class Model(object):
                 if range_id is None:
                     raise ModelException(f"Prop '{prop}' is missing range")
 
-                if range_id in enum_ids:
+                if range_id in enum_iris:
                     p.enum_id = str(range_id)
 
-                elif range_id in class_ids:
+                elif range_id in class_iris:
                     p.class_id = str(range_id)
 
                 else:

@@ -104,12 +104,12 @@
                                     "minItems": {{ prop.min_count }},
                                     {%- endif %}
                                     "items": {
-                                        "$ref": "#/$defs/{{ prop.path | replace("/", "_") }}"
+                                        "$ref": "#/$defs/prop_{{ context.compact(prop.path) | replace("/", "_") }}"
                                     }
                                 },
                                 {
                         {%- endif %}
-                                    "$ref": "#/$defs/{{ prop.path | replace("/", "_") }}"
+                                    "$ref": "#/$defs/prop_{{ context.compact(prop.path) | replace("/", "_") }}"
                         {%- if is_list %}
                                 }
                             ]
@@ -127,7 +127,7 @@
             ]
         },
         {%- for prop in class.properties %}
-        "{{ prop.path | replace("/", "_") }}": {
+        "prop_{{ context.compact(prop.path) | replace("/", "_") }}": {
             {%- if prop.class_id %}
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },

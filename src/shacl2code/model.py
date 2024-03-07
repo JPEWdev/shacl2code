@@ -56,6 +56,7 @@ class Class:
     _id: str
     clsname: str
     parent_ids: typing.List[str]
+    derived_ids: list
     properties: typing.List[Property]
     comment: str = ""
 
@@ -70,6 +71,7 @@ class Model(object):
         self.classes = []
         class_iris = set()
         enum_iris = set()
+        classes_by_iri = {}
 
         for cls_iri in self.model.subjects(RDF.type, OWL.Class):
             enum_values = []
@@ -118,6 +120,7 @@ class Model(object):
                     for parent_iri in self.model.objects(cls_iri, RDFS.subClassOf)
                     if parent_iri in class_iris
                 ],
+                derived_ids=[],
                 clsname=self.get_class_name(cls_iri),
                 comment=str(self.model.value(cls_iri, RDFS.comment, default="")),
                 properties=[],
@@ -160,6 +163,14 @@ class Model(object):
                 c.properties.append(p)
 
             self.classes.append(c)
+            classes_by_iri[str(cls_iri)] = c
+
+        for c in self.classes:
+            for p in c.parent_ids:
+                classes_by_iri[p].derived_ids.append(c._id)
+
+        for c in self.classes:
+            c.derived_ids.sort()
 
         self.enums.sort(key=lambda e: e._id)
         self.classes.sort(key=lambda c: c._id)

@@ -67,6 +67,14 @@
                 { "$ref": "#/$defs/{{ class.clsname }}_props" }
             ]
         },
+        "{{ class.clsname }}_derived": {
+            "oneOf": [
+                {%- for d in get_all_derived(class) %}
+                { "$ref": "#/$defs/{{ classes.get(d).clsname }}" },
+                {%- endfor %}
+                { "$ref": "#/$defs/{{ class.clsname }}" }
+            ]
+        },
         "{{ class.clsname }}_props": {
             "allOf": [
                 {%- if class.parent_ids %}
@@ -124,11 +132,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        {#- There is a bit of a hole here in that it doesn't #}
-                        {#- specify that the class @type is the exact class (or #}
-                        {#- a derived subclass), but that's a difficult check to #}
-                        {#- do in a schema, so let the SHACL take care of it #}
-                        "$ref": "#/$defs/{{ classes.get(prop.class_id).clsname }}",
+                        "$ref": "#/$defs/{{ classes.get(prop.class_id).clsname }}_derived",
                         "unevaluatedProperties": false
                     }
                 ]

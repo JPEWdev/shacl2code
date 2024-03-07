@@ -39,6 +39,11 @@
                 { "$ref": "#/$defs/CreationInfo_props" }
             ]
         },
+        "CreationInfo_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/CreationInfo" }
+            ]
+        },
         "CreationInfo_props": {
             "allOf": [
                 { "$ref": "#/$defs/SHACLClass" },
@@ -102,7 +107,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/Agent",
+                        "$ref": "#/$defs/Agent_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -111,7 +116,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/Tool",
+                        "$ref": "#/$defs/Tool_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -124,6 +129,11 @@
                     }
                 },
                 { "$ref": "#/$defs/DictionaryEntry_props" }
+            ]
+        },
+        "DictionaryEntry_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/DictionaryEntry" }
             ]
         },
         "DictionaryEntry_props": {
@@ -158,6 +168,59 @@
                     }
                 },
                 { "$ref": "#/$defs/Element_props" }
+            ]
+        },
+        "Element_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/AIPackage" },
+                { "$ref": "#/$defs/Build" },
+                { "$ref": "#/$defs/Agent" },
+                { "$ref": "#/$defs/Annotation" },
+                { "$ref": "#/$defs/Artifact" },
+                { "$ref": "#/$defs/Bom" },
+                { "$ref": "#/$defs/Bundle" },
+                { "$ref": "#/$defs/ElementCollection" },
+                { "$ref": "#/$defs/LifecycleScopedRelationship" },
+                { "$ref": "#/$defs/Organization" },
+                { "$ref": "#/$defs/Person" },
+                { "$ref": "#/$defs/Relationship" },
+                { "$ref": "#/$defs/SoftwareAgent" },
+                { "$ref": "#/$defs/SpdxDocument" },
+                { "$ref": "#/$defs/Tool" },
+                { "$ref": "#/$defs/Dataset" },
+                { "$ref": "#/$defs/ConjunctiveLicenseSet" },
+                { "$ref": "#/$defs/CustomLicense" },
+                { "$ref": "#/$defs/CustomLicenseAddition" },
+                { "$ref": "#/$defs/DisjunctiveLicenseSet" },
+                { "$ref": "#/$defs/ExtendableLicense" },
+                { "$ref": "#/$defs/License" },
+                { "$ref": "#/$defs/LicenseAddition" },
+                { "$ref": "#/$defs/ListedLicense" },
+                { "$ref": "#/$defs/ListedLicenseException" },
+                { "$ref": "#/$defs/OrLaterOperator" },
+                { "$ref": "#/$defs/WithAdditionOperator" },
+                { "$ref": "#/$defs/CvssV2VulnAssessmentRelationship" },
+                { "$ref": "#/$defs/CvssV3VulnAssessmentRelationship" },
+                { "$ref": "#/$defs/CvssV4VulnAssessmentRelationship" },
+                { "$ref": "#/$defs/EpssVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/ExploitCatalogVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/SsvcVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/VexAffectedVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/VexFixedVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/VexNotAffectedVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/VexUnderInvestigationVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/VexVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/VulnAssessmentRelationship" },
+                { "$ref": "#/$defs/Vulnerability" },
+                { "$ref": "#/$defs/AnyLicenseInfo" },
+                { "$ref": "#/$defs/LicenseExpression" },
+                { "$ref": "#/$defs/SimpleLicensingText" },
+                { "$ref": "#/$defs/File" },
+                { "$ref": "#/$defs/Package" },
+                { "$ref": "#/$defs/Sbom" },
+                { "$ref": "#/$defs/Snippet" },
+                { "$ref": "#/$defs/SoftwareArtifact" },
+                { "$ref": "#/$defs/Element" }
             ]
         },
         "Element_props": {
@@ -255,7 +318,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/CreationInfo",
+                        "$ref": "#/$defs/CreationInfo_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -264,7 +327,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/IntegrityMethod",
+                        "$ref": "#/$defs/IntegrityMethod_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -273,7 +336,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/ExternalRef",
+                        "$ref": "#/$defs/ExternalRef_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -282,7 +345,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/ExternalIdentifier",
+                        "$ref": "#/$defs/ExternalIdentifier_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -298,6 +361,15 @@
                     }
                 },
                 { "$ref": "#/$defs/ElementCollection_props" }
+            ]
+        },
+        "ElementCollection_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/Bom" },
+                { "$ref": "#/$defs/Bundle" },
+                { "$ref": "#/$defs/SpdxDocument" },
+                { "$ref": "#/$defs/Sbom" },
+                { "$ref": "#/$defs/ElementCollection" }
             ]
         },
         "ElementCollection_props": {
@@ -352,7 +424,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/Element",
+                        "$ref": "#/$defs/Element_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -361,7 +433,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/Element",
+                        "$ref": "#/$defs/Element_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -388,6 +460,11 @@
                     }
                 },
                 { "$ref": "#/$defs/ExternalIdentifier_props" }
+            ]
+        },
+        "ExternalIdentifier_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/ExternalIdentifier" }
             ]
         },
         "ExternalIdentifier_props": {
@@ -465,6 +542,11 @@
                 { "$ref": "#/$defs/ExternalMap_props" }
             ]
         },
+        "ExternalMap_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/ExternalMap" }
+            ]
+        },
         "ExternalMap_props": {
             "allOf": [
                 { "$ref": "#/$defs/SHACLClass" },
@@ -506,7 +588,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/IntegrityMethod",
+                        "$ref": "#/$defs/IntegrityMethod_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -518,7 +600,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/Artifact",
+                        "$ref": "#/$defs/Artifact_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -531,6 +613,11 @@
                     }
                 },
                 { "$ref": "#/$defs/ExternalRef_props" }
+            ]
+        },
+        "ExternalRef_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/ExternalRef" }
             ]
         },
         "ExternalRef_props": {
@@ -632,6 +719,12 @@
                 { "$ref": "#/$defs/IntegrityMethod_props" }
             ]
         },
+        "IntegrityMethod_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/Hash" },
+                { "$ref": "#/$defs/IntegrityMethod" }
+            ]
+        },
         "IntegrityMethod_props": {
             "allOf": [
                 { "$ref": "#/$defs/SHACLClass" },
@@ -655,6 +748,11 @@
                     }
                 },
                 { "$ref": "#/$defs/NamespaceMap_props" }
+            ]
+        },
+        "NamespaceMap_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/NamespaceMap" }
             ]
         },
         "NamespaceMap_props": {
@@ -692,6 +790,11 @@
                 { "$ref": "#/$defs/PositiveIntegerRange_props" }
             ]
         },
+        "PositiveIntegerRange_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/PositiveIntegerRange" }
+            ]
+        },
         "PositiveIntegerRange_props": {
             "allOf": [
                 { "$ref": "#/$defs/SHACLClass" },
@@ -727,6 +830,24 @@
                     }
                 },
                 { "$ref": "#/$defs/Relationship_props" }
+            ]
+        },
+        "Relationship_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/LifecycleScopedRelationship" },
+                { "$ref": "#/$defs/CvssV2VulnAssessmentRelationship" },
+                { "$ref": "#/$defs/CvssV3VulnAssessmentRelationship" },
+                { "$ref": "#/$defs/CvssV4VulnAssessmentRelationship" },
+                { "$ref": "#/$defs/EpssVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/ExploitCatalogVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/SsvcVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/VexAffectedVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/VexFixedVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/VexNotAffectedVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/VexUnderInvestigationVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/VexVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/VulnAssessmentRelationship" },
+                { "$ref": "#/$defs/Relationship" }
             ]
         },
         "Relationship_props": {
@@ -774,7 +895,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/Element",
+                        "$ref": "#/$defs/Element_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -783,7 +904,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/Element",
+                        "$ref": "#/$defs/Element_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -874,6 +995,11 @@
                 { "$ref": "#/$defs/SpdxDocument_props" }
             ]
         },
+        "SpdxDocument_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/SpdxDocument" }
+            ]
+        },
         "SpdxDocument_props": {
             "allOf": [
                 { "$ref": "#/$defs/ElementCollection_props" },
@@ -916,7 +1042,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/ExternalMap",
+                        "$ref": "#/$defs/ExternalMap_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -925,7 +1051,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/NamespaceMap",
+                        "$ref": "#/$defs/NamespaceMap_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -934,7 +1060,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/AnyLicenseInfo",
+                        "$ref": "#/$defs/AnyLicenseInfo_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -947,6 +1073,11 @@
                     }
                 },
                 { "$ref": "#/$defs/Tool_props" }
+            ]
+        },
+        "Tool_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/Tool" }
             ]
         },
         "Tool_props": {
@@ -966,6 +1097,13 @@
                     }
                 },
                 { "$ref": "#/$defs/LicenseAddition_props" }
+            ]
+        },
+        "LicenseAddition_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/CustomLicenseAddition" },
+                { "$ref": "#/$defs/ListedLicenseException" },
+                { "$ref": "#/$defs/LicenseAddition" }
             ]
         },
         "LicenseAddition_props": {
@@ -1036,6 +1174,11 @@
                 { "$ref": "#/$defs/ListedLicenseException_props" }
             ]
         },
+        "ListedLicenseException_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/ListedLicenseException" }
+            ]
+        },
         "ListedLicenseException_props": {
             "allOf": [
                 { "$ref": "#/$defs/LicenseAddition_props" },
@@ -1067,6 +1210,22 @@
                 { "$ref": "#/$defs/VulnAssessmentRelationship_props" }
             ]
         },
+        "VulnAssessmentRelationship_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/CvssV2VulnAssessmentRelationship" },
+                { "$ref": "#/$defs/CvssV3VulnAssessmentRelationship" },
+                { "$ref": "#/$defs/CvssV4VulnAssessmentRelationship" },
+                { "$ref": "#/$defs/EpssVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/ExploitCatalogVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/SsvcVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/VexAffectedVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/VexFixedVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/VexNotAffectedVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/VexUnderInvestigationVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/VexVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/VulnAssessmentRelationship" }
+            ]
+        },
         "VulnAssessmentRelationship_props": {
             "allOf": [
                 { "$ref": "#/$defs/Relationship_props" },
@@ -1095,7 +1254,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/Element",
+                        "$ref": "#/$defs/Element_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -1107,7 +1266,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/Agent",
+                        "$ref": "#/$defs/Agent_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -1128,6 +1287,20 @@
                 { "$ref": "#/$defs/AnyLicenseInfo_props" }
             ]
         },
+        "AnyLicenseInfo_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/ConjunctiveLicenseSet" },
+                { "$ref": "#/$defs/CustomLicense" },
+                { "$ref": "#/$defs/DisjunctiveLicenseSet" },
+                { "$ref": "#/$defs/ExtendableLicense" },
+                { "$ref": "#/$defs/License" },
+                { "$ref": "#/$defs/ListedLicense" },
+                { "$ref": "#/$defs/OrLaterOperator" },
+                { "$ref": "#/$defs/WithAdditionOperator" },
+                { "$ref": "#/$defs/LicenseExpression" },
+                { "$ref": "#/$defs/AnyLicenseInfo" }
+            ]
+        },
         "AnyLicenseInfo_props": {
             "allOf": [
                 { "$ref": "#/$defs/Element_props" },
@@ -1145,6 +1318,11 @@
                     }
                 },
                 { "$ref": "#/$defs/LicenseExpression_props" }
+            ]
+        },
+        "LicenseExpression_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/LicenseExpression" }
             ]
         },
         "LicenseExpression_props": {
@@ -1188,7 +1366,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/DictionaryEntry",
+                        "$ref": "#/$defs/DictionaryEntry_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -1201,6 +1379,11 @@
                     }
                 },
                 { "$ref": "#/$defs/SimpleLicensingText_props" }
+            ]
+        },
+        "SimpleLicensingText_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/SimpleLicensingText" }
             ]
         },
         "SimpleLicensingText_props": {
@@ -1229,6 +1412,11 @@
                     }
                 },
                 { "$ref": "#/$defs/Build_props" }
+            ]
+        },
+        "Build_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/Build" }
             ]
         },
         "Build_props": {
@@ -1336,7 +1524,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/Hash",
+                        "$ref": "#/$defs/Hash_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -1345,7 +1533,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/DictionaryEntry",
+                        "$ref": "#/$defs/DictionaryEntry_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -1360,7 +1548,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/DictionaryEntry",
+                        "$ref": "#/$defs/DictionaryEntry_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -1373,6 +1561,14 @@
                     }
                 },
                 { "$ref": "#/$defs/Agent_props" }
+            ]
+        },
+        "Agent_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/Organization" },
+                { "$ref": "#/$defs/Person" },
+                { "$ref": "#/$defs/SoftwareAgent" },
+                { "$ref": "#/$defs/Agent" }
             ]
         },
         "Agent_props": {
@@ -1392,6 +1588,11 @@
                     }
                 },
                 { "$ref": "#/$defs/Annotation_props" }
+            ]
+        },
+        "Annotation_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/Annotation" }
             ]
         },
         "Annotation_props": {
@@ -1435,7 +1636,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/Element",
+                        "$ref": "#/$defs/Element_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -1448,6 +1649,18 @@
                     }
                 },
                 { "$ref": "#/$defs/Artifact_props" }
+            ]
+        },
+        "Artifact_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/AIPackage" },
+                { "$ref": "#/$defs/Dataset" },
+                { "$ref": "#/$defs/Vulnerability" },
+                { "$ref": "#/$defs/File" },
+                { "$ref": "#/$defs/Package" },
+                { "$ref": "#/$defs/Snippet" },
+                { "$ref": "#/$defs/SoftwareArtifact" },
+                { "$ref": "#/$defs/Artifact" }
             ]
         },
         "Artifact_props": {
@@ -1501,7 +1714,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/Agent",
+                        "$ref": "#/$defs/Agent_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -1510,7 +1723,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/Agent",
+                        "$ref": "#/$defs/Agent_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -1537,6 +1750,13 @@
                 { "$ref": "#/$defs/Bundle_props" }
             ]
         },
+        "Bundle_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/Bom" },
+                { "$ref": "#/$defs/Sbom" },
+                { "$ref": "#/$defs/Bundle" }
+            ]
+        },
         "Bundle_props": {
             "allOf": [
                 { "$ref": "#/$defs/ElementCollection_props" },
@@ -1560,6 +1780,11 @@
                     }
                 },
                 { "$ref": "#/$defs/Hash_props" }
+            ]
+        },
+        "Hash_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/Hash" }
             ]
         },
         "Hash_props": {
@@ -1622,6 +1847,11 @@
                 { "$ref": "#/$defs/LifecycleScopedRelationship_props" }
             ]
         },
+        "LifecycleScopedRelationship_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/LifecycleScopedRelationship" }
+            ]
+        },
         "LifecycleScopedRelationship_props": {
             "allOf": [
                 { "$ref": "#/$defs/Relationship_props" },
@@ -1654,6 +1884,11 @@
                 { "$ref": "#/$defs/Organization_props" }
             ]
         },
+        "Organization_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/Organization" }
+            ]
+        },
         "Organization_props": {
             "allOf": [
                 { "$ref": "#/$defs/Agent_props" },
@@ -1671,6 +1906,11 @@
                     }
                 },
                 { "$ref": "#/$defs/Person_props" }
+            ]
+        },
+        "Person_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/Person" }
             ]
         },
         "Person_props": {
@@ -1692,6 +1932,11 @@
                 { "$ref": "#/$defs/SoftwareAgent_props" }
             ]
         },
+        "SoftwareAgent_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/SoftwareAgent" }
+            ]
+        },
         "SoftwareAgent_props": {
             "allOf": [
                 { "$ref": "#/$defs/Agent_props" },
@@ -1709,6 +1954,11 @@
                     }
                 },
                 { "$ref": "#/$defs/ConjunctiveLicenseSet_props" }
+            ]
+        },
+        "ConjunctiveLicenseSet_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/ConjunctiveLicenseSet" }
             ]
         },
         "ConjunctiveLicenseSet_props": {
@@ -1741,7 +1991,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/AnyLicenseInfo",
+                        "$ref": "#/$defs/AnyLicenseInfo_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -1754,6 +2004,11 @@
                     }
                 },
                 { "$ref": "#/$defs/CustomLicenseAddition_props" }
+            ]
+        },
+        "CustomLicenseAddition_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/CustomLicenseAddition" }
             ]
         },
         "CustomLicenseAddition_props": {
@@ -1773,6 +2028,11 @@
                     }
                 },
                 { "$ref": "#/$defs/DisjunctiveLicenseSet_props" }
+            ]
+        },
+        "DisjunctiveLicenseSet_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/DisjunctiveLicenseSet" }
             ]
         },
         "DisjunctiveLicenseSet_props": {
@@ -1805,7 +2065,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/AnyLicenseInfo",
+                        "$ref": "#/$defs/AnyLicenseInfo_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -1818,6 +2078,15 @@
                     }
                 },
                 { "$ref": "#/$defs/ExtendableLicense_props" }
+            ]
+        },
+        "ExtendableLicense_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/CustomLicense" },
+                { "$ref": "#/$defs/License" },
+                { "$ref": "#/$defs/ListedLicense" },
+                { "$ref": "#/$defs/OrLaterOperator" },
+                { "$ref": "#/$defs/ExtendableLicense" }
             ]
         },
         "ExtendableLicense_props": {
@@ -1837,6 +2106,13 @@
                     }
                 },
                 { "$ref": "#/$defs/License_props" }
+            ]
+        },
+        "License_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/CustomLicense" },
+                { "$ref": "#/$defs/ListedLicense" },
+                { "$ref": "#/$defs/License" }
             ]
         },
         "License_props": {
@@ -1925,6 +2201,11 @@
                 { "$ref": "#/$defs/ListedLicense_props" }
             ]
         },
+        "ListedLicense_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/ListedLicense" }
+            ]
+        },
         "ListedLicense_props": {
             "allOf": [
                 { "$ref": "#/$defs/License_props" },
@@ -1956,6 +2237,11 @@
                 { "$ref": "#/$defs/OrLaterOperator_props" }
             ]
         },
+        "OrLaterOperator_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/OrLaterOperator" }
+            ]
+        },
         "OrLaterOperator_props": {
             "allOf": [
                 { "$ref": "#/$defs/ExtendableLicense_props" },
@@ -1975,7 +2261,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/License",
+                        "$ref": "#/$defs/License_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -1988,6 +2274,11 @@
                     }
                 },
                 { "$ref": "#/$defs/WithAdditionOperator_props" }
+            ]
+        },
+        "WithAdditionOperator_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/WithAdditionOperator" }
             ]
         },
         "WithAdditionOperator_props": {
@@ -2013,7 +2304,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/License",
+                        "$ref": "#/$defs/License_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -2022,7 +2313,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/LicenseAddition",
+                        "$ref": "#/$defs/LicenseAddition_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -2035,6 +2326,11 @@
                     }
                 },
                 { "$ref": "#/$defs/CvssV2VulnAssessmentRelationship_props" }
+            ]
+        },
+        "CvssV2VulnAssessmentRelationship_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/CvssV2VulnAssessmentRelationship" }
             ]
         },
         "CvssV2VulnAssessmentRelationship_props": {
@@ -2070,6 +2366,11 @@
                     }
                 },
                 { "$ref": "#/$defs/CvssV3VulnAssessmentRelationship_props" }
+            ]
+        },
+        "CvssV3VulnAssessmentRelationship_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/CvssV3VulnAssessmentRelationship" }
             ]
         },
         "CvssV3VulnAssessmentRelationship_props": {
@@ -2120,6 +2421,11 @@
                 { "$ref": "#/$defs/CvssV4VulnAssessmentRelationship_props" }
             ]
         },
+        "CvssV4VulnAssessmentRelationship_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/CvssV4VulnAssessmentRelationship" }
+            ]
+        },
         "CvssV4VulnAssessmentRelationship_props": {
             "allOf": [
                 { "$ref": "#/$defs/VulnAssessmentRelationship_props" },
@@ -2168,6 +2474,11 @@
                 { "$ref": "#/$defs/EpssVulnAssessmentRelationship_props" }
             ]
         },
+        "EpssVulnAssessmentRelationship_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/EpssVulnAssessmentRelationship" }
+            ]
+        },
         "EpssVulnAssessmentRelationship_props": {
             "allOf": [
                 { "$ref": "#/$defs/VulnAssessmentRelationship_props" },
@@ -2208,6 +2519,11 @@
                     }
                 },
                 { "$ref": "#/$defs/ExploitCatalogVulnAssessmentRelationship_props" }
+            ]
+        },
+        "ExploitCatalogVulnAssessmentRelationship_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/ExploitCatalogVulnAssessmentRelationship" }
             ]
         },
         "ExploitCatalogVulnAssessmentRelationship_props": {
@@ -2255,6 +2571,11 @@
                 { "$ref": "#/$defs/SsvcVulnAssessmentRelationship_props" }
             ]
         },
+        "SsvcVulnAssessmentRelationship_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/SsvcVulnAssessmentRelationship" }
+            ]
+        },
         "SsvcVulnAssessmentRelationship_props": {
             "allOf": [
                 { "$ref": "#/$defs/VulnAssessmentRelationship_props" },
@@ -2288,6 +2609,15 @@
                 { "$ref": "#/$defs/VexVulnAssessmentRelationship_props" }
             ]
         },
+        "VexVulnAssessmentRelationship_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/VexAffectedVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/VexFixedVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/VexNotAffectedVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/VexUnderInvestigationVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/VexVulnAssessmentRelationship" }
+            ]
+        },
         "VexVulnAssessmentRelationship_props": {
             "allOf": [
                 { "$ref": "#/$defs/VulnAssessmentRelationship_props" },
@@ -2317,6 +2647,11 @@
                     }
                 },
                 { "$ref": "#/$defs/Vulnerability_props" }
+            ]
+        },
+        "Vulnerability_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/Vulnerability" }
             ]
         },
         "Vulnerability_props": {
@@ -2354,6 +2689,16 @@
                     }
                 },
                 { "$ref": "#/$defs/SoftwareArtifact_props" }
+            ]
+        },
+        "SoftwareArtifact_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/AIPackage" },
+                { "$ref": "#/$defs/Dataset" },
+                { "$ref": "#/$defs/File" },
+                { "$ref": "#/$defs/Package" },
+                { "$ref": "#/$defs/Snippet" },
+                { "$ref": "#/$defs/SoftwareArtifact" }
             ]
         },
         "SoftwareArtifact_props": {
@@ -2485,6 +2830,12 @@
                 { "$ref": "#/$defs/Bom_props" }
             ]
         },
+        "Bom_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/Sbom" },
+                { "$ref": "#/$defs/Bom" }
+            ]
+        },
         "Bom_props": {
             "allOf": [
                 { "$ref": "#/$defs/Bundle_props" },
@@ -2504,6 +2855,11 @@
                 { "$ref": "#/$defs/CustomLicense_props" }
             ]
         },
+        "CustomLicense_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/CustomLicense" }
+            ]
+        },
         "CustomLicense_props": {
             "allOf": [
                 { "$ref": "#/$defs/License_props" },
@@ -2521,6 +2877,11 @@
                     }
                 },
                 { "$ref": "#/$defs/VexAffectedVulnAssessmentRelationship_props" }
+            ]
+        },
+        "VexAffectedVulnAssessmentRelationship_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/VexAffectedVulnAssessmentRelationship" }
             ]
         },
         "VexAffectedVulnAssessmentRelationship_props": {
@@ -2564,6 +2925,11 @@
                 { "$ref": "#/$defs/VexFixedVulnAssessmentRelationship_props" }
             ]
         },
+        "VexFixedVulnAssessmentRelationship_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/VexFixedVulnAssessmentRelationship" }
+            ]
+        },
         "VexFixedVulnAssessmentRelationship_props": {
             "allOf": [
                 { "$ref": "#/$defs/VexVulnAssessmentRelationship_props" },
@@ -2581,6 +2947,11 @@
                     }
                 },
                 { "$ref": "#/$defs/VexNotAffectedVulnAssessmentRelationship_props" }
+            ]
+        },
+        "VexNotAffectedVulnAssessmentRelationship_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/VexNotAffectedVulnAssessmentRelationship" }
             ]
         },
         "VexNotAffectedVulnAssessmentRelationship_props": {
@@ -2626,6 +2997,11 @@
                 { "$ref": "#/$defs/VexUnderInvestigationVulnAssessmentRelationship_props" }
             ]
         },
+        "VexUnderInvestigationVulnAssessmentRelationship_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/VexUnderInvestigationVulnAssessmentRelationship" }
+            ]
+        },
         "VexUnderInvestigationVulnAssessmentRelationship_props": {
             "allOf": [
                 { "$ref": "#/$defs/VexVulnAssessmentRelationship_props" },
@@ -2643,6 +3019,11 @@
                     }
                 },
                 { "$ref": "#/$defs/File_props" }
+            ]
+        },
+        "File_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/File" }
             ]
         },
         "File_props": {
@@ -2668,6 +3049,13 @@
                     }
                 },
                 { "$ref": "#/$defs/Package_props" }
+            ]
+        },
+        "Package_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/AIPackage" },
+                { "$ref": "#/$defs/Dataset" },
+                { "$ref": "#/$defs/Package" }
             ]
         },
         "Package_props": {
@@ -2719,6 +3107,11 @@
                 { "$ref": "#/$defs/Sbom_props" }
             ]
         },
+        "Sbom_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/Sbom" }
+            ]
+        },
         "Sbom_props": {
             "allOf": [
                 { "$ref": "#/$defs/Bom_props" },
@@ -2761,6 +3154,11 @@
                 { "$ref": "#/$defs/Snippet_props" }
             ]
         },
+        "Snippet_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/Snippet" }
+            ]
+        },
         "Snippet_props": {
             "allOf": [
                 { "$ref": "#/$defs/SoftwareArtifact_props" },
@@ -2786,7 +3184,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/PositiveIntegerRange",
+                        "$ref": "#/$defs/PositiveIntegerRange_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -2795,7 +3193,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/PositiveIntegerRange",
+                        "$ref": "#/$defs/PositiveIntegerRange_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -2804,7 +3202,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/File",
+                        "$ref": "#/$defs/File_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -2817,6 +3215,11 @@
                     }
                 },
                 { "$ref": "#/$defs/AIPackage_props" }
+            ]
+        },
+        "AIPackage_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/AIPackage" }
             ]
         },
         "AIPackage_props": {
@@ -2975,7 +3378,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/DictionaryEntry",
+                        "$ref": "#/$defs/DictionaryEntry_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -2997,7 +3400,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/DictionaryEntry",
+                        "$ref": "#/$defs/DictionaryEntry_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -3006,7 +3409,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/DictionaryEntry",
+                        "$ref": "#/$defs/DictionaryEntry_derived",
                         "unevaluatedProperties": false
                     }
                 ]
@@ -3037,6 +3440,11 @@
                     }
                 },
                 { "$ref": "#/$defs/Dataset_props" }
+            ]
+        },
+        "Dataset_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/Dataset" }
             ]
         },
         "Dataset_props": {
@@ -3178,7 +3586,7 @@
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
-                        "$ref": "#/$defs/DictionaryEntry",
+                        "$ref": "#/$defs/DictionaryEntry_derived",
                         "unevaluatedProperties": false
                     }
                 ]

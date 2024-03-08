@@ -13,8 +13,11 @@ class JsonSchemaRender(BasicJinjaRender):
 
     def __init__(self, args):
         super().__init__(args, TEMPLATE_DIR / "jsonschema.j2")
-        self.__schema_title = args.title
-        self.__schema_id = args.id
+        self.__render_args = {
+            "schema_title": args.title,
+            "schema_id": args.id,
+            "allow_elided_lists": args.allow_elided_lists,
+        }
 
     @classmethod
     def get_arguments(cls, parser):
@@ -22,9 +25,11 @@ class JsonSchemaRender(BasicJinjaRender):
 
         parser.add_argument("--title", help="Schema title")
         parser.add_argument("--id", help="Schema ID")
+        parser.add_argument(
+            "--allow-elided-lists",
+            action="store_true",
+            help="Allow lists to be elided if they only contain a single element",
+        )
 
     def get_additional_render_args(self):
-        return {
-            "schema_title": self.__schema_title,
-            "schema_id": self.__schema_id,
-        }
+        return self.__render_args

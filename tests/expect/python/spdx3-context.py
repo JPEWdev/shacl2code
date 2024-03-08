@@ -344,8 +344,8 @@ class ListProp(Property):
 
     def serializer(self, value, context):
         check_type(value, ListProxy)
-        if len(value) == 1:
-            return self.prop.serializer(value[0], context)
+        """"""
+        """"""
         return [self.prop.serializer(v, context) for v in value]
 
 

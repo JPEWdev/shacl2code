@@ -136,27 +136,47 @@ class TestOutput:
 
 
 @pytest.mark.parametrize(
-    "passes,file",
+    "passes,file,args",
     [
-        (True, "graph.json"),
-        (True, "graph-empty.json"),
-        (False, "graph-missing-context.json"),
-        (False, "graph-unknown-root-field.json"),
-        (False, "graph-unknown-field.json"),
-        (False, "graph-unknown-field-nested.json"),
-        (False, "graph-bad-context.json"),
-        (True, "root.json"),
-        (False, "root-missing-context.json"),
-        (False, "root-bad-context.json"),
-        (False, "root-unknown-field.json"),
-        (False, "root-unknown-field-nested.json"),
-        (False, "root-unknown-type.json"),
-        (False, "context-only.json"),
-        (True, "compact-array.json"),
+        (True, "graph.json", []),
+        (True, "graph-empty.json", []),
+        (False, "graph-missing-context.json", []),
+        (False, "graph-unknown-root-field.json", []),
+        (False, "graph-unknown-field.json", []),
+        (False, "graph-unknown-field-nested.json", []),
+        (False, "graph-bad-context.json", []),
+        (True, "root.json", []),
+        (False, "root-missing-context.json", []),
+        (False, "root-bad-context.json", []),
+        (False, "root-unknown-field.json", []),
+        (False, "root-unknown-field-nested.json", []),
+        (False, "root-unknown-type.json", []),
+        (False, "context-only.json", []),
+        (False, "compact-array.json", []),
+        (True, "compact-array.json", ["--allow-elided-lists"]),
     ],
 )
-def test_schema_validation(passes, file):
-    with (EXPECT_DIR / "jsonschema" / "spdx3-context.json").open("r") as f:
+def test_schema_validation(passes, file, args, tmp_path):
+    schema_file = tmp_path / "schema.json"
+
+    subprocess.run(
+        [
+            "shacl2code",
+            "generate",
+            "--input",
+            SPDX3_MODEL,
+        ]
+        + SPDX3_CONTEXT_ARGS
+        + [
+            "jsonschema",
+            "--output",
+            schema_file,
+        ]
+        + args,
+        check=True,
+    )
+
+    with schema_file.open("r") as f:
         schema = json.load(f)
 
     with (DATA_DIR / "jsonschema" / file).open("r") as f:

@@ -344,8 +344,12 @@ class ListProp(Property):
 
     def serializer(self, value, context):
         check_type(value, ListProxy)
+        """{{ '"' }}{{ '"' }}{{ '"' }}
+        {%- if elide_lists %}
         if len(value) == 1:
             return self.prop.serializer(value[0], context)
+        {%- endif %}
+        {{ '"' }}{{ '"' }}{{ '"' }}"""
         return [self.prop.serializer(v, context) for v in value]
 
 

@@ -93,6 +93,7 @@
                         {%- endif %}
                         {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
                         "{{ context.compact(prop.path) }}": {
+                        {%- set prop_ref = "#/$defs/prop_" + class.clsname + "_" + ( context.compact(prop.path) | replace("/", "_") ) %}
                         {%- if is_list %}
                             "oneOf": [
                                 {
@@ -104,15 +105,16 @@
                                     "minItems": {{ prop.min_count }},
                                     {%- endif %}
                                     "items": {
-                                        "$ref": "#/$defs/prop_{{ context.compact(prop.path) | replace("/", "_") }}"
+                                        "$ref": "{{ prop_ref }}"
                                     }
-                                },
+                                }{% if allow_elided_lists %},
                                 {
-                        {%- endif %}
-                                    "$ref": "#/$defs/prop_{{ context.compact(prop.path) | replace("/", "_") }}"
-                        {%- if is_list %}
+                                    "$ref": "{{ prop_ref }}"
                                 }
+                                {%- endif %}
                             ]
+                        {%- else %}
+                            "$ref": "{{ prop_ref }}"
                         {%- endif %}
                         }{% if not loop.last %},{% endif %}
                         {%- endfor %}
@@ -127,7 +129,7 @@
             ]
         },
         {%- for prop in class.properties %}
-        "prop_{{ context.compact(prop.path) | replace("/", "_") }}": {
+        "prop_{{ class.clsname }}_{{ context.compact(prop.path) | replace("/", "_") }}": {
             {%- if prop.class_id %}
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },

@@ -15,8 +15,8 @@
             "type": "CreationInfo",
             "spdxId": "https://spdx.dev/test/creationinfo",
             "specVersion": "3.0.0",
-            "created": "2022-12-01T00:00:00",
-            "createdBy": "https://spdx.dev/test/agent"
+            "created": "2022-12-01T00:00:00Z",
+            "createdBy": ["https://spdx.dev/test/agent"]
         }
     ]
 }

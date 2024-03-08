@@ -50,13 +50,13 @@
                 {
                     "properties": {
                         "specVersion": {
-                                    "$ref": "#/$defs/prop_specVersion"
+                            "$ref": "#/$defs/prop_CreationInfo_specVersion"
                         },
                         "comment": {
-                                    "$ref": "#/$defs/prop_comment"
+                            "$ref": "#/$defs/prop_CreationInfo_comment"
                         },
                         "created": {
-                                    "$ref": "#/$defs/prop_created"
+                            "$ref": "#/$defs/prop_CreationInfo_created"
                         },
                         "createdBy": {
                             "oneOf": [
@@ -64,11 +64,8 @@
                                     "type": "array",
                                     "minItems": 1,
                                     "items": {
-                                        "$ref": "#/$defs/prop_createdBy"
+                                        "$ref": "#/$defs/prop_CreationInfo_createdBy"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_createdBy"
                                 }
                             ]
                         },
@@ -77,11 +74,8 @@
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_createdUsing"
+                                        "$ref": "#/$defs/prop_CreationInfo_createdUsing"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_createdUsing"
                                 }
                             ]
                         }
@@ -94,18 +88,18 @@
                 }
             ]
         },
-        "prop_specVersion": {
+        "prop_CreationInfo_specVersion": {
                     "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
                     "type": "string"
         },
-        "prop_comment": {
+        "prop_CreationInfo_comment": {
                     "type": "string"
         },
-        "prop_created": {
+        "prop_CreationInfo_created": {
                     "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
-        "prop_createdBy": {
+        "prop_CreationInfo_createdBy": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -114,7 +108,7 @@
                     }
                 ]
         },
-        "prop_createdUsing": {
+        "prop_CreationInfo_createdUsing": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -144,10 +138,10 @@
                 {
                     "properties": {
                         "key": {
-                                    "$ref": "#/$defs/prop_key"
+                            "$ref": "#/$defs/prop_DictionaryEntry_key"
                         },
                         "value": {
-                                    "$ref": "#/$defs/prop_value"
+                            "$ref": "#/$defs/prop_DictionaryEntry_value"
                         }
                     },
                     "required": [
@@ -156,10 +150,10 @@
                 }
             ]
         },
-        "prop_key": {
+        "prop_DictionaryEntry_key": {
                     "type": "string"
         },
-        "prop_value": {
+        "prop_DictionaryEntry_value": {
                     "type": "string"
         },
         "Element": {
@@ -232,30 +226,27 @@
                 {
                     "properties": {
                         "name": {
-                                    "$ref": "#/$defs/prop_name"
+                            "$ref": "#/$defs/prop_Element_name"
                         },
                         "summary": {
-                                    "$ref": "#/$defs/prop_summary"
+                            "$ref": "#/$defs/prop_Element_summary"
                         },
                         "description": {
-                                    "$ref": "#/$defs/prop_description"
+                            "$ref": "#/$defs/prop_Element_description"
                         },
                         "comment": {
-                                    "$ref": "#/$defs/prop_comment"
+                            "$ref": "#/$defs/prop_Element_comment"
                         },
                         "creationInfo": {
-                                    "$ref": "#/$defs/prop_creationInfo"
+                            "$ref": "#/$defs/prop_Element_creationInfo"
                         },
                         "verifiedUsing": {
                             "oneOf": [
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_verifiedUsing"
+                                        "$ref": "#/$defs/prop_Element_verifiedUsing"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_verifiedUsing"
                                 }
                             ]
                         },
@@ -264,11 +255,8 @@
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_externalRef"
+                                        "$ref": "#/$defs/prop_Element_externalRef"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_externalRef"
                                 }
                             ]
                         },
@@ -277,11 +265,8 @@
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_externalIdentifier"
+                                        "$ref": "#/$defs/prop_Element_externalIdentifier"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_externalIdentifier"
                                 }
                             ]
                         },
@@ -290,11 +275,8 @@
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_extension"
+                                        "$ref": "#/$defs/prop_Element_extension"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_extension"
                                 }
                             ]
                         }
@@ -305,19 +287,19 @@
                 }
             ]
         },
-        "prop_name": {
+        "prop_Element_name": {
                     "type": "string"
         },
-        "prop_summary": {
+        "prop_Element_summary": {
                     "type": "string"
         },
-        "prop_description": {
+        "prop_Element_description": {
                     "type": "string"
         },
-        "prop_comment": {
+        "prop_Element_comment": {
                     "type": "string"
         },
-        "prop_creationInfo": {
+        "prop_Element_creationInfo": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -326,7 +308,7 @@
                     }
                 ]
         },
-        "prop_verifiedUsing": {
+        "prop_Element_verifiedUsing": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -335,7 +317,7 @@
                     }
                 ]
         },
-        "prop_externalRef": {
+        "prop_Element_externalRef": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -344,7 +326,7 @@
                     }
                 ]
         },
-        "prop_externalIdentifier": {
+        "prop_Element_externalIdentifier": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -353,7 +335,7 @@
                     }
                 ]
         },
-        "prop_extension": {
+        "prop_Element_extension": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -391,11 +373,8 @@
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_element"
+                                        "$ref": "#/$defs/prop_ElementCollection_element"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_element"
                                 }
                             ]
                         },
@@ -404,11 +383,8 @@
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_rootElement"
+                                        "$ref": "#/$defs/prop_ElementCollection_rootElement"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_rootElement"
                                 }
                             ]
                         },
@@ -417,11 +393,8 @@
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_profileConformance"
+                                        "$ref": "#/$defs/prop_ElementCollection_profileConformance"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_profileConformance"
                                 }
                             ]
                         }
@@ -429,7 +402,7 @@
                 }
             ]
         },
-        "prop_element": {
+        "prop_ElementCollection_element": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -438,7 +411,7 @@
                     }
                 ]
         },
-        "prop_rootElement": {
+        "prop_ElementCollection_rootElement": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -447,7 +420,7 @@
                     }
                 ]
         },
-        "prop_profileConformance": {
+        "prop_ElementCollection_profileConformance": {
                 "enum": [
                     "ai",
                     "build",
@@ -482,29 +455,26 @@
                 {
                     "properties": {
                         "externalIdentifierType": {
-                                    "$ref": "#/$defs/prop_externalIdentifierType"
+                            "$ref": "#/$defs/prop_ExternalIdentifier_externalIdentifierType"
                         },
                         "identifier": {
-                                    "$ref": "#/$defs/prop_identifier"
+                            "$ref": "#/$defs/prop_ExternalIdentifier_identifier"
                         },
                         "comment": {
-                                    "$ref": "#/$defs/prop_comment"
+                            "$ref": "#/$defs/prop_ExternalIdentifier_comment"
                         },
                         "identifierLocator": {
                             "oneOf": [
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_identifierLocator"
+                                        "$ref": "#/$defs/prop_ExternalIdentifier_identifierLocator"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_identifierLocator"
                                 }
                             ]
                         },
                         "issuingAuthority": {
-                                    "$ref": "#/$defs/prop_issuingAuthority"
+                            "$ref": "#/$defs/prop_ExternalIdentifier_issuingAuthority"
                         }
                     },
                     "required": [
@@ -514,7 +484,7 @@
                 }
             ]
         },
-        "prop_externalIdentifierType": {
+        "prop_ExternalIdentifier_externalIdentifierType": {
                 "enum": [
                     "cpe22",
                     "cpe23",
@@ -529,16 +499,16 @@
                     "urlScheme"
                 ]
         },
-        "prop_identifier": {
+        "prop_ExternalIdentifier_identifier": {
                     "type": "string"
         },
-        "prop_comment": {
+        "prop_ExternalIdentifier_comment": {
                     "type": "string"
         },
-        "prop_identifierLocator": {
+        "prop_ExternalIdentifier_identifierLocator": {
                     "$ref": "#/$defs/anyURI"
         },
-        "prop_issuingAuthority": {
+        "prop_ExternalIdentifier_issuingAuthority": {
                     "type": "string"
         },
         "ExternalMap": {
@@ -562,26 +532,23 @@
                 {
                     "properties": {
                         "externalSpdxId": {
-                                    "$ref": "#/$defs/prop_externalSpdxId"
+                            "$ref": "#/$defs/prop_ExternalMap_externalSpdxId"
                         },
                         "verifiedUsing": {
                             "oneOf": [
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_verifiedUsing"
+                                        "$ref": "#/$defs/prop_ExternalMap_verifiedUsing"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_verifiedUsing"
                                 }
                             ]
                         },
                         "locationHint": {
-                                    "$ref": "#/$defs/prop_locationHint"
+                            "$ref": "#/$defs/prop_ExternalMap_locationHint"
                         },
                         "definingArtifact": {
-                                    "$ref": "#/$defs/prop_definingArtifact"
+                            "$ref": "#/$defs/prop_ExternalMap_definingArtifact"
                         }
                     },
                     "required": [
@@ -590,10 +557,10 @@
                 }
             ]
         },
-        "prop_externalSpdxId": {
+        "prop_ExternalMap_externalSpdxId": {
                     "$ref": "#/$defs/anyURI"
         },
-        "prop_verifiedUsing": {
+        "prop_ExternalMap_verifiedUsing": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -602,10 +569,10 @@
                     }
                 ]
         },
-        "prop_locationHint": {
+        "prop_ExternalMap_locationHint": {
                     "$ref": "#/$defs/anyURI"
         },
-        "prop_definingArtifact": {
+        "prop_ExternalMap_definingArtifact": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -635,32 +602,29 @@
                 {
                     "properties": {
                         "externalRefType": {
-                                    "$ref": "#/$defs/prop_externalRefType"
+                            "$ref": "#/$defs/prop_ExternalRef_externalRefType"
                         },
                         "locator": {
                             "oneOf": [
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_locator"
+                                        "$ref": "#/$defs/prop_ExternalRef_locator"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_locator"
                                 }
                             ]
                         },
                         "contentType": {
-                                    "$ref": "#/$defs/prop_contentType"
+                            "$ref": "#/$defs/prop_ExternalRef_contentType"
                         },
                         "comment": {
-                                    "$ref": "#/$defs/prop_comment"
+                            "$ref": "#/$defs/prop_ExternalRef_comment"
                         }
                     }
                 }
             ]
         },
-        "prop_externalRefType": {
+        "prop_ExternalRef_externalRefType": {
                 "enum": [
                     "altDownloadLocation",
                     "altWebPage",
@@ -709,14 +673,14 @@
                     "vulnerabilityExploitabilityAssessment"
                 ]
         },
-        "prop_locator": {
+        "prop_ExternalRef_locator": {
                     "type": "string"
         },
-        "prop_contentType": {
+        "prop_ExternalRef_contentType": {
                     "pattern": "^[^\\/]+\\/[^\\/]+$",
                     "type": "string"
         },
-        "prop_comment": {
+        "prop_ExternalRef_comment": {
                     "type": "string"
         },
         "IntegrityMethod": {
@@ -742,13 +706,13 @@
                 {
                     "properties": {
                         "comment": {
-                                    "$ref": "#/$defs/prop_comment"
+                            "$ref": "#/$defs/prop_IntegrityMethod_comment"
                         }
                     }
                 }
             ]
         },
-        "prop_comment": {
+        "prop_IntegrityMethod_comment": {
                     "type": "string"
         },
         "NamespaceMap": {
@@ -772,10 +736,10 @@
                 {
                     "properties": {
                         "prefix": {
-                                    "$ref": "#/$defs/prop_prefix"
+                            "$ref": "#/$defs/prop_NamespaceMap_prefix"
                         },
                         "namespace": {
-                                    "$ref": "#/$defs/prop_namespace"
+                            "$ref": "#/$defs/prop_NamespaceMap_namespace"
                         }
                     },
                     "required": [
@@ -785,10 +749,10 @@
                 }
             ]
         },
-        "prop_prefix": {
+        "prop_NamespaceMap_prefix": {
                     "type": "string"
         },
-        "prop_namespace": {
+        "prop_NamespaceMap_namespace": {
                     "$ref": "#/$defs/anyURI"
         },
         "PackageVerificationCode": {
@@ -812,18 +776,15 @@
                 {
                     "properties": {
                         "hashValue": {
-                                    "$ref": "#/$defs/prop_hashValue"
+                            "$ref": "#/$defs/prop_PackageVerificationCode_hashValue"
                         },
                         "packageVerificationCodeExcludedFile": {
                             "oneOf": [
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_packageVerificationCodeExcludedFile"
+                                        "$ref": "#/$defs/prop_PackageVerificationCode_packageVerificationCodeExcludedFile"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_packageVerificationCodeExcludedFile"
                                 }
                             ]
                         }
@@ -834,10 +795,10 @@
                 }
             ]
         },
-        "prop_hashValue": {
+        "prop_PackageVerificationCode_hashValue": {
                     "type": "string"
         },
-        "prop_packageVerificationCodeExcludedFile": {
+        "prop_PackageVerificationCode_packageVerificationCodeExcludedFile": {
                     "type": "string"
         },
         "PositiveIntegerRange": {
@@ -861,10 +822,10 @@
                 {
                     "properties": {
                         "beginIntegerRange": {
-                                    "$ref": "#/$defs/prop_beginIntegerRange"
+                            "$ref": "#/$defs/prop_PositiveIntegerRange_beginIntegerRange"
                         },
                         "endIntegerRange": {
-                                    "$ref": "#/$defs/prop_endIntegerRange"
+                            "$ref": "#/$defs/prop_PositiveIntegerRange_endIntegerRange"
                         }
                     },
                     "required": [
@@ -874,11 +835,11 @@
                 }
             ]
         },
-        "prop_beginIntegerRange": {
+        "prop_PositiveIntegerRange_beginIntegerRange": {
                     "type": "integer",
                     "minimum": 0
         },
-        "prop_endIntegerRange": {
+        "prop_PositiveIntegerRange_endIntegerRange": {
                     "type": "integer",
                     "minimum": 0
         },
@@ -916,32 +877,29 @@
                 {
                     "properties": {
                         "from": {
-                                    "$ref": "#/$defs/prop_from"
+                            "$ref": "#/$defs/prop_Relationship_from"
                         },
                         "to": {
                             "oneOf": [
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_to"
+                                        "$ref": "#/$defs/prop_Relationship_to"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_to"
                                 }
                             ]
                         },
                         "relationshipType": {
-                                    "$ref": "#/$defs/prop_relationshipType"
+                            "$ref": "#/$defs/prop_Relationship_relationshipType"
                         },
                         "completeness": {
-                                    "$ref": "#/$defs/prop_completeness"
+                            "$ref": "#/$defs/prop_Relationship_completeness"
                         },
                         "startTime": {
-                                    "$ref": "#/$defs/prop_startTime"
+                            "$ref": "#/$defs/prop_Relationship_startTime"
                         },
                         "endTime": {
-                                    "$ref": "#/$defs/prop_endTime"
+                            "$ref": "#/$defs/prop_Relationship_endTime"
                         }
                     },
                     "required": [
@@ -951,7 +909,7 @@
                 }
             ]
         },
-        "prop_from": {
+        "prop_Relationship_from": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -960,7 +918,7 @@
                     }
                 ]
         },
-        "prop_to": {
+        "prop_Relationship_to": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -969,7 +927,7 @@
                     }
                 ]
         },
-        "prop_relationshipType": {
+        "prop_Relationship_relationshipType": {
                 "enum": [
                     "affects",
                     "amendedBy",
@@ -1032,18 +990,18 @@
                     "usesTool"
                 ]
         },
-        "prop_completeness": {
+        "prop_Relationship_completeness": {
                 "enum": [
                     "complete",
                     "incomplete",
                     "noAssertion"
                 ]
         },
-        "prop_startTime": {
+        "prop_Relationship_startTime": {
                     "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
-        "prop_endTime": {
+        "prop_Relationship_endTime": {
                     "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
@@ -1072,11 +1030,8 @@
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_imports"
+                                        "$ref": "#/$defs/prop_SpdxDocument_imports"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_imports"
                                 }
                             ]
                         },
@@ -1085,22 +1040,19 @@
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_namespaceMap"
+                                        "$ref": "#/$defs/prop_SpdxDocument_namespaceMap"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_namespaceMap"
                                 }
                             ]
                         },
                         "dataLicense": {
-                                    "$ref": "#/$defs/prop_dataLicense"
+                            "$ref": "#/$defs/prop_SpdxDocument_dataLicense"
                         }
                     }
                 }
             ]
         },
-        "prop_imports": {
+        "prop_SpdxDocument_imports": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -1109,7 +1061,7 @@
                     }
                 ]
         },
-        "prop_namespaceMap": {
+        "prop_SpdxDocument_namespaceMap": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -1118,7 +1070,7 @@
                     }
                 ]
         },
-        "prop_dataLicense": {
+        "prop_SpdxDocument_dataLicense": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -1174,30 +1126,27 @@
                 {
                     "properties": {
                         "expandedlicensing_additionText": {
-                                    "$ref": "#/$defs/prop_expandedlicensing_additionText"
+                            "$ref": "#/$defs/prop_expandedlicensing_LicenseAddition_expandedlicensing_additionText"
                         },
                         "expandedlicensing_standardAdditionTemplate": {
-                                    "$ref": "#/$defs/prop_expandedlicensing_standardAdditionTemplate"
+                            "$ref": "#/$defs/prop_expandedlicensing_LicenseAddition_expandedlicensing_standardAdditionTemplate"
                         },
                         "expandedlicensing_isDeprecatedAdditionId": {
-                                    "$ref": "#/$defs/prop_expandedlicensing_isDeprecatedAdditionId"
+                            "$ref": "#/$defs/prop_expandedlicensing_LicenseAddition_expandedlicensing_isDeprecatedAdditionId"
                         },
                         "expandedlicensing_obsoletedBy": {
-                                    "$ref": "#/$defs/prop_expandedlicensing_obsoletedBy"
+                            "$ref": "#/$defs/prop_expandedlicensing_LicenseAddition_expandedlicensing_obsoletedBy"
                         },
                         "expandedlicensing_licenseXml": {
-                                    "$ref": "#/$defs/prop_expandedlicensing_licenseXml"
+                            "$ref": "#/$defs/prop_expandedlicensing_LicenseAddition_expandedlicensing_licenseXml"
                         },
                         "expandedlicensing_seeAlso": {
                             "oneOf": [
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_expandedlicensing_seeAlso"
+                                        "$ref": "#/$defs/prop_expandedlicensing_LicenseAddition_expandedlicensing_seeAlso"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_expandedlicensing_seeAlso"
                                 }
                             ]
                         }
@@ -1208,22 +1157,22 @@
                 }
             ]
         },
-        "prop_expandedlicensing_additionText": {
+        "prop_expandedlicensing_LicenseAddition_expandedlicensing_additionText": {
                     "type": "string"
         },
-        "prop_expandedlicensing_standardAdditionTemplate": {
+        "prop_expandedlicensing_LicenseAddition_expandedlicensing_standardAdditionTemplate": {
                     "type": "string"
         },
-        "prop_expandedlicensing_isDeprecatedAdditionId": {
+        "prop_expandedlicensing_LicenseAddition_expandedlicensing_isDeprecatedAdditionId": {
                     "type": "boolean"
         },
-        "prop_expandedlicensing_obsoletedBy": {
+        "prop_expandedlicensing_LicenseAddition_expandedlicensing_obsoletedBy": {
                     "type": "string"
         },
-        "prop_expandedlicensing_licenseXml": {
+        "prop_expandedlicensing_LicenseAddition_expandedlicensing_licenseXml": {
                     "type": "string"
         },
-        "prop_expandedlicensing_seeAlso": {
+        "prop_expandedlicensing_LicenseAddition_expandedlicensing_seeAlso": {
                     "$ref": "#/$defs/anyURI"
         },
         "expandedlicensing_ListedLicenseException": {
@@ -1247,19 +1196,19 @@
                 {
                     "properties": {
                         "expandedlicensing_listVersionAdded": {
-                                    "$ref": "#/$defs/prop_expandedlicensing_listVersionAdded"
+                            "$ref": "#/$defs/prop_expandedlicensing_ListedLicenseException_expandedlicensing_listVersionAdded"
                         },
                         "expandedlicensing_deprecatedVersion": {
-                                    "$ref": "#/$defs/prop_expandedlicensing_deprecatedVersion"
+                            "$ref": "#/$defs/prop_expandedlicensing_ListedLicenseException_expandedlicensing_deprecatedVersion"
                         }
                     }
                 }
             ]
         },
-        "prop_expandedlicensing_listVersionAdded": {
+        "prop_expandedlicensing_ListedLicenseException_expandedlicensing_listVersionAdded": {
                     "type": "string"
         },
-        "prop_expandedlicensing_deprecatedVersion": {
+        "prop_expandedlicensing_ListedLicenseException_expandedlicensing_deprecatedVersion": {
                     "type": "string"
         },
         "extension_Extension": {
@@ -1318,25 +1267,25 @@
                 {
                     "properties": {
                         "security_assessedElement": {
-                                    "$ref": "#/$defs/prop_security_assessedElement"
+                            "$ref": "#/$defs/prop_security_VulnAssessmentRelationship_security_assessedElement"
                         },
                         "security_publishedTime": {
-                                    "$ref": "#/$defs/prop_security_publishedTime"
+                            "$ref": "#/$defs/prop_security_VulnAssessmentRelationship_security_publishedTime"
                         },
                         "suppliedBy": {
-                                    "$ref": "#/$defs/prop_suppliedBy"
+                            "$ref": "#/$defs/prop_security_VulnAssessmentRelationship_suppliedBy"
                         },
                         "security_modifiedTime": {
-                                    "$ref": "#/$defs/prop_security_modifiedTime"
+                            "$ref": "#/$defs/prop_security_VulnAssessmentRelationship_security_modifiedTime"
                         },
                         "security_withdrawnTime": {
-                                    "$ref": "#/$defs/prop_security_withdrawnTime"
+                            "$ref": "#/$defs/prop_security_VulnAssessmentRelationship_security_withdrawnTime"
                         }
                     }
                 }
             ]
         },
-        "prop_security_assessedElement": {
+        "prop_security_VulnAssessmentRelationship_security_assessedElement": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -1345,11 +1294,11 @@
                     }
                 ]
         },
-        "prop_security_publishedTime": {
+        "prop_security_VulnAssessmentRelationship_security_publishedTime": {
                     "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
-        "prop_suppliedBy": {
+        "prop_security_VulnAssessmentRelationship_suppliedBy": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -1358,11 +1307,11 @@
                     }
                 ]
         },
-        "prop_security_modifiedTime": {
+        "prop_security_VulnAssessmentRelationship_security_modifiedTime": {
                     "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
-        "prop_security_withdrawnTime": {
+        "prop_security_VulnAssessmentRelationship_security_withdrawnTime": {
                     "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
@@ -1421,21 +1370,18 @@
                 {
                     "properties": {
                         "simplelicensing_licenseExpression": {
-                                    "$ref": "#/$defs/prop_simplelicensing_licenseExpression"
+                            "$ref": "#/$defs/prop_simplelicensing_LicenseExpression_simplelicensing_licenseExpression"
                         },
                         "simplelicensing_licenseListVersion": {
-                                    "$ref": "#/$defs/prop_simplelicensing_licenseListVersion"
+                            "$ref": "#/$defs/prop_simplelicensing_LicenseExpression_simplelicensing_licenseListVersion"
                         },
                         "simplelicensing_customIdToUri": {
                             "oneOf": [
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_simplelicensing_customIdToUri"
+                                        "$ref": "#/$defs/prop_simplelicensing_LicenseExpression_simplelicensing_customIdToUri"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_simplelicensing_customIdToUri"
                                 }
                             ]
                         }
@@ -1446,14 +1392,14 @@
                 }
             ]
         },
-        "prop_simplelicensing_licenseExpression": {
+        "prop_simplelicensing_LicenseExpression_simplelicensing_licenseExpression": {
                     "type": "string"
         },
-        "prop_simplelicensing_licenseListVersion": {
+        "prop_simplelicensing_LicenseExpression_simplelicensing_licenseListVersion": {
                     "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
                     "type": "string"
         },
-        "prop_simplelicensing_customIdToUri": {
+        "prop_simplelicensing_LicenseExpression_simplelicensing_customIdToUri": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -1483,7 +1429,7 @@
                 {
                     "properties": {
                         "simplelicensing_licenseText": {
-                                    "$ref": "#/$defs/prop_simplelicensing_licenseText"
+                            "$ref": "#/$defs/prop_simplelicensing_SimpleLicensingText_simplelicensing_licenseText"
                         }
                     },
                     "required": [
@@ -1492,7 +1438,7 @@
                 }
             ]
         },
-        "prop_simplelicensing_licenseText": {
+        "prop_simplelicensing_SimpleLicensingText_simplelicensing_licenseText": {
                     "type": "string"
         },
         "build_Build": {
@@ -1516,21 +1462,18 @@
                 {
                     "properties": {
                         "build_buildType": {
-                                    "$ref": "#/$defs/prop_build_buildType"
+                            "$ref": "#/$defs/prop_build_Build_build_buildType"
                         },
                         "build_buildId": {
-                                    "$ref": "#/$defs/prop_build_buildId"
+                            "$ref": "#/$defs/prop_build_Build_build_buildId"
                         },
                         "build_configSourceEntrypoint": {
                             "oneOf": [
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_build_configSourceEntrypoint"
+                                        "$ref": "#/$defs/prop_build_Build_build_configSourceEntrypoint"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_build_configSourceEntrypoint"
                                 }
                             ]
                         },
@@ -1539,11 +1482,8 @@
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_build_configSourceUri"
+                                        "$ref": "#/$defs/prop_build_Build_build_configSourceUri"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_build_configSourceUri"
                                 }
                             ]
                         },
@@ -1552,11 +1492,8 @@
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_build_configSourceDigest"
+                                        "$ref": "#/$defs/prop_build_Build_build_configSourceDigest"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_build_configSourceDigest"
                                 }
                             ]
                         },
@@ -1565,30 +1502,24 @@
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_build_parameters"
+                                        "$ref": "#/$defs/prop_build_Build_build_parameters"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_build_parameters"
                                 }
                             ]
                         },
                         "build_buildStartTime": {
-                                    "$ref": "#/$defs/prop_build_buildStartTime"
+                            "$ref": "#/$defs/prop_build_Build_build_buildStartTime"
                         },
                         "build_buildEndTime": {
-                                    "$ref": "#/$defs/prop_build_buildEndTime"
+                            "$ref": "#/$defs/prop_build_Build_build_buildEndTime"
                         },
                         "build_environment": {
                             "oneOf": [
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_build_environment"
+                                        "$ref": "#/$defs/prop_build_Build_build_environment"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_build_environment"
                                 }
                             ]
                         }
@@ -1599,19 +1530,19 @@
                 }
             ]
         },
-        "prop_build_buildType": {
+        "prop_build_Build_build_buildType": {
                     "$ref": "#/$defs/anyURI"
         },
-        "prop_build_buildId": {
+        "prop_build_Build_build_buildId": {
                     "type": "string"
         },
-        "prop_build_configSourceEntrypoint": {
+        "prop_build_Build_build_configSourceEntrypoint": {
                     "type": "string"
         },
-        "prop_build_configSourceUri": {
+        "prop_build_Build_build_configSourceUri": {
                     "$ref": "#/$defs/anyURI"
         },
-        "prop_build_configSourceDigest": {
+        "prop_build_Build_build_configSourceDigest": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -1620,7 +1551,7 @@
                     }
                 ]
         },
-        "prop_build_parameters": {
+        "prop_build_Build_build_parameters": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -1629,15 +1560,15 @@
                     }
                 ]
         },
-        "prop_build_buildStartTime": {
+        "prop_build_Build_build_buildStartTime": {
                     "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
-        "prop_build_buildEndTime": {
+        "prop_build_Build_build_buildEndTime": {
                     "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
-        "prop_build_environment": {
+        "prop_build_Build_build_environment": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -1694,16 +1625,16 @@
                 {
                     "properties": {
                         "annotationType": {
-                                    "$ref": "#/$defs/prop_annotationType"
+                            "$ref": "#/$defs/prop_Annotation_annotationType"
                         },
                         "contentType": {
-                                    "$ref": "#/$defs/prop_contentType"
+                            "$ref": "#/$defs/prop_Annotation_contentType"
                         },
                         "statement": {
-                                    "$ref": "#/$defs/prop_statement"
+                            "$ref": "#/$defs/prop_Annotation_statement"
                         },
                         "subject": {
-                                    "$ref": "#/$defs/prop_subject"
+                            "$ref": "#/$defs/prop_Annotation_subject"
                         }
                     },
                     "required": [
@@ -1713,20 +1644,20 @@
                 }
             ]
         },
-        "prop_annotationType": {
+        "prop_Annotation_annotationType": {
                 "enum": [
                     "other",
                     "review"
                 ]
         },
-        "prop_contentType": {
+        "prop_Annotation_contentType": {
                     "pattern": "^[^\\/]+\\/[^\\/]+$",
                     "type": "string"
         },
-        "prop_statement": {
+        "prop_Annotation_statement": {
                     "type": "string"
         },
-        "prop_subject": {
+        "prop_Annotation_subject": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -1767,36 +1698,30 @@
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_originatedBy"
+                                        "$ref": "#/$defs/prop_Artifact_originatedBy"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_originatedBy"
                                 }
                             ]
                         },
                         "suppliedBy": {
-                                    "$ref": "#/$defs/prop_suppliedBy"
+                            "$ref": "#/$defs/prop_Artifact_suppliedBy"
                         },
                         "builtTime": {
-                                    "$ref": "#/$defs/prop_builtTime"
+                            "$ref": "#/$defs/prop_Artifact_builtTime"
                         },
                         "releaseTime": {
-                                    "$ref": "#/$defs/prop_releaseTime"
+                            "$ref": "#/$defs/prop_Artifact_releaseTime"
                         },
                         "validUntilTime": {
-                                    "$ref": "#/$defs/prop_validUntilTime"
+                            "$ref": "#/$defs/prop_Artifact_validUntilTime"
                         },
                         "standardName": {
                             "oneOf": [
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_standardName"
+                                        "$ref": "#/$defs/prop_Artifact_standardName"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_standardName"
                                 }
                             ]
                         },
@@ -1805,11 +1730,8 @@
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_supportLevel"
+                                        "$ref": "#/$defs/prop_Artifact_supportLevel"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_supportLevel"
                                 }
                             ]
                         }
@@ -1817,7 +1739,7 @@
                 }
             ]
         },
-        "prop_originatedBy": {
+        "prop_Artifact_originatedBy": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -1826,7 +1748,7 @@
                     }
                 ]
         },
-        "prop_suppliedBy": {
+        "prop_Artifact_suppliedBy": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -1835,22 +1757,22 @@
                     }
                 ]
         },
-        "prop_builtTime": {
+        "prop_Artifact_builtTime": {
                     "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
-        "prop_releaseTime": {
+        "prop_Artifact_releaseTime": {
                     "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
-        "prop_validUntilTime": {
+        "prop_Artifact_validUntilTime": {
                     "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
-        "prop_standardName": {
+        "prop_Artifact_standardName": {
                     "type": "string"
         },
-        "prop_supportLevel": {
+        "prop_Artifact_supportLevel": {
                 "enum": [
                     "development",
                     "endOfSupport",
@@ -1883,13 +1805,13 @@
                 {
                     "properties": {
                         "context": {
-                                    "$ref": "#/$defs/prop_context"
+                            "$ref": "#/$defs/prop_Bundle_context"
                         }
                     }
                 }
             ]
         },
-        "prop_context": {
+        "prop_Bundle_context": {
                     "type": "string"
         },
         "Hash": {
@@ -1913,10 +1835,10 @@
                 {
                     "properties": {
                         "algorithm": {
-                                    "$ref": "#/$defs/prop_algorithm"
+                            "$ref": "#/$defs/prop_Hash_algorithm"
                         },
                         "hashValue": {
-                                    "$ref": "#/$defs/prop_hashValue"
+                            "$ref": "#/$defs/prop_Hash_hashValue"
                         }
                     },
                     "required": [
@@ -1926,7 +1848,7 @@
                 }
             ]
         },
-        "prop_algorithm": {
+        "prop_Hash_algorithm": {
                 "enum": [
                     "blake2b256",
                     "blake2b384",
@@ -1951,7 +1873,7 @@
                     "sha512"
                 ]
         },
-        "prop_hashValue": {
+        "prop_Hash_hashValue": {
                     "type": "string"
         },
         "LifecycleScopedRelationship": {
@@ -1975,13 +1897,13 @@
                 {
                     "properties": {
                         "scope": {
-                                    "$ref": "#/$defs/prop_scope"
+                            "$ref": "#/$defs/prop_LifecycleScopedRelationship_scope"
                         }
                     }
                 }
             ]
         },
-        "prop_scope": {
+        "prop_LifecycleScopedRelationship_scope": {
                 "enum": [
                     "build",
                     "design",
@@ -2089,11 +2011,8 @@
                                     "type": "array",
                                     "minItems": 2,
                                     "items": {
-                                        "$ref": "#/$defs/prop_expandedlicensing_member"
+                                        "$ref": "#/$defs/prop_expandedlicensing_ConjunctiveLicenseSet_expandedlicensing_member"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_expandedlicensing_member"
                                 }
                             ]
                         }
@@ -2104,7 +2023,7 @@
                 }
             ]
         },
-        "prop_expandedlicensing_member": {
+        "prop_expandedlicensing_ConjunctiveLicenseSet_expandedlicensing_member": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -2163,11 +2082,8 @@
                                     "type": "array",
                                     "minItems": 2,
                                     "items": {
-                                        "$ref": "#/$defs/prop_expandedlicensing_member"
+                                        "$ref": "#/$defs/prop_expandedlicensing_DisjunctiveLicenseSet_expandedlicensing_member"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_expandedlicensing_member"
                                 }
                             ]
                         }
@@ -2178,7 +2094,7 @@
                 }
             ]
         },
-        "prop_expandedlicensing_member": {
+        "prop_expandedlicensing_DisjunctiveLicenseSet_expandedlicensing_member": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -2262,39 +2178,36 @@
                 {
                     "properties": {
                         "simplelicensing_licenseText": {
-                                    "$ref": "#/$defs/prop_simplelicensing_licenseText"
+                            "$ref": "#/$defs/prop_expandedlicensing_License_simplelicensing_licenseText"
                         },
                         "expandedlicensing_isOsiApproved": {
-                                    "$ref": "#/$defs/prop_expandedlicensing_isOsiApproved"
+                            "$ref": "#/$defs/prop_expandedlicensing_License_expandedlicensing_isOsiApproved"
                         },
                         "expandedlicensing_isFsfLibre": {
-                                    "$ref": "#/$defs/prop_expandedlicensing_isFsfLibre"
+                            "$ref": "#/$defs/prop_expandedlicensing_License_expandedlicensing_isFsfLibre"
                         },
                         "expandedlicensing_standardLicenseHeader": {
-                                    "$ref": "#/$defs/prop_expandedlicensing_standardLicenseHeader"
+                            "$ref": "#/$defs/prop_expandedlicensing_License_expandedlicensing_standardLicenseHeader"
                         },
                         "expandedlicensing_standardLicenseTemplate": {
-                                    "$ref": "#/$defs/prop_expandedlicensing_standardLicenseTemplate"
+                            "$ref": "#/$defs/prop_expandedlicensing_License_expandedlicensing_standardLicenseTemplate"
                         },
                         "expandedlicensing_isDeprecatedLicenseId": {
-                                    "$ref": "#/$defs/prop_expandedlicensing_isDeprecatedLicenseId"
+                            "$ref": "#/$defs/prop_expandedlicensing_License_expandedlicensing_isDeprecatedLicenseId"
                         },
                         "expandedlicensing_obsoletedBy": {
-                                    "$ref": "#/$defs/prop_expandedlicensing_obsoletedBy"
+                            "$ref": "#/$defs/prop_expandedlicensing_License_expandedlicensing_obsoletedBy"
                         },
                         "expandedlicensing_licenseXml": {
-                                    "$ref": "#/$defs/prop_expandedlicensing_licenseXml"
+                            "$ref": "#/$defs/prop_expandedlicensing_License_expandedlicensing_licenseXml"
                         },
                         "expandedlicensing_seeAlso": {
                             "oneOf": [
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_expandedlicensing_seeAlso"
+                                        "$ref": "#/$defs/prop_expandedlicensing_License_expandedlicensing_seeAlso"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_expandedlicensing_seeAlso"
                                 }
                             ]
                         }
@@ -2305,31 +2218,31 @@
                 }
             ]
         },
-        "prop_simplelicensing_licenseText": {
+        "prop_expandedlicensing_License_simplelicensing_licenseText": {
                     "type": "string"
         },
-        "prop_expandedlicensing_isOsiApproved": {
+        "prop_expandedlicensing_License_expandedlicensing_isOsiApproved": {
                     "type": "boolean"
         },
-        "prop_expandedlicensing_isFsfLibre": {
+        "prop_expandedlicensing_License_expandedlicensing_isFsfLibre": {
                     "type": "boolean"
         },
-        "prop_expandedlicensing_standardLicenseHeader": {
+        "prop_expandedlicensing_License_expandedlicensing_standardLicenseHeader": {
                     "type": "string"
         },
-        "prop_expandedlicensing_standardLicenseTemplate": {
+        "prop_expandedlicensing_License_expandedlicensing_standardLicenseTemplate": {
                     "type": "string"
         },
-        "prop_expandedlicensing_isDeprecatedLicenseId": {
+        "prop_expandedlicensing_License_expandedlicensing_isDeprecatedLicenseId": {
                     "type": "boolean"
         },
-        "prop_expandedlicensing_obsoletedBy": {
+        "prop_expandedlicensing_License_expandedlicensing_obsoletedBy": {
                     "type": "string"
         },
-        "prop_expandedlicensing_licenseXml": {
+        "prop_expandedlicensing_License_expandedlicensing_licenseXml": {
                     "type": "string"
         },
-        "prop_expandedlicensing_seeAlso": {
+        "prop_expandedlicensing_License_expandedlicensing_seeAlso": {
                     "$ref": "#/$defs/anyURI"
         },
         "expandedlicensing_ListedLicense": {
@@ -2353,19 +2266,19 @@
                 {
                     "properties": {
                         "expandedlicensing_listVersionAdded": {
-                                    "$ref": "#/$defs/prop_expandedlicensing_listVersionAdded"
+                            "$ref": "#/$defs/prop_expandedlicensing_ListedLicense_expandedlicensing_listVersionAdded"
                         },
                         "expandedlicensing_deprecatedVersion": {
-                                    "$ref": "#/$defs/prop_expandedlicensing_deprecatedVersion"
+                            "$ref": "#/$defs/prop_expandedlicensing_ListedLicense_expandedlicensing_deprecatedVersion"
                         }
                     }
                 }
             ]
         },
-        "prop_expandedlicensing_listVersionAdded": {
+        "prop_expandedlicensing_ListedLicense_expandedlicensing_listVersionAdded": {
                     "type": "string"
         },
-        "prop_expandedlicensing_deprecatedVersion": {
+        "prop_expandedlicensing_ListedLicense_expandedlicensing_deprecatedVersion": {
                     "type": "string"
         },
         "expandedlicensing_OrLaterOperator": {
@@ -2389,7 +2302,7 @@
                 {
                     "properties": {
                         "expandedlicensing_subjectLicense": {
-                                    "$ref": "#/$defs/prop_expandedlicensing_subjectLicense"
+                            "$ref": "#/$defs/prop_expandedlicensing_OrLaterOperator_expandedlicensing_subjectLicense"
                         }
                     },
                     "required": [
@@ -2398,7 +2311,7 @@
                 }
             ]
         },
-        "prop_expandedlicensing_subjectLicense": {
+        "prop_expandedlicensing_OrLaterOperator_expandedlicensing_subjectLicense": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -2428,10 +2341,10 @@
                 {
                     "properties": {
                         "expandedlicensing_subjectExtendableLicense": {
-                                    "$ref": "#/$defs/prop_expandedlicensing_subjectExtendableLicense"
+                            "$ref": "#/$defs/prop_expandedlicensing_WithAdditionOperator_expandedlicensing_subjectExtendableLicense"
                         },
                         "expandedlicensing_subjectAddition": {
-                                    "$ref": "#/$defs/prop_expandedlicensing_subjectAddition"
+                            "$ref": "#/$defs/prop_expandedlicensing_WithAdditionOperator_expandedlicensing_subjectAddition"
                         }
                     },
                     "required": [
@@ -2441,7 +2354,7 @@
                 }
             ]
         },
-        "prop_expandedlicensing_subjectExtendableLicense": {
+        "prop_expandedlicensing_WithAdditionOperator_expandedlicensing_subjectExtendableLicense": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -2450,7 +2363,7 @@
                     }
                 ]
         },
-        "prop_expandedlicensing_subjectAddition": {
+        "prop_expandedlicensing_WithAdditionOperator_expandedlicensing_subjectAddition": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -2480,10 +2393,10 @@
                 {
                     "properties": {
                         "security_score": {
-                                    "$ref": "#/$defs/prop_security_score"
+                            "$ref": "#/$defs/prop_security_CvssV2VulnAssessmentRelationship_security_score"
                         },
                         "security_vectorString": {
-                                    "$ref": "#/$defs/prop_security_vectorString"
+                            "$ref": "#/$defs/prop_security_CvssV2VulnAssessmentRelationship_security_vectorString"
                         }
                     },
                     "required": [
@@ -2493,10 +2406,10 @@
                 }
             ]
         },
-        "prop_security_score": {
+        "prop_security_CvssV2VulnAssessmentRelationship_security_score": {
                     "type": "number"
         },
-        "prop_security_vectorString": {
+        "prop_security_CvssV2VulnAssessmentRelationship_security_vectorString": {
                     "type": "string"
         },
         "security_CvssV3VulnAssessmentRelationship": {
@@ -2520,13 +2433,13 @@
                 {
                     "properties": {
                         "security_score": {
-                                    "$ref": "#/$defs/prop_security_score"
+                            "$ref": "#/$defs/prop_security_CvssV3VulnAssessmentRelationship_security_score"
                         },
                         "security_severity": {
-                                    "$ref": "#/$defs/prop_security_severity"
+                            "$ref": "#/$defs/prop_security_CvssV3VulnAssessmentRelationship_security_severity"
                         },
                         "security_vectorString": {
-                                    "$ref": "#/$defs/prop_security_vectorString"
+                            "$ref": "#/$defs/prop_security_CvssV3VulnAssessmentRelationship_security_vectorString"
                         }
                     },
                     "required": [
@@ -2537,10 +2450,10 @@
                 }
             ]
         },
-        "prop_security_score": {
+        "prop_security_CvssV3VulnAssessmentRelationship_security_score": {
                     "type": "number"
         },
-        "prop_security_severity": {
+        "prop_security_CvssV3VulnAssessmentRelationship_security_severity": {
                 "enum": [
                     "critical",
                     "high",
@@ -2549,7 +2462,7 @@
                     "none"
                 ]
         },
-        "prop_security_vectorString": {
+        "prop_security_CvssV3VulnAssessmentRelationship_security_vectorString": {
                     "type": "string"
         },
         "security_CvssV4VulnAssessmentRelationship": {
@@ -2573,13 +2486,13 @@
                 {
                     "properties": {
                         "security_score": {
-                                    "$ref": "#/$defs/prop_security_score"
+                            "$ref": "#/$defs/prop_security_CvssV4VulnAssessmentRelationship_security_score"
                         },
                         "security_severity": {
-                                    "$ref": "#/$defs/prop_security_severity"
+                            "$ref": "#/$defs/prop_security_CvssV4VulnAssessmentRelationship_security_severity"
                         },
                         "security_vectorString": {
-                                    "$ref": "#/$defs/prop_security_vectorString"
+                            "$ref": "#/$defs/prop_security_CvssV4VulnAssessmentRelationship_security_vectorString"
                         }
                     },
                     "required": [
@@ -2590,10 +2503,10 @@
                 }
             ]
         },
-        "prop_security_score": {
+        "prop_security_CvssV4VulnAssessmentRelationship_security_score": {
                     "type": "number"
         },
-        "prop_security_severity": {
+        "prop_security_CvssV4VulnAssessmentRelationship_security_severity": {
                 "enum": [
                     "critical",
                     "high",
@@ -2602,7 +2515,7 @@
                     "none"
                 ]
         },
-        "prop_security_vectorString": {
+        "prop_security_CvssV4VulnAssessmentRelationship_security_vectorString": {
                     "type": "string"
         },
         "security_EpssVulnAssessmentRelationship": {
@@ -2626,13 +2539,13 @@
                 {
                     "properties": {
                         "security_probability": {
-                                    "$ref": "#/$defs/prop_security_probability"
+                            "$ref": "#/$defs/prop_security_EpssVulnAssessmentRelationship_security_probability"
                         },
                         "security_percentile": {
-                                    "$ref": "#/$defs/prop_security_percentile"
+                            "$ref": "#/$defs/prop_security_EpssVulnAssessmentRelationship_security_percentile"
                         },
                         "security_publishedTime": {
-                                    "$ref": "#/$defs/prop_security_publishedTime"
+                            "$ref": "#/$defs/prop_security_EpssVulnAssessmentRelationship_security_publishedTime"
                         }
                     },
                     "required": [
@@ -2643,13 +2556,13 @@
                 }
             ]
         },
-        "prop_security_probability": {
+        "prop_security_EpssVulnAssessmentRelationship_security_probability": {
                     "type": "number"
         },
-        "prop_security_percentile": {
+        "prop_security_EpssVulnAssessmentRelationship_security_percentile": {
                     "type": "number"
         },
-        "prop_security_publishedTime": {
+        "prop_security_EpssVulnAssessmentRelationship_security_publishedTime": {
                     "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
@@ -2674,13 +2587,13 @@
                 {
                     "properties": {
                         "security_catalogType": {
-                                    "$ref": "#/$defs/prop_security_catalogType"
+                            "$ref": "#/$defs/prop_security_ExploitCatalogVulnAssessmentRelationship_security_catalogType"
                         },
                         "security_exploited": {
-                                    "$ref": "#/$defs/prop_security_exploited"
+                            "$ref": "#/$defs/prop_security_ExploitCatalogVulnAssessmentRelationship_security_exploited"
                         },
                         "security_locator": {
-                                    "$ref": "#/$defs/prop_security_locator"
+                            "$ref": "#/$defs/prop_security_ExploitCatalogVulnAssessmentRelationship_security_locator"
                         }
                     },
                     "required": [
@@ -2691,16 +2604,16 @@
                 }
             ]
         },
-        "prop_security_catalogType": {
+        "prop_security_ExploitCatalogVulnAssessmentRelationship_security_catalogType": {
                 "enum": [
                     "kev",
                     "other"
                 ]
         },
-        "prop_security_exploited": {
+        "prop_security_ExploitCatalogVulnAssessmentRelationship_security_exploited": {
                     "type": "boolean"
         },
-        "prop_security_locator": {
+        "prop_security_ExploitCatalogVulnAssessmentRelationship_security_locator": {
                     "$ref": "#/$defs/anyURI"
         },
         "security_SsvcVulnAssessmentRelationship": {
@@ -2724,7 +2637,7 @@
                 {
                     "properties": {
                         "security_decisionType": {
-                                    "$ref": "#/$defs/prop_security_decisionType"
+                            "$ref": "#/$defs/prop_security_SsvcVulnAssessmentRelationship_security_decisionType"
                         }
                     },
                     "required": [
@@ -2733,7 +2646,7 @@
                 }
             ]
         },
-        "prop_security_decisionType": {
+        "prop_security_SsvcVulnAssessmentRelationship_security_decisionType": {
                 "enum": [
                     "act",
                     "attend",
@@ -2766,19 +2679,19 @@
                 {
                     "properties": {
                         "security_vexVersion": {
-                                    "$ref": "#/$defs/prop_security_vexVersion"
+                            "$ref": "#/$defs/prop_security_VexVulnAssessmentRelationship_security_vexVersion"
                         },
                         "security_statusNotes": {
-                                    "$ref": "#/$defs/prop_security_statusNotes"
+                            "$ref": "#/$defs/prop_security_VexVulnAssessmentRelationship_security_statusNotes"
                         }
                     }
                 }
             ]
         },
-        "prop_security_vexVersion": {
+        "prop_security_VexVulnAssessmentRelationship_security_vexVersion": {
                     "type": "string"
         },
-        "prop_security_statusNotes": {
+        "prop_security_VexVulnAssessmentRelationship_security_statusNotes": {
                     "type": "string"
         },
         "security_Vulnerability": {
@@ -2802,27 +2715,27 @@
                 {
                     "properties": {
                         "security_publishedTime": {
-                                    "$ref": "#/$defs/prop_security_publishedTime"
+                            "$ref": "#/$defs/prop_security_Vulnerability_security_publishedTime"
                         },
                         "security_modifiedTime": {
-                                    "$ref": "#/$defs/prop_security_modifiedTime"
+                            "$ref": "#/$defs/prop_security_Vulnerability_security_modifiedTime"
                         },
                         "security_withdrawnTime": {
-                                    "$ref": "#/$defs/prop_security_withdrawnTime"
+                            "$ref": "#/$defs/prop_security_Vulnerability_security_withdrawnTime"
                         }
                     }
                 }
             ]
         },
-        "prop_security_publishedTime": {
+        "prop_security_Vulnerability_security_publishedTime": {
                     "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
-        "prop_security_modifiedTime": {
+        "prop_security_Vulnerability_security_modifiedTime": {
                     "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
-        "prop_security_withdrawnTime": {
+        "prop_security_Vulnerability_security_withdrawnTime": {
                     "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
@@ -2857,43 +2770,34 @@
                                     "type": "array",
                                     "maxItems": 2,
                                     "items": {
-                                        "$ref": "#/$defs/prop_software_gitoid"
+                                        "$ref": "#/$defs/prop_software_SoftwareArtifact_software_gitoid"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_software_gitoid"
                                 }
                             ]
                         },
                         "software_primaryPurpose": {
-                                    "$ref": "#/$defs/prop_software_primaryPurpose"
+                            "$ref": "#/$defs/prop_software_SoftwareArtifact_software_primaryPurpose"
                         },
                         "software_additionalPurpose": {
                             "oneOf": [
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_software_additionalPurpose"
+                                        "$ref": "#/$defs/prop_software_SoftwareArtifact_software_additionalPurpose"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_software_additionalPurpose"
                                 }
                             ]
                         },
                         "software_copyrightText": {
-                                    "$ref": "#/$defs/prop_software_copyrightText"
+                            "$ref": "#/$defs/prop_software_SoftwareArtifact_software_copyrightText"
                         },
                         "software_attributionText": {
                             "oneOf": [
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_software_attributionText"
+                                        "$ref": "#/$defs/prop_software_SoftwareArtifact_software_attributionText"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_software_attributionText"
                                 }
                             ]
                         }
@@ -2901,10 +2805,10 @@
                 }
             ]
         },
-        "prop_software_gitoid": {
+        "prop_software_SoftwareArtifact_software_gitoid": {
                     "$ref": "#/$defs/anyURI"
         },
-        "prop_software_primaryPurpose": {
+        "prop_software_SoftwareArtifact_software_primaryPurpose": {
                 "enum": [
                     "application",
                     "archive",
@@ -2937,7 +2841,7 @@
                     "test"
                 ]
         },
-        "prop_software_additionalPurpose": {
+        "prop_software_SoftwareArtifact_software_additionalPurpose": {
                 "enum": [
                     "application",
                     "archive",
@@ -2970,10 +2874,10 @@
                     "test"
                 ]
         },
-        "prop_software_copyrightText": {
+        "prop_software_SoftwareArtifact_software_copyrightText": {
                     "type": "string"
         },
-        "prop_software_attributionText": {
+        "prop_software_SoftwareArtifact_software_attributionText": {
                     "type": "string"
         },
         "Bom": {
@@ -3046,18 +2950,15 @@
                 {
                     "properties": {
                         "security_actionStatement": {
-                                    "$ref": "#/$defs/prop_security_actionStatement"
+                            "$ref": "#/$defs/prop_security_VexAffectedVulnAssessmentRelationship_security_actionStatement"
                         },
                         "security_actionStatementTime": {
                             "oneOf": [
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_security_actionStatementTime"
+                                        "$ref": "#/$defs/prop_security_VexAffectedVulnAssessmentRelationship_security_actionStatementTime"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_security_actionStatementTime"
                                 }
                             ]
                         }
@@ -3065,10 +2966,10 @@
                 }
             ]
         },
-        "prop_security_actionStatement": {
+        "prop_security_VexAffectedVulnAssessmentRelationship_security_actionStatement": {
                     "type": "string"
         },
-        "prop_security_actionStatementTime": {
+        "prop_security_VexAffectedVulnAssessmentRelationship_security_actionStatementTime": {
                     "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
@@ -3117,19 +3018,19 @@
                 {
                     "properties": {
                         "security_justificationType": {
-                                    "$ref": "#/$defs/prop_security_justificationType"
+                            "$ref": "#/$defs/prop_security_VexNotAffectedVulnAssessmentRelationship_security_justificationType"
                         },
                         "security_impactStatement": {
-                                    "$ref": "#/$defs/prop_security_impactStatement"
+                            "$ref": "#/$defs/prop_security_VexNotAffectedVulnAssessmentRelationship_security_impactStatement"
                         },
                         "security_impactStatementTime": {
-                                    "$ref": "#/$defs/prop_security_impactStatementTime"
+                            "$ref": "#/$defs/prop_security_VexNotAffectedVulnAssessmentRelationship_security_impactStatementTime"
                         }
                     }
                 }
             ]
         },
-        "prop_security_justificationType": {
+        "prop_security_VexNotAffectedVulnAssessmentRelationship_security_justificationType": {
                 "enum": [
                     "componentNotPresent",
                     "inlineMitigationsAlreadyExist",
@@ -3138,10 +3039,10 @@
                     "vulnerableCodeNotPresent"
                 ]
         },
-        "prop_security_impactStatement": {
+        "prop_security_VexNotAffectedVulnAssessmentRelationship_security_impactStatement": {
                     "type": "string"
         },
-        "prop_security_impactStatementTime": {
+        "prop_security_VexNotAffectedVulnAssessmentRelationship_security_impactStatementTime": {
                     "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
@@ -3190,20 +3091,20 @@
                 {
                     "properties": {
                         "software_contentType": {
-                                    "$ref": "#/$defs/prop_software_contentType"
+                            "$ref": "#/$defs/prop_software_File_software_contentType"
                         },
                         "software_isDirectory": {
-                                    "$ref": "#/$defs/prop_software_isDirectory"
+                            "$ref": "#/$defs/prop_software_File_software_isDirectory"
                         }
                     }
                 }
             ]
         },
-        "prop_software_contentType": {
+        "prop_software_File_software_contentType": {
                     "pattern": "^[^\\/]+\\/[^\\/]+$",
                     "type": "string"
         },
-        "prop_software_isDirectory": {
+        "prop_software_File_software_isDirectory": {
                     "type": "boolean"
         },
         "software_Package": {
@@ -3229,37 +3130,37 @@
                 {
                     "properties": {
                         "software_packageVersion": {
-                                    "$ref": "#/$defs/prop_software_packageVersion"
+                            "$ref": "#/$defs/prop_software_Package_software_packageVersion"
                         },
                         "software_downloadLocation": {
-                                    "$ref": "#/$defs/prop_software_downloadLocation"
+                            "$ref": "#/$defs/prop_software_Package_software_downloadLocation"
                         },
                         "software_packageUrl": {
-                                    "$ref": "#/$defs/prop_software_packageUrl"
+                            "$ref": "#/$defs/prop_software_Package_software_packageUrl"
                         },
                         "software_homePage": {
-                                    "$ref": "#/$defs/prop_software_homePage"
+                            "$ref": "#/$defs/prop_software_Package_software_homePage"
                         },
                         "software_sourceInfo": {
-                                    "$ref": "#/$defs/prop_software_sourceInfo"
+                            "$ref": "#/$defs/prop_software_Package_software_sourceInfo"
                         }
                     }
                 }
             ]
         },
-        "prop_software_packageVersion": {
+        "prop_software_Package_software_packageVersion": {
                     "type": "string"
         },
-        "prop_software_downloadLocation": {
+        "prop_software_Package_software_downloadLocation": {
                     "$ref": "#/$defs/anyURI"
         },
-        "prop_software_packageUrl": {
+        "prop_software_Package_software_packageUrl": {
                     "$ref": "#/$defs/anyURI"
         },
-        "prop_software_homePage": {
+        "prop_software_Package_software_homePage": {
                     "$ref": "#/$defs/anyURI"
         },
-        "prop_software_sourceInfo": {
+        "prop_software_Package_software_sourceInfo": {
                     "type": "string"
         },
         "software_Sbom": {
@@ -3287,11 +3188,8 @@
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_software_sbomType"
+                                        "$ref": "#/$defs/prop_software_Sbom_software_sbomType"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_software_sbomType"
                                 }
                             ]
                         }
@@ -3299,7 +3197,7 @@
                 }
             ]
         },
-        "prop_software_sbomType": {
+        "prop_software_Sbom_software_sbomType": {
                 "enum": [
                     "analyzed",
                     "build",
@@ -3330,13 +3228,13 @@
                 {
                     "properties": {
                         "software_byteRange": {
-                                    "$ref": "#/$defs/prop_software_byteRange"
+                            "$ref": "#/$defs/prop_software_Snippet_software_byteRange"
                         },
                         "software_lineRange": {
-                                    "$ref": "#/$defs/prop_software_lineRange"
+                            "$ref": "#/$defs/prop_software_Snippet_software_lineRange"
                         },
                         "software_snippetFromFile": {
-                                    "$ref": "#/$defs/prop_software_snippetFromFile"
+                            "$ref": "#/$defs/prop_software_Snippet_software_snippetFromFile"
                         }
                     },
                     "required": [
@@ -3345,7 +3243,7 @@
                 }
             ]
         },
-        "prop_software_byteRange": {
+        "prop_software_Snippet_software_byteRange": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -3354,7 +3252,7 @@
                     }
                 ]
         },
-        "prop_software_lineRange": {
+        "prop_software_Snippet_software_lineRange": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -3363,7 +3261,7 @@
                     }
                 ]
         },
-        "prop_software_snippetFromFile": {
+        "prop_software_Snippet_software_snippetFromFile": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -3393,53 +3291,44 @@
                 {
                     "properties": {
                         "ai_energyConsumption": {
-                                    "$ref": "#/$defs/prop_ai_energyConsumption"
+                            "$ref": "#/$defs/prop_ai_AIPackage_ai_energyConsumption"
                         },
                         "ai_standardCompliance": {
                             "oneOf": [
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_ai_standardCompliance"
+                                        "$ref": "#/$defs/prop_ai_AIPackage_ai_standardCompliance"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_ai_standardCompliance"
                                 }
                             ]
                         },
                         "ai_limitation": {
-                                    "$ref": "#/$defs/prop_ai_limitation"
+                            "$ref": "#/$defs/prop_ai_AIPackage_ai_limitation"
                         },
                         "ai_typeOfModel": {
                             "oneOf": [
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_ai_typeOfModel"
+                                        "$ref": "#/$defs/prop_ai_AIPackage_ai_typeOfModel"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_ai_typeOfModel"
                                 }
                             ]
                         },
                         "ai_informationAboutTraining": {
-                                    "$ref": "#/$defs/prop_ai_informationAboutTraining"
+                            "$ref": "#/$defs/prop_ai_AIPackage_ai_informationAboutTraining"
                         },
                         "ai_informationAboutApplication": {
-                                    "$ref": "#/$defs/prop_ai_informationAboutApplication"
+                            "$ref": "#/$defs/prop_ai_AIPackage_ai_informationAboutApplication"
                         },
                         "ai_hyperparameter": {
                             "oneOf": [
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_ai_hyperparameter"
+                                        "$ref": "#/$defs/prop_ai_AIPackage_ai_hyperparameter"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_ai_hyperparameter"
                                 }
                             ]
                         },
@@ -3448,11 +3337,8 @@
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_ai_modelDataPreprocessing"
+                                        "$ref": "#/$defs/prop_ai_AIPackage_ai_modelDataPreprocessing"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_ai_modelDataPreprocessing"
                                 }
                             ]
                         },
@@ -3461,27 +3347,21 @@
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_ai_modelExplainability"
+                                        "$ref": "#/$defs/prop_ai_AIPackage_ai_modelExplainability"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_ai_modelExplainability"
                                 }
                             ]
                         },
                         "ai_sensitivePersonalInformation": {
-                                    "$ref": "#/$defs/prop_ai_sensitivePersonalInformation"
+                            "$ref": "#/$defs/prop_ai_AIPackage_ai_sensitivePersonalInformation"
                         },
                         "ai_metricDecisionThreshold": {
                             "oneOf": [
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_ai_metricDecisionThreshold"
+                                        "$ref": "#/$defs/prop_ai_AIPackage_ai_metricDecisionThreshold"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_ai_metricDecisionThreshold"
                                 }
                             ]
                         },
@@ -3490,11 +3370,8 @@
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_ai_metric"
+                                        "$ref": "#/$defs/prop_ai_AIPackage_ai_metric"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_ai_metric"
                                 }
                             ]
                         },
@@ -3503,43 +3380,40 @@
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_ai_domain"
+                                        "$ref": "#/$defs/prop_ai_AIPackage_ai_domain"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_ai_domain"
                                 }
                             ]
                         },
                         "ai_autonomyType": {
-                                    "$ref": "#/$defs/prop_ai_autonomyType"
+                            "$ref": "#/$defs/prop_ai_AIPackage_ai_autonomyType"
                         },
                         "ai_safetyRiskAssessment": {
-                                    "$ref": "#/$defs/prop_ai_safetyRiskAssessment"
+                            "$ref": "#/$defs/prop_ai_AIPackage_ai_safetyRiskAssessment"
                         }
                     }
                 }
             ]
         },
-        "prop_ai_energyConsumption": {
+        "prop_ai_AIPackage_ai_energyConsumption": {
                     "type": "string"
         },
-        "prop_ai_standardCompliance": {
+        "prop_ai_AIPackage_ai_standardCompliance": {
                     "type": "string"
         },
-        "prop_ai_limitation": {
+        "prop_ai_AIPackage_ai_limitation": {
                     "type": "string"
         },
-        "prop_ai_typeOfModel": {
+        "prop_ai_AIPackage_ai_typeOfModel": {
                     "type": "string"
         },
-        "prop_ai_informationAboutTraining": {
+        "prop_ai_AIPackage_ai_informationAboutTraining": {
                     "type": "string"
         },
-        "prop_ai_informationAboutApplication": {
+        "prop_ai_AIPackage_ai_informationAboutApplication": {
                     "type": "string"
         },
-        "prop_ai_hyperparameter": {
+        "prop_ai_AIPackage_ai_hyperparameter": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -3548,20 +3422,20 @@
                     }
                 ]
         },
-        "prop_ai_modelDataPreprocessing": {
+        "prop_ai_AIPackage_ai_modelDataPreprocessing": {
                     "type": "string"
         },
-        "prop_ai_modelExplainability": {
+        "prop_ai_AIPackage_ai_modelExplainability": {
                     "type": "string"
         },
-        "prop_ai_sensitivePersonalInformation": {
+        "prop_ai_AIPackage_ai_sensitivePersonalInformation": {
                 "enum": [
                     "no",
                     "noAssertion",
                     "yes"
                 ]
         },
-        "prop_ai_metricDecisionThreshold": {
+        "prop_ai_AIPackage_ai_metricDecisionThreshold": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -3570,7 +3444,7 @@
                     }
                 ]
         },
-        "prop_ai_metric": {
+        "prop_ai_AIPackage_ai_metric": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -3579,17 +3453,17 @@
                     }
                 ]
         },
-        "prop_ai_domain": {
+        "prop_ai_AIPackage_ai_domain": {
                     "type": "string"
         },
-        "prop_ai_autonomyType": {
+        "prop_ai_AIPackage_ai_autonomyType": {
                 "enum": [
                     "no",
                     "noAssertion",
                     "yes"
                 ]
         },
-        "prop_ai_safetyRiskAssessment": {
+        "prop_ai_AIPackage_ai_safetyRiskAssessment": {
                 "enum": [
                     "high",
                     "low",
@@ -3623,36 +3497,30 @@
                                     "type": "array",
                                     "minItems": 1,
                                     "items": {
-                                        "$ref": "#/$defs/prop_dataset_datasetType"
+                                        "$ref": "#/$defs/prop_dataset_Dataset_dataset_datasetType"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_dataset_datasetType"
                                 }
                             ]
                         },
                         "dataset_dataCollectionProcess": {
-                                    "$ref": "#/$defs/prop_dataset_dataCollectionProcess"
+                            "$ref": "#/$defs/prop_dataset_Dataset_dataset_dataCollectionProcess"
                         },
                         "dataset_intendedUse": {
-                                    "$ref": "#/$defs/prop_dataset_intendedUse"
+                            "$ref": "#/$defs/prop_dataset_Dataset_dataset_intendedUse"
                         },
                         "dataset_datasetSize": {
-                                    "$ref": "#/$defs/prop_dataset_datasetSize"
+                            "$ref": "#/$defs/prop_dataset_Dataset_dataset_datasetSize"
                         },
                         "dataset_datasetNoise": {
-                                    "$ref": "#/$defs/prop_dataset_datasetNoise"
+                            "$ref": "#/$defs/prop_dataset_Dataset_dataset_datasetNoise"
                         },
                         "dataset_dataPreprocessing": {
                             "oneOf": [
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_dataset_dataPreprocessing"
+                                        "$ref": "#/$defs/prop_dataset_Dataset_dataset_dataPreprocessing"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_dataset_dataPreprocessing"
                                 }
                             ]
                         },
@@ -3661,11 +3529,8 @@
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_dataset_sensor"
+                                        "$ref": "#/$defs/prop_dataset_Dataset_dataset_sensor"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_dataset_sensor"
                                 }
                             ]
                         },
@@ -3674,38 +3539,32 @@
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_dataset_knownBias"
+                                        "$ref": "#/$defs/prop_dataset_Dataset_dataset_knownBias"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_dataset_knownBias"
                                 }
                             ]
                         },
                         "dataset_sensitivePersonalInformation": {
-                                    "$ref": "#/$defs/prop_dataset_sensitivePersonalInformation"
+                            "$ref": "#/$defs/prop_dataset_Dataset_dataset_sensitivePersonalInformation"
                         },
                         "dataset_anonymizationMethodUsed": {
                             "oneOf": [
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_dataset_anonymizationMethodUsed"
+                                        "$ref": "#/$defs/prop_dataset_Dataset_dataset_anonymizationMethodUsed"
                                     }
-                                },
-                                {
-                                    "$ref": "#/$defs/prop_dataset_anonymizationMethodUsed"
                                 }
                             ]
                         },
                         "dataset_confidentialityLevel": {
-                                    "$ref": "#/$defs/prop_dataset_confidentialityLevel"
+                            "$ref": "#/$defs/prop_dataset_Dataset_dataset_confidentialityLevel"
                         },
                         "dataset_datasetUpdateMechanism": {
-                                    "$ref": "#/$defs/prop_dataset_datasetUpdateMechanism"
+                            "$ref": "#/$defs/prop_dataset_Dataset_dataset_datasetUpdateMechanism"
                         },
                         "dataset_datasetAvailability": {
-                                    "$ref": "#/$defs/prop_dataset_datasetAvailability"
+                            "$ref": "#/$defs/prop_dataset_Dataset_dataset_datasetAvailability"
                         }
                     },
                     "required": [
@@ -3714,7 +3573,7 @@
                 }
             ]
         },
-        "prop_dataset_datasetType": {
+        "prop_dataset_Dataset_dataset_datasetType": {
                 "enum": [
                     "audio",
                     "categorical",
@@ -3732,22 +3591,22 @@
                     "video"
                 ]
         },
-        "prop_dataset_dataCollectionProcess": {
+        "prop_dataset_Dataset_dataset_dataCollectionProcess": {
                     "type": "string"
         },
-        "prop_dataset_intendedUse": {
+        "prop_dataset_Dataset_dataset_intendedUse": {
                     "type": "string"
         },
-        "prop_dataset_datasetSize": {
+        "prop_dataset_Dataset_dataset_datasetSize": {
                     "type": "integer"
         },
-        "prop_dataset_datasetNoise": {
+        "prop_dataset_Dataset_dataset_datasetNoise": {
                     "type": "string"
         },
-        "prop_dataset_dataPreprocessing": {
+        "prop_dataset_Dataset_dataset_dataPreprocessing": {
                     "type": "string"
         },
-        "prop_dataset_sensor": {
+        "prop_dataset_Dataset_dataset_sensor": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {
@@ -3756,20 +3615,20 @@
                     }
                 ]
         },
-        "prop_dataset_knownBias": {
+        "prop_dataset_Dataset_dataset_knownBias": {
                     "type": "string"
         },
-        "prop_dataset_sensitivePersonalInformation": {
+        "prop_dataset_Dataset_dataset_sensitivePersonalInformation": {
                 "enum": [
                     "no",
                     "noAssertion",
                     "yes"
                 ]
         },
-        "prop_dataset_anonymizationMethodUsed": {
+        "prop_dataset_Dataset_dataset_anonymizationMethodUsed": {
                     "type": "string"
         },
-        "prop_dataset_confidentialityLevel": {
+        "prop_dataset_Dataset_dataset_confidentialityLevel": {
                 "enum": [
                     "amber",
                     "clear",
@@ -3777,10 +3636,10 @@
                     "red"
                 ]
         },
-        "prop_dataset_datasetUpdateMechanism": {
+        "prop_dataset_Dataset_dataset_datasetUpdateMechanism": {
                     "type": "string"
         },
-        "prop_dataset_datasetAvailability": {
+        "prop_dataset_Dataset_dataset_datasetAvailability": {
                 "enum": [
                     "clickthrough",
                     "directDownload",

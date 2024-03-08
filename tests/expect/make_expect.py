@@ -24,7 +24,7 @@ def main():
         if not src.is_file():
             continue
 
-        if not src.name.endswith(".jsonld"):
+        if not src.name.endswith(".jsonld") and not src.name.endswith(".ttl"):
             continue
 
         context = src.parent / (src.stem + "-context.json")

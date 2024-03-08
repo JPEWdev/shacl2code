@@ -49,6 +49,7 @@ class Property:
     enum_id: str = ""
     class_id: str = ""
     datatype: str = ""
+    pattern: str = ""
 
 
 @dataclass
@@ -143,22 +144,27 @@ class Model(object):
                     min_count=int_val(self.model.value(obj_prop, SH.minCount)),
                 )
 
-                range_id = self.model.value(
-                    prop,
-                    RDFS.range,
-                    default=self.model.value(obj_prop, SH.datatype),
-                )
-                if range_id is None:
-                    raise ModelException(f"Prop '{prop}' is missing range")
+                if range_id := self.model.value(obj_prop, SH["class"]):
+                    if range_id in enum_iris:
+                        p.enum_id = str(range_id)
 
-                if range_id in enum_iris:
-                    p.enum_id = str(range_id)
+                    elif range_id in class_iris:
+                        p.class_id = str(range_id)
 
-                elif range_id in class_iris:
-                    p.class_id = str(range_id)
+                    else:
+                        raise ModelException(
+                            f"Prop {prop} has unknown class restriction {range_id}"
+                        )
 
-                else:
+                elif range_id := self.model.value(obj_prop, SH.datatype):
                     p.datatype = str(range_id)
+                    if pattern := self.model.value(obj_prop, SH.pattern):
+                        p.pattern = str(pattern)
+
+                elif range_id := self.model.value(prop, RDFS.range):
+                    p.datatype = str(range_id)
+                else:
+                    raise ModelException(f"Prop '{prop}' is missing range")
 
                 c.properties.append(p)
 

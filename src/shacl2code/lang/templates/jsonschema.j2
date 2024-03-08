@@ -143,26 +143,15 @@
                 {%- endfor %}
                 ]
             {%- else %}
+                {%- if prop.pattern %}
+                    "pattern": "{{ prop.pattern | replace("\\", "\\\\") }}",
+                {%- endif %}
                 {%- if prop.datatype == "http://www.w3.org/2001/XMLSchema#string" %}
+                    "type": "string"
+                {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#dateTime" %}
                     "type": "string"
                 {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#anyURI" %}
                     "$ref": "#/$defs/anyURI"
-                {%- elif prop.datatype == "https://spdx.org/rdf/v3/Core/DateTime" %}
-                    "$ref": "#/$defs/DateTime"
-                {%- elif prop.datatype == "https://spdx.org/rdf/v3/Core/MediaType" %}
-                    "$ref": "#/$defs/MediaType"
-                {%- elif prop.datatype == "https://spdx.org/rdf/v3/Core/SemVer" %}
-                    "$ref": "#/$defs/SemVer"
-                {%- elif prop.datatype == "https://spdx.org/rdf/v3/Core/Extension" %}
-                    "$ref": "#/$defs/Extension"
-                {%- elif prop.datatype == "https://rdf.spdx.org/v3/Core/DateTime" %}
-                    "$ref": "#/$defs/DateTime"
-                {%- elif prop.datatype == "https://rdf.spdx.org/v3/Core/MediaType" %}
-                    "$ref": "#/$defs/MediaType"
-                {%- elif prop.datatype == "https://rdf.spdx.org/v3/Core/SemVer" %}
-                    "$ref": "#/$defs/SemVer"
-                {%- elif prop.datatype == "https://rdf.spdx.org/v3/Core/Extension" %}
-                    "$ref": "#/$defs/Extension"
                 {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#positiveInteger" %}
                     "type": "integer",
                     "minimum": 0

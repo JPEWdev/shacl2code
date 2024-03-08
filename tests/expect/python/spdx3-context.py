@@ -30,14 +30,16 @@ class Property(object):
 
     TYPE = None
 
-    def __init__(self):
-        pass
+    def __init__(self, *, pattern=None):
+        self.pattern = pattern
 
     def init(self):
         return None
 
     def validate(self, value):
         check_type(value, self.VALID_TYPES)
+        if self.pattern is not None and not re.search(self.pattern, self.set(value)):
+            raise ValueError(f"Value is not correctly formatted. Got '{value}'")
 
     def set(self, value):
         return value
@@ -84,15 +86,9 @@ class StringProp(Property):
 
     TYPE = None
     VALID_TYPES = str
-    REGEX = None
 
     def set(self, value):
         return str(value)
-
-    def validate(self, value):
-        super().validate(value)
-        if self.REGEX is not None and not re.match(self.REGEX, value):
-            raise ValueError(f"Value is not correctly formatted. Got '{value}'")
 
 
 class AnyURIProp(StringProp):
@@ -102,20 +98,6 @@ class AnyURIProp(StringProp):
         super().validate(value)
 
 
-class MediaTypeProp(StringProp):
-    TYPE = "https://spdx.org/rdf/v3/Core/MediaType"
-    REGEX = r"^([a-zA-Z0-9][-a-zA-Z0-9!#$&^_.+]{0,126})\/([a-zA-Z0-9][-a-zA-Z0-9!#$&^_.+]{0,126})(;.+)?$"
-
-
-class SemVerProp(StringProp):
-    TYPE = "https://spdx.org/rdf/v3/Core/SemVer"
-    REGEX = r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"
-
-
-class ExtensionProp(StringProp):
-    TYPE = "https://spdx.org/rdf/v3/Core/Extension"
-
-
 class DateTimeProp(Property):
     """
     A Date/Time Object
@@ -123,12 +105,13 @@ class DateTimeProp(Property):
 
     TYPE = "https://spdx.org/rdf/v3/Core/DateTime"
     VALID_TYPES = datetime
+    FORMAT_STR = "%Y-%m-%dT%H:%M:%SZ"
 
     def set(self, value):
-        return value.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        return value.astimezone(timezone.utc).strftime(self.FORMAT_STR)
 
     def get(self, value):
-        return datetime.fromisoformat(value)
+        return datetime.strptime(value, self.FORMAT_STR)
 
 
 class IntegerProp(Property):
@@ -2178,7 +2161,7 @@ class CreationInfo(SHACLObject):
         # Provides a reference number that can be used to understand how to parse and interpret an Element.
         self._add_property(
             "specVersion",
-            StringProp(),
+            StringProp(pattern=r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$",),
             json_name="https://rdf.spdx.org/v3/Core/specVersion",
             min_count=1,
         )
@@ -2191,7 +2174,7 @@ class CreationInfo(SHACLObject):
         # Identifies when the Element was originally created.
         self._add_property(
             "created",
-            StringProp(),
+            StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Core/created",
             min_count=1,
         )
@@ -2440,7 +2423,7 @@ class ExternalRef(SHACLObject):
         # Specifies the media type of an Element or Property.
         self._add_property(
             "contentType",
-            StringProp(),
+            StringProp(pattern=r"^[^\/]+\/[^\/]+$",),
             json_name="https://rdf.spdx.org/v3/Core/contentType",
         )
         # Provide consumers with comments by the creator of the Element about the Element.
@@ -2585,13 +2568,13 @@ class Relationship(Element):
         # Specifies the time from which an element is applicable / valid.
         self._add_property(
             "startTime",
-            StringProp(),
+            StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Core/startTime",
         )
         # Specifies the time from which an element is no longer applicable / valid.
         self._add_property(
             "endTime",
-            StringProp(),
+            StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Core/endTime",
         )
         self._set_init_props(**kwargs)
@@ -2747,7 +2730,7 @@ class security_VulnAssessmentRelationship(Relationship):
         # Specifies the time when a vulnerability was published.
         self._add_property(
             "security_publishedTime",
-            StringProp(),
+            StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Security/publishedTime",
         )
         # Identifies who or what supplied the artifact or VulnAssessmentRelationship referenced by the Element.
@@ -2759,13 +2742,13 @@ class security_VulnAssessmentRelationship(Relationship):
         # Specifies a time when a vulnerability assessment was modified
         self._add_property(
             "security_modifiedTime",
-            StringProp(),
+            StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Security/modifiedTime",
         )
         # Specified the time and date when a vulnerability was withdrawn.
         self._add_property(
             "security_withdrawnTime",
-            StringProp(),
+            StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Security/withdrawnTime",
         )
         self._set_init_props(**kwargs)
@@ -2804,7 +2787,7 @@ class simplelicensing_LicenseExpression(simplelicensing_AnyLicenseInfo):
         # The version of the SPDX License List used in the license expression.
         self._add_property(
             "simplelicensing_licenseListVersion",
-            StringProp(),
+            StringProp(pattern=r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$",),
             json_name="https://rdf.spdx.org/v3/SimpleLicensing/licenseListVersion",
         )
         # Maps a LicenseRef or AdditionRef string for a Custom License or a Custom License Addition to its URI ID.
@@ -2884,13 +2867,13 @@ class build_Build(Element):
         # Property describing the start time of a build.
         self._add_property(
             "build_buildStartTime",
-            StringProp(),
+            StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Build/buildStartTime",
         )
         # Property that describes the time at which a build stops.
         self._add_property(
             "build_buildEndTime",
-            StringProp(),
+            StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Build/buildEndTime",
         )
         # Property describing the session in which a build is invoked.
@@ -2933,7 +2916,7 @@ class Annotation(Element):
         # Specifies the media type of an Element or Property.
         self._add_property(
             "contentType",
-            StringProp(),
+            StringProp(pattern=r"^[^\/]+\/[^\/]+$",),
             json_name="https://rdf.spdx.org/v3/Core/contentType",
         )
         # Commentary on an assertion that an annotator has made.
@@ -2976,19 +2959,19 @@ class Artifact(Element):
         # Specifies the time an artifact was built.
         self._add_property(
             "builtTime",
-            StringProp(),
+            StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Core/builtTime",
         )
         # Specifies the time an artifact was released.
         self._add_property(
             "releaseTime",
-            StringProp(),
+            StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Core/releaseTime",
         )
         # Specifies until when the artifact can be used before its usage needs to be reassessed.
         self._add_property(
             "validUntilTime",
-            StringProp(),
+            StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Core/validUntilTime",
         )
         # The name of a relevant standard that may apply to an artifact.
@@ -3444,7 +3427,7 @@ class security_EpssVulnAssessmentRelationship(security_VulnAssessmentRelationshi
         # Specifies the time when a vulnerability was published.
         self._add_property(
             "security_publishedTime",
-            StringProp(),
+            StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Security/publishedTime",
             min_count=1,
         )
@@ -3539,19 +3522,19 @@ class security_Vulnerability(Artifact):
         # Specifies the time when a vulnerability was published.
         self._add_property(
             "security_publishedTime",
-            StringProp(),
+            StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Security/publishedTime",
         )
         # Specifies a time when a vulnerability assessment was modified
         self._add_property(
             "security_modifiedTime",
-            StringProp(),
+            StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Security/modifiedTime",
         )
         # Specified the time and date when a vulnerability was withdrawn.
         self._add_property(
             "security_withdrawnTime",
-            StringProp(),
+            StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Security/withdrawnTime",
         )
         self._set_init_props(**kwargs)
@@ -3648,7 +3631,7 @@ class security_VexAffectedVulnAssessmentRelationship(security_VexVulnAssessmentR
         # to mitigate a vulnerability.
         self._add_property(
             "security_actionStatementTime",
-            ListProp(StringProp()),
+            ListProp(StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",)),
             json_name="https://rdf.spdx.org/v3/Security/actionStatementTime",
         )
         self._set_init_props(**kwargs)
@@ -3696,7 +3679,7 @@ class security_VexNotAffectedVulnAssessmentRelationship(security_VexVulnAssessme
         # Timestamp of impact statement.
         self._add_property(
             "security_impactStatementTime",
-            StringProp(),
+            StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Security/impactStatementTime",
         )
         self._set_init_props(**kwargs)
@@ -3727,7 +3710,7 @@ class software_File(software_SoftwareArtifact):
         # Provides information about the content type of an Element.
         self._add_property(
             "software_contentType",
-            StringProp(),
+            StringProp(pattern=r"^[^\/]+\/[^\/]+$",),
             json_name="https://rdf.spdx.org/v3/Software/contentType",
         )
         # If true, denotes the Element is a directory.

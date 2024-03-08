@@ -30,14 +30,16 @@ class Property(object):
 
     TYPE = None
 
-    def __init__(self):
-        pass
+    def __init__(self, *, pattern=None):
+        self.pattern = pattern
 
     def init(self):
         return None
 
     def validate(self, value):
         check_type(value, self.VALID_TYPES)
+        if self.pattern is not None and not re.search(self.pattern, self.set(value)):
+            raise ValueError(f"Value is not correctly formatted. Got '{value}'")
 
     def set(self, value):
         return value
@@ -84,15 +86,9 @@ class StringProp(Property):
 
     TYPE = None
     VALID_TYPES = str
-    REGEX = None
 
     def set(self, value):
         return str(value)
-
-    def validate(self, value):
-        super().validate(value)
-        if self.REGEX is not None and not re.match(self.REGEX, value):
-            raise ValueError(f"Value is not correctly formatted. Got '{value}'")
 
 
 class AnyURIProp(StringProp):
@@ -102,20 +98,6 @@ class AnyURIProp(StringProp):
         super().validate(value)
 
 
-class MediaTypeProp(StringProp):
-    TYPE = "https://spdx.org/rdf/v3/Core/MediaType"
-    REGEX = r"^([a-zA-Z0-9][-a-zA-Z0-9!#$&^_.+]{0,126})\/([a-zA-Z0-9][-a-zA-Z0-9!#$&^_.+]{0,126})(;.+)?$"
-
-
-class SemVerProp(StringProp):
-    TYPE = "https://spdx.org/rdf/v3/Core/SemVer"
-    REGEX = r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"
-
-
-class ExtensionProp(StringProp):
-    TYPE = "https://spdx.org/rdf/v3/Core/Extension"
-
-
 class DateTimeProp(Property):
     """
     A Date/Time Object
@@ -123,12 +105,13 @@ class DateTimeProp(Property):
 
     TYPE = "https://spdx.org/rdf/v3/Core/DateTime"
     VALID_TYPES = datetime
+    FORMAT_STR = "%Y-%m-%dT%H:%M:%SZ"
 
     def set(self, value):
-        return value.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        return value.astimezone(timezone.utc).strftime(self.FORMAT_STR)
 
     def get(self, value):
-        return datetime.fromisoformat(value)
+        return datetime.strptime(value, self.FORMAT_STR)
 
 
 class IntegerProp(Property):
@@ -819,18 +802,11 @@ def print_tree(objects, all_fields=False):
 DATATYPE_CLASSES = {
     "http://www.w3.org/2001/XMLSchema#string": "StringProp",
     "http://www.w3.org/2001/XMLSchema#anyURI": "AnyURIProp",
-    "https://spdx.org/rdf/v3/Core/DateTime": "DateTimeProp",
-    "https://spdx.org/rdf/v3/Core/MediaType": "MediaTypeProp",
-    "https://spdx.org/rdf/v3/Core/SemVer": "SemVerProp",
-    "https://spdx.org/rdf/v3/Core/Extension": "ExtensionProp",
-    "https://rdf.spdx.org/v3/Core/DateTime": "DateTimeProp",
-    "https://rdf.spdx.org/v3/Core/MediaType": "MediaTypeProp",
-    "https://rdf.spdx.org/v3/Core/SemVer": "SemVerProp",
-    "https://rdf.spdx.org/v3/Core/Extension": "ExtensionProp",
     "http://www.w3.org/2001/XMLSchema#positiveInteger": "PositiveIntegerProp",
     "http://www.w3.org/2001/XMLSchema#nonNegativeInteger": "NonNegativeIntegerProp",
     "http://www.w3.org/2001/XMLSchema#boolean": "BooleanProp",
     "http://www.w3.org/2001/XMLSchema#decimal": "FloatProp",
+    "http://www.w3.org/2001/XMLSchema#dateTime": "DateTimeProp",
 }
 %}
 
@@ -921,7 +897,7 @@ class {{ class.clsname }}(
                 {% if not prop.datatype in DATATYPE_CLASSES -%}
                     {{ abort("Unknown data type " + prop.datatype) -}}
                 {% endif -%}
-                {{ DATATYPE_CLASSES[prop.datatype] }}()
+                {{ DATATYPE_CLASSES[prop.datatype] }}({%- if prop.pattern %}pattern=r"{{ prop.pattern }}",{%- endif %})
             {%- endif %}{% if is_list %}){% endif %},
             json_name="{{ prop.path }}",
             {%- if is_list and not prop.max_count is none %}

@@ -91,12 +91,14 @@
             ]
         },
         "prop_https:__rdf.spdx.org_v3_Core_specVersion": {
+                    "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
                     "type": "string"
         },
         "prop_https:__rdf.spdx.org_v3_Core_comment": {
                     "type": "string"
         },
         "prop_https:__rdf.spdx.org_v3_Core_created": {
+                    "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
         "prop_https:__rdf.spdx.org_v3_Core_createdBy": {
@@ -707,6 +709,7 @@
                     "type": "string"
         },
         "prop_https:__rdf.spdx.org_v3_Core_contentType": {
+                    "pattern": "^[^\\/]+\\/[^\\/]+$",
                     "type": "string"
         },
         "prop_https:__rdf.spdx.org_v3_Core_comment": {
@@ -1033,9 +1036,11 @@
                 ]
         },
         "prop_https:__rdf.spdx.org_v3_Core_startTime": {
+                    "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
         "prop_https:__rdf.spdx.org_v3_Core_endTime": {
+                    "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
         "https_rdfspdxorgv3CoreSpdxDocument": {
@@ -1337,6 +1342,7 @@
                 ]
         },
         "prop_https:__rdf.spdx.org_v3_Security_publishedTime": {
+                    "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
         "prop_https:__rdf.spdx.org_v3_Core_suppliedBy": {
@@ -1349,9 +1355,11 @@
                 ]
         },
         "prop_https:__rdf.spdx.org_v3_Security_modifiedTime": {
+                    "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
         "prop_https:__rdf.spdx.org_v3_Security_withdrawnTime": {
+                    "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
         "https_rdfspdxorgv3SimpleLicensingAnyLicenseInfo": {
@@ -1438,6 +1446,7 @@
                     "type": "string"
         },
         "prop_https:__rdf.spdx.org_v3_SimpleLicensing_licenseListVersion": {
+                    "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
                     "type": "string"
         },
         "prop_https:__rdf.spdx.org_v3_SimpleLicensing_customIdToUri": {
@@ -1617,9 +1626,11 @@
                 ]
         },
         "prop_https:__rdf.spdx.org_v3_Build_buildStartTime": {
+                    "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
         "prop_https:__rdf.spdx.org_v3_Build_buildEndTime": {
+                    "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
         "prop_https:__rdf.spdx.org_v3_Build_environment": {
@@ -1705,6 +1716,7 @@
                 ]
         },
         "prop_https:__rdf.spdx.org_v3_Core_contentType": {
+                    "pattern": "^[^\\/]+\\/[^\\/]+$",
                     "type": "string"
         },
         "prop_https:__rdf.spdx.org_v3_Core_statement": {
@@ -1820,12 +1832,15 @@
                 ]
         },
         "prop_https:__rdf.spdx.org_v3_Core_builtTime": {
+                    "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
         "prop_https:__rdf.spdx.org_v3_Core_releaseTime": {
+                    "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
         "prop_https:__rdf.spdx.org_v3_Core_validUntilTime": {
+                    "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
         "prop_https:__rdf.spdx.org_v3_Core_standardName": {
@@ -2631,6 +2646,7 @@
                     "type": "number"
         },
         "prop_https:__rdf.spdx.org_v3_Security_publishedTime": {
+                    "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
         "https_rdfspdxorgv3SecurityExploitCatalogVulnAssessmentRelationship": {
@@ -2795,12 +2811,15 @@
             ]
         },
         "prop_https:__rdf.spdx.org_v3_Security_publishedTime": {
+                    "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
         "prop_https:__rdf.spdx.org_v3_Security_modifiedTime": {
+                    "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
         "prop_https:__rdf.spdx.org_v3_Security_withdrawnTime": {
+                    "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
         "https_rdfspdxorgv3SoftwareSoftwareArtifact": {
@@ -3046,6 +3065,7 @@
                     "type": "string"
         },
         "prop_https:__rdf.spdx.org_v3_Security_actionStatementTime": {
+                    "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
         "https_rdfspdxorgv3SecurityVexFixedVulnAssessmentRelationship": {
@@ -3118,6 +3138,7 @@
                     "type": "string"
         },
         "prop_https:__rdf.spdx.org_v3_Security_impactStatementTime": {
+                    "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
         "https_rdfspdxorgv3SecurityVexUnderInvestigationVulnAssessmentRelationship": {
@@ -3175,6 +3196,7 @@
             ]
         },
         "prop_https:__rdf.spdx.org_v3_Software_contentType": {
+                    "pattern": "^[^\\/]+\\/[^\\/]+$",
                     "type": "string"
         },
         "prop_https:__rdf.spdx.org_v3_Software_isDirectory": {

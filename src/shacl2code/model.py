@@ -191,7 +191,14 @@ class Model(object):
                         p.pattern = str(pattern)
 
                 elif range_id := self.model.value(prop, RDFS.range):
-                    p.datatype = str(range_id)
+                    if range_id in enum_iris:
+                        p.enum_id = str(range_id)
+
+                    elif range_id in class_iris:
+                        p.class_id = str(range_id)
+
+                    else:
+                        p.datatype = str(range_id)
                 else:
                     raise ModelException(f"Prop '{prop}' is missing range")
 

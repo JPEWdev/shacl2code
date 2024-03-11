@@ -93,7 +93,7 @@
                         {%- endif %}
                         {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
                         "{{ context.compact(prop.path) }}": {
-                        {%- set prop_ref = "#/$defs/prop_" + class.clsname + "_" + ( context.compact(prop.path) | replace("/", "_") ) %}
+                        {%- set prop_ref = "#/$defs/prop_" + class.clsname + "_" + prop.varname %}
                         {%- if is_list %}
                             "oneOf": [
                                 {
@@ -129,7 +129,7 @@
             ]
         },
         {%- for prop in class.properties %}
-        "prop_{{ class.clsname }}_{{ context.compact(prop.path) | replace("/", "_") }}": {
+        "prop_{{ class.clsname }}_{{ prop.varname }}": {
             {%- if prop.class_id %}
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },

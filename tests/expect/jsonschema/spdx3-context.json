@@ -877,7 +877,7 @@
                 {
                     "properties": {
                         "from": {
-                            "$ref": "#/$defs/prop_Relationship_from"
+                            "$ref": "#/$defs/prop_Relationship_from_"
                         },
                         "to": {
                             "oneOf": [
@@ -909,7 +909,7 @@
                 }
             ]
         },
-        "prop_Relationship_from": {
+        "prop_Relationship_from_": {
                 "oneOf": [
                     { "$ref": "#/$defs/idRef" },
                     {

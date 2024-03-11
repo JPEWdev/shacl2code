@@ -1688,34 +1688,34 @@ class https_rdfspdxorgv3CoreCreationInfo(SHACLObject):
         super().__init__()
         # Provides a reference number that can be used to understand how to parse and interpret an Element.
         self._add_property(
-            "httpsrdfspdxorgv3CorespecVersion",
+            "specVersion",
             StringProp(pattern=r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$",),
             json_name="https://rdf.spdx.org/v3/Core/specVersion",
             min_count=1,
         )
         # Provide consumers with comments by the creator of the Element about the Element.
         self._add_property(
-            "httpsrdfspdxorgv3Corecomment",
+            "comment",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Core/comment",
         )
         # Identifies when the Element was originally created.
         self._add_property(
-            "httpsrdfspdxorgv3Corecreated",
+            "created",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Core/created",
             min_count=1,
         )
         # Identifies who or what created the Element.
         self._add_property(
-            "httpsrdfspdxorgv3CorecreatedBy",
+            "createdBy",
             ListProp(ObjectProp(https_rdfspdxorgv3CoreAgent, False)),
             json_name="https://rdf.spdx.org/v3/Core/createdBy",
             min_count=1,
         )
         # Identifies the tooling that was used during the creation of the Element.
         self._add_property(
-            "httpsrdfspdxorgv3CorecreatedUsing",
+            "createdUsing",
             ListProp(ObjectProp(https_rdfspdxorgv3CoreTool, False)),
             json_name="https://rdf.spdx.org/v3/Core/createdUsing",
         )
@@ -1733,14 +1733,14 @@ class https_rdfspdxorgv3CoreDictionaryEntry(SHACLObject):
         super().__init__()
         # A key used in a generic key-value pair.
         self._add_property(
-            "httpsrdfspdxorgv3Corekey",
+            "key",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Core/key",
             min_count=1,
         )
         # A value used in a generic key-value pair.
         self._add_property(
-            "httpsrdfspdxorgv3Corevalue",
+            "value",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Core/value",
         )
@@ -1758,58 +1758,58 @@ class https_rdfspdxorgv3CoreElement(SHACLObject):
         super().__init__()
         # Identifies the name of an Element as designated by the creator.
         self._add_property(
-            "httpsrdfspdxorgv3Corename",
+            "name",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Core/name",
         )
         # A short description of an Element.
         self._add_property(
-            "httpsrdfspdxorgv3Coresummary",
+            "summary",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Core/summary",
         )
         # Provides a detailed description of the Element.
         self._add_property(
-            "httpsrdfspdxorgv3Coredescription",
+            "description",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Core/description",
         )
         # Provide consumers with comments by the creator of the Element about the Element.
         self._add_property(
-            "httpsrdfspdxorgv3Corecomment",
+            "comment",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Core/comment",
         )
         # Provides information about the creation of the Element.
         self._add_property(
-            "httpsrdfspdxorgv3CorecreationInfo",
+            "creationInfo",
             ObjectProp(https_rdfspdxorgv3CoreCreationInfo, True),
             json_name="https://rdf.spdx.org/v3/Core/creationInfo",
             min_count=1,
         )
         # Provides an IntegrityMethod with which the integrity of an Element can be asserted.
         self._add_property(
-            "httpsrdfspdxorgv3CoreverifiedUsing",
+            "verifiedUsing",
             ListProp(ObjectProp(https_rdfspdxorgv3CoreIntegrityMethod, False)),
             json_name="https://rdf.spdx.org/v3/Core/verifiedUsing",
         )
         # Points to a resource outside the scope of the SPDX-3.0 content
         # that provides additional characteristics of an Element.
         self._add_property(
-            "httpsrdfspdxorgv3CoreexternalRef",
+            "externalRef",
             ListProp(ObjectProp(https_rdfspdxorgv3CoreExternalRef, False)),
             json_name="https://rdf.spdx.org/v3/Core/externalRef",
         )
         # Provides a reference to a resource outside the scope of SPDX-3.0 content
         # that uniquely identifies an Element.
         self._add_property(
-            "httpsrdfspdxorgv3CoreexternalIdentifier",
+            "externalIdentifier",
             ListProp(ObjectProp(https_rdfspdxorgv3CoreExternalIdentifier, False)),
             json_name="https://rdf.spdx.org/v3/Core/externalIdentifier",
         )
         # Specifies an Extension characterization of some aspect of an Element.
         self._add_property(
-            "httpsrdfspdxorgv3Coreextension",
+            "extension",
             ListProp(ObjectProp(https_rdfspdxorgv3ExtensionExtension, False)),
             json_name="https://rdf.spdx.org/v3/Core/extension",
         )
@@ -1827,19 +1827,19 @@ class https_rdfspdxorgv3CoreElementCollection(https_rdfspdxorgv3CoreElement):
         super().__init__()
         # Refers to one or more Elements that are part of an ElementCollection.
         self._add_property(
-            "httpsrdfspdxorgv3Coreelement",
+            "element",
             ListProp(ObjectProp(https_rdfspdxorgv3CoreElement, False)),
             json_name="https://rdf.spdx.org/v3/Core/element",
         )
         # This property is used to denote the root Element(s) of a tree of elements contained in an SBOM.
         self._add_property(
-            "httpsrdfspdxorgv3CorerootElement",
+            "rootElement",
             ListProp(ObjectProp(https_rdfspdxorgv3CoreElement, False)),
             json_name="https://rdf.spdx.org/v3/Core/rootElement",
         )
         # Describes one a profile which the creator of this ElementCollection intends to conform to.
         self._add_property(
-            "httpsrdfspdxorgv3CoreprofileConformance",
+            "profileConformance",
             ListProp(https_rdfspdxorgv3CoreProfileIdentifierType()),
             json_name="https://rdf.spdx.org/v3/Core/profileConformance",
         )
@@ -1857,33 +1857,33 @@ class https_rdfspdxorgv3CoreExternalIdentifier(SHACLObject):
         super().__init__()
         # Specifies the type of the external identifier.
         self._add_property(
-            "httpsrdfspdxorgv3CoreexternalIdentifierType",
+            "externalIdentifierType",
             https_rdfspdxorgv3CoreExternalIdentifierType(),
             json_name="https://rdf.spdx.org/v3/Core/externalIdentifierType",
             min_count=1,
         )
         # Uniquely identifies an external element.
         self._add_property(
-            "httpsrdfspdxorgv3Coreidentifier",
+            "identifier",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Core/identifier",
             min_count=1,
         )
         # Provide consumers with comments by the creator of the Element about the Element.
         self._add_property(
-            "httpsrdfspdxorgv3Corecomment",
+            "comment",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Core/comment",
         )
         # Provides the location for more information regarding an external identifier.
         self._add_property(
-            "httpsrdfspdxorgv3CoreidentifierLocator",
+            "identifierLocator",
             ListProp(AnyURIProp()),
             json_name="https://rdf.spdx.org/v3/Core/identifierLocator",
         )
         # An entity that is authorized to issue identification credentials.
         self._add_property(
-            "httpsrdfspdxorgv3CoreissuingAuthority",
+            "issuingAuthority",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Core/issuingAuthority",
         )
@@ -1901,26 +1901,26 @@ class https_rdfspdxorgv3CoreExternalMap(SHACLObject):
         super().__init__()
         # Identifies an external Element used within a Document but defined external to that Document.
         self._add_property(
-            "httpsrdfspdxorgv3CoreexternalSpdxId",
+            "externalSpdxId",
             AnyURIProp(),
             json_name="https://rdf.spdx.org/v3/Core/externalSpdxId",
             min_count=1,
         )
         # Provides an IntegrityMethod with which the integrity of an Element can be asserted.
         self._add_property(
-            "httpsrdfspdxorgv3CoreverifiedUsing",
+            "verifiedUsing",
             ListProp(ObjectProp(https_rdfspdxorgv3CoreIntegrityMethod, False)),
             json_name="https://rdf.spdx.org/v3/Core/verifiedUsing",
         )
         # Provides an indication of where to retrieve an external Element.
         self._add_property(
-            "httpsrdfspdxorgv3CorelocationHint",
+            "locationHint",
             AnyURIProp(),
             json_name="https://rdf.spdx.org/v3/Core/locationHint",
         )
         # Artifact representing a serialization instance of SPDX data containing the definition of a particular Element.
         self._add_property(
-            "httpsrdfspdxorgv3CoredefiningArtifact",
+            "definingArtifact",
             ObjectProp(https_rdfspdxorgv3CoreArtifact, False),
             json_name="https://rdf.spdx.org/v3/Core/definingArtifact",
         )
@@ -1938,25 +1938,25 @@ class https_rdfspdxorgv3CoreExternalRef(SHACLObject):
         super().__init__()
         # Specifies the type of the external reference.
         self._add_property(
-            "httpsrdfspdxorgv3CoreexternalRefType",
+            "externalRefType",
             https_rdfspdxorgv3CoreExternalRefType(),
             json_name="https://rdf.spdx.org/v3/Core/externalRefType",
         )
         # Provides the location of an external reference.
         self._add_property(
-            "httpsrdfspdxorgv3Corelocator",
+            "locator",
             ListProp(StringProp()),
             json_name="https://rdf.spdx.org/v3/Core/locator",
         )
         # Specifies the media type of an Element or Property.
         self._add_property(
-            "httpsrdfspdxorgv3CorecontentType",
+            "contentType",
             StringProp(pattern=r"^[^\/]+\/[^\/]+$",),
             json_name="https://rdf.spdx.org/v3/Core/contentType",
         )
         # Provide consumers with comments by the creator of the Element about the Element.
         self._add_property(
-            "httpsrdfspdxorgv3Corecomment",
+            "comment",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Core/comment",
         )
@@ -1974,7 +1974,7 @@ class https_rdfspdxorgv3CoreIntegrityMethod(SHACLObject):
         super().__init__()
         # Provide consumers with comments by the creator of the Element about the Element.
         self._add_property(
-            "httpsrdfspdxorgv3Corecomment",
+            "comment",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Core/comment",
         )
@@ -1992,14 +1992,14 @@ class https_rdfspdxorgv3CoreNamespaceMap(SHACLObject):
         super().__init__()
         # A substitute for a URI.
         self._add_property(
-            "httpsrdfspdxorgv3Coreprefix",
+            "prefix",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Core/prefix",
             min_count=1,
         )
         # Provides an unambiguous mechanism for conveying a URI fragment portion of an ElementID.
         self._add_property(
-            "httpsrdfspdxorgv3Corenamespace",
+            "namespace",
             AnyURIProp(),
             json_name="https://rdf.spdx.org/v3/Core/namespace",
             min_count=1,
@@ -2018,14 +2018,14 @@ class https_rdfspdxorgv3CorePackageVerificationCode(https_rdfspdxorgv3CoreIntegr
         super().__init__()
         # The result of applying a hash algorithm to an Element.
         self._add_property(
-            "httpsrdfspdxorgv3CorehashValue",
+            "hashValue",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Core/hashValue",
             min_count=1,
         )
         # The relative file name of a file to be excluded from the `PackageVerificationCode`.
         self._add_property(
-            "httpsrdfspdxorgv3CorepackageVerificationCodeExcludedFile",
+            "packageVerificationCodeExcludedFile",
             ListProp(StringProp()),
             json_name="https://rdf.spdx.org/v3/Core/packageVerificationCodeExcludedFile",
         )
@@ -2043,14 +2043,14 @@ class https_rdfspdxorgv3CorePositiveIntegerRange(SHACLObject):
         super().__init__()
         # Defines the beginning of a range.
         self._add_property(
-            "httpsrdfspdxorgv3CorebeginIntegerRange",
+            "beginIntegerRange",
             PositiveIntegerProp(),
             json_name="https://rdf.spdx.org/v3/Core/beginIntegerRange",
             min_count=1,
         )
         # Defines the end of a range.
         self._add_property(
-            "httpsrdfspdxorgv3CoreendIntegerRange",
+            "endIntegerRange",
             PositiveIntegerProp(),
             json_name="https://rdf.spdx.org/v3/Core/endIntegerRange",
             min_count=1,
@@ -2069,39 +2069,39 @@ class https_rdfspdxorgv3CoreRelationship(https_rdfspdxorgv3CoreElement):
         super().__init__()
         # References the Element on the left-hand side of a relationship.
         self._add_property(
-            "httpsrdfspdxorgv3Corefrom",
+            "from_",
             ObjectProp(https_rdfspdxorgv3CoreElement, True),
             json_name="https://rdf.spdx.org/v3/Core/from",
             min_count=1,
         )
         # References an Element on the right-hand side of a relationship.
         self._add_property(
-            "httpsrdfspdxorgv3Coreto",
+            "to",
             ListProp(ObjectProp(https_rdfspdxorgv3CoreElement, False)),
             json_name="https://rdf.spdx.org/v3/Core/to",
         )
         # Information about the relationship between two Elements.
         self._add_property(
-            "httpsrdfspdxorgv3CorerelationshipType",
+            "relationshipType",
             https_rdfspdxorgv3CoreRelationshipType(),
             json_name="https://rdf.spdx.org/v3/Core/relationshipType",
             min_count=1,
         )
         # Provides information about the completeness of relationships.
         self._add_property(
-            "httpsrdfspdxorgv3Corecompleteness",
+            "completeness",
             https_rdfspdxorgv3CoreRelationshipCompleteness(),
             json_name="https://rdf.spdx.org/v3/Core/completeness",
         )
         # Specifies the time from which an element is applicable / valid.
         self._add_property(
-            "httpsrdfspdxorgv3CorestartTime",
+            "startTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Core/startTime",
         )
         # Specifies the time from which an element is no longer applicable / valid.
         self._add_property(
-            "httpsrdfspdxorgv3CoreendTime",
+            "endTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Core/endTime",
         )
@@ -2119,19 +2119,19 @@ class https_rdfspdxorgv3CoreSpdxDocument(https_rdfspdxorgv3CoreElementCollection
         super().__init__()
         # Provides an ExternalMap of Element identifiers.
         self._add_property(
-            "httpsrdfspdxorgv3Coreimports",
+            "imports",
             ListProp(ObjectProp(https_rdfspdxorgv3CoreExternalMap, False)),
             json_name="https://rdf.spdx.org/v3/Core/imports",
         )
         # Provides a NamespaceMap of prefixes and associated namespace partial URIs applicable to an SpdxDocument and independent of any specific serialization format or instance.
         self._add_property(
-            "httpsrdfspdxorgv3CorenamespaceMap",
+            "namespaceMap",
             ListProp(ObjectProp(https_rdfspdxorgv3CoreNamespaceMap, False)),
             json_name="https://rdf.spdx.org/v3/Core/namespaceMap",
         )
         # Provides the license under which the SPDX documentation of the Element can be used.
         self._add_property(
-            "httpsrdfspdxorgv3CoredataLicense",
+            "dataLicense",
             ObjectProp(https_rdfspdxorgv3SimpleLicensingAnyLicenseInfo, False),
             json_name="https://rdf.spdx.org/v3/Core/dataLicense",
         )
@@ -2162,39 +2162,39 @@ class https_rdfspdxorgv3ExpandedLicensingLicenseAddition(https_rdfspdxorgv3CoreE
         super().__init__()
         # Identifies the full text of a LicenseAddition.
         self._add_property(
-            "httpsrdfspdxorgv3ExpandedLicensingadditionText",
+            "additionText",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/ExpandedLicensing/additionText",
             min_count=1,
         )
         # Identifies the full text of a LicenseAddition, in SPDX templating format.
         self._add_property(
-            "httpsrdfspdxorgv3ExpandedLicensingstandardAdditionTemplate",
+            "standardAdditionTemplate",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/ExpandedLicensing/standardAdditionTemplate",
         )
         # Specifies whether an additional text identifier has been marked as deprecated.
         self._add_property(
-            "httpsrdfspdxorgv3ExpandedLicensingisDeprecatedAdditionId",
+            "isDeprecatedAdditionId",
             BooleanProp(),
             json_name="https://rdf.spdx.org/v3/ExpandedLicensing/isDeprecatedAdditionId",
         )
         # Specifies the licenseId that is preferred to be used in place of a deprecated
         # License or LicenseAddition.
         self._add_property(
-            "httpsrdfspdxorgv3ExpandedLicensingobsoletedBy",
+            "obsoletedBy",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/ExpandedLicensing/obsoletedBy",
         )
         # Identifies all the text and metadata associated with a license in the license XML format.
         self._add_property(
-            "httpsrdfspdxorgv3ExpandedLicensinglicenseXml",
+            "licenseXml",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/ExpandedLicensing/licenseXml",
         )
         # Contains a URL where the License or LicenseAddition can be found in use.
         self._add_property(
-            "httpsrdfspdxorgv3ExpandedLicensingseeAlso",
+            "seeAlso",
             ListProp(AnyURIProp()),
             json_name="https://rdf.spdx.org/v3/ExpandedLicensing/seeAlso",
         )
@@ -2213,14 +2213,14 @@ class https_rdfspdxorgv3ExpandedLicensingListedLicenseException(https_rdfspdxorg
         # Specifies the SPDX License List version in which this ListedLicense or
         # ListedLicenseException identifier was first added.
         self._add_property(
-            "httpsrdfspdxorgv3ExpandedLicensinglistVersionAdded",
+            "listVersionAdded",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/ExpandedLicensing/listVersionAdded",
         )
         # Specifies the SPDX License List version in which this license or exception
         # identifier was deprecated.
         self._add_property(
-            "httpsrdfspdxorgv3ExpandedLicensingdeprecatedVersion",
+            "deprecatedVersion",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/ExpandedLicensing/deprecatedVersion",
         )
@@ -2251,31 +2251,31 @@ class https_rdfspdxorgv3SecurityVulnAssessmentRelationship(https_rdfspdxorgv3Cor
         # Specifies an element contained in a piece of software where a vulnerability was
         # found.
         self._add_property(
-            "httpsrdfspdxorgv3SecurityassessedElement",
+            "assessedElement",
             ObjectProp(https_rdfspdxorgv3CoreElement, False),
             json_name="https://rdf.spdx.org/v3/Security/assessedElement",
         )
         # Specifies the time when a vulnerability was published.
         self._add_property(
-            "httpsrdfspdxorgv3SecuritypublishedTime",
+            "publishedTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Security/publishedTime",
         )
         # Identifies who or what supplied the artifact or VulnAssessmentRelationship referenced by the Element.
         self._add_property(
-            "httpsrdfspdxorgv3CoresuppliedBy",
+            "CoresuppliedBy",
             ObjectProp(https_rdfspdxorgv3CoreAgent, False),
             json_name="https://rdf.spdx.org/v3/Core/suppliedBy",
         )
         # Specifies a time when a vulnerability assessment was modified
         self._add_property(
-            "httpsrdfspdxorgv3SecuritymodifiedTime",
+            "modifiedTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Security/modifiedTime",
         )
         # Specified the time and date when a vulnerability was withdrawn.
         self._add_property(
-            "httpsrdfspdxorgv3SecuritywithdrawnTime",
+            "withdrawnTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Security/withdrawnTime",
         )
@@ -2307,20 +2307,20 @@ class https_rdfspdxorgv3SimpleLicensingLicenseExpression(https_rdfspdxorgv3Simpl
         super().__init__()
         # A string in the license expression format.
         self._add_property(
-            "httpsrdfspdxorgv3SimpleLicensinglicenseExpression",
+            "licenseExpression",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/SimpleLicensing/licenseExpression",
             min_count=1,
         )
         # The version of the SPDX License List used in the license expression.
         self._add_property(
-            "httpsrdfspdxorgv3SimpleLicensinglicenseListVersion",
+            "licenseListVersion",
             StringProp(pattern=r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$",),
             json_name="https://rdf.spdx.org/v3/SimpleLicensing/licenseListVersion",
         )
         # Maps a LicenseRef or AdditionRef string for a Custom License or a Custom License Addition to its URI ID.
         self._add_property(
-            "httpsrdfspdxorgv3SimpleLicensingcustomIdToUri",
+            "customIdToUri",
             ListProp(ObjectProp(https_rdfspdxorgv3CoreDictionaryEntry, False)),
             json_name="https://rdf.spdx.org/v3/SimpleLicensing/customIdToUri",
         )
@@ -2338,7 +2338,7 @@ class https_rdfspdxorgv3SimpleLicensingSimpleLicensingText(https_rdfspdxorgv3Cor
         super().__init__()
         # Identifies the full text of a License or Addition.
         self._add_property(
-            "httpsrdfspdxorgv3SimpleLicensinglicenseText",
+            "licenseText",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/SimpleLicensing/licenseText",
             min_count=1,
@@ -2357,56 +2357,56 @@ class https_rdfspdxorgv3BuildBuild(https_rdfspdxorgv3CoreElement):
         super().__init__()
         # A buildType is a hint that is used to indicate the toolchain, platform, or infrastructure that the build was invoked on.
         self._add_property(
-            "httpsrdfspdxorgv3BuildbuildType",
+            "buildType",
             AnyURIProp(),
             json_name="https://rdf.spdx.org/v3/Build/buildType",
             min_count=1,
         )
         # A buildId is a locally unique identifier used by a builder to identify a unique instance of a build produced by it.
         self._add_property(
-            "httpsrdfspdxorgv3BuildbuildId",
+            "buildId",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Build/buildId",
         )
         # Property describes the invocation entrypoint of a build.
         self._add_property(
-            "httpsrdfspdxorgv3BuildconfigSourceEntrypoint",
+            "configSourceEntrypoint",
             ListProp(StringProp()),
             json_name="https://rdf.spdx.org/v3/Build/configSourceEntrypoint",
         )
         # Property that describes the URI of the build configuration source file.
         self._add_property(
-            "httpsrdfspdxorgv3BuildconfigSourceUri",
+            "configSourceUri",
             ListProp(AnyURIProp()),
             json_name="https://rdf.spdx.org/v3/Build/configSourceUri",
         )
         # Property that describes the digest of the build configuration file used to invoke a build.
         self._add_property(
-            "httpsrdfspdxorgv3BuildconfigSourceDigest",
+            "configSourceDigest",
             ListProp(ObjectProp(https_rdfspdxorgv3CoreHash, False)),
             json_name="https://rdf.spdx.org/v3/Build/configSourceDigest",
         )
         # Property describing the parameters used in an instance of a build.
         self._add_property(
-            "httpsrdfspdxorgv3Buildparameters",
+            "parameters",
             ListProp(ObjectProp(https_rdfspdxorgv3CoreDictionaryEntry, False)),
             json_name="https://rdf.spdx.org/v3/Build/parameters",
         )
         # Property describing the start time of a build.
         self._add_property(
-            "httpsrdfspdxorgv3BuildbuildStartTime",
+            "buildStartTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Build/buildStartTime",
         )
         # Property that describes the time at which a build stops.
         self._add_property(
-            "httpsrdfspdxorgv3BuildbuildEndTime",
+            "buildEndTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Build/buildEndTime",
         )
         # Property describing the session in which a build is invoked.
         self._add_property(
-            "httpsrdfspdxorgv3Buildenvironment",
+            "environment",
             ListProp(ObjectProp(https_rdfspdxorgv3CoreDictionaryEntry, False)),
             json_name="https://rdf.spdx.org/v3/Build/environment",
         )
@@ -2436,26 +2436,26 @@ class https_rdfspdxorgv3CoreAnnotation(https_rdfspdxorgv3CoreElement):
         super().__init__()
         # Describes the type of annotation.
         self._add_property(
-            "httpsrdfspdxorgv3CoreannotationType",
+            "annotationType",
             https_rdfspdxorgv3CoreAnnotationType(),
             json_name="https://rdf.spdx.org/v3/Core/annotationType",
             min_count=1,
         )
         # Specifies the media type of an Element or Property.
         self._add_property(
-            "httpsrdfspdxorgv3CorecontentType",
+            "contentType",
             StringProp(pattern=r"^[^\/]+\/[^\/]+$",),
             json_name="https://rdf.spdx.org/v3/Core/contentType",
         )
         # Commentary on an assertion that an annotator has made.
         self._add_property(
-            "httpsrdfspdxorgv3Corestatement",
+            "statement",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Core/statement",
         )
         # An Element an annotator has made an assertion about.
         self._add_property(
-            "httpsrdfspdxorgv3Coresubject",
+            "subject",
             ObjectProp(https_rdfspdxorgv3CoreElement, True),
             json_name="https://rdf.spdx.org/v3/Core/subject",
             min_count=1,
@@ -2474,43 +2474,43 @@ class https_rdfspdxorgv3CoreArtifact(https_rdfspdxorgv3CoreElement):
         super().__init__()
         # Identifies from where or whom the Element originally came.
         self._add_property(
-            "httpsrdfspdxorgv3CoreoriginatedBy",
+            "originatedBy",
             ListProp(ObjectProp(https_rdfspdxorgv3CoreAgent, False)),
             json_name="https://rdf.spdx.org/v3/Core/originatedBy",
         )
         # Identifies who or what supplied the artifact or VulnAssessmentRelationship referenced by the Element.
         self._add_property(
-            "httpsrdfspdxorgv3CoresuppliedBy",
+            "suppliedBy",
             ObjectProp(https_rdfspdxorgv3CoreAgent, False),
             json_name="https://rdf.spdx.org/v3/Core/suppliedBy",
         )
         # Specifies the time an artifact was built.
         self._add_property(
-            "httpsrdfspdxorgv3CorebuiltTime",
+            "builtTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Core/builtTime",
         )
         # Specifies the time an artifact was released.
         self._add_property(
-            "httpsrdfspdxorgv3CorereleaseTime",
+            "releaseTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Core/releaseTime",
         )
         # Specifies until when the artifact can be used before its usage needs to be reassessed.
         self._add_property(
-            "httpsrdfspdxorgv3CorevalidUntilTime",
+            "validUntilTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Core/validUntilTime",
         )
         # The name of a relevant standard that may apply to an artifact.
         self._add_property(
-            "httpsrdfspdxorgv3CorestandardName",
+            "standardName",
             ListProp(StringProp()),
             json_name="https://rdf.spdx.org/v3/Core/standardName",
         )
         # Specifies the level of support associated with an artifact.
         self._add_property(
-            "httpsrdfspdxorgv3CoresupportLevel",
+            "supportLevel",
             ListProp(https_rdfspdxorgv3CoreSupportType()),
             json_name="https://rdf.spdx.org/v3/Core/supportLevel",
         )
@@ -2529,7 +2529,7 @@ class https_rdfspdxorgv3CoreBundle(https_rdfspdxorgv3CoreElementCollection):
         # Gives information about the circumstances or unifying properties
         # that Elements of the bundle have been assembled under.
         self._add_property(
-            "httpsrdfspdxorgv3Corecontext",
+            "context",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Core/context",
         )
@@ -2547,14 +2547,14 @@ class https_rdfspdxorgv3CoreHash(https_rdfspdxorgv3CoreIntegrityMethod):
         super().__init__()
         # Specifies the algorithm used for calculating the hash value.
         self._add_property(
-            "httpsrdfspdxorgv3Corealgorithm",
+            "algorithm",
             https_rdfspdxorgv3CoreHashAlgorithm(),
             json_name="https://rdf.spdx.org/v3/Core/algorithm",
             min_count=1,
         )
         # The result of applying a hash algorithm to an Element.
         self._add_property(
-            "httpsrdfspdxorgv3CorehashValue",
+            "hashValue",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Core/hashValue",
             min_count=1,
@@ -2573,7 +2573,7 @@ class https_rdfspdxorgv3CoreLifecycleScopedRelationship(https_rdfspdxorgv3CoreRe
         super().__init__()
         # Capture the scope of information about a specific relationship between elements.
         self._add_property(
-            "httpsrdfspdxorgv3Corescope",
+            "scope",
             https_rdfspdxorgv3CoreLifecycleScopeType(),
             json_name="https://rdf.spdx.org/v3/Core/scope",
         )
@@ -2628,7 +2628,7 @@ class https_rdfspdxorgv3ExpandedLicensingConjunctiveLicenseSet(https_rdfspdxorgv
         super().__init__()
         # A license expression participating in a license set.
         self._add_property(
-            "httpsrdfspdxorgv3ExpandedLicensingmember",
+            "member",
             ListProp(ObjectProp(https_rdfspdxorgv3SimpleLicensingAnyLicenseInfo, False)),
             json_name="https://rdf.spdx.org/v3/ExpandedLicensing/member",
             min_count=2,
@@ -2660,7 +2660,7 @@ class https_rdfspdxorgv3ExpandedLicensingDisjunctiveLicenseSet(https_rdfspdxorgv
         super().__init__()
         # A license expression participating in a license set.
         self._add_property(
-            "httpsrdfspdxorgv3ExpandedLicensingmember",
+            "member",
             ListProp(ObjectProp(https_rdfspdxorgv3SimpleLicensingAnyLicenseInfo, False)),
             json_name="https://rdf.spdx.org/v3/ExpandedLicensing/member",
             min_count=2,
@@ -2703,7 +2703,7 @@ class https_rdfspdxorgv3ExpandedLicensingLicense(https_rdfspdxorgv3ExpandedLicen
         super().__init__()
         # Identifies the full text of a License or Addition.
         self._add_property(
-            "httpsrdfspdxorgv3SimpleLicensinglicenseText",
+            "SimpleLicensinglicenseText",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/SimpleLicensing/licenseText",
             min_count=1,
@@ -2711,53 +2711,53 @@ class https_rdfspdxorgv3ExpandedLicensingLicense(https_rdfspdxorgv3ExpandedLicen
         # Specifies whether the License is listed as approved by the
         # [Open Source Initiative (OSI)](https://opensource.org).
         self._add_property(
-            "httpsrdfspdxorgv3ExpandedLicensingisOsiApproved",
+            "isOsiApproved",
             BooleanProp(),
             json_name="https://rdf.spdx.org/v3/ExpandedLicensing/isOsiApproved",
         )
         # Specifies whether the License is listed as free by the
         # [Free Software Foundation (FSF)](https://fsf.org).
         self._add_property(
-            "httpsrdfspdxorgv3ExpandedLicensingisFsfLibre",
+            "isFsfLibre",
             BooleanProp(),
             json_name="https://rdf.spdx.org/v3/ExpandedLicensing/isFsfLibre",
         )
         # Provides a License author's preferred text to indicate that a file is covered
         # by the License.
         self._add_property(
-            "httpsrdfspdxorgv3ExpandedLicensingstandardLicenseHeader",
+            "standardLicenseHeader",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/ExpandedLicensing/standardLicenseHeader",
         )
         # Identifies the full text of a License, in SPDX templating format.
         self._add_property(
-            "httpsrdfspdxorgv3ExpandedLicensingstandardLicenseTemplate",
+            "standardLicenseTemplate",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/ExpandedLicensing/standardLicenseTemplate",
         )
         # Specifies whether a license or additional text identifier has been marked as
         # deprecated.
         self._add_property(
-            "httpsrdfspdxorgv3ExpandedLicensingisDeprecatedLicenseId",
+            "isDeprecatedLicenseId",
             BooleanProp(),
             json_name="https://rdf.spdx.org/v3/ExpandedLicensing/isDeprecatedLicenseId",
         )
         # Specifies the licenseId that is preferred to be used in place of a deprecated
         # License or LicenseAddition.
         self._add_property(
-            "httpsrdfspdxorgv3ExpandedLicensingobsoletedBy",
+            "obsoletedBy",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/ExpandedLicensing/obsoletedBy",
         )
         # Identifies all the text and metadata associated with a license in the license XML format.
         self._add_property(
-            "httpsrdfspdxorgv3ExpandedLicensinglicenseXml",
+            "licenseXml",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/ExpandedLicensing/licenseXml",
         )
         # Contains a URL where the License or LicenseAddition can be found in use.
         self._add_property(
-            "httpsrdfspdxorgv3ExpandedLicensingseeAlso",
+            "seeAlso",
             ListProp(AnyURIProp()),
             json_name="https://rdf.spdx.org/v3/ExpandedLicensing/seeAlso",
         )
@@ -2776,14 +2776,14 @@ class https_rdfspdxorgv3ExpandedLicensingListedLicense(https_rdfspdxorgv3Expande
         # Specifies the SPDX License List version in which this ListedLicense or
         # ListedLicenseException identifier was first added.
         self._add_property(
-            "httpsrdfspdxorgv3ExpandedLicensinglistVersionAdded",
+            "listVersionAdded",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/ExpandedLicensing/listVersionAdded",
         )
         # Specifies the SPDX License List version in which this license or exception
         # identifier was deprecated.
         self._add_property(
-            "httpsrdfspdxorgv3ExpandedLicensingdeprecatedVersion",
+            "deprecatedVersion",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/ExpandedLicensing/deprecatedVersion",
         )
@@ -2802,7 +2802,7 @@ class https_rdfspdxorgv3ExpandedLicensingOrLaterOperator(https_rdfspdxorgv3Expan
         super().__init__()
         # A License participating in an 'or later' model.
         self._add_property(
-            "httpsrdfspdxorgv3ExpandedLicensingsubjectLicense",
+            "subjectLicense",
             ObjectProp(https_rdfspdxorgv3ExpandedLicensingLicense, True),
             json_name="https://rdf.spdx.org/v3/ExpandedLicensing/subjectLicense",
             min_count=1,
@@ -2822,14 +2822,14 @@ class https_rdfspdxorgv3ExpandedLicensingWithAdditionOperator(https_rdfspdxorgv3
         super().__init__()
         # A License participating in a 'with addition' model.
         self._add_property(
-            "httpsrdfspdxorgv3ExpandedLicensingsubjectExtendableLicense",
+            "subjectExtendableLicense",
             ObjectProp(https_rdfspdxorgv3ExpandedLicensingExtendableLicense, True),
             json_name="https://rdf.spdx.org/v3/ExpandedLicensing/subjectExtendableLicense",
             min_count=1,
         )
         # A LicenseAddition participating in a 'with addition' model.
         self._add_property(
-            "httpsrdfspdxorgv3ExpandedLicensingsubjectAddition",
+            "subjectAddition",
             ObjectProp(https_rdfspdxorgv3ExpandedLicensingLicenseAddition, True),
             json_name="https://rdf.spdx.org/v3/ExpandedLicensing/subjectAddition",
             min_count=1,
@@ -2848,14 +2848,14 @@ class https_rdfspdxorgv3SecurityCvssV2VulnAssessmentRelationship(https_rdfspdxor
         super().__init__()
         # Provides a numerical (0-10) representation of the severity of a vulnerability.
         self._add_property(
-            "httpsrdfspdxorgv3Securityscore",
+            "score",
             FloatProp(),
             json_name="https://rdf.spdx.org/v3/Security/score",
             min_count=1,
         )
         # Specifies the CVSS vector string for a vulnerability.
         self._add_property(
-            "httpsrdfspdxorgv3SecurityvectorString",
+            "vectorString",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Security/vectorString",
             min_count=1,
@@ -2874,21 +2874,21 @@ class https_rdfspdxorgv3SecurityCvssV3VulnAssessmentRelationship(https_rdfspdxor
         super().__init__()
         # Provides a numerical (0-10) representation of the severity of a vulnerability.
         self._add_property(
-            "httpsrdfspdxorgv3Securityscore",
+            "score",
             FloatProp(),
             json_name="https://rdf.spdx.org/v3/Security/score",
             min_count=1,
         )
         # Specifies the CVSS qualitative severity rating of a vulnerability in relation to a piece of software.
         self._add_property(
-            "httpsrdfspdxorgv3Securityseverity",
+            "severity",
             https_rdfspdxorgv3SecurityCvssSeverityType(),
             json_name="https://rdf.spdx.org/v3/Security/severity",
             min_count=1,
         )
         # Specifies the CVSS vector string for a vulnerability.
         self._add_property(
-            "httpsrdfspdxorgv3SecurityvectorString",
+            "vectorString",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Security/vectorString",
             min_count=1,
@@ -2907,21 +2907,21 @@ class https_rdfspdxorgv3SecurityCvssV4VulnAssessmentRelationship(https_rdfspdxor
         super().__init__()
         # Provides a numerical (0-10) representation of the severity of a vulnerability.
         self._add_property(
-            "httpsrdfspdxorgv3Securityscore",
+            "score",
             FloatProp(),
             json_name="https://rdf.spdx.org/v3/Security/score",
             min_count=1,
         )
         # Specifies the CVSS qualitative severity rating of a vulnerability in relation to a piece of software.
         self._add_property(
-            "httpsrdfspdxorgv3Securityseverity",
+            "severity",
             https_rdfspdxorgv3SecurityCvssSeverityType(),
             json_name="https://rdf.spdx.org/v3/Security/severity",
             min_count=1,
         )
         # Specifies the CVSS vector string for a vulnerability.
         self._add_property(
-            "httpsrdfspdxorgv3SecurityvectorString",
+            "vectorString",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Security/vectorString",
             min_count=1,
@@ -2940,21 +2940,21 @@ class https_rdfspdxorgv3SecurityEpssVulnAssessmentRelationship(https_rdfspdxorgv
         super().__init__()
         # A probability score between 0 and 1 of a vulnerability being exploited.
         self._add_property(
-            "httpsrdfspdxorgv3Securityprobability",
+            "probability",
             FloatProp(),
             json_name="https://rdf.spdx.org/v3/Security/probability",
             min_count=1,
         )
         # The percentile of the current probability score.
         self._add_property(
-            "httpsrdfspdxorgv3Securitypercentile",
+            "percentile",
             FloatProp(),
             json_name="https://rdf.spdx.org/v3/Security/percentile",
             min_count=1,
         )
         # Specifies the time when a vulnerability was published.
         self._add_property(
-            "httpsrdfspdxorgv3SecuritypublishedTime",
+            "publishedTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Security/publishedTime",
             min_count=1,
@@ -2973,21 +2973,21 @@ class https_rdfspdxorgv3SecurityExploitCatalogVulnAssessmentRelationship(https_r
         super().__init__()
         # Specifies the exploit catalog type.
         self._add_property(
-            "httpsrdfspdxorgv3SecuritycatalogType",
+            "catalogType",
             https_rdfspdxorgv3SecurityExploitCatalogType(),
             json_name="https://rdf.spdx.org/v3/Security/catalogType",
             min_count=1,
         )
         # Describe that a CVE is known to have an exploit because it's been listed in an exploit catalog.
         self._add_property(
-            "httpsrdfspdxorgv3Securityexploited",
+            "exploited",
             BooleanProp(),
             json_name="https://rdf.spdx.org/v3/Security/exploited",
             min_count=1,
         )
         # Provides the location of an exploit catalog.
         self._add_property(
-            "httpsrdfspdxorgv3Securitylocator",
+            "locator",
             AnyURIProp(),
             json_name="https://rdf.spdx.org/v3/Security/locator",
             min_count=1,
@@ -3006,7 +3006,7 @@ class https_rdfspdxorgv3SecuritySsvcVulnAssessmentRelationship(https_rdfspdxorgv
         super().__init__()
         # Provide the enumeration of possible decisions in the Stakeholder-Specific Vulnerability Categorization (SSVC) decision tree [https://www.cisa.gov/sites/default/files/publications/cisa-ssvc-guide%20508c.pdf](https://www.cisa.gov/sites/default/files/publications/cisa-ssvc-guide%20508c.pdf)
         self._add_property(
-            "httpsrdfspdxorgv3SecuritydecisionType",
+            "decisionType",
             https_rdfspdxorgv3SecuritySsvcDecisionType(),
             json_name="https://rdf.spdx.org/v3/Security/decisionType",
             min_count=1,
@@ -3025,13 +3025,13 @@ class https_rdfspdxorgv3SecurityVexVulnAssessmentRelationship(https_rdfspdxorgv3
         super().__init__()
         # Specifies the version of the VEX document.
         self._add_property(
-            "httpsrdfspdxorgv3SecurityvexVersion",
+            "vexVersion",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Security/vexVersion",
         )
         # Conveys information about how VEX status was determined.
         self._add_property(
-            "httpsrdfspdxorgv3SecuritystatusNotes",
+            "statusNotes",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Security/statusNotes",
         )
@@ -3049,19 +3049,19 @@ class https_rdfspdxorgv3SecurityVulnerability(https_rdfspdxorgv3CoreArtifact):
         super().__init__()
         # Specifies the time when a vulnerability was published.
         self._add_property(
-            "httpsrdfspdxorgv3SecuritypublishedTime",
+            "publishedTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Security/publishedTime",
         )
         # Specifies a time when a vulnerability assessment was modified
         self._add_property(
-            "httpsrdfspdxorgv3SecuritymodifiedTime",
+            "modifiedTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Security/modifiedTime",
         )
         # Specified the time and date when a vulnerability was withdrawn.
         self._add_property(
-            "httpsrdfspdxorgv3SecuritywithdrawnTime",
+            "withdrawnTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Security/withdrawnTime",
         )
@@ -3079,34 +3079,34 @@ class https_rdfspdxorgv3SoftwareSoftwareArtifact(https_rdfspdxorgv3CoreArtifact)
         super().__init__()
         # Used to record the artifact’s gitoid: a canonical, unique, immutable identifier that can be used for software integrity verification.
         self._add_property(
-            "httpsrdfspdxorgv3Softwaregitoid",
+            "gitoid",
             ListProp(AnyURIProp()),
             json_name="https://rdf.spdx.org/v3/Software/gitoid",
             max_count=2,
         )
         # Provides information about the primary purpose of the software artifact.
         self._add_property(
-            "httpsrdfspdxorgv3SoftwareprimaryPurpose",
+            "primaryPurpose",
             https_rdfspdxorgv3SoftwareSoftwarePurpose(),
             json_name="https://rdf.spdx.org/v3/Software/primaryPurpose",
         )
         # Provides additional purpose information of the software artifact.
         self._add_property(
-            "httpsrdfspdxorgv3SoftwareadditionalPurpose",
+            "additionalPurpose",
             ListProp(https_rdfspdxorgv3SoftwareSoftwarePurpose()),
             json_name="https://rdf.spdx.org/v3/Software/additionalPurpose",
         )
         # Identifies the text of one or more copyright notices for a software Package,
         # File or Snippet, if any.
         self._add_property(
-            "httpsrdfspdxorgv3SoftwarecopyrightText",
+            "copyrightText",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Software/copyrightText",
         )
         # Provides a place for the SPDX data creator to record acknowledgement text for
         # a software Package, File or Snippet.
         self._add_property(
-            "httpsrdfspdxorgv3SoftwareattributionText",
+            "attributionText",
             ListProp(StringProp()),
             json_name="https://rdf.spdx.org/v3/Software/attributionText",
         )
@@ -3151,14 +3151,14 @@ class https_rdfspdxorgv3SecurityVexAffectedVulnAssessmentRelationship(https_rdfs
         # Provides advise on how to mitigate or remediate a vulnerability when a VEX product
         # is affected by it.
         self._add_property(
-            "httpsrdfspdxorgv3SecurityactionStatement",
+            "actionStatement",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Security/actionStatement",
         )
         # Records the time when a recommended action was communicated in a VEX statement
         # to mitigate a vulnerability.
         self._add_property(
-            "httpsrdfspdxorgv3SecurityactionStatementTime",
+            "actionStatementTime",
             ListProp(StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",)),
             json_name="https://rdf.spdx.org/v3/Security/actionStatementTime",
         )
@@ -3192,7 +3192,7 @@ class https_rdfspdxorgv3SecurityVexNotAffectedVulnAssessmentRelationship(https_r
         # representing a VEX product with a VexNotAffectedVulnAssessmentRelationship
         # relationship.
         self._add_property(
-            "httpsrdfspdxorgv3SecurityjustificationType",
+            "justificationType",
             https_rdfspdxorgv3SecurityVexJustificationType(),
             json_name="https://rdf.spdx.org/v3/Security/justificationType",
         )
@@ -3200,13 +3200,13 @@ class https_rdfspdxorgv3SecurityVexNotAffectedVulnAssessmentRelationship(https_r
         # alternative in VexNotAffectedVulnAssessmentRelationship to the machine-readable
         # justification label.
         self._add_property(
-            "httpsrdfspdxorgv3SecurityimpactStatement",
+            "impactStatement",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Security/impactStatement",
         )
         # Timestamp of impact statement.
         self._add_property(
-            "httpsrdfspdxorgv3SecurityimpactStatementTime",
+            "impactStatementTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             json_name="https://rdf.spdx.org/v3/Security/impactStatementTime",
         )
@@ -3237,13 +3237,13 @@ class https_rdfspdxorgv3SoftwareFile(https_rdfspdxorgv3SoftwareSoftwareArtifact)
         super().__init__()
         # Provides information about the content type of an Element.
         self._add_property(
-            "httpsrdfspdxorgv3SoftwarecontentType",
+            "contentType",
             StringProp(pattern=r"^[^\/]+\/[^\/]+$",),
             json_name="https://rdf.spdx.org/v3/Software/contentType",
         )
         # If true, denotes the Element is a directory.
         self._add_property(
-            "httpsrdfspdxorgv3SoftwareisDirectory",
+            "isDirectory",
             BooleanProp(),
             json_name="https://rdf.spdx.org/v3/Software/isDirectory",
         )
@@ -3261,32 +3261,32 @@ class https_rdfspdxorgv3SoftwarePackage(https_rdfspdxorgv3SoftwareSoftwareArtifa
         super().__init__()
         # Identify the version of a package.
         self._add_property(
-            "httpsrdfspdxorgv3SoftwarepackageVersion",
+            "packageVersion",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Software/packageVersion",
         )
         # Identifies the download Uniform Resource Identifier for the package at the time that the document was created.
         self._add_property(
-            "httpsrdfspdxorgv3SoftwaredownloadLocation",
+            "downloadLocation",
             AnyURIProp(),
             json_name="https://rdf.spdx.org/v3/Software/downloadLocation",
         )
         # Provides a place for the SPDX data creator to record the package URL string (in accordance with the [package URL spec](https://github.com/package-url/purl-spec/blob/master/PURL-SPECIFICATION.rst)) for a software Package.
         self._add_property(
-            "httpsrdfspdxorgv3SoftwarepackageUrl",
+            "packageUrl",
             AnyURIProp(),
             json_name="https://rdf.spdx.org/v3/Software/packageUrl",
         )
         # A place for the SPDX document creator to record a website that serves as the package's home page.
         self._add_property(
-            "httpsrdfspdxorgv3SoftwarehomePage",
+            "homePage",
             AnyURIProp(),
             json_name="https://rdf.spdx.org/v3/Software/homePage",
         )
         # Records any relevant background information or additional comments
         # about the origin of the package.
         self._add_property(
-            "httpsrdfspdxorgv3SoftwaresourceInfo",
+            "sourceInfo",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Software/sourceInfo",
         )
@@ -3304,7 +3304,7 @@ class https_rdfspdxorgv3SoftwareSbom(https_rdfspdxorgv3CoreBom):
         super().__init__()
         # Provides information about the type of an SBOM.
         self._add_property(
-            "httpsrdfspdxorgv3SoftwaresbomType",
+            "sbomType",
             ListProp(https_rdfspdxorgv3SoftwareSbomType()),
             json_name="https://rdf.spdx.org/v3/Software/sbomType",
         )
@@ -3322,19 +3322,19 @@ class https_rdfspdxorgv3SoftwareSnippet(https_rdfspdxorgv3SoftwareSoftwareArtifa
         super().__init__()
         # Defines the byte range in the original host file that the snippet information applies to.
         self._add_property(
-            "httpsrdfspdxorgv3SoftwarebyteRange",
+            "byteRange",
             ObjectProp(https_rdfspdxorgv3CorePositiveIntegerRange, False),
             json_name="https://rdf.spdx.org/v3/Software/byteRange",
         )
         # Defines the line range in the original host file that the snippet information applies to.
         self._add_property(
-            "httpsrdfspdxorgv3SoftwarelineRange",
+            "lineRange",
             ObjectProp(https_rdfspdxorgv3CorePositiveIntegerRange, False),
             json_name="https://rdf.spdx.org/v3/Software/lineRange",
         )
         # Defines the original host file that the snippet information applies to.
         self._add_property(
-            "httpsrdfspdxorgv3SoftwaresnippetFromFile",
+            "snippetFromFile",
             ObjectProp(https_rdfspdxorgv3SoftwareFile, True),
             json_name="https://rdf.spdx.org/v3/Software/snippetFromFile",
             min_count=1,
@@ -3353,91 +3353,91 @@ class https_rdfspdxorgv3AIAIPackage(https_rdfspdxorgv3SoftwarePackage):
         super().__init__()
         # Indicates the amount of energy consumed to build the AI package.
         self._add_property(
-            "httpsrdfspdxorgv3AIenergyConsumption",
+            "energyConsumption",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/AI/energyConsumption",
         )
         # Captures a standard that is being complied with.
         self._add_property(
-            "httpsrdfspdxorgv3AIstandardCompliance",
+            "standardCompliance",
             ListProp(StringProp()),
             json_name="https://rdf.spdx.org/v3/AI/standardCompliance",
         )
         # Captures a limitation of the AI software.
         self._add_property(
-            "httpsrdfspdxorgv3AIlimitation",
+            "limitation",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/AI/limitation",
         )
         # Records the type of the model used in the AI software.
         self._add_property(
-            "httpsrdfspdxorgv3AItypeOfModel",
+            "typeOfModel",
             ListProp(StringProp()),
             json_name="https://rdf.spdx.org/v3/AI/typeOfModel",
         )
         # Describes relevant information about different steps of the training process.
         self._add_property(
-            "httpsrdfspdxorgv3AIinformationAboutTraining",
+            "informationAboutTraining",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/AI/informationAboutTraining",
         )
         # Provides relevant information about the AI software, not including the model description.
         self._add_property(
-            "httpsrdfspdxorgv3AIinformationAboutApplication",
+            "informationAboutApplication",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/AI/informationAboutApplication",
         )
         # Records a hyperparameter used to build the AI model contained in the AI package.
         self._add_property(
-            "httpsrdfspdxorgv3AIhyperparameter",
+            "hyperparameter",
             ListProp(ObjectProp(https_rdfspdxorgv3CoreDictionaryEntry, False)),
             json_name="https://rdf.spdx.org/v3/AI/hyperparameter",
         )
         # Describes all the preprocessing steps applied to the training data before the model training.
         self._add_property(
-            "httpsrdfspdxorgv3AImodelDataPreprocessing",
+            "modelDataPreprocessing",
             ListProp(StringProp()),
             json_name="https://rdf.spdx.org/v3/AI/modelDataPreprocessing",
         )
         # Describes methods that can be used to explain the model.
         self._add_property(
-            "httpsrdfspdxorgv3AImodelExplainability",
+            "modelExplainability",
             ListProp(StringProp()),
             json_name="https://rdf.spdx.org/v3/AI/modelExplainability",
         )
         # Records if sensitive personal information is used during model training.
         self._add_property(
-            "httpsrdfspdxorgv3AIsensitivePersonalInformation",
+            "sensitivePersonalInformation",
             https_rdfspdxorgv3CorePresenceType(),
             json_name="https://rdf.spdx.org/v3/AI/sensitivePersonalInformation",
         )
         # Captures the threshold that was used for computation of a metric described in the metric field.
         self._add_property(
-            "httpsrdfspdxorgv3AImetricDecisionThreshold",
+            "metricDecisionThreshold",
             ListProp(ObjectProp(https_rdfspdxorgv3CoreDictionaryEntry, False)),
             json_name="https://rdf.spdx.org/v3/AI/metricDecisionThreshold",
         )
         # Records the measurement of prediction quality of the AI model.
         self._add_property(
-            "httpsrdfspdxorgv3AImetric",
+            "metric",
             ListProp(ObjectProp(https_rdfspdxorgv3CoreDictionaryEntry, False)),
             json_name="https://rdf.spdx.org/v3/AI/metric",
         )
         # Captures the domain in which the AI package can be used.
         self._add_property(
-            "httpsrdfspdxorgv3AIdomain",
+            "domain",
             ListProp(StringProp()),
             json_name="https://rdf.spdx.org/v3/AI/domain",
         )
         # States if a human is involved in the decisions of the AI software.
         self._add_property(
-            "httpsrdfspdxorgv3AIautonomyType",
+            "autonomyType",
             https_rdfspdxorgv3CorePresenceType(),
             json_name="https://rdf.spdx.org/v3/AI/autonomyType",
         )
         # Categorizes safety risk impact of AI software.
         self._add_property(
-            "httpsrdfspdxorgv3AIsafetyRiskAssessment",
+            "safetyRiskAssessment",
             https_rdfspdxorgv3AISafetyRiskAssessmentType(),
             json_name="https://rdf.spdx.org/v3/AI/safetyRiskAssessment",
         )
@@ -3455,80 +3455,80 @@ class https_rdfspdxorgv3DatasetDataset(https_rdfspdxorgv3SoftwarePackage):
         super().__init__()
         # Describes the type of the given dataset.
         self._add_property(
-            "httpsrdfspdxorgv3DatasetdatasetType",
+            "datasetType",
             ListProp(https_rdfspdxorgv3DatasetDatasetType()),
             json_name="https://rdf.spdx.org/v3/Dataset/datasetType",
             min_count=1,
         )
         # Describes how the dataset was collected.
         self._add_property(
-            "httpsrdfspdxorgv3DatasetdataCollectionProcess",
+            "dataCollectionProcess",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Dataset/dataCollectionProcess",
         )
         # Describes what the given dataset should be used for.
         self._add_property(
-            "httpsrdfspdxorgv3DatasetintendedUse",
+            "intendedUse",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Dataset/intendedUse",
         )
         # Captures the size of the dataset.
         self._add_property(
-            "httpsrdfspdxorgv3DatasetdatasetSize",
+            "datasetSize",
             NonNegativeIntegerProp(),
             json_name="https://rdf.spdx.org/v3/Dataset/datasetSize",
         )
         # Describes potentially noisy elements of the dataset.
         self._add_property(
-            "httpsrdfspdxorgv3DatasetdatasetNoise",
+            "datasetNoise",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Dataset/datasetNoise",
         )
         # Describes the preprocessing steps that were applied to the raw data to create the given dataset.
         self._add_property(
-            "httpsrdfspdxorgv3DatasetdataPreprocessing",
+            "dataPreprocessing",
             ListProp(StringProp()),
             json_name="https://rdf.spdx.org/v3/Dataset/dataPreprocessing",
         )
         # Describes a sensor used for collecting the data.
         self._add_property(
-            "httpsrdfspdxorgv3Datasetsensor",
+            "sensor",
             ListProp(ObjectProp(https_rdfspdxorgv3CoreDictionaryEntry, False)),
             json_name="https://rdf.spdx.org/v3/Dataset/sensor",
         )
         # Records the biases that the dataset is known to encompass.
         self._add_property(
-            "httpsrdfspdxorgv3DatasetknownBias",
+            "knownBias",
             ListProp(StringProp()),
             json_name="https://rdf.spdx.org/v3/Dataset/knownBias",
         )
         # Describes if any sensitive personal information is present in the dataset.
         self._add_property(
-            "httpsrdfspdxorgv3DatasetsensitivePersonalInformation",
+            "sensitivePersonalInformation",
             https_rdfspdxorgv3CorePresenceType(),
             json_name="https://rdf.spdx.org/v3/Dataset/sensitivePersonalInformation",
         )
         # Describes the anonymization methods used.
         self._add_property(
-            "httpsrdfspdxorgv3DatasetanonymizationMethodUsed",
+            "anonymizationMethodUsed",
             ListProp(StringProp()),
             json_name="https://rdf.spdx.org/v3/Dataset/anonymizationMethodUsed",
         )
         # Describes the confidentiality level of the data points contained in the dataset.
         self._add_property(
-            "httpsrdfspdxorgv3DatasetconfidentialityLevel",
+            "confidentialityLevel",
             https_rdfspdxorgv3DatasetConfidentialityLevelType(),
             json_name="https://rdf.spdx.org/v3/Dataset/confidentialityLevel",
         )
         # Describes a mechanism to update the dataset.
         self._add_property(
-            "httpsrdfspdxorgv3DatasetdatasetUpdateMechanism",
+            "datasetUpdateMechanism",
             StringProp(),
             json_name="https://rdf.spdx.org/v3/Dataset/datasetUpdateMechanism",
         )
         # The field describes the availability of a dataset.
         self._add_property(
-            "httpsrdfspdxorgv3DatasetdatasetAvailability",
+            "datasetAvailability",
             https_rdfspdxorgv3DatasetDatasetAvailabilityType(),
             json_name="https://rdf.spdx.org/v3/Dataset/datasetAvailability",
         )

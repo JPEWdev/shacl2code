@@ -24,6 +24,30 @@ def to_var_name(name):
     return name
 
 
+def common_prefix(*s):
+    if not s:
+        return ""
+
+    if len(s) == 1:
+        return s[0]
+
+    p1 = common_prefix(*s[: len(s) // 2])
+    p2 = common_prefix(*s[len(s) // 2 :])
+    for idx in range(len(p1)):
+        if idx >= len(p2):
+            return p2
+
+        if p1[idx] != p2[idx]:
+            return p2[:idx]
+
+    return p1
+
+
+def remove_common_prefix(val, *cmp):
+    prefix = common_prefix(val, *cmp)
+    return val[len(prefix) :]
+
+
 @dataclass
 class EnumValue:
     _id: str
@@ -87,7 +111,9 @@ class Model(object):
                         self.model.value(
                             value_iri,
                             RDFS.label,
-                            default=to_var_name(str(value_iri).split("/")[-1]),
+                            default=to_var_name(
+                                remove_common_prefix(value_iri, cls_iri)
+                            ),
                         )
                     ),
                     comment=str(self.model.value(value_iri, RDFS.comment, default="")),
@@ -133,9 +159,12 @@ class Model(object):
                 p = Property(
                     varname=to_var_name(
                         self.model.value(
-                            prop,
+                            obj_prop,
                             SH.name,
-                            default=self.get_compact_id(prop),
+                            default=self.get_compact_id(
+                                prop,
+                                fallback=remove_common_prefix(prop, cls_iri),
+                            ),
                         )
                     ),
                     path=str(prop),
@@ -198,7 +227,7 @@ class Model(object):
             self.classes.append(c)
             done_ids.add(c._id)
 
-    def get_compact_id(self, _id):
+    def get_compact_id(self, _id, *, fallback=None):
         """
         Returns the "compacted" name of an object, that is the name of the
         object with the context applied
@@ -207,6 +236,8 @@ class Model(object):
         if _id not in self.compact_ids:
             self.compact_ids[_id] = self.context.compact(_id)
 
+        if self.compact_ids[_id] == _id and fallback is not None:
+            return fallback
         return self.compact_ids[_id]
 
     def get_class_name(self, c):

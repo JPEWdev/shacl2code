@@ -1,0 +1,18 @@
+Context: https://spdx.github.io/spdx-3-model/context.json
+
+http://example.org/enumType: enumType
+
+
+http://example.org/link-class: link-class
+
+http://example.org/link-derived-class: link-derived-class
+
+http://example.org/parent-class: parent-class
+
+http://example.org/test-another-class: test-another-class
+
+http://example.org/test-class: test-class
+
+http://example.org/test-class-required: test-class-required
+
+http://example.org/test-derived-class: test-derived-class

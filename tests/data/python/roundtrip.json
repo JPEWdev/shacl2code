@@ -2,21 +2,49 @@
     "@context": "https://spdx.github.io/spdx-3-model/context.json",
     "@graph": [
         {
-            "type": "Element",
-            "creationInfo": "https://spdx.dev/test/creationinfo"
+            "@id": "http://serialize.example.com/derived",
+            "@type": "test-derived-class"
         },
         {
-            "type": "Agent",
-            "spdxId": "https://spdx.dev/test/agent",
-            "creationInfo": "https://spdx.dev/test/creationinfo",
-            "name": "test-agent"
+            "@type": "test-class-required",
+            "@id": "http://serialize.example.com/required",
+            "test-class/required-string-scalar-prop": "hello",
+            "test-class/required-string-list-prop": [
+                "hello",
+                "world"
+            ]
         },
         {
-            "type": "CreationInfo",
-            "spdxId": "https://spdx.dev/test/creationinfo",
-            "specVersion": "3.0.0",
-            "created": "2022-12-01T00:00:00Z",
-            "createdBy": ["https://spdx.dev/test/agent"]
+            "@type": "test-class",
+            "@id": "http://serialize.example.com/test",
+            "test-class/string-list-prop": [
+                "hello",
+                "world"
+            ],
+            "test-class/string-list-no-datatype": [
+                "hello",
+                "world"
+            ],
+            "test-class/string-scalar-prop": "hello",
+            "test-class/named-property": "hello",
+            "test-class/datetime-scalar-prop": "2024-03-11T00:00:00Z",
+            "test-class/datetime-list-prop": ["2024-03-11T00:00:00Z"],
+            "test-class/positive-integer-prop": 1,
+            "test-class/anyuri-prop": "http://foo.bar.com/",
+            "test-class/nonnegative-integer-prop": 0,
+            "test-class/integer-prop": -1,
+            "test-class/boolean-prop": true,
+            "test-class/float-prop": 0.1,
+            "test-class/class-prop": "http://serialize.example.com/derived",
+            "test-class/class-prop-no-class": "http://serialize.example.com/derived",
+            "test-class/class-list-prop": [
+                "http://serialize.example.com/derived",
+                "http://serialize.example.com/test"
+            ],
+            "test-class/enum-prop": "enumType/foo",
+            "test-class/enum-prop-no-class": "enumType/bar",
+            "test-class/regex": "foo1",
+            "test-class/regex-list": ["foo2", "foo3"]
         }
     ]
 }

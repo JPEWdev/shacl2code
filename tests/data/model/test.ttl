@@ -1,0 +1,307 @@
+@base <http://example.org/#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<parent-class> a rdfs:Class, sh:NodeShape, owl:Class ;
+    rdfs:comment "The parent class" ;
+    .
+
+
+<test-class> a rdfs:Class, sh:NodeShape, owl:Class ;
+    rdfs:subClassOf <parent-class> ;
+    rdfs:comment "The test class" ;
+    sh:property [
+        sh:datatype xsd:string ;
+        sh:path <test-class/string-list-prop>
+    ] ,
+    [
+        sh:path <test-class/string-list-no-datatype>
+    ],
+    [
+        sh:datatype xsd:string ;
+        sh:path <test-class/string-scalar-prop> ;
+        sh:maxCount 1
+    ],
+    [
+        sh:datatype xsd:string ;
+        sh:name "named_property" ;
+        sh:path <test-class/named-property> ;
+        sh:maxCount 1
+    ],
+    [
+        sh:datatype xsd:dateTime ;
+        sh:path <test-class/datetime-scalar-prop> ;
+        sh:maxCount 1 
+    ],
+    [
+        sh:datatype xsd:dateTime ;
+        sh:path <test-class/datetime-list-prop> ;
+    ],
+    [
+        sh:datatype xsd:positiveInteger ;
+        sh:path <test-class/positive-integer-prop> ;
+        sh:maxCount 1
+    ],
+    [
+        sh:datatype xsd:nonNegativeInteger ;
+        sh:path <test-class/nonnegative-integer-prop> ;
+        sh:maxCount 1
+    ],
+    [
+        sh:datatype xsd:integer ;
+        sh:path <test-class/integer-prop> ;
+        sh:maxCount 1
+    ],
+    [
+        sh:datatype xsd:anyURI ;
+        sh:path <test-class/anyuri-prop> ;
+        sh:maxCount 1
+    ],
+    [
+        sh:datatype xsd:boolean ;
+        sh:path <test-class/boolean-prop> ;
+        sh:maxCount 1
+    ],
+    [
+        sh:datatype xsd:decimal ;
+        sh:path <test-class/float-prop> ;
+        sh:maxCount 1
+    ],
+    [
+        sh:class <test-class> ;
+        sh:path <test-class/class-prop> ;
+        sh:maxCount 1
+    ],
+    [
+        sh:path <test-class/class-prop-no-class> ;
+        sh:maxCount 1
+    ],
+    [
+        sh:class <test-class> ;
+        sh:path <test-class/class-list-prop> ;
+    ],
+    [
+        sh:class <enumType> ;
+        sh:path <test-class/enum-prop> ;
+        sh:maxCount 1
+    ],
+    [
+        sh:class <enumType> ;
+        sh:path <test-class/enum-list-prop> ;
+    ],
+    [
+        sh:path <test-class/enum-prop-no-class> ;
+        sh:maxCount 1
+    ],
+    [
+        sh:datatype xsd:string ;
+        sh:pattern "^foo\\d" ;
+        sh:path <test-class/regex> ;
+        sh:maxCount 1
+        
+    ],
+    [
+        sh:datatype xsd:string ;
+        sh:pattern "^foo\\d" ;
+        sh:path <test-class/regex-list> ;
+    ]
+    .
+
+<test-class-required> a rdfs:Class, sh:NodeShape, owl:Class ;
+    rdfs:subClassOf <test-class> ;
+    sh:property [
+        sh:datatype xsd:string ;
+        sh:path <test-class/required-string-scalar-prop> ;
+        sh:maxCount 1 ;
+        sh:minCount 1
+    ],
+    [
+        sh:datatype xsd:string ;
+        sh:path <test-class/required-string-list-prop> ;
+        sh:minCount 1 ;
+        sh:maxCount 2
+    ]
+    .
+
+<test-derived-class> a rdfs:Class, sh:NodeShape, owl:Class ;
+    rdfs:subClassOf <test-class> ;
+    rdfs:command "A class derived from test-class"
+    .
+
+<test-another-class> a rdfs:Class, sh:NodeShape, owl:Class ;
+    rdfs:comment "Another class"
+    .
+
+
+<test-class/string-list-prop> a rdf:Property ;
+    rdfs:comment "A string list property" ;
+    .
+
+<test-class/string-list-no-datatype> a rdf:Property ;
+    rdfs:comment "A string list property with no sh:datatype" ;
+    rdfs:range xsd:string 
+    .
+
+<test-class/string-scalar-prop> a rdf:Property ;
+    rdfs:comment "A scalar string propery" ;
+    rdfs:range xsd:string
+    .
+
+<test-class/required-string-scalar-prop> a rdf:Property ;
+    rdfs:comment "A required scalar string property" ;
+    rdfs:range xsd:string
+    .
+
+<test-class/required-string-list-prop> a rdf:Property ;
+    rdfs:comment "A required string list property" ;
+    rdfs:range xsd:string
+    .
+
+<test-class/named-property> a rdf:Property ;
+    rdfs:comment "A named property";
+    rdfs:range xsd:string
+    .
+
+<test-class/datetime-scalar-prop> a rdf:Property ;
+    rdfs:comment "A scalar datetime property";
+    rdfs:range xsd:dateTime
+    .
+
+<test-class/datetime-list-prop> a rdf:Property ;
+    rdfs:comment "A datetime list property" ;
+    rdfs:range xsd:dateTime
+    .
+
+<test-class/positive-integer-prop> a rdf:Property ;
+    rdfs:comment "A positive integer" ;
+    rdfs:range xsd:positiveInteger
+    .
+
+<test-class/nonnegative-integer-prop> a rdf:Property ;
+    rdfs:comment "a non-negative integer" ;
+    rdfs:range xsd:nonNegativeInteger
+    .
+
+<test-class/nonnegative-integer-prop> a rdf:Property ;
+    rdfs:comment "a non-negative integer" ;
+    rdfs:range xsd:integer
+    .
+
+<test-class/anyuri-prop> a rdf:Property ;
+    rdfs:comment "a URI" ;
+    rdfs:range xsd:anyURI 
+    .
+
+<test-class/boolean-prop> a rdf:Property ;
+    rdfs:comment "a boolean property" ;
+    rdfs:range xsd:boolean
+    .
+
+<test-class/float-prop> a rdf:Property ;
+    rdfs:comment "a float property" ;
+    rdfs:range xsd:decimal 
+    .
+
+<test-class/class-prop> a rdf:Property ;
+    rdfs:comment "A test-class property" ;
+    rdfs:range <test-class>
+    .
+
+<test-class/class-prop-no-class> a rdf:Property ;
+    rdfs:comment "A test-class property with no sh:class" ;
+    rdfs:range <test-class>
+    .
+
+<test-class/class-list-prop> a rdf:Property ;
+    rdfs:comment "A test-class list property" ;
+    rdfs:range <test-class>
+    .
+    
+<test-class/enum-prop> a rdf:Property ;
+    rdfs:comment "A enum property" ;
+    rdfs:range <enumType>
+    .
+
+<test-class/enum-list-prop> a rdf:Property ;
+    rdfs:comment "A enum list property" ;
+    rdfs:range <enumType>
+    .
+        
+<test-class/enum-prop-no-class> a rdf:Property ;
+    rdfs:comment "A enum property with no sh:class" ;
+    rdfs:range <enumType>
+    .
+
+<test-class/regex> a rdf:Property ;
+    rdfs:comment "A regex validated string" ;
+    rdfs:range xsd:string
+    .
+
+<test-class/regex-list> a rdf:Property ;
+    rdfs:comment "A regex validated string list" ;
+    rdfs:range xsd:string
+    .
+
+<enumType> a rdfs:Class, owl:Class ;
+    rdfs:comment "An enumerated type"
+    .
+
+<enumType/foo> a owl:NamedIndividual, <enumType> ;
+    rdfs:label "foo" ;
+    rdfs:comment "The foo value of enumType"
+    .
+
+<enumType/bar> a owl:NamedIndividual, <enumType> ;
+    rdfs:label "bar" ;
+    rdfs:comment "The bar value of enumType"
+    .
+
+<enumType/nolabel> a owl:NamedIndividual, <enumType> ;
+    rdfs:comment "This value has no label"
+    .
+
+<enumType/non-named-indivdual> a <enumType> ;
+    rdfs:comment "This value is not a named individual and won't appear in the output" 
+    .
+
+# Classes to test links
+
+<link-class> a rdfs:Class, sh:NodeShape, owl:Class ;
+    rdfs:comment "A class to test links" ;
+    sh:property [
+        sh:class <link-class> ;
+        sh:path <link-class-prop> ;
+        sh:maxCount 1
+    ],
+    [
+        sh:path <link-class-prop-no-class> ;
+        sh:maxCount 1
+    ],
+    [
+        sh:class <link-class> ;
+        sh:path <link-class-list-prop> ;
+    ]
+    .
+
+<link-derived-class> a rdfs:Class, sh:NodeShape, owl:Class ;
+    rdfs:subClassOf <link-class> ;
+    rdfs:command "A class derived from link-class"
+    .
+
+<link-class-prop> a rdf:Property ;
+    rdfs:comment "A link-class property" ;
+    rdfs:range <link-class>
+    .
+
+<link-class-prop-no-class> a rdf:Property ;
+    rdfs:comment "A link-class property with no sh:class" ;
+    rdfs:range <link-class>
+    .
+
+<link-class-list-prop> a rdf:Property ;
+    rdfs:comment "A link-class list property" ;
+    rdfs:range <link-class>
+    .

@@ -10,6 +10,7 @@ import functools
 import hashlib
 import json
 import re
+import time
 from datetime import datetime, timezone
 
 
@@ -111,7 +112,10 @@ class DateTimeProp(Property):
         return value.astimezone(timezone.utc).strftime(self.FORMAT_STR)
 
     def get(self, value):
-        return datetime.strptime(value, self.FORMAT_STR)
+        return datetime(
+            *(time.strptime(value, self.FORMAT_STR)[0:6]),
+            tzinfo=timezone.utc,
+        )
 
 
 class IntegerProp(Property):
@@ -123,7 +127,7 @@ class IntegerProp(Property):
 
 class PositiveIntegerProp(IntegerProp):
     def validate(self, value):
-        super.validate()
+        super().validate(value)
         if value < 1:
             raise ValueError(f"Value must be >=1. Got {value}")
 
@@ -143,7 +147,7 @@ class BooleanProp(Property):
 
 
 class FloatProp(Property):
-    VALID_TYPES = float
+    VALID_TYPES = (float, int)
 
     def set(self, value):
         return float(value)
@@ -233,13 +237,19 @@ class ListProxy(object):
             self.__data = data
         self.__prop = prop
 
+    def get_raw(self, key):
+        return self.__data[key]
+
+    def raw_items(self):
+        return iter(self.__data)
+
     def append(self, value):
         self.__prop.validate(value)
-        self.__data.append(value)
+        self.__data.append(self.__prop.set(value))
 
     def insert(self, idx, value):
         self.__prop.validate(value)
-        self.__data.insert(idx, value)
+        self.__data.insert(idx, self.__prop.set(value))
 
     def extend(self, items):
         for i in items:
@@ -249,25 +259,26 @@ class ListProxy(object):
         self.__data.sort(*args, **kwargs)
 
     def __getitem__(self, key):
-        return self.__data[key]
+        return self.__prop.get(self.get_raw(key))
 
     def __setitem__(self, key, value):
         if isinstance(key, slice):
             for v in value:
                 self.__prop.validate(v)
+            self.__data[key] = [self.__prop.set(v) for v in value]
         else:
             self.__prop.validate(value)
-
-        self.__data[key] = value
+            self.__data[key] = self.__prop.set(value)
 
     def __delitem__(self, key):
         del self.__data[key]
 
     def __contains__(self, item):
-        return item in self.__data
+        return item in [self.__prop.get(d) for d in self.__data]
 
     def __iter__(self):
-        return iter(self.__data)
+        for v in self.__data:
+            yield self.__prop.get(v)
 
     def __len__(self):
         return len(self.__data)
@@ -282,7 +293,7 @@ class ListProxy(object):
         if isinstance(other, ListProxy):
             return self.__data == other.__data
 
-        return self.__data == other
+        return [self.__prop.get(d) for d in self.__data] == other
 
 
 class ListProp(Property):
@@ -309,7 +320,7 @@ class ListProp(Property):
         if isinstance(value, ListProxy):
             return value
 
-        return ListProxy(self.prop, value)
+        return ListProxy(self.prop, [self.prop.set(d) for d in value])
 
     def check_min_count(self, value, min_count):
         check_type(value, ListProxy)
@@ -337,16 +348,21 @@ class ListProp(Property):
         return ListProxy(self.prop, data=data)
 
     def link_prop(self, value, link_cache, missing, visited):
-        return ListProxy(
-            self.prop,
-            data=[self.prop.link_prop(v, link_cache, missing, visited) for v in value],
-        )
+        if isinstance(value, ListProxy):
+            data = [
+                self.prop.link_prop(v, link_cache, missing, visited)
+                for v in value.raw_items()
+            ]
+        else:
+            data = [self.prop.link_prop(v, link_cache, missing, visited) for v in value]
+
+        return ListProxy(self.prop, data=data)
 
     def serializer(self, value, context):
         check_type(value, ListProxy)
         """"""
         """"""
-        return [self.prop.serializer(v, context) for v in value]
+        return [self.prop.serializer(v, context) for v in value.raw_items()]
 
 
 class EnumProp(Property):
@@ -372,31 +388,14 @@ class EnumProp(Property):
 class SHACLObject(object):
     DESERIALIZERS = {}
 
-    class IRIMap(object):
-        def __init__(self, obj):
-            self.obj = obj
-
-        def __getattr__(self, name):
-            try:
-                return self[name]
-            except KeyError as e:
-                raise AttributeError(str(e))
-
-        def __getitem__(self, name):
-            (json_name, _, _, _) = self.obj._obj_properties[name]
-            return json_name
-
-        def __contains__(self, name):
-            return name in self.obj._obj_properties
-
     def __init__(self):
         self._obj_data = {}
         self._obj_properties = {}
+        self._obj_iris = {}
         self._obj_written = False
         self._obj_metadata = {}
 
-        self._add_property("_id", StringProp(), json_name="@id")
-        self._obj_IRI = self.IRIMap(self)
+        self._add_property("_id", StringProp(), iri="@id")
 
     def _set_init_props(self, **kwargs):
         for k, v in kwargs.items():
@@ -406,31 +405,34 @@ class SHACLObject(object):
         self,
         pyname,
         prop,
-        json_name=None,
+        iri,
         min_count=None,
         max_count=None,
     ):
-        if json_name is None:
-            json_name = pyname
-        if pyname in self._obj_properties:
+        if pyname in self._obj_iris:
             raise KeyError(
                 f"'{pyname}' is already defined for '{self.__class__.__name__}'"
             )
-        self._obj_properties[pyname] = (json_name, prop, min_count, max_count)
-        self._obj_data[json_name] = prop.init()
+        if iri in self._obj_properties:
+            raise KeyError(
+                f"'{iri}' is already defined for '{self.__class__.__name__}'"
+            )
+
+        self._obj_iris[pyname] = iri
+        self._obj_properties[iri] = (prop, min_count, max_count, pyname)
+        self._obj_data[iri] = prop.init()
 
     def __setattr__(self, name, value):
         if name.startswith("_obj_"):
             return super().__setattr__(name, value)
 
         try:
-            (json_name, prop, _, _) = self._obj_properties[name]
+            iri = self._obj_iris[name]
+            self[iri] = value
         except KeyError:
             raise AttributeError(
                 f"'{name}' is not a valid property of {self.__class__.__name__}"
             )
-        prop.validate(value)
-        self._obj_data[json_name] = prop.set(value)
 
     def __getattr__(self, name):
         if name.startswith("_obj_"):
@@ -440,24 +442,50 @@ class SHACLObject(object):
             return self._obj_metadata
 
         if name == "_IRI":
-            return self._obj_IRI
+            return self._obj_iris
 
         try:
-            (json_name, prop, _, _) = self._obj_properties[name]
+            iri = self._obj_iris[name]
+            return self[iri]
         except KeyError:
             raise AttributeError(
                 f"'{name}' is not a valid property of {self.__class__.__name__}"
             )
-        return prop.get(self._obj_data[json_name])
 
     def __delattr__(self, name):
         try:
-            (json_name, prop, _, _) = self._obj_properties[name]
+            iri = self._obj_iris[name]
+            del self[iri]
         except KeyError:
             raise AttributeError(
                 f"'{name}' is not a valid property of {self.__class__.__name__}"
             )
-        self._obj_data[json_name] = prop.init()
+
+    def __get_prop(self, iri):
+        if iri not in self._obj_properties:
+            raise KeyError(
+                f"'{iri}' is not a valid property of {self.__class__.__name__}"
+            )
+
+        return self._obj_properties[iri]
+
+    def __iter_props(self):
+        for iri, v in self._obj_properties.items():
+            prop, min_count, max_count, pyname = v
+            yield iri, prop, min_count, max_count, pyname
+
+    def __getitem__(self, iri):
+        prop, _, _, _ = self.__get_prop(iri)
+        return prop.get(self._obj_data[iri])
+
+    def __setitem__(self, iri, value):
+        prop, _, _, _ = self.__get_prop(iri)
+        prop.validate(value)
+        self._obj_data[iri] = prop.set(value)
+
+    def __delitem__(self, iri):
+        prop, _, _, _ = self.__get_prop(iri)
+        self._obj_data[iri] = prop.init()
 
     def walk(self, callback, path=None):
         """
@@ -471,8 +499,8 @@ class SHACLObject(object):
             path = ["."]
 
         if callback(self, path):
-            for json_name, prop, _, _ in self._obj_properties.values():
-                prop.walk(self._obj_data[json_name], callback, path + [f".{json_name}"])
+            for iri, prop, _, _, _ in self.__iter_props():
+                prop.walk(self._obj_data[iri], callback, path + [f".{iri}"])
 
     def child_objects(self):
         """
@@ -507,9 +535,8 @@ class SHACLObject(object):
             context.compact("@type"): context.compact(self.TYPE),
         }
 
-        for pyname, v in self._obj_properties.items():
-            json_name, prop, min_count, max_count = v
-            value = self._obj_data[json_name]
+        for iri, prop, min_count, max_count, pyname in self.__iter_props():
+            value = self._obj_data[iri]
             if prop.elide(value):
                 if min_count:
                     raise ValueError(
@@ -529,8 +556,8 @@ class SHACLObject(object):
                         f"Property '{pyname}' in {self.__class__.__name__} ({id(self)}) requires a maximum of {max_count} elements"
                     )
 
-            with context.vocab_push(json_name):
-                d[context.compact(json_name)] = prop.serializer(value, context)
+            with context.vocab_push(iri):
+                d[context.compact(iri)] = prop.serializer(value, context)
         return d
 
     def to_jsonld(self, f, *args, **kwargs):
@@ -564,12 +591,11 @@ class SHACLObject(object):
         if _id and _id in object_ids:
             return object_ids[_id]
 
-        for pyname, v in obj._obj_properties.items():
-            json_name, prop, _, _ = v
-            for n in (json_name, context.compact(json_name)):
+        for iri, prop, _, _, _ in obj.__iter_props():
+            for n in (iri, context.compact(iri)):
                 if n in data:
-                    with context.vocab_push(json_name):
-                        obj._obj_data[json_name] = prop.deserialize(
+                    with context.vocab_push(iri):
+                        obj._obj_data[iri] = prop.deserialize(
                             data[n],
                             context,
                             object_ids=object_ids,
@@ -587,10 +613,9 @@ class SHACLObject(object):
 
         visited.add(self)
 
-        for pyname, v in self._obj_properties.items():
-            json_name, prop, _, _ = v
-            self._obj_data[json_name] = prop.link_prop(
-                self._obj_data[json_name],
+        for iri, prop, _, _, _ in self.__iter_props():
+            self._obj_data[iri] = prop.link_prop(
+                self._obj_data[iri],
                 link_cache,
                 missing,
                 visited,
@@ -624,6 +649,8 @@ class SHACLObject(object):
 
     def __lt__(self, other):
         def sort_key(obj):
+            if isinstance(obj, str):
+                return (obj, "", "", "")
             return (
                 obj._id or "",
                 obj.TYPE,
@@ -2162,34 +2189,34 @@ class CreationInfo(SHACLObject):
         self._add_property(
             "specVersion",
             StringProp(pattern=r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$",),
-            json_name="https://rdf.spdx.org/v3/Core/specVersion",
+            iri="https://rdf.spdx.org/v3/Core/specVersion",
             min_count=1,
         )
         # Provide consumers with comments by the creator of the Element about the Element.
         self._add_property(
             "comment",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Core/comment",
+            iri="https://rdf.spdx.org/v3/Core/comment",
         )
         # Identifies when the Element was originally created.
         self._add_property(
             "created",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
-            json_name="https://rdf.spdx.org/v3/Core/created",
+            iri="https://rdf.spdx.org/v3/Core/created",
             min_count=1,
         )
         # Identifies who or what created the Element.
         self._add_property(
             "createdBy",
             ListProp(ObjectProp(Agent, False)),
-            json_name="https://rdf.spdx.org/v3/Core/createdBy",
+            iri="https://rdf.spdx.org/v3/Core/createdBy",
             min_count=1,
         )
         # Identifies the tooling that was used during the creation of the Element.
         self._add_property(
             "createdUsing",
             ListProp(ObjectProp(Tool, False)),
-            json_name="https://rdf.spdx.org/v3/Core/createdUsing",
+            iri="https://rdf.spdx.org/v3/Core/createdUsing",
         )
         self._set_init_props(**kwargs)
 
@@ -2207,14 +2234,14 @@ class DictionaryEntry(SHACLObject):
         self._add_property(
             "key",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Core/key",
+            iri="https://rdf.spdx.org/v3/Core/key",
             min_count=1,
         )
         # A value used in a generic key-value pair.
         self._add_property(
             "value",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Core/value",
+            iri="https://rdf.spdx.org/v3/Core/value",
         )
         self._set_init_props(**kwargs)
 
@@ -2232,58 +2259,58 @@ class Element(SHACLObject):
         self._add_property(
             "name",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Core/name",
+            iri="https://rdf.spdx.org/v3/Core/name",
         )
         # A short description of an Element.
         self._add_property(
             "summary",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Core/summary",
+            iri="https://rdf.spdx.org/v3/Core/summary",
         )
         # Provides a detailed description of the Element.
         self._add_property(
             "description",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Core/description",
+            iri="https://rdf.spdx.org/v3/Core/description",
         )
         # Provide consumers with comments by the creator of the Element about the Element.
         self._add_property(
             "comment",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Core/comment",
+            iri="https://rdf.spdx.org/v3/Core/comment",
         )
         # Provides information about the creation of the Element.
         self._add_property(
             "creationInfo",
             ObjectProp(CreationInfo, True),
-            json_name="https://rdf.spdx.org/v3/Core/creationInfo",
+            iri="https://rdf.spdx.org/v3/Core/creationInfo",
             min_count=1,
         )
         # Provides an IntegrityMethod with which the integrity of an Element can be asserted.
         self._add_property(
             "verifiedUsing",
             ListProp(ObjectProp(IntegrityMethod, False)),
-            json_name="https://rdf.spdx.org/v3/Core/verifiedUsing",
+            iri="https://rdf.spdx.org/v3/Core/verifiedUsing",
         )
         # Points to a resource outside the scope of the SPDX-3.0 content
         # that provides additional characteristics of an Element.
         self._add_property(
             "externalRef",
             ListProp(ObjectProp(ExternalRef, False)),
-            json_name="https://rdf.spdx.org/v3/Core/externalRef",
+            iri="https://rdf.spdx.org/v3/Core/externalRef",
         )
         # Provides a reference to a resource outside the scope of SPDX-3.0 content
         # that uniquely identifies an Element.
         self._add_property(
             "externalIdentifier",
             ListProp(ObjectProp(ExternalIdentifier, False)),
-            json_name="https://rdf.spdx.org/v3/Core/externalIdentifier",
+            iri="https://rdf.spdx.org/v3/Core/externalIdentifier",
         )
         # Specifies an Extension characterization of some aspect of an Element.
         self._add_property(
             "extension",
             ListProp(ObjectProp(extension_Extension, False)),
-            json_name="https://rdf.spdx.org/v3/Core/extension",
+            iri="https://rdf.spdx.org/v3/Core/extension",
         )
         self._set_init_props(**kwargs)
 
@@ -2301,19 +2328,19 @@ class ElementCollection(Element):
         self._add_property(
             "element",
             ListProp(ObjectProp(Element, False)),
-            json_name="https://rdf.spdx.org/v3/Core/element",
+            iri="https://rdf.spdx.org/v3/Core/element",
         )
         # This property is used to denote the root Element(s) of a tree of elements contained in an SBOM.
         self._add_property(
             "rootElement",
             ListProp(ObjectProp(Element, False)),
-            json_name="https://rdf.spdx.org/v3/Core/rootElement",
+            iri="https://rdf.spdx.org/v3/Core/rootElement",
         )
         # Describes one a profile which the creator of this ElementCollection intends to conform to.
         self._add_property(
             "profileConformance",
             ListProp(ProfileIdentifierType()),
-            json_name="https://rdf.spdx.org/v3/Core/profileConformance",
+            iri="https://rdf.spdx.org/v3/Core/profileConformance",
         )
         self._set_init_props(**kwargs)
 
@@ -2331,33 +2358,33 @@ class ExternalIdentifier(SHACLObject):
         self._add_property(
             "externalIdentifierType",
             ExternalIdentifierType(),
-            json_name="https://rdf.spdx.org/v3/Core/externalIdentifierType",
+            iri="https://rdf.spdx.org/v3/Core/externalIdentifierType",
             min_count=1,
         )
         # Uniquely identifies an external element.
         self._add_property(
             "identifier",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Core/identifier",
+            iri="https://rdf.spdx.org/v3/Core/identifier",
             min_count=1,
         )
         # Provide consumers with comments by the creator of the Element about the Element.
         self._add_property(
             "comment",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Core/comment",
+            iri="https://rdf.spdx.org/v3/Core/comment",
         )
         # Provides the location for more information regarding an external identifier.
         self._add_property(
             "identifierLocator",
             ListProp(AnyURIProp()),
-            json_name="https://rdf.spdx.org/v3/Core/identifierLocator",
+            iri="https://rdf.spdx.org/v3/Core/identifierLocator",
         )
         # An entity that is authorized to issue identification credentials.
         self._add_property(
             "issuingAuthority",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Core/issuingAuthority",
+            iri="https://rdf.spdx.org/v3/Core/issuingAuthority",
         )
         self._set_init_props(**kwargs)
 
@@ -2375,26 +2402,26 @@ class ExternalMap(SHACLObject):
         self._add_property(
             "externalSpdxId",
             AnyURIProp(),
-            json_name="https://rdf.spdx.org/v3/Core/externalSpdxId",
+            iri="https://rdf.spdx.org/v3/Core/externalSpdxId",
             min_count=1,
         )
         # Provides an IntegrityMethod with which the integrity of an Element can be asserted.
         self._add_property(
             "verifiedUsing",
             ListProp(ObjectProp(IntegrityMethod, False)),
-            json_name="https://rdf.spdx.org/v3/Core/verifiedUsing",
+            iri="https://rdf.spdx.org/v3/Core/verifiedUsing",
         )
         # Provides an indication of where to retrieve an external Element.
         self._add_property(
             "locationHint",
             AnyURIProp(),
-            json_name="https://rdf.spdx.org/v3/Core/locationHint",
+            iri="https://rdf.spdx.org/v3/Core/locationHint",
         )
         # Artifact representing a serialization instance of SPDX data containing the definition of a particular Element.
         self._add_property(
             "definingArtifact",
             ObjectProp(Artifact, False),
-            json_name="https://rdf.spdx.org/v3/Core/definingArtifact",
+            iri="https://rdf.spdx.org/v3/Core/definingArtifact",
         )
         self._set_init_props(**kwargs)
 
@@ -2412,25 +2439,25 @@ class ExternalRef(SHACLObject):
         self._add_property(
             "externalRefType",
             ExternalRefType(),
-            json_name="https://rdf.spdx.org/v3/Core/externalRefType",
+            iri="https://rdf.spdx.org/v3/Core/externalRefType",
         )
         # Provides the location of an external reference.
         self._add_property(
             "locator",
             ListProp(StringProp()),
-            json_name="https://rdf.spdx.org/v3/Core/locator",
+            iri="https://rdf.spdx.org/v3/Core/locator",
         )
         # Specifies the media type of an Element or Property.
         self._add_property(
             "contentType",
             StringProp(pattern=r"^[^\/]+\/[^\/]+$",),
-            json_name="https://rdf.spdx.org/v3/Core/contentType",
+            iri="https://rdf.spdx.org/v3/Core/contentType",
         )
         # Provide consumers with comments by the creator of the Element about the Element.
         self._add_property(
             "comment",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Core/comment",
+            iri="https://rdf.spdx.org/v3/Core/comment",
         )
         self._set_init_props(**kwargs)
 
@@ -2448,7 +2475,7 @@ class IntegrityMethod(SHACLObject):
         self._add_property(
             "comment",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Core/comment",
+            iri="https://rdf.spdx.org/v3/Core/comment",
         )
         self._set_init_props(**kwargs)
 
@@ -2466,14 +2493,14 @@ class NamespaceMap(SHACLObject):
         self._add_property(
             "prefix",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Core/prefix",
+            iri="https://rdf.spdx.org/v3/Core/prefix",
             min_count=1,
         )
         # Provides an unambiguous mechanism for conveying a URI fragment portion of an ElementID.
         self._add_property(
             "namespace",
             AnyURIProp(),
-            json_name="https://rdf.spdx.org/v3/Core/namespace",
+            iri="https://rdf.spdx.org/v3/Core/namespace",
             min_count=1,
         )
         self._set_init_props(**kwargs)
@@ -2492,14 +2519,14 @@ class PackageVerificationCode(IntegrityMethod):
         self._add_property(
             "hashValue",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Core/hashValue",
+            iri="https://rdf.spdx.org/v3/Core/hashValue",
             min_count=1,
         )
         # The relative file name of a file to be excluded from the `PackageVerificationCode`.
         self._add_property(
             "packageVerificationCodeExcludedFile",
             ListProp(StringProp()),
-            json_name="https://rdf.spdx.org/v3/Core/packageVerificationCodeExcludedFile",
+            iri="https://rdf.spdx.org/v3/Core/packageVerificationCodeExcludedFile",
         )
         self._set_init_props(**kwargs)
 
@@ -2517,14 +2544,14 @@ class PositiveIntegerRange(SHACLObject):
         self._add_property(
             "beginIntegerRange",
             PositiveIntegerProp(),
-            json_name="https://rdf.spdx.org/v3/Core/beginIntegerRange",
+            iri="https://rdf.spdx.org/v3/Core/beginIntegerRange",
             min_count=1,
         )
         # Defines the end of a range.
         self._add_property(
             "endIntegerRange",
             PositiveIntegerProp(),
-            json_name="https://rdf.spdx.org/v3/Core/endIntegerRange",
+            iri="https://rdf.spdx.org/v3/Core/endIntegerRange",
             min_count=1,
         )
         self._set_init_props(**kwargs)
@@ -2543,39 +2570,39 @@ class Relationship(Element):
         self._add_property(
             "from_",
             ObjectProp(Element, True),
-            json_name="https://rdf.spdx.org/v3/Core/from",
+            iri="https://rdf.spdx.org/v3/Core/from",
             min_count=1,
         )
         # References an Element on the right-hand side of a relationship.
         self._add_property(
             "to",
             ListProp(ObjectProp(Element, False)),
-            json_name="https://rdf.spdx.org/v3/Core/to",
+            iri="https://rdf.spdx.org/v3/Core/to",
         )
         # Information about the relationship between two Elements.
         self._add_property(
             "relationshipType",
             RelationshipType(),
-            json_name="https://rdf.spdx.org/v3/Core/relationshipType",
+            iri="https://rdf.spdx.org/v3/Core/relationshipType",
             min_count=1,
         )
         # Provides information about the completeness of relationships.
         self._add_property(
             "completeness",
             RelationshipCompleteness(),
-            json_name="https://rdf.spdx.org/v3/Core/completeness",
+            iri="https://rdf.spdx.org/v3/Core/completeness",
         )
         # Specifies the time from which an element is applicable / valid.
         self._add_property(
             "startTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
-            json_name="https://rdf.spdx.org/v3/Core/startTime",
+            iri="https://rdf.spdx.org/v3/Core/startTime",
         )
         # Specifies the time from which an element is no longer applicable / valid.
         self._add_property(
             "endTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
-            json_name="https://rdf.spdx.org/v3/Core/endTime",
+            iri="https://rdf.spdx.org/v3/Core/endTime",
         )
         self._set_init_props(**kwargs)
 
@@ -2593,19 +2620,19 @@ class SpdxDocument(ElementCollection):
         self._add_property(
             "imports",
             ListProp(ObjectProp(ExternalMap, False)),
-            json_name="https://rdf.spdx.org/v3/Core/imports",
+            iri="https://rdf.spdx.org/v3/Core/imports",
         )
         # Provides a NamespaceMap of prefixes and associated namespace partial URIs applicable to an SpdxDocument and independent of any specific serialization format or instance.
         self._add_property(
             "namespaceMap",
             ListProp(ObjectProp(NamespaceMap, False)),
-            json_name="https://rdf.spdx.org/v3/Core/namespaceMap",
+            iri="https://rdf.spdx.org/v3/Core/namespaceMap",
         )
         # Provides the license under which the SPDX documentation of the Element can be used.
         self._add_property(
             "dataLicense",
             ObjectProp(simplelicensing_AnyLicenseInfo, False),
-            json_name="https://rdf.spdx.org/v3/Core/dataLicense",
+            iri="https://rdf.spdx.org/v3/Core/dataLicense",
         )
         self._set_init_props(**kwargs)
 
@@ -2636,39 +2663,39 @@ class expandedlicensing_LicenseAddition(Element):
         self._add_property(
             "expandedlicensing_additionText",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/ExpandedLicensing/additionText",
+            iri="https://rdf.spdx.org/v3/ExpandedLicensing/additionText",
             min_count=1,
         )
         # Identifies the full text of a LicenseAddition, in SPDX templating format.
         self._add_property(
             "expandedlicensing_standardAdditionTemplate",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/ExpandedLicensing/standardAdditionTemplate",
+            iri="https://rdf.spdx.org/v3/ExpandedLicensing/standardAdditionTemplate",
         )
         # Specifies whether an additional text identifier has been marked as deprecated.
         self._add_property(
             "expandedlicensing_isDeprecatedAdditionId",
             BooleanProp(),
-            json_name="https://rdf.spdx.org/v3/ExpandedLicensing/isDeprecatedAdditionId",
+            iri="https://rdf.spdx.org/v3/ExpandedLicensing/isDeprecatedAdditionId",
         )
         # Specifies the licenseId that is preferred to be used in place of a deprecated
         # License or LicenseAddition.
         self._add_property(
             "expandedlicensing_obsoletedBy",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/ExpandedLicensing/obsoletedBy",
+            iri="https://rdf.spdx.org/v3/ExpandedLicensing/obsoletedBy",
         )
         # Identifies all the text and metadata associated with a license in the license XML format.
         self._add_property(
             "expandedlicensing_licenseXml",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/ExpandedLicensing/licenseXml",
+            iri="https://rdf.spdx.org/v3/ExpandedLicensing/licenseXml",
         )
         # Contains a URL where the License or LicenseAddition can be found in use.
         self._add_property(
             "expandedlicensing_seeAlso",
             ListProp(AnyURIProp()),
-            json_name="https://rdf.spdx.org/v3/ExpandedLicensing/seeAlso",
+            iri="https://rdf.spdx.org/v3/ExpandedLicensing/seeAlso",
         )
         self._set_init_props(**kwargs)
 
@@ -2687,14 +2714,14 @@ class expandedlicensing_ListedLicenseException(expandedlicensing_LicenseAddition
         self._add_property(
             "expandedlicensing_listVersionAdded",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/ExpandedLicensing/listVersionAdded",
+            iri="https://rdf.spdx.org/v3/ExpandedLicensing/listVersionAdded",
         )
         # Specifies the SPDX License List version in which this license or exception
         # identifier was deprecated.
         self._add_property(
             "expandedlicensing_deprecatedVersion",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/ExpandedLicensing/deprecatedVersion",
+            iri="https://rdf.spdx.org/v3/ExpandedLicensing/deprecatedVersion",
         )
         self._set_init_props(**kwargs)
 
@@ -2725,31 +2752,31 @@ class security_VulnAssessmentRelationship(Relationship):
         self._add_property(
             "security_assessedElement",
             ObjectProp(Element, False),
-            json_name="https://rdf.spdx.org/v3/Security/assessedElement",
+            iri="https://rdf.spdx.org/v3/Security/assessedElement",
         )
         # Specifies the time when a vulnerability was published.
         self._add_property(
             "security_publishedTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
-            json_name="https://rdf.spdx.org/v3/Security/publishedTime",
+            iri="https://rdf.spdx.org/v3/Security/publishedTime",
         )
         # Identifies who or what supplied the artifact or VulnAssessmentRelationship referenced by the Element.
         self._add_property(
             "suppliedBy",
             ObjectProp(Agent, False),
-            json_name="https://rdf.spdx.org/v3/Core/suppliedBy",
+            iri="https://rdf.spdx.org/v3/Core/suppliedBy",
         )
         # Specifies a time when a vulnerability assessment was modified
         self._add_property(
             "security_modifiedTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
-            json_name="https://rdf.spdx.org/v3/Security/modifiedTime",
+            iri="https://rdf.spdx.org/v3/Security/modifiedTime",
         )
         # Specified the time and date when a vulnerability was withdrawn.
         self._add_property(
             "security_withdrawnTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
-            json_name="https://rdf.spdx.org/v3/Security/withdrawnTime",
+            iri="https://rdf.spdx.org/v3/Security/withdrawnTime",
         )
         self._set_init_props(**kwargs)
 
@@ -2781,20 +2808,20 @@ class simplelicensing_LicenseExpression(simplelicensing_AnyLicenseInfo):
         self._add_property(
             "simplelicensing_licenseExpression",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/SimpleLicensing/licenseExpression",
+            iri="https://rdf.spdx.org/v3/SimpleLicensing/licenseExpression",
             min_count=1,
         )
         # The version of the SPDX License List used in the license expression.
         self._add_property(
             "simplelicensing_licenseListVersion",
             StringProp(pattern=r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$",),
-            json_name="https://rdf.spdx.org/v3/SimpleLicensing/licenseListVersion",
+            iri="https://rdf.spdx.org/v3/SimpleLicensing/licenseListVersion",
         )
         # Maps a LicenseRef or AdditionRef string for a Custom License or a Custom License Addition to its URI ID.
         self._add_property(
             "simplelicensing_customIdToUri",
             ListProp(ObjectProp(DictionaryEntry, False)),
-            json_name="https://rdf.spdx.org/v3/SimpleLicensing/customIdToUri",
+            iri="https://rdf.spdx.org/v3/SimpleLicensing/customIdToUri",
         )
         self._set_init_props(**kwargs)
 
@@ -2812,7 +2839,7 @@ class simplelicensing_SimpleLicensingText(Element):
         self._add_property(
             "simplelicensing_licenseText",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/SimpleLicensing/licenseText",
+            iri="https://rdf.spdx.org/v3/SimpleLicensing/licenseText",
             min_count=1,
         )
         self._set_init_props(**kwargs)
@@ -2831,56 +2858,56 @@ class build_Build(Element):
         self._add_property(
             "build_buildType",
             AnyURIProp(),
-            json_name="https://rdf.spdx.org/v3/Build/buildType",
+            iri="https://rdf.spdx.org/v3/Build/buildType",
             min_count=1,
         )
         # A buildId is a locally unique identifier used by a builder to identify a unique instance of a build produced by it.
         self._add_property(
             "build_buildId",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Build/buildId",
+            iri="https://rdf.spdx.org/v3/Build/buildId",
         )
         # Property describes the invocation entrypoint of a build.
         self._add_property(
             "build_configSourceEntrypoint",
             ListProp(StringProp()),
-            json_name="https://rdf.spdx.org/v3/Build/configSourceEntrypoint",
+            iri="https://rdf.spdx.org/v3/Build/configSourceEntrypoint",
         )
         # Property that describes the URI of the build configuration source file.
         self._add_property(
             "build_configSourceUri",
             ListProp(AnyURIProp()),
-            json_name="https://rdf.spdx.org/v3/Build/configSourceUri",
+            iri="https://rdf.spdx.org/v3/Build/configSourceUri",
         )
         # Property that describes the digest of the build configuration file used to invoke a build.
         self._add_property(
             "build_configSourceDigest",
             ListProp(ObjectProp(Hash, False)),
-            json_name="https://rdf.spdx.org/v3/Build/configSourceDigest",
+            iri="https://rdf.spdx.org/v3/Build/configSourceDigest",
         )
         # Property describing the parameters used in an instance of a build.
         self._add_property(
             "build_parameters",
             ListProp(ObjectProp(DictionaryEntry, False)),
-            json_name="https://rdf.spdx.org/v3/Build/parameters",
+            iri="https://rdf.spdx.org/v3/Build/parameters",
         )
         # Property describing the start time of a build.
         self._add_property(
             "build_buildStartTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
-            json_name="https://rdf.spdx.org/v3/Build/buildStartTime",
+            iri="https://rdf.spdx.org/v3/Build/buildStartTime",
         )
         # Property that describes the time at which a build stops.
         self._add_property(
             "build_buildEndTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
-            json_name="https://rdf.spdx.org/v3/Build/buildEndTime",
+            iri="https://rdf.spdx.org/v3/Build/buildEndTime",
         )
         # Property describing the session in which a build is invoked.
         self._add_property(
             "build_environment",
             ListProp(ObjectProp(DictionaryEntry, False)),
-            json_name="https://rdf.spdx.org/v3/Build/environment",
+            iri="https://rdf.spdx.org/v3/Build/environment",
         )
         self._set_init_props(**kwargs)
 
@@ -2910,26 +2937,26 @@ class Annotation(Element):
         self._add_property(
             "annotationType",
             AnnotationType(),
-            json_name="https://rdf.spdx.org/v3/Core/annotationType",
+            iri="https://rdf.spdx.org/v3/Core/annotationType",
             min_count=1,
         )
         # Specifies the media type of an Element or Property.
         self._add_property(
             "contentType",
             StringProp(pattern=r"^[^\/]+\/[^\/]+$",),
-            json_name="https://rdf.spdx.org/v3/Core/contentType",
+            iri="https://rdf.spdx.org/v3/Core/contentType",
         )
         # Commentary on an assertion that an annotator has made.
         self._add_property(
             "statement",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Core/statement",
+            iri="https://rdf.spdx.org/v3/Core/statement",
         )
         # An Element an annotator has made an assertion about.
         self._add_property(
             "subject",
             ObjectProp(Element, True),
-            json_name="https://rdf.spdx.org/v3/Core/subject",
+            iri="https://rdf.spdx.org/v3/Core/subject",
             min_count=1,
         )
         self._set_init_props(**kwargs)
@@ -2948,43 +2975,43 @@ class Artifact(Element):
         self._add_property(
             "originatedBy",
             ListProp(ObjectProp(Agent, False)),
-            json_name="https://rdf.spdx.org/v3/Core/originatedBy",
+            iri="https://rdf.spdx.org/v3/Core/originatedBy",
         )
         # Identifies who or what supplied the artifact or VulnAssessmentRelationship referenced by the Element.
         self._add_property(
             "suppliedBy",
             ObjectProp(Agent, False),
-            json_name="https://rdf.spdx.org/v3/Core/suppliedBy",
+            iri="https://rdf.spdx.org/v3/Core/suppliedBy",
         )
         # Specifies the time an artifact was built.
         self._add_property(
             "builtTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
-            json_name="https://rdf.spdx.org/v3/Core/builtTime",
+            iri="https://rdf.spdx.org/v3/Core/builtTime",
         )
         # Specifies the time an artifact was released.
         self._add_property(
             "releaseTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
-            json_name="https://rdf.spdx.org/v3/Core/releaseTime",
+            iri="https://rdf.spdx.org/v3/Core/releaseTime",
         )
         # Specifies until when the artifact can be used before its usage needs to be reassessed.
         self._add_property(
             "validUntilTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
-            json_name="https://rdf.spdx.org/v3/Core/validUntilTime",
+            iri="https://rdf.spdx.org/v3/Core/validUntilTime",
         )
         # The name of a relevant standard that may apply to an artifact.
         self._add_property(
             "standardName",
             ListProp(StringProp()),
-            json_name="https://rdf.spdx.org/v3/Core/standardName",
+            iri="https://rdf.spdx.org/v3/Core/standardName",
         )
         # Specifies the level of support associated with an artifact.
         self._add_property(
             "supportLevel",
             ListProp(SupportType()),
-            json_name="https://rdf.spdx.org/v3/Core/supportLevel",
+            iri="https://rdf.spdx.org/v3/Core/supportLevel",
         )
         self._set_init_props(**kwargs)
 
@@ -3003,7 +3030,7 @@ class Bundle(ElementCollection):
         self._add_property(
             "context",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Core/context",
+            iri="https://rdf.spdx.org/v3/Core/context",
         )
         self._set_init_props(**kwargs)
 
@@ -3021,14 +3048,14 @@ class Hash(IntegrityMethod):
         self._add_property(
             "algorithm",
             HashAlgorithm(),
-            json_name="https://rdf.spdx.org/v3/Core/algorithm",
+            iri="https://rdf.spdx.org/v3/Core/algorithm",
             min_count=1,
         )
         # The result of applying a hash algorithm to an Element.
         self._add_property(
             "hashValue",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Core/hashValue",
+            iri="https://rdf.spdx.org/v3/Core/hashValue",
             min_count=1,
         )
         self._set_init_props(**kwargs)
@@ -3047,7 +3074,7 @@ class LifecycleScopedRelationship(Relationship):
         self._add_property(
             "scope",
             LifecycleScopeType(),
-            json_name="https://rdf.spdx.org/v3/Core/scope",
+            iri="https://rdf.spdx.org/v3/Core/scope",
         )
         self._set_init_props(**kwargs)
 
@@ -3102,7 +3129,7 @@ class expandedlicensing_ConjunctiveLicenseSet(simplelicensing_AnyLicenseInfo):
         self._add_property(
             "expandedlicensing_member",
             ListProp(ObjectProp(simplelicensing_AnyLicenseInfo, False)),
-            json_name="https://rdf.spdx.org/v3/ExpandedLicensing/member",
+            iri="https://rdf.spdx.org/v3/ExpandedLicensing/member",
             min_count=2,
         )
         self._set_init_props(**kwargs)
@@ -3134,7 +3161,7 @@ class expandedlicensing_DisjunctiveLicenseSet(simplelicensing_AnyLicenseInfo):
         self._add_property(
             "expandedlicensing_member",
             ListProp(ObjectProp(simplelicensing_AnyLicenseInfo, False)),
-            json_name="https://rdf.spdx.org/v3/ExpandedLicensing/member",
+            iri="https://rdf.spdx.org/v3/ExpandedLicensing/member",
             min_count=2,
         )
         self._set_init_props(**kwargs)
@@ -3177,7 +3204,7 @@ class expandedlicensing_License(expandedlicensing_ExtendableLicense):
         self._add_property(
             "simplelicensing_licenseText",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/SimpleLicensing/licenseText",
+            iri="https://rdf.spdx.org/v3/SimpleLicensing/licenseText",
             min_count=1,
         )
         # Specifies whether the License is listed as approved by the
@@ -3185,53 +3212,53 @@ class expandedlicensing_License(expandedlicensing_ExtendableLicense):
         self._add_property(
             "expandedlicensing_isOsiApproved",
             BooleanProp(),
-            json_name="https://rdf.spdx.org/v3/ExpandedLicensing/isOsiApproved",
+            iri="https://rdf.spdx.org/v3/ExpandedLicensing/isOsiApproved",
         )
         # Specifies whether the License is listed as free by the
         # [Free Software Foundation (FSF)](https://fsf.org).
         self._add_property(
             "expandedlicensing_isFsfLibre",
             BooleanProp(),
-            json_name="https://rdf.spdx.org/v3/ExpandedLicensing/isFsfLibre",
+            iri="https://rdf.spdx.org/v3/ExpandedLicensing/isFsfLibre",
         )
         # Provides a License author's preferred text to indicate that a file is covered
         # by the License.
         self._add_property(
             "expandedlicensing_standardLicenseHeader",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/ExpandedLicensing/standardLicenseHeader",
+            iri="https://rdf.spdx.org/v3/ExpandedLicensing/standardLicenseHeader",
         )
         # Identifies the full text of a License, in SPDX templating format.
         self._add_property(
             "expandedlicensing_standardLicenseTemplate",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/ExpandedLicensing/standardLicenseTemplate",
+            iri="https://rdf.spdx.org/v3/ExpandedLicensing/standardLicenseTemplate",
         )
         # Specifies whether a license or additional text identifier has been marked as
         # deprecated.
         self._add_property(
             "expandedlicensing_isDeprecatedLicenseId",
             BooleanProp(),
-            json_name="https://rdf.spdx.org/v3/ExpandedLicensing/isDeprecatedLicenseId",
+            iri="https://rdf.spdx.org/v3/ExpandedLicensing/isDeprecatedLicenseId",
         )
         # Specifies the licenseId that is preferred to be used in place of a deprecated
         # License or LicenseAddition.
         self._add_property(
             "expandedlicensing_obsoletedBy",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/ExpandedLicensing/obsoletedBy",
+            iri="https://rdf.spdx.org/v3/ExpandedLicensing/obsoletedBy",
         )
         # Identifies all the text and metadata associated with a license in the license XML format.
         self._add_property(
             "expandedlicensing_licenseXml",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/ExpandedLicensing/licenseXml",
+            iri="https://rdf.spdx.org/v3/ExpandedLicensing/licenseXml",
         )
         # Contains a URL where the License or LicenseAddition can be found in use.
         self._add_property(
             "expandedlicensing_seeAlso",
             ListProp(AnyURIProp()),
-            json_name="https://rdf.spdx.org/v3/ExpandedLicensing/seeAlso",
+            iri="https://rdf.spdx.org/v3/ExpandedLicensing/seeAlso",
         )
         self._set_init_props(**kwargs)
 
@@ -3250,14 +3277,14 @@ class expandedlicensing_ListedLicense(expandedlicensing_License):
         self._add_property(
             "expandedlicensing_listVersionAdded",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/ExpandedLicensing/listVersionAdded",
+            iri="https://rdf.spdx.org/v3/ExpandedLicensing/listVersionAdded",
         )
         # Specifies the SPDX License List version in which this license or exception
         # identifier was deprecated.
         self._add_property(
             "expandedlicensing_deprecatedVersion",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/ExpandedLicensing/deprecatedVersion",
+            iri="https://rdf.spdx.org/v3/ExpandedLicensing/deprecatedVersion",
         )
         self._set_init_props(**kwargs)
 
@@ -3276,7 +3303,7 @@ class expandedlicensing_OrLaterOperator(expandedlicensing_ExtendableLicense):
         self._add_property(
             "expandedlicensing_subjectLicense",
             ObjectProp(expandedlicensing_License, True),
-            json_name="https://rdf.spdx.org/v3/ExpandedLicensing/subjectLicense",
+            iri="https://rdf.spdx.org/v3/ExpandedLicensing/subjectLicense",
             min_count=1,
         )
         self._set_init_props(**kwargs)
@@ -3296,14 +3323,14 @@ class expandedlicensing_WithAdditionOperator(simplelicensing_AnyLicenseInfo):
         self._add_property(
             "expandedlicensing_subjectExtendableLicense",
             ObjectProp(expandedlicensing_ExtendableLicense, True),
-            json_name="https://rdf.spdx.org/v3/ExpandedLicensing/subjectExtendableLicense",
+            iri="https://rdf.spdx.org/v3/ExpandedLicensing/subjectExtendableLicense",
             min_count=1,
         )
         # A LicenseAddition participating in a 'with addition' model.
         self._add_property(
             "expandedlicensing_subjectAddition",
             ObjectProp(expandedlicensing_LicenseAddition, True),
-            json_name="https://rdf.spdx.org/v3/ExpandedLicensing/subjectAddition",
+            iri="https://rdf.spdx.org/v3/ExpandedLicensing/subjectAddition",
             min_count=1,
         )
         self._set_init_props(**kwargs)
@@ -3322,14 +3349,14 @@ class security_CvssV2VulnAssessmentRelationship(security_VulnAssessmentRelations
         self._add_property(
             "security_score",
             FloatProp(),
-            json_name="https://rdf.spdx.org/v3/Security/score",
+            iri="https://rdf.spdx.org/v3/Security/score",
             min_count=1,
         )
         # Specifies the CVSS vector string for a vulnerability.
         self._add_property(
             "security_vectorString",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Security/vectorString",
+            iri="https://rdf.spdx.org/v3/Security/vectorString",
             min_count=1,
         )
         self._set_init_props(**kwargs)
@@ -3348,21 +3375,21 @@ class security_CvssV3VulnAssessmentRelationship(security_VulnAssessmentRelations
         self._add_property(
             "security_score",
             FloatProp(),
-            json_name="https://rdf.spdx.org/v3/Security/score",
+            iri="https://rdf.spdx.org/v3/Security/score",
             min_count=1,
         )
         # Specifies the CVSS qualitative severity rating of a vulnerability in relation to a piece of software.
         self._add_property(
             "security_severity",
             security_CvssSeverityType(),
-            json_name="https://rdf.spdx.org/v3/Security/severity",
+            iri="https://rdf.spdx.org/v3/Security/severity",
             min_count=1,
         )
         # Specifies the CVSS vector string for a vulnerability.
         self._add_property(
             "security_vectorString",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Security/vectorString",
+            iri="https://rdf.spdx.org/v3/Security/vectorString",
             min_count=1,
         )
         self._set_init_props(**kwargs)
@@ -3381,21 +3408,21 @@ class security_CvssV4VulnAssessmentRelationship(security_VulnAssessmentRelations
         self._add_property(
             "security_score",
             FloatProp(),
-            json_name="https://rdf.spdx.org/v3/Security/score",
+            iri="https://rdf.spdx.org/v3/Security/score",
             min_count=1,
         )
         # Specifies the CVSS qualitative severity rating of a vulnerability in relation to a piece of software.
         self._add_property(
             "security_severity",
             security_CvssSeverityType(),
-            json_name="https://rdf.spdx.org/v3/Security/severity",
+            iri="https://rdf.spdx.org/v3/Security/severity",
             min_count=1,
         )
         # Specifies the CVSS vector string for a vulnerability.
         self._add_property(
             "security_vectorString",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Security/vectorString",
+            iri="https://rdf.spdx.org/v3/Security/vectorString",
             min_count=1,
         )
         self._set_init_props(**kwargs)
@@ -3414,21 +3441,21 @@ class security_EpssVulnAssessmentRelationship(security_VulnAssessmentRelationshi
         self._add_property(
             "security_probability",
             FloatProp(),
-            json_name="https://rdf.spdx.org/v3/Security/probability",
+            iri="https://rdf.spdx.org/v3/Security/probability",
             min_count=1,
         )
         # The percentile of the current probability score.
         self._add_property(
             "security_percentile",
             FloatProp(),
-            json_name="https://rdf.spdx.org/v3/Security/percentile",
+            iri="https://rdf.spdx.org/v3/Security/percentile",
             min_count=1,
         )
         # Specifies the time when a vulnerability was published.
         self._add_property(
             "security_publishedTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
-            json_name="https://rdf.spdx.org/v3/Security/publishedTime",
+            iri="https://rdf.spdx.org/v3/Security/publishedTime",
             min_count=1,
         )
         self._set_init_props(**kwargs)
@@ -3447,21 +3474,21 @@ class security_ExploitCatalogVulnAssessmentRelationship(security_VulnAssessmentR
         self._add_property(
             "security_catalogType",
             security_ExploitCatalogType(),
-            json_name="https://rdf.spdx.org/v3/Security/catalogType",
+            iri="https://rdf.spdx.org/v3/Security/catalogType",
             min_count=1,
         )
         # Describe that a CVE is known to have an exploit because it's been listed in an exploit catalog.
         self._add_property(
             "security_exploited",
             BooleanProp(),
-            json_name="https://rdf.spdx.org/v3/Security/exploited",
+            iri="https://rdf.spdx.org/v3/Security/exploited",
             min_count=1,
         )
         # Provides the location of an exploit catalog.
         self._add_property(
             "security_locator",
             AnyURIProp(),
-            json_name="https://rdf.spdx.org/v3/Security/locator",
+            iri="https://rdf.spdx.org/v3/Security/locator",
             min_count=1,
         )
         self._set_init_props(**kwargs)
@@ -3480,7 +3507,7 @@ class security_SsvcVulnAssessmentRelationship(security_VulnAssessmentRelationshi
         self._add_property(
             "security_decisionType",
             security_SsvcDecisionType(),
-            json_name="https://rdf.spdx.org/v3/Security/decisionType",
+            iri="https://rdf.spdx.org/v3/Security/decisionType",
             min_count=1,
         )
         self._set_init_props(**kwargs)
@@ -3499,13 +3526,13 @@ class security_VexVulnAssessmentRelationship(security_VulnAssessmentRelationship
         self._add_property(
             "security_vexVersion",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Security/vexVersion",
+            iri="https://rdf.spdx.org/v3/Security/vexVersion",
         )
         # Conveys information about how VEX status was determined.
         self._add_property(
             "security_statusNotes",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Security/statusNotes",
+            iri="https://rdf.spdx.org/v3/Security/statusNotes",
         )
         self._set_init_props(**kwargs)
 
@@ -3523,19 +3550,19 @@ class security_Vulnerability(Artifact):
         self._add_property(
             "security_publishedTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
-            json_name="https://rdf.spdx.org/v3/Security/publishedTime",
+            iri="https://rdf.spdx.org/v3/Security/publishedTime",
         )
         # Specifies a time when a vulnerability assessment was modified
         self._add_property(
             "security_modifiedTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
-            json_name="https://rdf.spdx.org/v3/Security/modifiedTime",
+            iri="https://rdf.spdx.org/v3/Security/modifiedTime",
         )
         # Specified the time and date when a vulnerability was withdrawn.
         self._add_property(
             "security_withdrawnTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
-            json_name="https://rdf.spdx.org/v3/Security/withdrawnTime",
+            iri="https://rdf.spdx.org/v3/Security/withdrawnTime",
         )
         self._set_init_props(**kwargs)
 
@@ -3553,34 +3580,34 @@ class software_SoftwareArtifact(Artifact):
         self._add_property(
             "software_gitoid",
             ListProp(AnyURIProp()),
-            json_name="https://rdf.spdx.org/v3/Software/gitoid",
+            iri="https://rdf.spdx.org/v3/Software/gitoid",
             max_count=2,
         )
         # Provides information about the primary purpose of the software artifact.
         self._add_property(
             "software_primaryPurpose",
             software_SoftwarePurpose(),
-            json_name="https://rdf.spdx.org/v3/Software/primaryPurpose",
+            iri="https://rdf.spdx.org/v3/Software/primaryPurpose",
         )
         # Provides additional purpose information of the software artifact.
         self._add_property(
             "software_additionalPurpose",
             ListProp(software_SoftwarePurpose()),
-            json_name="https://rdf.spdx.org/v3/Software/additionalPurpose",
+            iri="https://rdf.spdx.org/v3/Software/additionalPurpose",
         )
         # Identifies the text of one or more copyright notices for a software Package,
         # File or Snippet, if any.
         self._add_property(
             "software_copyrightText",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Software/copyrightText",
+            iri="https://rdf.spdx.org/v3/Software/copyrightText",
         )
         # Provides a place for the SPDX data creator to record acknowledgement text for
         # a software Package, File or Snippet.
         self._add_property(
             "software_attributionText",
             ListProp(StringProp()),
-            json_name="https://rdf.spdx.org/v3/Software/attributionText",
+            iri="https://rdf.spdx.org/v3/Software/attributionText",
         )
         self._set_init_props(**kwargs)
 
@@ -3625,14 +3652,14 @@ class security_VexAffectedVulnAssessmentRelationship(security_VexVulnAssessmentR
         self._add_property(
             "security_actionStatement",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Security/actionStatement",
+            iri="https://rdf.spdx.org/v3/Security/actionStatement",
         )
         # Records the time when a recommended action was communicated in a VEX statement
         # to mitigate a vulnerability.
         self._add_property(
             "security_actionStatementTime",
             ListProp(StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",)),
-            json_name="https://rdf.spdx.org/v3/Security/actionStatementTime",
+            iri="https://rdf.spdx.org/v3/Security/actionStatementTime",
         )
         self._set_init_props(**kwargs)
 
@@ -3666,7 +3693,7 @@ class security_VexNotAffectedVulnAssessmentRelationship(security_VexVulnAssessme
         self._add_property(
             "security_justificationType",
             security_VexJustificationType(),
-            json_name="https://rdf.spdx.org/v3/Security/justificationType",
+            iri="https://rdf.spdx.org/v3/Security/justificationType",
         )
         # Explains why a VEX product is not affected by a vulnerability. It is an
         # alternative in VexNotAffectedVulnAssessmentRelationship to the machine-readable
@@ -3674,13 +3701,13 @@ class security_VexNotAffectedVulnAssessmentRelationship(security_VexVulnAssessme
         self._add_property(
             "security_impactStatement",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Security/impactStatement",
+            iri="https://rdf.spdx.org/v3/Security/impactStatement",
         )
         # Timestamp of impact statement.
         self._add_property(
             "security_impactStatementTime",
             StringProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
-            json_name="https://rdf.spdx.org/v3/Security/impactStatementTime",
+            iri="https://rdf.spdx.org/v3/Security/impactStatementTime",
         )
         self._set_init_props(**kwargs)
 
@@ -3711,13 +3738,13 @@ class software_File(software_SoftwareArtifact):
         self._add_property(
             "software_contentType",
             StringProp(pattern=r"^[^\/]+\/[^\/]+$",),
-            json_name="https://rdf.spdx.org/v3/Software/contentType",
+            iri="https://rdf.spdx.org/v3/Software/contentType",
         )
         # If true, denotes the Element is a directory.
         self._add_property(
             "software_isDirectory",
             BooleanProp(),
-            json_name="https://rdf.spdx.org/v3/Software/isDirectory",
+            iri="https://rdf.spdx.org/v3/Software/isDirectory",
         )
         self._set_init_props(**kwargs)
 
@@ -3735,32 +3762,32 @@ class software_Package(software_SoftwareArtifact):
         self._add_property(
             "software_packageVersion",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Software/packageVersion",
+            iri="https://rdf.spdx.org/v3/Software/packageVersion",
         )
         # Identifies the download Uniform Resource Identifier for the package at the time that the document was created.
         self._add_property(
             "software_downloadLocation",
             AnyURIProp(),
-            json_name="https://rdf.spdx.org/v3/Software/downloadLocation",
+            iri="https://rdf.spdx.org/v3/Software/downloadLocation",
         )
         # Provides a place for the SPDX data creator to record the package URL string (in accordance with the [package URL spec](https://github.com/package-url/purl-spec/blob/master/PURL-SPECIFICATION.rst)) for a software Package.
         self._add_property(
             "software_packageUrl",
             AnyURIProp(),
-            json_name="https://rdf.spdx.org/v3/Software/packageUrl",
+            iri="https://rdf.spdx.org/v3/Software/packageUrl",
         )
         # A place for the SPDX document creator to record a website that serves as the package's home page.
         self._add_property(
             "software_homePage",
             AnyURIProp(),
-            json_name="https://rdf.spdx.org/v3/Software/homePage",
+            iri="https://rdf.spdx.org/v3/Software/homePage",
         )
         # Records any relevant background information or additional comments
         # about the origin of the package.
         self._add_property(
             "software_sourceInfo",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Software/sourceInfo",
+            iri="https://rdf.spdx.org/v3/Software/sourceInfo",
         )
         self._set_init_props(**kwargs)
 
@@ -3778,7 +3805,7 @@ class software_Sbom(Bom):
         self._add_property(
             "software_sbomType",
             ListProp(software_SbomType()),
-            json_name="https://rdf.spdx.org/v3/Software/sbomType",
+            iri="https://rdf.spdx.org/v3/Software/sbomType",
         )
         self._set_init_props(**kwargs)
 
@@ -3796,19 +3823,19 @@ class software_Snippet(software_SoftwareArtifact):
         self._add_property(
             "software_byteRange",
             ObjectProp(PositiveIntegerRange, False),
-            json_name="https://rdf.spdx.org/v3/Software/byteRange",
+            iri="https://rdf.spdx.org/v3/Software/byteRange",
         )
         # Defines the line range in the original host file that the snippet information applies to.
         self._add_property(
             "software_lineRange",
             ObjectProp(PositiveIntegerRange, False),
-            json_name="https://rdf.spdx.org/v3/Software/lineRange",
+            iri="https://rdf.spdx.org/v3/Software/lineRange",
         )
         # Defines the original host file that the snippet information applies to.
         self._add_property(
             "software_snippetFromFile",
             ObjectProp(software_File, True),
-            json_name="https://rdf.spdx.org/v3/Software/snippetFromFile",
+            iri="https://rdf.spdx.org/v3/Software/snippetFromFile",
             min_count=1,
         )
         self._set_init_props(**kwargs)
@@ -3827,91 +3854,91 @@ class ai_AIPackage(software_Package):
         self._add_property(
             "ai_energyConsumption",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/AI/energyConsumption",
+            iri="https://rdf.spdx.org/v3/AI/energyConsumption",
         )
         # Captures a standard that is being complied with.
         self._add_property(
             "ai_standardCompliance",
             ListProp(StringProp()),
-            json_name="https://rdf.spdx.org/v3/AI/standardCompliance",
+            iri="https://rdf.spdx.org/v3/AI/standardCompliance",
         )
         # Captures a limitation of the AI software.
         self._add_property(
             "ai_limitation",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/AI/limitation",
+            iri="https://rdf.spdx.org/v3/AI/limitation",
         )
         # Records the type of the model used in the AI software.
         self._add_property(
             "ai_typeOfModel",
             ListProp(StringProp()),
-            json_name="https://rdf.spdx.org/v3/AI/typeOfModel",
+            iri="https://rdf.spdx.org/v3/AI/typeOfModel",
         )
         # Describes relevant information about different steps of the training process.
         self._add_property(
             "ai_informationAboutTraining",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/AI/informationAboutTraining",
+            iri="https://rdf.spdx.org/v3/AI/informationAboutTraining",
         )
         # Provides relevant information about the AI software, not including the model description.
         self._add_property(
             "ai_informationAboutApplication",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/AI/informationAboutApplication",
+            iri="https://rdf.spdx.org/v3/AI/informationAboutApplication",
         )
         # Records a hyperparameter used to build the AI model contained in the AI package.
         self._add_property(
             "ai_hyperparameter",
             ListProp(ObjectProp(DictionaryEntry, False)),
-            json_name="https://rdf.spdx.org/v3/AI/hyperparameter",
+            iri="https://rdf.spdx.org/v3/AI/hyperparameter",
         )
         # Describes all the preprocessing steps applied to the training data before the model training.
         self._add_property(
             "ai_modelDataPreprocessing",
             ListProp(StringProp()),
-            json_name="https://rdf.spdx.org/v3/AI/modelDataPreprocessing",
+            iri="https://rdf.spdx.org/v3/AI/modelDataPreprocessing",
         )
         # Describes methods that can be used to explain the model.
         self._add_property(
             "ai_modelExplainability",
             ListProp(StringProp()),
-            json_name="https://rdf.spdx.org/v3/AI/modelExplainability",
+            iri="https://rdf.spdx.org/v3/AI/modelExplainability",
         )
         # Records if sensitive personal information is used during model training.
         self._add_property(
             "ai_sensitivePersonalInformation",
             PresenceType(),
-            json_name="https://rdf.spdx.org/v3/AI/sensitivePersonalInformation",
+            iri="https://rdf.spdx.org/v3/AI/sensitivePersonalInformation",
         )
         # Captures the threshold that was used for computation of a metric described in the metric field.
         self._add_property(
             "ai_metricDecisionThreshold",
             ListProp(ObjectProp(DictionaryEntry, False)),
-            json_name="https://rdf.spdx.org/v3/AI/metricDecisionThreshold",
+            iri="https://rdf.spdx.org/v3/AI/metricDecisionThreshold",
         )
         # Records the measurement of prediction quality of the AI model.
         self._add_property(
             "ai_metric",
             ListProp(ObjectProp(DictionaryEntry, False)),
-            json_name="https://rdf.spdx.org/v3/AI/metric",
+            iri="https://rdf.spdx.org/v3/AI/metric",
         )
         # Captures the domain in which the AI package can be used.
         self._add_property(
             "ai_domain",
             ListProp(StringProp()),
-            json_name="https://rdf.spdx.org/v3/AI/domain",
+            iri="https://rdf.spdx.org/v3/AI/domain",
         )
         # States if a human is involved in the decisions of the AI software.
         self._add_property(
             "ai_autonomyType",
             PresenceType(),
-            json_name="https://rdf.spdx.org/v3/AI/autonomyType",
+            iri="https://rdf.spdx.org/v3/AI/autonomyType",
         )
         # Categorizes safety risk impact of AI software.
         self._add_property(
             "ai_safetyRiskAssessment",
             ai_SafetyRiskAssessmentType(),
-            json_name="https://rdf.spdx.org/v3/AI/safetyRiskAssessment",
+            iri="https://rdf.spdx.org/v3/AI/safetyRiskAssessment",
         )
         self._set_init_props(**kwargs)
 
@@ -3929,80 +3956,80 @@ class dataset_Dataset(software_Package):
         self._add_property(
             "dataset_datasetType",
             ListProp(dataset_DatasetType()),
-            json_name="https://rdf.spdx.org/v3/Dataset/datasetType",
+            iri="https://rdf.spdx.org/v3/Dataset/datasetType",
             min_count=1,
         )
         # Describes how the dataset was collected.
         self._add_property(
             "dataset_dataCollectionProcess",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Dataset/dataCollectionProcess",
+            iri="https://rdf.spdx.org/v3/Dataset/dataCollectionProcess",
         )
         # Describes what the given dataset should be used for.
         self._add_property(
             "dataset_intendedUse",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Dataset/intendedUse",
+            iri="https://rdf.spdx.org/v3/Dataset/intendedUse",
         )
         # Captures the size of the dataset.
         self._add_property(
             "dataset_datasetSize",
             NonNegativeIntegerProp(),
-            json_name="https://rdf.spdx.org/v3/Dataset/datasetSize",
+            iri="https://rdf.spdx.org/v3/Dataset/datasetSize",
         )
         # Describes potentially noisy elements of the dataset.
         self._add_property(
             "dataset_datasetNoise",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Dataset/datasetNoise",
+            iri="https://rdf.spdx.org/v3/Dataset/datasetNoise",
         )
         # Describes the preprocessing steps that were applied to the raw data to create the given dataset.
         self._add_property(
             "dataset_dataPreprocessing",
             ListProp(StringProp()),
-            json_name="https://rdf.spdx.org/v3/Dataset/dataPreprocessing",
+            iri="https://rdf.spdx.org/v3/Dataset/dataPreprocessing",
         )
         # Describes a sensor used for collecting the data.
         self._add_property(
             "dataset_sensor",
             ListProp(ObjectProp(DictionaryEntry, False)),
-            json_name="https://rdf.spdx.org/v3/Dataset/sensor",
+            iri="https://rdf.spdx.org/v3/Dataset/sensor",
         )
         # Records the biases that the dataset is known to encompass.
         self._add_property(
             "dataset_knownBias",
             ListProp(StringProp()),
-            json_name="https://rdf.spdx.org/v3/Dataset/knownBias",
+            iri="https://rdf.spdx.org/v3/Dataset/knownBias",
         )
         # Describes if any sensitive personal information is present in the dataset.
         self._add_property(
             "dataset_sensitivePersonalInformation",
             PresenceType(),
-            json_name="https://rdf.spdx.org/v3/Dataset/sensitivePersonalInformation",
+            iri="https://rdf.spdx.org/v3/Dataset/sensitivePersonalInformation",
         )
         # Describes the anonymization methods used.
         self._add_property(
             "dataset_anonymizationMethodUsed",
             ListProp(StringProp()),
-            json_name="https://rdf.spdx.org/v3/Dataset/anonymizationMethodUsed",
+            iri="https://rdf.spdx.org/v3/Dataset/anonymizationMethodUsed",
         )
         # Describes the confidentiality level of the data points contained in the dataset.
         self._add_property(
             "dataset_confidentialityLevel",
             dataset_ConfidentialityLevelType(),
-            json_name="https://rdf.spdx.org/v3/Dataset/confidentialityLevel",
+            iri="https://rdf.spdx.org/v3/Dataset/confidentialityLevel",
         )
         # Describes a mechanism to update the dataset.
         self._add_property(
             "dataset_datasetUpdateMechanism",
             StringProp(),
-            json_name="https://rdf.spdx.org/v3/Dataset/datasetUpdateMechanism",
+            iri="https://rdf.spdx.org/v3/Dataset/datasetUpdateMechanism",
         )
         # The field describes the availability of a dataset.
         self._add_property(
             "dataset_datasetAvailability",
             dataset_DatasetAvailabilityType(),
-            json_name="https://rdf.spdx.org/v3/Dataset/datasetAvailability",
+            iri="https://rdf.spdx.org/v3/Dataset/datasetAvailability",
         )
         self._set_init_props(**kwargs)
 

@@ -2,39 +2,92 @@
     "@context": "https://spdx.github.io/spdx-3-model/context.json",
     "@graph": [
         {
-            "type": "CreationInfo",
-            "spdxId": "https://spdx.dev/test/creationinfo",
-            "specVersion": "3.0.0",
-            "created": "2022-12-01T00:00:00Z",
-            "createdBy": "https://spdx.dev/test/agent-with-link"
+            "@id": "http://serialize.example.com/self",
+            "@type": "link-class",
+            "link-class-prop": "http://serialize.example.com/self",
+            "link-class-prop-no-class": "http://serialize.example.com/self",
+            "link-class-list-prop": [
+                "http://serialize.example.com/self",
+                "http://serialize.example.com/self"
+            ]
         },
         {
-            "type": "Agent",
-            "spdxId": "https://spdx.dev/test/agent-with-link",
-            "creationInfo": "https://spdx.dev/test/creationinfo"
+            "@id": "http://serialize.example.com/self-derived",
+            "@type": "link-derived-class",
+            "link-class-prop": "http://serialize.example.com/self-derived",
+            "link-class-prop-no-class": "http://serialize.example.com/self-derived",
+            "link-class-list-prop": [
+                "http://serialize.example.com/self-derived",
+                "http://serialize.example.com/self-derived"
+            ]
         },
         {
-            "type": "Agent",
-            "spdxId": "https://spdx.dev/test/agent-with-link-2",
-            "creationInfo": "https://spdx.dev/test/creationinfo"
-        },
-
-        {
-            "type": "CreationInfo",
-            "spdxId": "_:creationinfo-blank",
-            "specVersion": "3.0.0",
-            "created": "2022-12-01T00:00:00Z",
-            "createdBy": "https://spdx.dev/test/agent-blank"
+            "@id": "http://serialize.example.com/base-to-derived",
+            "@type": "link-class",
+            "link-class-prop": "http://serialize.example.com/self-derived",
+            "link-class-prop-no-class": "http://serialize.example.com/self-derived",
+            "link-class-list-prop": [
+                "http://serialize.example.com/self-derived",
+                "http://serialize.example.com/self-derived"
+            ]
         },
         {
-            "type": "Agent",
-            "spdxId": "https://spdx.dev/test/agent-blank",
-            "creationInfo": "_:creationinfo-blank"
+            "@id": "http://serialize.example.com/derived-to-base",
+            "@type": "link-derived-class",
+            "link-class-prop": "http://serialize.example.com/self",
+            "link-class-prop-no-class": "http://serialize.example.com/self",
+            "link-class-list-prop": [
+                "http://serialize.example.com/self",
+                "http://serialize.example.com/self"
+            ]
         },
         {
-            "type": "Agent",
-            "spdxId": "https://spdx.dev/test/agent-blank-2",
-            "creationInfo": "_:creationinfo-blank"
+            "@id": "_:blank-base",
+            "@type": "link-class"
+        },
+        {
+            "@id": "_:blank-derived",
+            "@type": "link-derived-class"
+        },
+        {
+            "@id": "http://serialize.example.com/base-to-blank-base",
+            "@type": "link-class",
+            "link-class-prop": "_:blank-base",
+            "link-class-prop-no-class": "_:blank-base",
+            "link-class-list-prop": [
+                "_:blank-base",
+                "_:blank-base"
+            ]
+        },
+        {
+            "@id": "http://serialize.example.com/base-to-blank-derived",
+            "@type": "link-class",
+            "link-class-prop": "_:blank-derived",
+            "link-class-prop-no-class": "_:blank-derived",
+            "link-class-list-prop": [
+                "_:blank-derived",
+                "_:blank-derived"
+            ]
+        },
+        {
+            "@id": "http://serialize.example.com/derived-to-blank-base",
+            "@type": "link-derived-class",
+            "link-class-prop": "_:blank-base",
+            "link-class-prop-no-class": "_:blank-base",
+            "link-class-list-prop": [
+                "_:blank-base",
+                "_:blank-base"
+            ]
+        },
+        {
+            "@id": "http://serialize.example.com/derived-to-blank-derived",
+            "@type": "link-derived-class",
+            "link-class-prop": "_:blank-derived",
+            "link-class-prop-no-class": "_:blank-derived",
+            "link-class-list-prop": [
+                "_:blank-derived",
+                "_:blank-derived"
+            ]
         }
     ]
 }

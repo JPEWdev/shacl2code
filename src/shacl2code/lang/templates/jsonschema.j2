@@ -151,13 +151,17 @@
                 {%- if prop.datatype == "http://www.w3.org/2001/XMLSchema#string" %}
                     "type": "string"
                 {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#dateTime" %}
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^[0-9]{4}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-6][0-9]:[0-6][0-9]Z$"
                 {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#anyURI" %}
                     "$ref": "#/$defs/anyURI"
                 {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#positiveInteger" %}
                     "type": "integer",
-                    "minimum": 0
+                    "minimum": 1
                 {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#nonNegativeInteger" %}
+                    "type": "integer",
+                    "minimum": 0
+                {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#integer" %}
                     "type": "integer"
                 {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#boolean" %}
                     "type": "boolean"

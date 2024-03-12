@@ -16,28 +16,28 @@ THIS_FILE = Path(__file__)
 THIS_DIR = THIS_FILE.parent
 
 RAW_TEMPLATE = THIS_DIR / "data" / "raw.j2"
-SPDX3_MODEL = THIS_DIR / "data" / "model" / "spdx3.jsonld"
-SPDX3_EXPECT = THIS_DIR / "expect" / "raw" / "spdx3.txt"
-BAD_REFERENCE_MODEL = THIS_DIR / "data" / "bad-reference.jsonld"
+TEST_MODEL = THIS_DIR / "data" / "model" / "test.ttl"
+TEST_EXPECT = THIS_DIR / "expect" / "raw" / "test.txt"
+
 
 CONTEXT_TEMPLATE = THIS_DIR / "data" / "context.j2"
 CONTEXT_URL_TEMPLATE = THIS_DIR / "data" / "context-url.j2"
-SPDX3_CONTEXT = THIS_DIR / "data" / "model" / "spdx3-context.json"
-SPDX3_CONTEXT_URL = "https://spdx.github.io/spdx-3-model/context.json"
-SPDX3_CONTEXT_EXPECT = THIS_DIR / "expect" / "raw" / "spdx3-context.txt"
+TEST_CONTEXT = THIS_DIR / "data" / "model" / "test-context.json"
+TEST_CONTEXT_URL = "https://spdx.github.io/spdx-3-model/context.json"
+TEST_CONTEXT_EXPECT = THIS_DIR / "expect" / "raw" / "test-context.txt"
 
 
-def test_generation_file(tmpdir):
+def test_generation_file(tmp_path):
     """
     Tests that shacl2code generates output to a file when requested
     """
-    outfile = tmpdir.join("spdx3.txt")
+    outfile = tmp_path / "out.txt"
     subprocess.run(
         [
             "shacl2code",
             "generate",
             "--input",
-            SPDX3_MODEL,
+            TEST_MODEL,
             "jinja",
             "--output",
             outfile,
@@ -49,8 +49,9 @@ def test_generation_file(tmpdir):
         encoding="utf-8",
     )
 
-    with SPDX3_EXPECT.open("r") as f:
-        assert outfile.read() == f.read()
+    with TEST_EXPECT.open("r") as expect_f:
+        with outfile.open("r") as out_f:
+            assert out_f.read() == expect_f.read()
 
 
 def test_generation_stdout():
@@ -62,7 +63,7 @@ def test_generation_stdout():
             "shacl2code",
             "generate",
             "--input",
-            SPDX3_MODEL,
+            TEST_MODEL,
             "jinja",
             "--output",
             "-",
@@ -74,7 +75,7 @@ def test_generation_stdout():
         encoding="utf-8",
     )
 
-    with SPDX3_EXPECT.open("r") as f:
+    with TEST_EXPECT.open("r") as f:
         assert p.stdout == f.read()
 
 
@@ -85,15 +86,17 @@ def test_generation_input_format(tmp_path):
     """
     # File has no extension
     dest = tmp_path / "model"
-    shutil.copy(SPDX3_MODEL, dest)
+    shutil.copy(TEST_MODEL, dest)
 
-    # Not passing the input format should fail
+    # Passing the wrong input format should fail
     p = subprocess.run(
         [
             "shacl2code",
             "generate",
             "--input",
             dest,
+            "--input-format",
+            "json-ld",
             "jinja",
             "--output",
             "-",
@@ -112,7 +115,7 @@ def test_generation_input_format(tmp_path):
             "--input",
             dest,
             "--input-format",
-            "json-ld",
+            "ttl",
             "jinja",
             "--output",
             "-",
@@ -123,7 +126,7 @@ def test_generation_input_format(tmp_path):
         stdout=subprocess.PIPE,
         encoding="utf-8",
     )
-    with SPDX3_EXPECT.open("r") as f:
+    with TEST_EXPECT.open("r") as f:
         assert p.stdout == f.read()
 
 
@@ -131,7 +134,7 @@ def test_generation_stdin():
     """
     Tests that shacl2code generates output from a model on stdin
     """
-    with SPDX3_MODEL.open("r") as f:
+    with TEST_MODEL.open("r") as f:
         p = subprocess.run(
             [
                 "shacl2code",
@@ -139,7 +142,7 @@ def test_generation_stdin():
                 "--input",
                 "-",
                 "--input-format",
-                "json-ld",
+                "ttl",
                 "jinja",
                 "--output",
                 "-",
@@ -152,7 +155,7 @@ def test_generation_stdin():
             encoding="utf-8",
         )
 
-    with SPDX3_EXPECT.open("r") as f:
+    with TEST_EXPECT.open("r") as f:
         assert p.stdout == f.read()
 
 
@@ -160,7 +163,7 @@ def test_generation_stdin_auto_format():
     """
     Tests that shacl2code doesn't allow 'auto' format on stdin
     """
-    with SPDX3_MODEL.open("r") as f:
+    with TEST_MODEL.open("r") as f:
         p = subprocess.run(
             [
                 "shacl2code",
@@ -187,16 +190,14 @@ def test_generation_url(http_server):
     """
     Tests that shacl2code generates output from a model provided in a URL
     """
-    shutil.copyfile(
-        SPDX3_MODEL, os.path.join(http_server.document_root, "model.jsonld")
-    )
+    shutil.copyfile(TEST_MODEL, os.path.join(http_server.document_root, "model.ttl"))
 
     p = subprocess.run(
         [
             "shacl2code",
             "generate",
             "--input",
-            f"{http_server.uri}/model.jsonld",
+            f"{http_server.uri}/model.ttl",
             "jinja",
             "--output",
             "-",
@@ -208,7 +209,7 @@ def test_generation_url(http_server):
         encoding="utf-8",
     )
 
-    with SPDX3_EXPECT.open("r") as f:
+    with TEST_EXPECT.open("r") as f:
         assert p.stdout == f.read()
 
 
@@ -221,10 +222,10 @@ def test_context_file():
             "shacl2code",
             "generate",
             "--input",
-            SPDX3_MODEL,
+            TEST_MODEL,
             "--context-url",
-            SPDX3_CONTEXT,
-            SPDX3_CONTEXT_URL,
+            TEST_CONTEXT,
+            TEST_CONTEXT_URL,
             "jinja",
             "--output",
             "-",
@@ -236,7 +237,7 @@ def test_context_file():
         encoding="utf-8",
     )
 
-    with SPDX3_CONTEXT_EXPECT.open("r") as f:
+    with TEST_CONTEXT_EXPECT.open("r") as f:
         assert p.stdout == f.read()
 
 
@@ -246,9 +247,9 @@ def test_context_file_missing_url():
             "shacl2code",
             "generate",
             "--input",
-            SPDX3_MODEL,
+            TEST_MODEL,
             "--context",
-            SPDX3_CONTEXT,
+            TEST_CONTEXT,
             "jinja",
             "--output",
             "-",
@@ -264,7 +265,7 @@ def test_context_file_missing_url():
 
 def test_context_url(http_server):
     shutil.copyfile(
-        SPDX3_CONTEXT, os.path.join(http_server.document_root, "context.json")
+        TEST_CONTEXT, os.path.join(http_server.document_root, "context.json")
     )
 
     p = subprocess.run(
@@ -272,10 +273,10 @@ def test_context_url(http_server):
             "shacl2code",
             "generate",
             "--input",
-            SPDX3_MODEL,
+            TEST_MODEL,
             "--context-url",
             f"{http_server.uri}/context.json",
-            SPDX3_CONTEXT_URL,
+            TEST_CONTEXT_URL,
             "jinja",
             "--output",
             "-",
@@ -287,16 +288,16 @@ def test_context_url(http_server):
         encoding="utf-8",
     )
 
-    with SPDX3_CONTEXT_EXPECT.open("r") as f:
+    with TEST_CONTEXT_EXPECT.open("r") as f:
         assert p.stdout == f.read()
 
 
 def test_context_args(http_server):
     shutil.copyfile(
-        SPDX3_CONTEXT, os.path.join(http_server.document_root, "context.json")
+        TEST_CONTEXT, os.path.join(http_server.document_root, "context.json")
     )
     shutil.copyfile(
-        SPDX3_CONTEXT, os.path.join(http_server.document_root, "context2.json")
+        TEST_CONTEXT, os.path.join(http_server.document_root, "context2.json")
     )
 
     def do_test(*, contexts=[], url_contexts=[]):
@@ -304,7 +305,7 @@ def test_context_args(http_server):
             "shacl2code",
             "generate",
             "--input",
-            SPDX3_MODEL,
+            TEST_MODEL,
         ]
 
         expect = []
@@ -372,13 +373,20 @@ def test_context_args(http_server):
     )
 
 
-def test_bad_model_class():
+@pytest.mark.parametrize(
+    "file",
+    [
+        "bad-reference.jsonld",
+        "missing-range.ttl",
+    ],
+)
+def test_model_errors(file):
     with pytest.raises(shacl2code.ModelException):
         shacl2code.main(
             [
                 "generate",
                 "--input",
-                str(BAD_REFERENCE_MODEL),
+                str(THIS_DIR / "data" / file),
                 "jinja",
                 "--output",
                 "-",

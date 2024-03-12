@@ -837,11 +837,11 @@
         },
         "prop_PositiveIntegerRange_beginIntegerRange": {
                     "type": "integer",
-                    "minimum": 0
+                    "minimum": 1
         },
         "prop_PositiveIntegerRange_endIntegerRange": {
                     "type": "integer",
-                    "minimum": 0
+                    "minimum": 1
         },
         "Relationship": {
             "allOf": [
@@ -3598,7 +3598,8 @@
                     "type": "string"
         },
         "prop_dataset_Dataset_dataset_datasetSize": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 0
         },
         "prop_dataset_Dataset_dataset_datasetNoise": {
                     "type": "string"

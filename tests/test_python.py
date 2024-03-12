@@ -10,13 +10,17 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 THIS_FILE = Path(__file__)
 THIS_DIR = THIS_FILE.parent
 
 EXPECT_DIR = THIS_DIR / "expect"
 DATA_DIR = THIS_DIR / "data"
+
+TEST_MODEL = THIS_DIR / "data" / "model" / "test.ttl"
+
+TEST_CONTEXT = THIS_DIR / "data" / "model" / "test-context.json"
 
 SPDX3_MODEL = THIS_DIR / "data" / "model" / "spdx3.jsonld"
 
@@ -38,17 +42,18 @@ class ObjectSet(object):
         return o
 
 
-@pytest.fixture
-def spdx3_import(tmp_path):
-    outfile = tmp_path / "spdx3.py"
+@pytest.fixture(scope="module")
+def import_test_context(tmp_path_factory):
+    tmp_directory = tmp_path_factory.mktemp("pythontestcontext")
+    outfile = tmp_directory / "model.py"
     subprocess.run(
         [
             "shacl2code",
             "generate",
             "--input",
-            SPDX3_MODEL,
+            TEST_MODEL,
             "--context-url",
-            SPDX3_CONTEXT,
+            TEST_CONTEXT,
             SPDX3_CONTEXT_URL,
             "python",
             "--output",
@@ -58,7 +63,7 @@ def spdx3_import(tmp_path):
     )
 
     old_path = sys.path[:]
-    sys.path.append(str(tmp_path))
+    sys.path.append(str(tmp_directory))
     try:
         yield
     finally:
@@ -66,31 +71,37 @@ def spdx3_import(tmp_path):
 
 
 @pytest.mark.parametrize(
-    "expect,args",
+    "args,expect",
     [
         (
+            ["--input", SPDX3_MODEL],
             "spdx3.py",
-            [],
         ),
         (
+            ["--input", SPDX3_MODEL, "--context-url", SPDX3_CONTEXT, SPDX3_CONTEXT_URL],
             "spdx3-context.py",
-            ["--context-url", SPDX3_CONTEXT, SPDX3_CONTEXT_URL],
+        ),
+        (
+            ["--input", TEST_MODEL],
+            "test.py",
+        ),
+        (
+            ["--input", TEST_MODEL, "--context-url", TEST_CONTEXT, SPDX3_CONTEXT_URL],
+            "test-context.py",
         ),
     ],
 )
 class TestOutput:
-    def test_generation(self, tmpdir, expect, args):
+    def test_generation(self, tmp_path, args, expect):
         """
         Tests that shacl2code generates python output that matches the expected
         output
         """
-        outfile = tmpdir.join("spdx3.py")
+        outfile = tmp_path / "output.py"
         subprocess.run(
             [
                 "shacl2code",
                 "generate",
-                "--input",
-                SPDX3_MODEL,
             ]
             + args
             + [
@@ -101,20 +112,19 @@ class TestOutput:
             check=True,
         )
 
-        with (EXPECT_DIR / "python" / expect).open("r") as f:
-            assert outfile.read() == f.read()
+        with (EXPECT_DIR / "python" / expect).open("r") as expect_f:
+            with outfile.open("r") as out_f:
+                assert out_f.read() == expect_f.read()
 
-    def test_output_syntax(self, tmpdir, expect, args):
+    def test_output_syntax(self, tmp_path, args, expect):
         """
         Checks that the output file is valid python syntax by executing it"
         """
-        outfile = tmpdir.join("spdx3.py")
+        outfile = tmp_path / "output.py"
         subprocess.run(
             [
                 "shacl2code",
                 "generate",
-                "--input",
-                SPDX3_MODEL,
             ]
             + args
             + [
@@ -127,7 +137,7 @@ class TestOutput:
 
         subprocess.run([sys.executable, outfile, "--help"], check=True)
 
-    def test_trailing_whitespace(self, expect, args):
+    def test_trailing_whitespace(self, args, expect):
         """
         Tests that the generated file does not have trailing whitespace
         """
@@ -135,8 +145,6 @@ class TestOutput:
             [
                 "shacl2code",
                 "generate",
-                "--input",
-                SPDX3_MODEL,
             ]
             + args
             + [
@@ -154,7 +162,7 @@ class TestOutput:
                 re.search(r"\s+$", line) is None
             ), f"Line {num + 1} has trailing whitespace"
 
-    def test_tabs(self, expect, args):
+    def test_tabs(self, args, expect):
         """
         Tests that the output file doesn't contain tabs
         """
@@ -162,8 +170,6 @@ class TestOutput:
             [
                 "shacl2code",
                 "generate",
-                "--input",
-                SPDX3_MODEL,
             ]
             + args
             + [
@@ -180,16 +186,16 @@ class TestOutput:
             assert "\t" not in line, f"Line {num + 1} has tabs"
 
 
-def test_roundtrip(spdx3_import, tmp_path):
-    import spdx3
+def test_roundtrip(import_test_context, tmp_path):
+    import model
 
     infile = DATA_DIR / "python" / "roundtrip.json"
     with infile.open("r") as f:
-        objects, _ = spdx3.read_jsonld(f)
+        objects, _ = model.read_jsonld(f)
 
     outfile = tmp_path / "out.json"
     with outfile.open("wb") as f:
-        spdx3.write_jsonld(objects, f, indent=4)
+        model.write_jsonld(objects, f, indent=4)
 
     with infile.open("r") as f:
         indata = json.load(f)
@@ -201,7 +207,7 @@ def test_roundtrip(spdx3_import, tmp_path):
 
 
 def test_jsonschema_validation():
-    with (THIS_DIR / "expect" / "jsonschema" / "spdx3-context.json").open("r") as f:
+    with (THIS_DIR / "expect" / "jsonschema" / "test-context.json").open("r") as f:
         schema = json.load(f)
 
     with (DATA_DIR / "python" / "roundtrip.json").open("r") as f:
@@ -210,160 +216,470 @@ def test_jsonschema_validation():
     jsonschema.validate(data, schema=schema)
 
 
-def test_links(spdx3_import):
-    import spdx3
+@pytest.mark.parametrize(
+    "name,expect",
+    [
+        (
+            "http://serialize.example.com/self",
+            "http://serialize.example.com/self",
+        ),
+        (
+            "http://serialize.example.com/self-derived",
+            "http://serialize.example.com/self-derived",
+        ),
+        (
+            "http://serialize.example.com/base-to-derived",
+            "http://serialize.example.com/self-derived",
+        ),
+        (
+            "http://serialize.example.com/derived-to-base",
+            "http://serialize.example.com/self",
+        ),
+    ],
+)
+def test_links(import_test_context, name, expect):
+    import model
 
     with (DATA_DIR / "python" / "links.json").open("r") as f:
-        d = ObjectSet(*spdx3.read_jsonld(f))
+        d = ObjectSet(*model.read_jsonld(f))
 
-    agent = d.get_obj("https://spdx.dev/test/agent-with-link", spdx3.Agent)
-    agent_2 = d.get_obj("https://spdx.dev/test/agent-with-link-2", spdx3.Agent)
-    creationinfo = d.get_obj("https://spdx.dev/test/creationinfo", spdx3.CreationInfo)
+    c = d.get_obj(name, model.linkclass)
+    link = d.get_obj(expect, model.linkclass)
 
-    assert agent.creationInfo is creationinfo
-    assert agent_2.creationInfo is creationinfo
-    assert creationinfo.createdBy == [agent]
-
-    agent_blank = d.get_obj("https://spdx.dev/test/agent-blank", spdx3.Agent)
-    agent_blank_2 = d.get_obj("https://spdx.dev/test/agent-blank-2", spdx3.Agent)
-
-    assert isinstance(agent_blank.creationInfo, spdx3.CreationInfo)
-    assert agent_blank.creationInfo is agent_blank_2.creationInfo
-    assert agent_blank.creationInfo.createdBy == [agent_blank]
+    assert c.linkclassprop is link
+    assert c.linkclasspropnoclass is link
+    assert c.linkclasslistprop == [link, link]
 
 
-def test_property_validation(spdx3_import):
-    import spdx3
+@pytest.mark.parametrize(
+    "name,cls",
+    [
+        (
+            "http://serialize.example.com/base-to-blank-base",
+            "linkclass",
+        ),
+        (
+            "http://serialize.example.com/base-to-blank-derived",
+            "linkderivedclass",
+        ),
+        (
+            "http://serialize.example.com/derived-to-blank-base",
+            "linkclass",
+        ),
+        (
+            "http://serialize.example.com/derived-to-blank-derived",
+            "linkderivedclass",
+        ),
+    ],
+)
+def test_blank_links(import_test_context, name, cls):
+    import model
 
-    with (DATA_DIR / "python" / "roundtrip.json").open("r") as f:
-        d = ObjectSet(*spdx3.read_jsonld(f))
+    with (DATA_DIR / "python" / "links.json").open("r") as f:
+        d = ObjectSet(*model.read_jsonld(f))
 
-    agent = d.get_obj("https://spdx.dev/test/agent", spdx3.Agent)
-    creationinfo = d.get_obj("https://spdx.dev/test/creationinfo", spdx3.CreationInfo)
+    c = d.get_obj(name, model.linkclass)
 
-    # Setting an unknown property
-    with pytest.raises(AttributeError):
-        agent.foo = "Bar"
-
-    # Basic type validation
-    with pytest.raises(TypeError):
-        agent.name = 1
-
-    with pytest.raises(TypeError):
-        agent.name = []
-
-    with pytest.raises(ValueError):
-        creationinfo.specVersion = "1"
-
-    # Datetime
-    assert isinstance(creationinfo.created, datetime)
-
-    with pytest.raises(TypeError):
-        creationinfo.created = 1
-
-    creationinfo.created = datetime.now()
-
-    # Object
-    with pytest.raises(TypeError):
-        agent.creationInfo = None
-
-    agent.creationInfo = "https://spdx.dev/foo/bar"
-    agent.creationInfo = creationinfo
-    with pytest.raises(TypeError):
-        agent.creationInfo = agent
-
-    # Object Lists
-    creationinfo.createdBy = []
-    for i in range(3):
-        with pytest.raises(TypeError):
-            creationinfo.createdBy.append(None)
-
-        with pytest.raises(TypeError):
-            creationinfo.createdBy.append(creationinfo)
-
-        assert len(creationinfo.createdBy) == i
-        creationinfo.createdBy.append(agent)
-        assert len(creationinfo.createdBy) == i + 1
-
-    with pytest.raises(TypeError):
-        creationinfo.createdBy = 1
-
-    with pytest.raises(AttributeError):
-        creationinfo.createdBy.foo
-
-    # Enum
-    h = spdx3.Hash()
-    with pytest.raises(TypeError):
-        h.algorithm = 1
-
-    with pytest.raises(ValueError):
-        h.algorithm = "sha1"
-
-    h.algorithm = spdx3.HashAlgorithm.sha1
-    assert isinstance(spdx3.HashAlgorithm.sha1, str)
-
-    # Check valid values
-    for name, value in spdx3.HashAlgorithm.valid_values:
-        h.algorithm = value
-        getattr(spdx3.HashAlgorithm, name)
+    expect = c.linkclassprop
+    assert type(expect) is getattr(model, cls)
+    assert c.linkclasspropnoclass is expect
+    assert c.linkclasslistprop == [expect, expect]
 
 
-def test_mandatory_properties(spdx3_import, tmp_path):
+SAME_AS_VALUE = object()
+
+
+def type_tests(name, *typ):
+    tests = [
+        (name, None, TypeError),
+        (name, [], TypeError),
+        (name, object(), TypeError),
+        (name, lambda model: sum, TypeError),
+    ]
+    if bool not in typ and int not in typ:
+        tests.append((name, True, TypeError))
+        tests.append((name, False, TypeError))
+
+    if int not in typ:
+        tests.append((name, 1, TypeError))
+
+    if float not in typ:
+        tests.append((name, 1.0, TypeError))
+
+    if datetime not in typ:
+        tests.append((name, datetime(2024, 3, 11, 0, 0, 0), TypeError)),
+
+    if str not in typ:
+        tests.append((name, "foo", TypeError))
+
+    return tests
+
+
+@pytest.mark.parametrize(
+    "prop,value,expect",
+    [
+        # postive integer
+        ("testclasspositiveintegerprop", -1, ValueError),
+        ("testclasspositiveintegerprop", 0, ValueError),
+        ("testclasspositiveintegerprop", 1, 1),
+        ("testclasspositiveintegerprop", False, ValueError),
+        ("testclasspositiveintegerprop", True, 1),
+        *type_tests("testclasspositiveintegerprop", int),
+        # non-negative integer
+        ("testclassnonnegativeintegerprop", -1, ValueError),
+        ("testclassnonnegativeintegerprop", 0, 0),
+        ("testclassnonnegativeintegerprop", 1, 1),
+        ("testclassnonnegativeintegerprop", False, 0),
+        ("testclassnonnegativeintegerprop", True, 1),
+        *type_tests("testclassnonnegativeintegerprop", int),
+        # integer
+        ("testclassintegerprop", -1, -1),
+        ("testclassintegerprop", 0, 0),
+        ("testclassintegerprop", 1, 1),
+        ("testclassintegerprop", False, 0),
+        ("testclassintegerprop", True, 1),
+        *type_tests("testclassintegerprop", int),
+        # float
+        ("testclassfloatprop", -1, -1.0),
+        ("testclassfloatprop", -1.0, -1.0),
+        ("testclassfloatprop", 0, 0.0),
+        ("testclassfloatprop", 0.0, 0.0),
+        ("testclassfloatprop", 1, 1.0),
+        ("testclassfloatprop", 1.0, 1.0),
+        ("testclassfloatprop", False, 0.0),
+        ("testclassfloatprop", True, 1.0),
+        *type_tests("testclassfloatprop", int, float),
+        # boolean
+        ("testclassbooleanprop", True, True),
+        ("testclassbooleanprop", False, False),
+        *type_tests("testclassbooleanprop", bool),
+        # datetime
+        (
+            "testclassdatetimescalarprop",
+            # Local time to UTC
+            datetime(2024, 3, 11, 0, 0, 0),
+            datetime(2024, 3, 11, 0, 0, 0).astimezone(timezone.utc),
+        ),
+        (
+            "testclassdatetimescalarprop",
+            # Explict timezone to UTC
+            datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone(-timedelta(hours=6))),
+            datetime(2024, 3, 11, 6, 0, 0, tzinfo=timezone.utc),
+        ),
+        (
+            "testclassdatetimescalarprop",
+            # Already in UTC
+            datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone.utc),
+            datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone.utc),
+        ),
+        *type_tests("testclassdatetimescalarprop", datetime),
+        # String
+        ("testclassstringscalarprop", "foo", "foo"),
+        ("testclassstringscalarprop", "", ""),
+        *type_tests("testclassstringscalarprop", str),
+        # Named property
+        ("named_property", "foo", "foo"),
+        ("named_property", "", ""),
+        *type_tests("named_property", str),
+        # Enumerated value
+        (
+            "testclassenumprop",
+            "http://example.org/enumType/foo",
+            "http://example.org/enumType/foo",
+        ),
+        ("testclassenumprop", "foo", ValueError),
+        *type_tests("testclassenumprop", str),
+        # Object
+        ("testclassclassprop", lambda model: model.testclass(), SAME_AS_VALUE),
+        ("testclassclassprop", lambda model: model.testderivedclass(), SAME_AS_VALUE),
+        ("testclassclassprop", lambda model: model.testanotherclass(), TypeError),
+        ("testclassclassprop", lambda model: model.parentclass(), TypeError),
+        ("testclassclassprop", "_:blanknode", "_:blanknode"),
+        (
+            "testclassclassprop",
+            "http://serialize.example.org/test",
+            "http://serialize.example.org/test",
+        ),
+        *type_tests("testclassclassprop", str),
+        # Pattern validated
+        ("testclassregex", "foo1", "foo1"),
+        ("testclassregex", "foo2", "foo2"),
+        ("testclassregex", "foo2a", "foo2a"),
+        ("testclassregex", "bar", ValueError),
+        ("testclassregex", "fooa", ValueError),
+        ("testclassregex", "afoo1", ValueError),
+        *type_tests("testclassregex", str),
+    ],
+)
+def test_scalar_prop_validation(import_test_context, prop, value, expect):
+    import model
+
+    c = model.testclass()
+
+    if callable(value):
+        value = value(model)
+
+    if expect is SAME_AS_VALUE:
+        expect = value
+
+    if isinstance(expect, type) and issubclass(expect, Exception):
+        with pytest.raises(expect):
+            setattr(c, prop, value)
+    else:
+        setattr(c, prop, value)
+        assert getattr(c, prop) == expect
+        assert type(getattr(c, prop)) is type(expect)
+
+
+def list_type_tests(name, *typ):
+    tests = [
+        # Non list types
+        (name, 1, TypeError),
+        (name, 1.0, TypeError),
+        (name, True, TypeError),
+        (name, "foo", TypeError),
+        (name, datetime(2024, 3, 11, 0, 0, 0), TypeError),
+        (name, object(), TypeError),
+        (name, [object()], TypeError),
+        (name, lambda model: sum, TypeError),
+        (name, [sum], TypeError),
+        # Empty list is always allowed
+        (name, [], []),
+    ]
+
+    if bool not in typ and int not in typ:
+        tests.append((name, [True], TypeError))
+        tests.append((name, [False], TypeError))
+
+    if int not in typ:
+        tests.append((name, [1], TypeError))
+
+    if float not in typ:
+        tests.append((name, [1.0], TypeError))
+
+    if datetime not in typ:
+        tests.append((name, [datetime(2024, 3, 11, 0, 0, 0)], TypeError)),
+
+    if str not in typ:
+        tests.append((name, ["foo"], TypeError))
+
+    return tests
+
+
+@pytest.mark.parametrize(
+    "prop,value,expect",
+    [
+        # string
+        ("testclassstringlistprop", ["foo", "bar"], ["foo", "bar"]),
+        ("testclassstringlistprop", [""], [""]),
+        *list_type_tests("testclassstringlistprop", str),
+        # datetime
+        (
+            "testclassdatetimelistprop",
+            [
+                datetime(2024, 3, 11, 0, 0, 0),
+                datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone(-timedelta(hours=6))),
+                datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone.utc),
+            ],
+            [
+                datetime(2024, 3, 11, 0, 0, 0).astimezone(timezone.utc),
+                datetime(2024, 3, 11, 6, 0, 0, tzinfo=timezone.utc),
+                datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone.utc),
+            ],
+        ),
+        *list_type_tests("testclassdatetimelistprop", datetime),
+        # Enumerate type
+        (
+            "testclassenumlistprop",
+            [
+                "http://example.org/enumType/foo",
+                "http://example.org/enumType/bar",
+                "http://example.org/enumType/nolabel",
+            ],
+            [
+                "http://example.org/enumType/foo",
+                "http://example.org/enumType/bar",
+                "http://example.org/enumType/nolabel",
+            ],
+        ),
+        (
+            "testclassenumlistprop",
+            [
+                "http://example.org/enumType/foo",
+                "foo",
+            ],
+            ValueError,
+        ),
+        *list_type_tests("testclassenumlistprop", str),
+        # Object
+        (
+            "testclassclasslistprop",
+            lambda model: [
+                model.testclass(),
+                model.testderivedclass(),
+                "_:blanknode",
+                "http://serialize.example.org/test",
+                "http://serialize.example.org/test",
+            ],
+            SAME_AS_VALUE,
+        ),
+        (
+            "testclassclasslistprop",
+            lambda model: [model.testanotherclass()],
+            TypeError,
+        ),
+        (
+            "testclassclasslistprop",
+            lambda model: [model.parentclass()],
+            TypeError,
+        ),
+        *list_type_tests("testclassclasslistprop", str),
+        # Pattern validated
+        (
+            "testclassregexlist",
+            [
+                "foo1",
+                "foo2",
+                "foo2a",
+            ],
+            [
+                "foo1",
+                "foo2",
+                "foo2a",
+            ],
+        ),
+        ("testclassregexlist", ["bar"], ValueError),
+        ("testclassregexlist", ["fooa"], ValueError),
+        ("testclassregexlist", ["afoo1"], ValueError),
+        *list_type_tests("testclassregexlist", str),
+        # TODO Add more list tests
+    ],
+)
+def test_list_prop_validation(import_test_context, prop, value, expect):
+    import model
+
+    c = model.testclass()
+
+    if callable(value):
+        value = value(model)
+
+    if expect is SAME_AS_VALUE:
+        expect = value
+
+    if isinstance(expect, type) and issubclass(expect, Exception):
+        with pytest.raises(expect):
+            if value is list:
+                for v in value:
+                    getattr(c, prop).append(v)
+            else:
+                setattr(c, prop, value)
+
+    else:
+        for v in value:
+            getattr(c, prop).append(v)
+
+        assert getattr(c, prop) == expect
+        for idx, v in enumerate(expect):
+            assert getattr(c, prop)[idx] == v
+            assert type(getattr(c, prop)[idx]) is type(v)
+
+        setattr(c, prop, value[:])
+        assert getattr(c, prop) == expect
+
+        assert list(getattr(c, prop)) == expect
+
+        getattr(c, prop).sort()
+        assert getattr(c, prop) == list(sorted(expect))
+
+        setattr(c, prop, [])
+        getattr(c, prop).extend(value)
+        assert getattr(c, prop) == expect
+
+        setattr(c, prop, [])
+        for v in value:
+            getattr(c, prop).insert(0, v)
+        assert getattr(c, prop) == list(reversed(expect))
+
+        for v in expect:
+            assert v in getattr(c, prop)
+
+
+def test_enum_var_names(import_test_context):
+    import model
+
+    assert type(model.enumType.foo) is str
+    assert model.enumType.foo == "http://example.org/enumType/foo"
+
+    c = model.testclass()
+
+    for name, value in model.enumType.valid_values:
+        c.testclassenumprop = value
+        assert getattr(model.enumType, name) == value
+
+
+def test_mandatory_properties(import_test_context, tmp_path):
     """
     Tests that property ordinality (e.g. min count & max count) is checked when
     writing out a file
     """
-    import spdx3
+    import model
 
     outfile = tmp_path / "test.json"
 
     def base_obj():
-        c = spdx3.CreationInfo()
-        c.specVersion = "3.0.0"
-        c.created = datetime.now()
-        c.createdBy = ["https://spdx.dev/test/agent"]
+        c = model.testclassrequired()
+        c.testclassrequiredstringscalarprop = "foo"
+        c.testclassrequiredstringlistprop = ["bar", "baz"]
         return c
 
     # First validate that the base object is actually valid
     c = base_obj()
     with outfile.open("wb") as f:
-        spdx3.write_jsonld([c], f)
+        model.write_jsonld([c], f)
 
-    # Optional argument
+    # Required scalar property
     c = base_obj()
-    del c.specVersion
+    del c.testclassrequiredstringscalarprop
     with outfile.open("wb") as f:
         with pytest.raises(ValueError):
-            spdx3.write_jsonld([c], f)
+            model.write_jsonld([c], f)
 
     # Array that is deleted
     c = base_obj()
-    del c.createdBy
+    del c.testclassrequiredstringlistprop
     with outfile.open("wb") as f:
         with pytest.raises(ValueError):
-            spdx3.write_jsonld([c], f)
+            model.write_jsonld([c], f)
 
     # Array initialized to empty list
     c = base_obj()
-    c.createdBy = []
+    c.testclassrequiredstringlistprop = []
     with outfile.open("wb") as f:
         with pytest.raises(ValueError):
-            spdx3.write_jsonld([c], f)
+            model.write_jsonld([c], f)
 
-    # TODO: Need to test max count, but there aren't any in the SPDX model currently
+    # Array with too many items
+    c = base_obj()
+    c.testclassrequiredstringlistprop.append("too many")
+    with outfile.open("wb") as f:
+        with pytest.raises(ValueError):
+            model.write_jsonld([c], f)
 
 
-def test_iri(spdx3_import):
-    import spdx3
+def test_iri(import_test_context):
+    import model
 
-    c = spdx3.CreationInfo()
+    infile = DATA_DIR / "python" / "roundtrip.json"
+    with infile.open("r") as f:
+        d = ObjectSet(*model.read_jsonld(f))
 
-    assert c._IRI.specVersion == "https://spdx.org/rdf/v3/Core/specVersion"
-    assert c._IRI["specVersion"] == "https://spdx.org/rdf/v3/Core/specVersion"
-    assert "specVersion" in c._IRI
+    c = d.get_obj("http://serialize.example.com/test", model.testclass)
 
-    with pytest.raises(AttributeError):
-        c._IRI.foo
+    assert c._IRI["_id"] == "@id"
+    assert c._IRI["named_property"] == "http://example.org/test-class/named-property"
+
+    for name, iri in c._IRI.items():
+        assert c[iri] == getattr(c, name)
 
     with pytest.raises(KeyError):
         c._IRI["foo"]

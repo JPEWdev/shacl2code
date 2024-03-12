@@ -833,11 +833,11 @@
         },
         "prop_https_rdfspdxorgv3CorePositiveIntegerRange_beginIntegerRange": {
                     "type": "integer",
-                    "minimum": 0
+                    "minimum": 1
         },
         "prop_https_rdfspdxorgv3CorePositiveIntegerRange_endIntegerRange": {
                     "type": "integer",
-                    "minimum": 0
+                    "minimum": 1
         },
         "https_rdfspdxorgv3CoreRelationship": {
             "allOf": [
@@ -3594,7 +3594,8 @@
                     "type": "string"
         },
         "prop_https_rdfspdxorgv3DatasetDataset_datasetSize": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 0
         },
         "prop_https_rdfspdxorgv3DatasetDataset_datasetNoise": {
                     "type": "string"

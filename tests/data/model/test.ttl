@@ -129,7 +129,7 @@
 
 <test-derived-class> a rdfs:Class, sh:NodeShape, owl:Class ;
     rdfs:subClassOf <test-class> ;
-    rdfs:command "A class derived from test-class"
+    rdfs:comment "A class derived from test-class"
     .
 
 <test-another-class> a rdfs:Class, sh:NodeShape, owl:Class ;
@@ -289,7 +289,7 @@
 
 <link-derived-class> a rdfs:Class, sh:NodeShape, owl:Class ;
     rdfs:subClassOf <link-class> ;
-    rdfs:command "A class derived from link-class"
+    rdfs:comment "A class derived from link-class"
     .
 
 <link-class-prop> a rdf:Property ;

@@ -221,6 +221,66 @@ BASE_OBJ = {
 }
 
 
+def ref_tests(name, none, blank, iri, inline):
+    return [
+        (
+            none,
+            {
+                "@context": SPDX3_CONTEXT_URL,
+                "@type": name,
+            },
+        ),
+        (
+            none and inline,
+            {
+                "@context": SPDX3_CONTEXT_URL,
+                "@type": "link-class",
+                "link-class-prop": {
+                    "@type": name,
+                },
+            },
+        ),
+        (
+            blank,
+            {
+                "@context": SPDX3_CONTEXT_URL,
+                "@type": name,
+                "@id": "_:blank",
+            },
+        ),
+        (
+            blank and inline,
+            {
+                "@context": SPDX3_CONTEXT_URL,
+                "@type": "link-class",
+                "link-class-prop": {
+                    "@type": name,
+                    "@id": "_:blank",
+                },
+            },
+        ),
+        (
+            iri,
+            {
+                "@context": SPDX3_CONTEXT_URL,
+                "@type": name,
+                "@id": "http://example.com/name",
+            },
+        ),
+        (
+            iri and inline,
+            {
+                "@context": SPDX3_CONTEXT_URL,
+                "@type": "link-class",
+                "link-class-prop": {
+                    "@type": name,
+                    "@id": "http://example.com/name",
+                },
+            },
+        ),
+    ]
+
+
 @pytest.mark.parametrize(
     "passes,data",
     [
@@ -532,6 +592,29 @@ BASE_OBJ = {
             {
                 "@context": SPDX3_CONTEXT_URL,
                 "@type": "foo",
+            },
+        ),
+        # Referenceable tests
+        *ref_tests("ref-no-class", True, False, False, True),
+        *ref_tests("ref-local-class", True, True, False, True),
+        *ref_tests("ref-optional-class", True, True, True, True),
+        *ref_tests("ref-mandatory-class", False, False, True, False),
+        # Alternate ID
+        (
+            True,
+            {
+                "@context": SPDX3_CONTEXT_URL,
+                "@type": "id-prop-class",
+                "testid": "_:blank",
+            },
+        ),
+        # @id not allowed for alternate ID classes
+        (
+            False,
+            {
+                "@context": SPDX3_CONTEXT_URL,
+                "@type": "id-prop-class",
+                "@id": "_:blank",
             },
         ),
         # Base object for type tests

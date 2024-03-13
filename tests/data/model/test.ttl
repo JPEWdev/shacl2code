@@ -4,6 +4,7 @@
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix spdxs: <https://rdf.spdx.org/ns/schema#> .
 
 <parent-class> a rdfs:Class, sh:NodeShape, owl:Class ;
     rdfs:comment "The parent class" ;
@@ -304,4 +305,33 @@
 <link-class-list-prop> a rdf:Property ;
     rdfs:comment "A link-class list property" ;
     rdfs:range <link-class>
+    .
+
+<ref-mandatory-class> a rdf:Class, sh:NodeShape, owl:Class ;
+    rdfs:subClassOf <link-class> ;
+    rdfs:comment "A class with mandatory linking" ;
+    spdxs:referenceable "mandatory" 
+    .
+
+<ref-optional-class> a rdf:Class, sh:NodeShape, owl:Class ;
+    rdfs:subClassOf <link-class> ;
+    rdfs:comment "A class with optional linking" ;
+    spdxs:referenceable "optional" 
+    .
+
+<ref-no-class> a rdf:Class, sh:NodeShape, owl:Class ;
+    rdfs:subClassOf <link-class> ;
+    rdfs:comment "A class with no linking" ;
+    spdxs:referenceable "no" 
+    .
+
+<ref-local-class> a rdf:Class, sh:NodeShape, owl:Class ;
+    rdfs:subClassOf <link-class> ;
+    rdfs:comment "A class with local linking" ;
+    spdxs:referenceable "local" 
+    .
+
+<id-prop-class> a rdf:Class, sh:NodeShape, owl:Class ;
+    rdfs:comment "A class with an ID alias" ;
+    spdxs:idPropertyName "testid"
     .

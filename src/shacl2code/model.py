@@ -9,7 +9,14 @@ import re
 import typing
 from dataclasses import dataclass
 
-from rdflib.namespace import RDF, RDFS, OWL, SH
+from rdflib import URIRef
+from rdflib.namespace import RDF, RDFS, OWL, SH, DefinedNamespace, Namespace
+
+
+class SPDXS(DefinedNamespace):
+    referenceable: URIRef
+    idPropertyName: URIRef
+    _NS = Namespace("https://rdf.spdx.org/ns/schema#")
 
 
 class ModelException(Exception):
@@ -84,6 +91,8 @@ class Class:
     derived_ids: list
     properties: typing.List[Property]
     comment: str = ""
+    id_property: str = ""
+    referenceable: str = "optional"
 
 
 class Model(object):
@@ -139,6 +148,11 @@ class Model(object):
                 return None
             return int(v)
 
+        def str_val(v):
+            if v is None:
+                return v
+            return str(v)
+
         for cls_iri in class_iris:
             c = Class(
                 _id=str(cls_iri),
@@ -151,7 +165,16 @@ class Model(object):
                 clsname=self.get_class_name(cls_iri),
                 comment=str(self.model.value(cls_iri, RDFS.comment, default="")),
                 properties=[],
+                id_property=str_val(self.model.value(cls_iri, SPDXS.idPropertyName)),
+                referenceable=str(
+                    self.model.value(cls_iri, SPDXS.referenceable, default="optional")
+                ),
             )
+
+            if c.referenceable not in ["no", "mandatory", "optional", "local"]:
+                raise ModelException(
+                    f"Class {c._id} has unknown '{SPDXS.referenceable}' value '{c.referenceable}'"
+                )
 
             for obj_prop in self.model.objects(cls_iri, SH.property):
                 prop = self.model.value(obj_prop, SH.path)

@@ -378,6 +378,7 @@ def test_context_args(http_server):
     [
         "bad-reference.jsonld",
         "missing-range.ttl",
+        "bad-referenceable.ttl",
     ],
 )
 def test_model_errors(file):

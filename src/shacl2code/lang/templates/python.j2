@@ -12,6 +12,7 @@ import json
 import re
 import time
 from datetime import datetime, timezone
+from enum import Enum
 
 
 def check_type(obj, types):
@@ -388,9 +389,18 @@ class EnumProp(Property):
         return context.compact(value)
 
 
+class Refable(Enum):
+    no = 1
+    local = 2
+    optional = 3
+    mandatory = 4
+
+
 @functools.total_ordering
 class SHACLObject(object):
     DESERIALIZERS = {}
+    REFABLE = Refable.optional
+    ID_ALIAS = None
 
     def __init__(self):
         self._obj_data = {}
@@ -430,6 +440,9 @@ class SHACLObject(object):
         if name.startswith("_obj_"):
             return super().__setattr__(name, value)
 
+        if name == self.ID_ALIAS:
+            name = "_id"
+
         try:
             iri = self._obj_iris[name]
             self[iri] = value
@@ -448,6 +461,9 @@ class SHACLObject(object):
         if name == "_IRI":
             return self._obj_iris
 
+        if name == self.ID_ALIAS:
+            name = "_id"
+
         try:
             iri = self._obj_iris[name]
             return self[iri]
@@ -457,6 +473,9 @@ class SHACLObject(object):
             )
 
     def __delattr__(self, name):
+        if name == self.ID_ALIAS:
+            name = "_id"
+
         try:
             iri = self._obj_iris[name]
             del self[iri]
@@ -483,6 +502,22 @@ class SHACLObject(object):
         return prop.get(self._obj_data[iri])
 
     def __setitem__(self, iri, value):
+        if iri == "@id":
+            if self.REFABLE == Refable.no:
+                raise ValueError(
+                    "{self.__class__.__name__} ({id(self)}) is not referenceable. Property '{iri}' cannot be set to '{value}'"
+                )
+            elif self.REFABLE == Refable.local:
+                if not value.startswith("_:"):
+                    raise ValueError(
+                        "{self.__class__.__name__} ({id(self)}) can only have local reference. Property '{iri}' cannot be set to '{value}' and must start with '_:'"
+                    )
+            elif self.REFABLE == Refable.mandatory:
+                if value.startswith("_:"):
+                    raise ValueError(
+                        "{self.__class__.__name__} ({id(self)}) can has mandatory reference. Property '{iri}' cannot be set to '{value}'"
+                    )
+
         prop, _, _, _ = self.__get_prop(iri)
         prop.validate(value)
         self._obj_data[iri] = prop.set(value)
@@ -530,6 +565,17 @@ class SHACLObject(object):
             yield obj
 
     def serializer(self, context):
+        idname = self.ID_ALIAS or self._obj_iris["_id"]
+        if self._id is not None and self.REFABLE == Refable.no:
+            raise ValueError(
+                "{self.__class__.__name__} ({id(self)}) is not referenceable. Property '{idname}' must not be defined (currently '{self._id}')"
+            )
+
+        if not self._id and self.REFABLE == Refable.mandatory:
+            raise ValueError(
+                "{self.__class__.__name__} ({id(self)}) must have a '{idname}' property to be referenceable"
+            )
+
         if self._id and self._obj_written:
             return self._id
 
@@ -560,8 +606,11 @@ class SHACLObject(object):
                         f"Property '{pyname}' in {self.__class__.__name__} ({id(self)}) requires a maximum of {max_count} elements"
                     )
 
-            with context.vocab_push(iri):
-                d[context.compact(iri)] = prop.serializer(value, context)
+            if iri == self._obj_iris["_id"]:
+                d[idname] = prop.serializer(value, context)
+            else:
+                with context.vocab_push(iri):
+                    d[context.compact(iri)] = prop.serializer(value, context)
         return d
 
     def to_jsonld(self, f, *args, **kwargs):
@@ -670,9 +719,9 @@ def make_context():
     return Context(CONTEXTS)
 
 
-def write_jsonld(objects, f, force_graph=False, **kwargs):
+def serialize_jsonld(objects, force_graph=False):
     """
-    Write a list of objects to a JSON LD file
+    Serialize a list of objects for writing to a JSON LD file
 
     If force_graph is True, a @graph node will always be written
     """
@@ -692,7 +741,7 @@ def write_jsonld(objects, f, force_graph=False, **kwargs):
         if value._id and value._id.startswith("_:"):
             del value._id
 
-        if value._id:
+        if value._id or value.REFABLE == Refable.mandatory:
             id_objects.add(value)
 
         ref_counts.setdefault(value, 0)
@@ -747,6 +796,17 @@ def write_jsonld(objects, f, force_graph=False, **kwargs):
         data["@context"] = CONTEXT_URLS[0]
     elif CONTEXT_URLS:
         data["@context"] = CONTEXT_URLS
+
+    return data
+
+
+def write_jsonld(objects, f, force_graph=False, **kwargs):
+    """
+    Write a list of objects to a JSON LD file
+
+    If force_graph is True, a @graph node will always be written
+    """
+    data = serialize_jsonld(objects, force_graph)
 
     sha1 = hashlib.sha1()
     for chunk in json.JSONEncoder(**kwargs).iterencode(data):
@@ -908,9 +968,15 @@ class {{ class.clsname }}(
     SHACLObject
 {%- endif -%}):
     TYPE = "{{ class._id }}"
+    REFABLE = Refable.{{ class.referenceable }}
+    {%- if class.id_property %}
+    ID_ALIAS = "{{ class.id_property }}"
+    {%- endif %}
 
     def __init__(self, **kwargs):
         super().__init__()
+        {%- if class.id_property %}
+        {%- endif %}
         {%- for prop in class.properties %}
         {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
         {%- if prop.comment %}

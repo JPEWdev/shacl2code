@@ -286,6 +286,233 @@ def test_blank_links(import_test_context, name, cls):
     assert c.linkclasslistprop == [expect, expect]
 
 
+def test_non_refable(import_test_context):
+    import model
+
+    c1 = model.linkclass()
+    c2 = model.linkclass()
+
+    non_ref = model.refnoclass()
+
+    c1.linkclassprop = non_ref
+
+    # A non-refable object should be inlined
+    result = model.serialize_jsonld([c1])
+    assert result == {
+        "@context": SPDX3_CONTEXT_URL,
+        "@type": "link-class",
+        "link-class-prop": {
+            "@type": "ref-no-class",
+        },
+    }
+
+    # A non-refable class cannot be referenced from multiple objects, as this
+    # would require creating a blank node reference
+    c1.linkclassprop = non_ref
+    c2.linkclassprop = non_ref
+
+    with pytest.raises(ValueError):
+        result = model.serialize_jsonld([c1, c2])
+        print(result)
+
+    # A non-refable class written as the root object is OK
+    result = model.serialize_jsonld([non_ref])
+    assert result == {
+        "@context": SPDX3_CONTEXT_URL,
+        "@type": "ref-no-class",
+    }
+
+    # A non-refable class cannot have an explicit ID assigned
+    with pytest.raises(ValueError):
+        non_ref._id = "http://example.org/name"
+
+    # Or a blank node
+    with pytest.raises(ValueError):
+        non_ref._id = "_:blank"
+
+
+def test_mandatory_refable(import_test_context):
+    import model
+
+    TEST_ID = "http://example.com/name"
+
+    c1 = model.linkclass()
+    c2 = model.linkclass()
+
+    ref = model.refmandatoryclass()
+
+    # Mandatory reference fails because there is no ID
+    c1.linkclassprop = ref
+    with pytest.raises(ValueError):
+        model.serialize_jsonld([c1])
+
+    # Even references from multiple objects fails because it would generate a
+    # blank node with is not referenceable
+    c2.linkclassprop = ref
+    with pytest.raises(ValueError):
+        model.serialize_jsonld([c1, c2])
+
+    # Assigning a reference allows the object to be serialized
+    ref._id = TEST_ID
+    result = model.serialize_jsonld([c1])
+    # inline is allowed for non-@graphs
+    assert result == {
+        "@context": SPDX3_CONTEXT_URL,
+        "@type": "link-class",
+        "link-class-prop": {
+            "@id": TEST_ID,
+            "@type": "ref-mandatory-class",
+        },
+    }
+
+    # using a graph will force the object into the root @graph (even though not
+    # explicitly specified)
+    result = model.serialize_jsonld([c1], force_graph=True)
+    assert result == {
+        "@context": SPDX3_CONTEXT_URL,
+        "@graph": [
+            {
+                "@type": "link-class",
+                "link-class-prop": TEST_ID,
+            },
+            {
+                "@id": TEST_ID,
+                "@type": "ref-mandatory-class",
+            },
+        ],
+    }
+
+    # Assignment of a blank node value is not allowed
+    with pytest.raises(ValueError):
+        ref._id = "_:blank"
+
+
+def test_optional_refable(import_test_context):
+    # This is the normal object behavior, so not much to test here that isn't
+    # covered elsewhere
+    import model
+
+    TEST_ID = "http://example.com/name"
+
+    c1 = model.linkclass()
+    c2 = model.linkclass()
+
+    ref = model.refoptionalclass()
+
+    INLINE_RESULT = {
+        "@context": SPDX3_CONTEXT_URL,
+        "@type": "link-class",
+        "link-class-prop": {
+            "@type": "ref-optional-class",
+        },
+    }
+
+    # Test that objects are inlined
+    c1.linkclassprop = ref
+    result = model.serialize_jsonld([c1])
+    assert result == INLINE_RESULT
+
+    # Explict blank node assignment is not preserved
+    ref._id = "_:blank"
+    result = model.serialize_jsonld([c1])
+    assert result == INLINE_RESULT
+
+    BLANK_RESULT = {
+        "@context": SPDX3_CONTEXT_URL,
+        "@graph": [
+            {
+                "@type": "link-class",
+                "link-class-prop": "_:refoptionalclass0",
+            },
+            {
+                "@type": "link-class",
+                "link-class-prop": "_:refoptionalclass0",
+            },
+            {
+                "@id": "_:refoptionalclass0",
+                "@type": "ref-optional-class",
+            },
+        ],
+    }
+
+    # Multiple links means the object will be moved to the @graph instead of
+    # being inlined
+    del ref._id
+    c2.linkclassprop = ref
+    result = model.serialize_jsonld([c1, c2])
+    assert result == BLANK_RESULT
+
+    # Explicit blank node assignment, but it's not preserved in serialization
+    ref._id = "_:blank"
+    result = model.serialize_jsonld([c1, c2])
+    assert result == BLANK_RESULT
+
+    # Assign a non-blank node id (which is preserved)
+    ref._id = TEST_ID
+    result = model.serialize_jsonld([c1, c2])
+    assert result == {
+        "@context": SPDX3_CONTEXT_URL,
+        "@graph": [
+            {
+                "@type": "link-class",
+                "link-class-prop": TEST_ID,
+            },
+            {
+                "@type": "link-class",
+                "link-class-prop": TEST_ID,
+            },
+            {
+                "@id": TEST_ID,
+                "@type": "ref-optional-class",
+            },
+        ],
+    }
+
+
+def test_local_refable(import_test_context):
+    import model
+
+    c1 = model.linkclass()
+    c2 = model.linkclass()
+
+    ref = model.reflocalclass()
+
+    with pytest.raises(ValueError):
+        ref._id = "http://example.com/name"
+
+    # Blank node assignment is fine, but not preserved when serializing
+    ref._id = "_:blank"
+
+
+def test_id_name(import_test_context):
+    import model
+
+    c = model.idpropclass()
+
+    TEST_ID = "http://example.com/name"
+
+    # Assign alternate ID
+    c.testid = TEST_ID
+    assert c.testid == TEST_ID
+
+    # alternate ID is an alias for the _id property
+    assert c._id == TEST_ID
+
+    # Delete id
+    del c.testid
+    assert c.testid is None
+    assert c._id is None
+
+    # Serialization should the alias name
+    c._id = TEST_ID
+    result = model.serialize_jsonld([c])
+    assert result == {
+        "@context": SPDX3_CONTEXT_URL,
+        "@type": "id-prop-class",
+        "testid": TEST_ID,
+    }
+
+
 SAME_AS_VALUE = object()
 
 

@@ -61,19 +61,57 @@
             "allOf": [
                 {
                     "properties": {
+                        {%- if class.referenceable != "no" %}
+                        "{{ class.id_property or context.compact("@id") }}":
+                        {%- if class.referenceable == "mandatory" -%}
+                            { "$ref": "#/$defs/externalRef" }
+                        {%- elif class.referenceable == "local" -%}
+                            { "$ref": "#/$defs/localRef" }
+                        {%- elif class.referenceable == "optional" -%}
+                            { "$ref": "#/$defs/anyRef" }
+                        {%- endif %},
+                        {%- endif %}
                         "{{ context.compact("@type") }}": { "const": "{{ context.compact(class._id) }}" }
-                    }
+                    }{%- if class.referenceable == "mandatory" %},
+                    "required": ["{{ class.id_property or context.compact("@id") }}"]
+                    {%- endif %}
                 },
                 { "$ref": "#/$defs/{{ class.clsname }}_props" }
             ]
         },
         "{{ class.clsname }}_derived": {
+            {%- set ns = namespace(external_ref=False, local_ref=False, any_ref=False, json_refs=[]) %}
+            {%- for d in get_all_derived(class) + [class._id] %}
+                {%- if class.referenceable == "mandatory" %}
+                    {%- set ns.external_ref = True %}
+                {%- elif class.referenceable == "local" %}
+                    {%- set ns.local_ref = True %}
+                {%- elif class.referenceable == "optional" %}
+                    {%- set ns.any_ref = True %}
+                {%- endif %}
+                {%- set ns.json_refs = ns.json_refs + ["#/$defs/" + classes.get(d).clsname] %}
+            {%- endfor %}
+            {%- if ns.any_ref %}
+                {%- set ns.json_refs = ns.json_refs + ["#/$defs/anyRef"] %}
+            {%- else %}
+                {%- if ns.local_ref %}
+                    {%- set ns.json_refs = ns.json_refs + ["#/$defs/localRef"] %}
+                {%- endif %}
+                {%- if ns.external_ref %}
+                    {%- set ns.json_refs = ns.json_refs + ["#/$defs/externalRef"] %}
+                {%- endif %}
+            {%- endif %}
+
+            {%- if ns.json_refs | length == 1 %}
+            "$ref": "{{ ns.json_refs[0] }}",
+            {%- elif ns.json_refs %}
             "oneOf": [
-                {%- for d in get_all_derived(class) %}
-                { "$ref": "#/$defs/{{ classes.get(d).clsname }}" },
+                {%- for r in ns.json_refs %}
+                { "$ref": "{{ r }}" }{% if not loop.last %},{% endif %}
                 {%- endfor %}
-                { "$ref": "#/$defs/{{ class.clsname }}" }
-            ]
+            ],
+            {%- endif %}
+            "unevaluatedProperties": false
         },
         "{{ class.clsname }}_props": {
             "allOf": [
@@ -131,13 +169,7 @@
         {%- for prop in class.properties %}
         "prop_{{ class.clsname }}_{{ prop.varname }}": {
             {%- if prop.class_id %}
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/{{ classes.get(prop.class_id).clsname }}_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/{{ classes.get(prop.class_id).clsname }}_derived"
             {%- elif prop.enum_id %}
                 "enum": [
                 {%- for e in enums.get(prop.enum_id).values %}
@@ -174,8 +206,16 @@
         },
         {%- endfor %}
     {%- endfor %}
-        "idRef": {
+        "anyRef": {
             "type": "string"
+        },
+        "externalRef": {
+            "type": "string",
+            "pattern": "^(?!_:).*"
+        },
+        "localRef": {
+            "type": "string",
+            "pattern": "^_:.*"
         },
         "anyURI": {
             "type": "string"
@@ -195,7 +235,6 @@
         "SHACLClass": {
             "type": "object",
             "properties": {
-                "{{ context.compact("@id") }}": { "$ref": "#/$defs/idRef" },
                 "{{ context.compact("@type") }}": {
                     "enum": [
                     {%- for class in classes %}

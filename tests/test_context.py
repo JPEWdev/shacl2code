@@ -25,6 +25,10 @@ TEST_CONTEXTS = [
                 "@vocab": "foo:prefix/",
             },
         },
+        "idfoostring": {
+            "@id": "idfoo:string",
+            "@type": "http://www.w3.org/2001/XMLSchema#string",
+        },
     },
 ]
 
@@ -47,6 +51,7 @@ BASE_CONTEXT = [
         (TEST_CONTEXTS, "foo:prefix/value", "http://bar/prefix/value"),
         (TEST_CONTEXTS, "value", "value"),
         (TEST_CONTEXTS, "v", "http://bar/vocab"),
+        (TEST_CONTEXTS, "idfoostring", "http://idbar/string"),
         (BASE_CONTEXT, "foo", "http://bar/foo"),
         (BASE_CONTEXT, "_:foo", "_:foo"),
         (BASE_CONTEXT, ":foo", "http://bar/:foo"),

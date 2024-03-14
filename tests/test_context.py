@@ -28,45 +28,112 @@ TEST_CONTEXTS = [
     },
 ]
 
-
-@pytest.mark.parametrize(
-    "in_id,out_id,vocab",
-    [
-        ("nonexist", "nonexist", None),
-        ("http://bar/", "foo", None),
-        ("http://bar/baz", "foo:baz", None),
-        ("http://bar/bat", "foobat", None),
-        ("http://idbar/", "idfoo", None),
-        ("http://idbar/bat", "idfoobat", None),
-        ("http://bar/prefix/value", "foo:prefix/value", None),
-        ("http://bar/prefix/value", "value", "http://bar/vocab"),
-        ("http://bar/vocab", "v", None),
-    ],
-)
-def test_compact(in_id, out_id, vocab):
-    ctx = Context(TEST_CONTEXTS)
-
-    result = ctx.compact(in_id, vocab)
-    assert result == out_id, f"Expected {out_id}, got {result}"
+BASE_CONTEXT = [
+    {
+        "@base": "http://bar/",
+    },
+]
 
 
 @pytest.mark.parametrize(
-    "in_id,out_id,vocab",
+    "context,compact_id,expand_id",
     [
-        ("nonexist", "nonexist", None),
-        ("foo", "http://bar/", None),
-        ("foo:baz", "http://bar/baz", None),
-        ("foobat", "http://bar/bat", None),
-        ("idfoo", "http://idbar/", None),
-        ("idfoobat", "http://idbar/bat", None),
-        ("foo:prefix/value", "http://bar/prefix/value", None),
-        ("value", "http://bar/prefix/value", "http://bar/vocab"),
-        ("value", "value", None),
-        ("v", "http://bar/vocab", None),
+        (TEST_CONTEXTS, "nonexist", "nonexist"),
+        (TEST_CONTEXTS, "foo", "http://bar/"),
+        (TEST_CONTEXTS, "foo:baz", "http://bar/baz"),
+        (TEST_CONTEXTS, "foobat", "http://bar/bat"),
+        (TEST_CONTEXTS, "idfoo", "http://idbar/"),
+        (TEST_CONTEXTS, "idfoobat", "http://idbar/bat"),
+        (TEST_CONTEXTS, "foo:prefix/value", "http://bar/prefix/value"),
+        (TEST_CONTEXTS, "value", "value"),
+        (TEST_CONTEXTS, "v", "http://bar/vocab"),
+        (BASE_CONTEXT, "foo", "http://bar/foo"),
+        (BASE_CONTEXT, "_:foo", "_:foo"),
+        (BASE_CONTEXT, ":foo", "http://bar/:foo"),
+        (BASE_CONTEXT, "http:foo", "http:foo"),
+        (BASE_CONTEXT, ":", "http://bar/:"),
+        (BASE_CONTEXT, "http://foo/bar", "http://foo/bar"),
     ],
 )
-def test_expand(in_id, out_id, vocab):
-    ctx = Context(TEST_CONTEXTS)
+def test_expand_compact(context, compact_id, expand_id):
+    ctx = Context(context)
 
-    result = ctx.expand(in_id, vocab)
-    assert result == out_id, f"Expected {out_id}, got {result}"
+    # Test expansion
+    assert ctx.expand(compact_id) == expand_id
+
+    # Test compaction
+    assert ctx.compact(expand_id) == compact_id
+
+
+@pytest.mark.parametrize(
+    "context,compact_id,expand_id,expand_vocab,vocab",
+    [
+        (
+            TEST_CONTEXTS,
+            "value",
+            "value",
+            "http://bar/prefix/value",
+            "http://bar/vocab",
+        ),
+        (
+            TEST_CONTEXTS,
+            "http://foo/bar",
+            "http://foo/bar",
+            "http://bar/prefix/http://foo/bar",
+            "http://bar/vocab",
+        ),
+    ],
+)
+def test_expand_compact_vocab(context, compact_id, expand_id, expand_vocab, vocab):
+    ctx = Context(context)
+
+    # Test expansion
+    assert ctx.expand(compact_id) == expand_id
+
+    # Test compaction
+    assert ctx.compact(expand_id) == compact_id
+
+    # Test vocab expansion
+    assert ctx.expand_vocab(compact_id, vocab) == expand_vocab
+
+    # Test vocab push
+    with ctx.vocab_push(vocab):
+        assert ctx.expand_vocab(compact_id) == expand_vocab
+        assert ctx.compact_vocab(expand_vocab) == compact_id
+        # Pushed vocab should not affect regular expansion
+        assert ctx.expand(compact_id) == expand_id
+
+    assert ctx.expand_vocab(compact_id, vocab) == expand_vocab
+    assert ctx.compact_vocab(expand_vocab, vocab) == compact_id
+
+    # Vocab with no pushed or specified context is equivalent to base
+    assert ctx.expand_vocab(compact_id) == expand_id
+    assert ctx.compact_vocab(expand_id) == compact_id
+
+
+@pytest.mark.parametrize(
+    "context,compact_id,expand_id,expand_vocab,vocab",
+    [
+        (BASE_CONTEXT, "http://bar/foo", "http://bar/foo", None, None),
+    ],
+)
+def test_expand(context, compact_id, expand_id, expand_vocab, vocab):
+    """
+    This tests expansion edge cases without checking if the compaction will
+    reverse back
+    """
+    ctx = Context(context)
+    if expand_vocab is None:
+        expand_vocab = expand_id
+
+    # Test expansion
+    assert ctx.expand(compact_id) == expand_id
+
+    # Test vocab expansion
+    assert ctx.expand_vocab(compact_id, vocab) == expand_vocab
+
+    # Test vocab push
+    with ctx.vocab_push(vocab):
+        assert ctx.expand_vocab(compact_id) == expand_vocab
+        # Pushed vocab should not affect regular expansion
+        assert ctx.expand(compact_id) == expand_id

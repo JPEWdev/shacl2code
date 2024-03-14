@@ -173,7 +173,7 @@
             {%- elif prop.enum_id %}
                 "enum": [
                 {%- for e in enums.get(prop.enum_id).values %}
-                    "{{ context.compact(e._id, prop.path) }}"{% if not loop.last %},{% endif %}
+                    "{{ context.compact_vocab(e._id, prop.path) }}"{% if not loop.last %},{% endif %}
                 {%- endfor %}
                 ]
             {%- else %}

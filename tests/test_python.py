@@ -9,6 +9,7 @@ import pytest
 import re
 import subprocess
 import sys
+import hashlib
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 
@@ -189,21 +190,42 @@ class TestOutput:
 def test_roundtrip(import_test_context, tmp_path):
     import model
 
+    def check_file(p, expect, digest):
+        sha1 = hashlib.sha1()
+        with p.open("rb") as f:
+            while True:
+                d = f.read(4096)
+                if not d:
+                    break
+                sha1.update(d)
+
+        assert sha1.hexdigest() == digest
+
+        with p.open("r") as f:
+            data = json.load(f)
+
+        assert data == expect
+
     infile = DATA_DIR / "python" / "roundtrip.json"
     with infile.open("r") as f:
-        objects, _ = model.read_jsonld(f)
+        d = model.JSONLDDeserializer()
+        objects, _ = d.read(f)
+
+    with infile.open("r") as f:
+        expect_data = json.load(f)
 
     outfile = tmp_path / "out.json"
     with outfile.open("wb") as f:
-        model.write_jsonld(objects, f, indent=4)
+        s = model.JSONLDSerializer()
+        digest = s.write(objects, f, indent=4)
 
-    with infile.open("r") as f:
-        indata = json.load(f)
+    check_file(outfile, expect_data, digest)
 
-    with outfile.open("r") as f:
-        outdata = json.load(f)
+    with outfile.open("wb") as f:
+        s = model.JSONLDInlineSerializer()
+        digest = s.write(objects, f)
 
-    assert outdata == indata
+    check_file(outfile, expect_data, digest)
 
 
 def test_jsonschema_validation():
@@ -241,7 +263,8 @@ def test_links(import_test_context, name, expect):
     import model
 
     with (DATA_DIR / "python" / "links.json").open("r") as f:
-        d = ObjectSet(*model.read_jsonld(f))
+        deserializer = model.JSONLDDeserializer()
+        d = ObjectSet(*deserializer.read(f))
 
     c = d.get_obj(name, model.linkclass)
     link = d.get_obj(expect, model.linkclass)
@@ -276,7 +299,8 @@ def test_blank_links(import_test_context, name, cls):
     import model
 
     with (DATA_DIR / "python" / "links.json").open("r") as f:
-        d = ObjectSet(*model.read_jsonld(f))
+        deserializer = model.JSONLDDeserializer()
+        d = ObjectSet(*deserializer.read(f))
 
     c = d.get_obj(name, model.linkclass)
 
@@ -289,6 +313,7 @@ def test_blank_links(import_test_context, name, cls):
 def test_non_refable(import_test_context):
     import model
 
+    s = model.JSONLDSerializer()
     c1 = model.linkclass()
     c2 = model.linkclass()
 
@@ -297,7 +322,7 @@ def test_non_refable(import_test_context):
     c1.linkclassprop = non_ref
 
     # A non-refable object should be inlined
-    result = model.serialize_jsonld([c1])
+    result = s.serialize_data([c1])
     assert result == {
         "@context": SPDX3_CONTEXT_URL,
         "@type": "link-class",
@@ -312,11 +337,11 @@ def test_non_refable(import_test_context):
     c2.linkclassprop = non_ref
 
     with pytest.raises(ValueError):
-        result = model.serialize_jsonld([c1, c2])
+        result = s.serialize_data([c1, c2])
         print(result)
 
     # A non-refable class written as the root object is OK
-    result = model.serialize_jsonld([non_ref])
+    result = s.serialize_data([non_ref])
     assert result == {
         "@context": SPDX3_CONTEXT_URL,
         "@type": "ref-no-class",
@@ -336,6 +361,7 @@ def test_mandatory_refable(import_test_context):
 
     TEST_ID = "http://example.com/name"
 
+    s = model.JSONLDSerializer()
     c1 = model.linkclass()
     c2 = model.linkclass()
 
@@ -344,17 +370,17 @@ def test_mandatory_refable(import_test_context):
     # Mandatory reference fails because there is no ID
     c1.linkclassprop = ref
     with pytest.raises(ValueError):
-        model.serialize_jsonld([c1])
+        s.serialize_data([c1])
 
     # Even references from multiple objects fails because it would generate a
     # blank node with is not referenceable
     c2.linkclassprop = ref
     with pytest.raises(ValueError):
-        model.serialize_jsonld([c1, c2])
+        s.serialize_data([c1, c2])
 
     # Assigning a reference allows the object to be serialized
     ref._id = TEST_ID
-    result = model.serialize_jsonld([c1])
+    result = s.serialize_data([c1])
     # inline is allowed for non-@graphs
     assert result == {
         "@context": SPDX3_CONTEXT_URL,
@@ -367,7 +393,7 @@ def test_mandatory_refable(import_test_context):
 
     # using a graph will force the object into the root @graph (even though not
     # explicitly specified)
-    result = model.serialize_jsonld([c1], force_graph=True)
+    result = s.serialize_data([c1], force_graph=True)
     assert result == {
         "@context": SPDX3_CONTEXT_URL,
         "@graph": [
@@ -394,6 +420,7 @@ def test_optional_refable(import_test_context):
 
     TEST_ID = "http://example.com/name"
 
+    s = model.JSONLDSerializer()
     c1 = model.linkclass()
     c2 = model.linkclass()
 
@@ -409,12 +436,12 @@ def test_optional_refable(import_test_context):
 
     # Test that objects are inlined
     c1.linkclassprop = ref
-    result = model.serialize_jsonld([c1])
+    result = s.serialize_data([c1])
     assert result == INLINE_RESULT
 
     # Explict blank node assignment is not preserved
     ref._id = "_:blank"
-    result = model.serialize_jsonld([c1])
+    result = s.serialize_data([c1])
     assert result == INLINE_RESULT
 
     BLANK_RESULT = {
@@ -439,17 +466,17 @@ def test_optional_refable(import_test_context):
     # being inlined
     del ref._id
     c2.linkclassprop = ref
-    result = model.serialize_jsonld([c1, c2])
+    result = s.serialize_data([c1, c2])
     assert result == BLANK_RESULT
 
     # Explicit blank node assignment, but it's not preserved in serialization
     ref._id = "_:blank"
-    result = model.serialize_jsonld([c1, c2])
+    result = s.serialize_data([c1, c2])
     assert result == BLANK_RESULT
 
     # Assign a non-blank node id (which is preserved)
     ref._id = TEST_ID
-    result = model.serialize_jsonld([c1, c2])
+    result = s.serialize_data([c1, c2])
     assert result == {
         "@context": SPDX3_CONTEXT_URL,
         "@graph": [
@@ -487,6 +514,7 @@ def test_local_refable(import_test_context):
 def test_id_name(import_test_context):
     import model
 
+    s = model.JSONLDSerializer()
     c = model.idpropclass()
 
     TEST_ID = "http://example.com/name"
@@ -505,7 +533,7 @@ def test_id_name(import_test_context):
 
     # Serialization should the alias name
     c._id = TEST_ID
-    result = model.serialize_jsonld([c])
+    result = s.serialize_data([c])
     assert result == {
         "@context": SPDX3_CONTEXT_URL,
         "@type": "id-prop-class",
@@ -851,6 +879,7 @@ def test_mandatory_properties(import_test_context, tmp_path):
     """
     import model
 
+    s = model.JSONLDSerializer()
     outfile = tmp_path / "test.json"
 
     def base_obj():
@@ -862,35 +891,35 @@ def test_mandatory_properties(import_test_context, tmp_path):
     # First validate that the base object is actually valid
     c = base_obj()
     with outfile.open("wb") as f:
-        model.write_jsonld([c], f)
+        s.write([c], f)
 
     # Required scalar property
     c = base_obj()
     del c.testclassrequiredstringscalarprop
     with outfile.open("wb") as f:
         with pytest.raises(ValueError):
-            model.write_jsonld([c], f)
+            s.write([c], f)
 
     # Array that is deleted
     c = base_obj()
     del c.testclassrequiredstringlistprop
     with outfile.open("wb") as f:
         with pytest.raises(ValueError):
-            model.write_jsonld([c], f)
+            s.write([c], f)
 
     # Array initialized to empty list
     c = base_obj()
     c.testclassrequiredstringlistprop = []
     with outfile.open("wb") as f:
         with pytest.raises(ValueError):
-            model.write_jsonld([c], f)
+            s.write([c], f)
 
     # Array with too many items
     c = base_obj()
     c.testclassrequiredstringlistprop.append("too many")
     with outfile.open("wb") as f:
         with pytest.raises(ValueError):
-            model.write_jsonld([c], f)
+            s.write([c], f)
 
 
 def test_iri(import_test_context):
@@ -898,7 +927,8 @@ def test_iri(import_test_context):
 
     infile = DATA_DIR / "python" / "roundtrip.json"
     with infile.open("r") as f:
-        d = ObjectSet(*model.read_jsonld(f))
+        deserializer = model.JSONLDDeserializer()
+        d = ObjectSet(*deserializer.read(f))
 
     c = d.get_obj("http://serialize.example.com/test", model.testclass)
 

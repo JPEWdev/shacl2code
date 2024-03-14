@@ -33,6 +33,7 @@
             "allOf": [
                 {
                     "properties": {
+                        "id":{ "$ref": "#/$defs/localRef" },
                         "type": { "const": "CreationInfo" }
                     }
                 },
@@ -41,8 +42,10 @@
         },
         "CreationInfo_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/CreationInfo" }
-            ]
+                { "$ref": "#/$defs/CreationInfo" },
+                { "$ref": "#/$defs/localRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "CreationInfo_props": {
             "allOf": [
@@ -100,22 +103,10 @@
                     "type": "string"
         },
         "prop_CreationInfo_createdBy": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/Agent_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/Agent_derived"
         },
         "prop_CreationInfo_createdUsing": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/Tool_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/Tool_derived"
         },
         "DictionaryEntry": {
             "allOf": [
@@ -128,9 +119,8 @@
             ]
         },
         "DictionaryEntry_derived": {
-            "oneOf": [
-                { "$ref": "#/$defs/DictionaryEntry" }
-            ]
+            "$ref": "#/$defs/DictionaryEntry",
+            "unevaluatedProperties": false
         },
         "DictionaryEntry_props": {
             "allOf": [
@@ -160,8 +150,10 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "Element" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/Element_props" }
             ]
@@ -217,8 +209,10 @@
                 { "$ref": "#/$defs/software_Sbom" },
                 { "$ref": "#/$defs/software_Snippet" },
                 { "$ref": "#/$defs/software_SoftwareArtifact" },
-                { "$ref": "#/$defs/Element" }
-            ]
+                { "$ref": "#/$defs/Element" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "Element_props": {
             "allOf": [
@@ -300,56 +294,28 @@
                     "type": "string"
         },
         "prop_Element_creationInfo": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/CreationInfo_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/CreationInfo_derived"
         },
         "prop_Element_verifiedUsing": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/IntegrityMethod_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/IntegrityMethod_derived"
         },
         "prop_Element_externalRef": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/ExternalRef_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/ExternalRef_derived"
         },
         "prop_Element_externalIdentifier": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/ExternalIdentifier_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/ExternalIdentifier_derived"
         },
         "prop_Element_extension": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/extension_Extension_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/extension_Extension_derived"
         },
         "ElementCollection": {
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "ElementCollection" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/ElementCollection_props" }
             ]
@@ -360,8 +326,10 @@
                 { "$ref": "#/$defs/Bundle" },
                 { "$ref": "#/$defs/SpdxDocument" },
                 { "$ref": "#/$defs/software_Sbom" },
-                { "$ref": "#/$defs/ElementCollection" }
-            ]
+                { "$ref": "#/$defs/ElementCollection" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "ElementCollection_props": {
             "allOf": [
@@ -403,22 +371,10 @@
             ]
         },
         "prop_ElementCollection_element": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/Element_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/Element_derived"
         },
         "prop_ElementCollection_rootElement": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/Element_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/Element_derived"
         },
         "prop_ElementCollection_profileConformance": {
                 "enum": [
@@ -445,9 +401,8 @@
             ]
         },
         "ExternalIdentifier_derived": {
-            "oneOf": [
-                { "$ref": "#/$defs/ExternalIdentifier" }
-            ]
+            "$ref": "#/$defs/ExternalIdentifier",
+            "unevaluatedProperties": false
         },
         "ExternalIdentifier_props": {
             "allOf": [
@@ -522,9 +477,8 @@
             ]
         },
         "ExternalMap_derived": {
-            "oneOf": [
-                { "$ref": "#/$defs/ExternalMap" }
-            ]
+            "$ref": "#/$defs/ExternalMap",
+            "unevaluatedProperties": false
         },
         "ExternalMap_props": {
             "allOf": [
@@ -561,25 +515,13 @@
                     "$ref": "#/$defs/anyURI"
         },
         "prop_ExternalMap_verifiedUsing": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/IntegrityMethod_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/IntegrityMethod_derived"
         },
         "prop_ExternalMap_locationHint": {
                     "$ref": "#/$defs/anyURI"
         },
         "prop_ExternalMap_definingArtifact": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/Artifact_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/Artifact_derived"
         },
         "ExternalRef": {
             "allOf": [
@@ -592,9 +534,8 @@
             ]
         },
         "ExternalRef_derived": {
-            "oneOf": [
-                { "$ref": "#/$defs/ExternalRef" }
-            ]
+            "$ref": "#/$defs/ExternalRef",
+            "unevaluatedProperties": false
         },
         "ExternalRef_props": {
             "allOf": [
@@ -698,7 +639,8 @@
                 { "$ref": "#/$defs/Hash" },
                 { "$ref": "#/$defs/PackageVerificationCode" },
                 { "$ref": "#/$defs/IntegrityMethod" }
-            ]
+            ],
+            "unevaluatedProperties": false
         },
         "IntegrityMethod_props": {
             "allOf": [
@@ -726,9 +668,8 @@
             ]
         },
         "NamespaceMap_derived": {
-            "oneOf": [
-                { "$ref": "#/$defs/NamespaceMap" }
-            ]
+            "$ref": "#/$defs/NamespaceMap",
+            "unevaluatedProperties": false
         },
         "NamespaceMap_props": {
             "allOf": [
@@ -766,9 +707,8 @@
             ]
         },
         "PackageVerificationCode_derived": {
-            "oneOf": [
-                { "$ref": "#/$defs/PackageVerificationCode" }
-            ]
+            "$ref": "#/$defs/PackageVerificationCode",
+            "unevaluatedProperties": false
         },
         "PackageVerificationCode_props": {
             "allOf": [
@@ -812,9 +752,8 @@
             ]
         },
         "PositiveIntegerRange_derived": {
-            "oneOf": [
-                { "$ref": "#/$defs/PositiveIntegerRange" }
-            ]
+            "$ref": "#/$defs/PositiveIntegerRange",
+            "unevaluatedProperties": false
         },
         "PositiveIntegerRange_props": {
             "allOf": [
@@ -847,8 +786,10 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "Relationship" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/Relationship_props" }
             ]
@@ -868,8 +809,10 @@
                 { "$ref": "#/$defs/security_VexUnderInvestigationVulnAssessmentRelationship" },
                 { "$ref": "#/$defs/security_VexVulnAssessmentRelationship" },
                 { "$ref": "#/$defs/security_VulnAssessmentRelationship" },
-                { "$ref": "#/$defs/Relationship" }
-            ]
+                { "$ref": "#/$defs/Relationship" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "Relationship_props": {
             "allOf": [
@@ -910,22 +853,10 @@
             ]
         },
         "prop_Relationship_from_": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/Element_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/Element_derived"
         },
         "prop_Relationship_to": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/Element_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/Element_derived"
         },
         "prop_Relationship_relationshipType": {
                 "enum": [
@@ -1009,16 +940,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "SpdxDocument" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/SpdxDocument_props" }
             ]
         },
         "SpdxDocument_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/SpdxDocument" }
-            ]
+                { "$ref": "#/$defs/SpdxDocument" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "SpdxDocument_props": {
             "allOf": [
@@ -1053,46 +988,32 @@
             ]
         },
         "prop_SpdxDocument_imports": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/ExternalMap_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/ExternalMap_derived"
         },
         "prop_SpdxDocument_namespaceMap": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/NamespaceMap_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/NamespaceMap_derived"
         },
         "prop_SpdxDocument_dataLicense": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/simplelicensing_AnyLicenseInfo_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/simplelicensing_AnyLicenseInfo_derived"
         },
         "Tool": {
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "Tool" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/Tool_props" }
             ]
         },
         "Tool_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/Tool" }
-            ]
+                { "$ref": "#/$defs/Tool" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "Tool_props": {
             "allOf": [
@@ -1107,8 +1028,10 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "expandedlicensing_LicenseAddition" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/expandedlicensing_LicenseAddition_props" }
             ]
@@ -1117,8 +1040,10 @@
             "oneOf": [
                 { "$ref": "#/$defs/expandedlicensing_CustomLicenseAddition" },
                 { "$ref": "#/$defs/expandedlicensing_ListedLicenseException" },
-                { "$ref": "#/$defs/expandedlicensing_LicenseAddition" }
-            ]
+                { "$ref": "#/$defs/expandedlicensing_LicenseAddition" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "expandedlicensing_LicenseAddition_props": {
             "allOf": [
@@ -1179,16 +1104,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "expandedlicensing_ListedLicenseException" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/expandedlicensing_ListedLicenseException_props" }
             ]
         },
         "expandedlicensing_ListedLicenseException_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/expandedlicensing_ListedLicenseException" }
-            ]
+                { "$ref": "#/$defs/expandedlicensing_ListedLicenseException" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "expandedlicensing_ListedLicenseException_props": {
             "allOf": [
@@ -1215,6 +1144,7 @@
             "allOf": [
                 {
                     "properties": {
+                        "id":{ "$ref": "#/$defs/anyRef" },
                         "type": { "const": "extension_Extension" }
                     }
                 },
@@ -1223,8 +1153,10 @@
         },
         "extension_Extension_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/extension_Extension" }
-            ]
+                { "$ref": "#/$defs/extension_Extension" },
+                { "$ref": "#/$defs/anyRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "extension_Extension_props": {
             "allOf": [
@@ -1239,8 +1171,10 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "security_VulnAssessmentRelationship" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/security_VulnAssessmentRelationship_props" }
             ]
@@ -1258,8 +1192,10 @@
                 { "$ref": "#/$defs/security_VexNotAffectedVulnAssessmentRelationship" },
                 { "$ref": "#/$defs/security_VexUnderInvestigationVulnAssessmentRelationship" },
                 { "$ref": "#/$defs/security_VexVulnAssessmentRelationship" },
-                { "$ref": "#/$defs/security_VulnAssessmentRelationship" }
-            ]
+                { "$ref": "#/$defs/security_VulnAssessmentRelationship" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "security_VulnAssessmentRelationship_props": {
             "allOf": [
@@ -1286,26 +1222,14 @@
             ]
         },
         "prop_security_VulnAssessmentRelationship_security_assessedElement": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/Element_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/Element_derived"
         },
         "prop_security_VulnAssessmentRelationship_security_publishedTime": {
                     "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
                     "type": "string"
         },
         "prop_security_VulnAssessmentRelationship_suppliedBy": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/Agent_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/Agent_derived"
         },
         "prop_security_VulnAssessmentRelationship_security_modifiedTime": {
                     "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
@@ -1319,8 +1243,10 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "simplelicensing_AnyLicenseInfo" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/simplelicensing_AnyLicenseInfo_props" }
             ]
@@ -1337,8 +1263,10 @@
                 { "$ref": "#/$defs/expandedlicensing_OrLaterOperator" },
                 { "$ref": "#/$defs/expandedlicensing_WithAdditionOperator" },
                 { "$ref": "#/$defs/simplelicensing_LicenseExpression" },
-                { "$ref": "#/$defs/simplelicensing_AnyLicenseInfo" }
-            ]
+                { "$ref": "#/$defs/simplelicensing_AnyLicenseInfo" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "simplelicensing_AnyLicenseInfo_props": {
             "allOf": [
@@ -1353,16 +1281,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "simplelicensing_LicenseExpression" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/simplelicensing_LicenseExpression_props" }
             ]
         },
         "simplelicensing_LicenseExpression_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/simplelicensing_LicenseExpression" }
-            ]
+                { "$ref": "#/$defs/simplelicensing_LicenseExpression" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "simplelicensing_LicenseExpression_props": {
             "allOf": [
@@ -1400,28 +1332,26 @@
                     "type": "string"
         },
         "prop_simplelicensing_LicenseExpression_simplelicensing_customIdToUri": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/DictionaryEntry_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/DictionaryEntry_derived"
         },
         "simplelicensing_SimpleLicensingText": {
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "simplelicensing_SimpleLicensingText" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/simplelicensing_SimpleLicensingText_props" }
             ]
         },
         "simplelicensing_SimpleLicensingText_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/simplelicensing_SimpleLicensingText" }
-            ]
+                { "$ref": "#/$defs/simplelicensing_SimpleLicensingText" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "simplelicensing_SimpleLicensingText_props": {
             "allOf": [
@@ -1445,16 +1375,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "build_Build" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/build_Build_props" }
             ]
         },
         "build_Build_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/build_Build" }
-            ]
+                { "$ref": "#/$defs/build_Build" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "build_Build_props": {
             "allOf": [
@@ -1543,22 +1477,10 @@
                     "$ref": "#/$defs/anyURI"
         },
         "prop_build_Build_build_configSourceDigest": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/Hash_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/Hash_derived"
         },
         "prop_build_Build_build_parameters": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/DictionaryEntry_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/DictionaryEntry_derived"
         },
         "prop_build_Build_build_buildStartTime": {
                     "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
@@ -1569,20 +1491,16 @@
                     "type": "string"
         },
         "prop_build_Build_build_environment": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/DictionaryEntry_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/DictionaryEntry_derived"
         },
         "Agent": {
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "Agent" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/Agent_props" }
             ]
@@ -1592,8 +1510,10 @@
                 { "$ref": "#/$defs/Organization" },
                 { "$ref": "#/$defs/Person" },
                 { "$ref": "#/$defs/SoftwareAgent" },
-                { "$ref": "#/$defs/Agent" }
-            ]
+                { "$ref": "#/$defs/Agent" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "Agent_props": {
             "allOf": [
@@ -1608,16 +1528,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "Annotation" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/Annotation_props" }
             ]
         },
         "Annotation_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/Annotation" }
-            ]
+                { "$ref": "#/$defs/Annotation" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "Annotation_props": {
             "allOf": [
@@ -1658,20 +1582,16 @@
                     "type": "string"
         },
         "prop_Annotation_subject": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/Element_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/Element_derived"
         },
         "Artifact": {
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "Artifact" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/Artifact_props" }
             ]
@@ -1685,8 +1605,10 @@
                 { "$ref": "#/$defs/software_Package" },
                 { "$ref": "#/$defs/software_Snippet" },
                 { "$ref": "#/$defs/software_SoftwareArtifact" },
-                { "$ref": "#/$defs/Artifact" }
-            ]
+                { "$ref": "#/$defs/Artifact" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "Artifact_props": {
             "allOf": [
@@ -1740,22 +1662,10 @@
             ]
         },
         "prop_Artifact_originatedBy": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/Agent_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/Agent_derived"
         },
         "prop_Artifact_suppliedBy": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/Agent_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/Agent_derived"
         },
         "prop_Artifact_builtTime": {
                     "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",
@@ -1786,8 +1696,10 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "Bundle" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/Bundle_props" }
             ]
@@ -1796,8 +1708,10 @@
             "oneOf": [
                 { "$ref": "#/$defs/Bom" },
                 { "$ref": "#/$defs/software_Sbom" },
-                { "$ref": "#/$defs/Bundle" }
-            ]
+                { "$ref": "#/$defs/Bundle" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "Bundle_props": {
             "allOf": [
@@ -1825,9 +1739,8 @@
             ]
         },
         "Hash_derived": {
-            "oneOf": [
-                { "$ref": "#/$defs/Hash" }
-            ]
+            "$ref": "#/$defs/Hash",
+            "unevaluatedProperties": false
         },
         "Hash_props": {
             "allOf": [
@@ -1880,16 +1793,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "LifecycleScopedRelationship" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/LifecycleScopedRelationship_props" }
             ]
         },
         "LifecycleScopedRelationship_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/LifecycleScopedRelationship" }
-            ]
+                { "$ref": "#/$defs/LifecycleScopedRelationship" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "LifecycleScopedRelationship_props": {
             "allOf": [
@@ -1917,16 +1834,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "Organization" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/Organization_props" }
             ]
         },
         "Organization_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/Organization" }
-            ]
+                { "$ref": "#/$defs/Organization" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "Organization_props": {
             "allOf": [
@@ -1941,16 +1862,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "Person" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/Person_props" }
             ]
         },
         "Person_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/Person" }
-            ]
+                { "$ref": "#/$defs/Person" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "Person_props": {
             "allOf": [
@@ -1965,16 +1890,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "SoftwareAgent" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/SoftwareAgent_props" }
             ]
         },
         "SoftwareAgent_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/SoftwareAgent" }
-            ]
+                { "$ref": "#/$defs/SoftwareAgent" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "SoftwareAgent_props": {
             "allOf": [
@@ -1989,16 +1918,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "expandedlicensing_ConjunctiveLicenseSet" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/expandedlicensing_ConjunctiveLicenseSet_props" }
             ]
         },
         "expandedlicensing_ConjunctiveLicenseSet_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/expandedlicensing_ConjunctiveLicenseSet" }
-            ]
+                { "$ref": "#/$defs/expandedlicensing_ConjunctiveLicenseSet" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "expandedlicensing_ConjunctiveLicenseSet_props": {
             "allOf": [
@@ -2024,28 +1957,26 @@
             ]
         },
         "prop_expandedlicensing_ConjunctiveLicenseSet_expandedlicensing_member": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/simplelicensing_AnyLicenseInfo_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/simplelicensing_AnyLicenseInfo_derived"
         },
         "expandedlicensing_CustomLicenseAddition": {
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "expandedlicensing_CustomLicenseAddition" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/expandedlicensing_CustomLicenseAddition_props" }
             ]
         },
         "expandedlicensing_CustomLicenseAddition_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/expandedlicensing_CustomLicenseAddition" }
-            ]
+                { "$ref": "#/$defs/expandedlicensing_CustomLicenseAddition" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "expandedlicensing_CustomLicenseAddition_props": {
             "allOf": [
@@ -2060,16 +1991,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "expandedlicensing_DisjunctiveLicenseSet" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/expandedlicensing_DisjunctiveLicenseSet_props" }
             ]
         },
         "expandedlicensing_DisjunctiveLicenseSet_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/expandedlicensing_DisjunctiveLicenseSet" }
-            ]
+                { "$ref": "#/$defs/expandedlicensing_DisjunctiveLicenseSet" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "expandedlicensing_DisjunctiveLicenseSet_props": {
             "allOf": [
@@ -2095,20 +2030,16 @@
             ]
         },
         "prop_expandedlicensing_DisjunctiveLicenseSet_expandedlicensing_member": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/simplelicensing_AnyLicenseInfo_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/simplelicensing_AnyLicenseInfo_derived"
         },
         "expandedlicensing_ExtendableLicense": {
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "expandedlicensing_ExtendableLicense" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/expandedlicensing_ExtendableLicense_props" }
             ]
@@ -2119,8 +2050,10 @@
                 { "$ref": "#/$defs/expandedlicensing_License" },
                 { "$ref": "#/$defs/expandedlicensing_ListedLicense" },
                 { "$ref": "#/$defs/expandedlicensing_OrLaterOperator" },
-                { "$ref": "#/$defs/expandedlicensing_ExtendableLicense" }
-            ]
+                { "$ref": "#/$defs/expandedlicensing_ExtendableLicense" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "expandedlicensing_ExtendableLicense_props": {
             "allOf": [
@@ -2135,16 +2068,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "expandedlicensing_IndividualLicensingInfo" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/expandedlicensing_IndividualLicensingInfo_props" }
             ]
         },
         "expandedlicensing_IndividualLicensingInfo_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/expandedlicensing_IndividualLicensingInfo" }
-            ]
+                { "$ref": "#/$defs/expandedlicensing_IndividualLicensingInfo" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "expandedlicensing_IndividualLicensingInfo_props": {
             "allOf": [
@@ -2159,8 +2096,10 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "expandedlicensing_License" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/expandedlicensing_License_props" }
             ]
@@ -2169,8 +2108,10 @@
             "oneOf": [
                 { "$ref": "#/$defs/expandedlicensing_CustomLicense" },
                 { "$ref": "#/$defs/expandedlicensing_ListedLicense" },
-                { "$ref": "#/$defs/expandedlicensing_License" }
-            ]
+                { "$ref": "#/$defs/expandedlicensing_License" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "expandedlicensing_License_props": {
             "allOf": [
@@ -2249,16 +2190,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "expandedlicensing_ListedLicense" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/expandedlicensing_ListedLicense_props" }
             ]
         },
         "expandedlicensing_ListedLicense_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/expandedlicensing_ListedLicense" }
-            ]
+                { "$ref": "#/$defs/expandedlicensing_ListedLicense" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "expandedlicensing_ListedLicense_props": {
             "allOf": [
@@ -2285,16 +2230,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "expandedlicensing_OrLaterOperator" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/expandedlicensing_OrLaterOperator_props" }
             ]
         },
         "expandedlicensing_OrLaterOperator_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/expandedlicensing_OrLaterOperator" }
-            ]
+                { "$ref": "#/$defs/expandedlicensing_OrLaterOperator" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "expandedlicensing_OrLaterOperator_props": {
             "allOf": [
@@ -2312,28 +2261,26 @@
             ]
         },
         "prop_expandedlicensing_OrLaterOperator_expandedlicensing_subjectLicense": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/expandedlicensing_License_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/expandedlicensing_License_derived"
         },
         "expandedlicensing_WithAdditionOperator": {
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "expandedlicensing_WithAdditionOperator" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/expandedlicensing_WithAdditionOperator_props" }
             ]
         },
         "expandedlicensing_WithAdditionOperator_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/expandedlicensing_WithAdditionOperator" }
-            ]
+                { "$ref": "#/$defs/expandedlicensing_WithAdditionOperator" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "expandedlicensing_WithAdditionOperator_props": {
             "allOf": [
@@ -2355,37 +2302,29 @@
             ]
         },
         "prop_expandedlicensing_WithAdditionOperator_expandedlicensing_subjectExtendableLicense": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/expandedlicensing_ExtendableLicense_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/expandedlicensing_ExtendableLicense_derived"
         },
         "prop_expandedlicensing_WithAdditionOperator_expandedlicensing_subjectAddition": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/expandedlicensing_LicenseAddition_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/expandedlicensing_LicenseAddition_derived"
         },
         "security_CvssV2VulnAssessmentRelationship": {
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "security_CvssV2VulnAssessmentRelationship" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/security_CvssV2VulnAssessmentRelationship_props" }
             ]
         },
         "security_CvssV2VulnAssessmentRelationship_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/security_CvssV2VulnAssessmentRelationship" }
-            ]
+                { "$ref": "#/$defs/security_CvssV2VulnAssessmentRelationship" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "security_CvssV2VulnAssessmentRelationship_props": {
             "allOf": [
@@ -2416,16 +2355,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "security_CvssV3VulnAssessmentRelationship" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/security_CvssV3VulnAssessmentRelationship_props" }
             ]
         },
         "security_CvssV3VulnAssessmentRelationship_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/security_CvssV3VulnAssessmentRelationship" }
-            ]
+                { "$ref": "#/$defs/security_CvssV3VulnAssessmentRelationship" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "security_CvssV3VulnAssessmentRelationship_props": {
             "allOf": [
@@ -2469,16 +2412,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "security_CvssV4VulnAssessmentRelationship" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/security_CvssV4VulnAssessmentRelationship_props" }
             ]
         },
         "security_CvssV4VulnAssessmentRelationship_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/security_CvssV4VulnAssessmentRelationship" }
-            ]
+                { "$ref": "#/$defs/security_CvssV4VulnAssessmentRelationship" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "security_CvssV4VulnAssessmentRelationship_props": {
             "allOf": [
@@ -2522,16 +2469,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "security_EpssVulnAssessmentRelationship" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/security_EpssVulnAssessmentRelationship_props" }
             ]
         },
         "security_EpssVulnAssessmentRelationship_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/security_EpssVulnAssessmentRelationship" }
-            ]
+                { "$ref": "#/$defs/security_EpssVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "security_EpssVulnAssessmentRelationship_props": {
             "allOf": [
@@ -2570,16 +2521,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "security_ExploitCatalogVulnAssessmentRelationship" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/security_ExploitCatalogVulnAssessmentRelationship_props" }
             ]
         },
         "security_ExploitCatalogVulnAssessmentRelationship_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/security_ExploitCatalogVulnAssessmentRelationship" }
-            ]
+                { "$ref": "#/$defs/security_ExploitCatalogVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "security_ExploitCatalogVulnAssessmentRelationship_props": {
             "allOf": [
@@ -2620,16 +2575,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "security_SsvcVulnAssessmentRelationship" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/security_SsvcVulnAssessmentRelationship_props" }
             ]
         },
         "security_SsvcVulnAssessmentRelationship_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/security_SsvcVulnAssessmentRelationship" }
-            ]
+                { "$ref": "#/$defs/security_SsvcVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "security_SsvcVulnAssessmentRelationship_props": {
             "allOf": [
@@ -2658,8 +2617,10 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "security_VexVulnAssessmentRelationship" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/security_VexVulnAssessmentRelationship_props" }
             ]
@@ -2670,8 +2631,10 @@
                 { "$ref": "#/$defs/security_VexFixedVulnAssessmentRelationship" },
                 { "$ref": "#/$defs/security_VexNotAffectedVulnAssessmentRelationship" },
                 { "$ref": "#/$defs/security_VexUnderInvestigationVulnAssessmentRelationship" },
-                { "$ref": "#/$defs/security_VexVulnAssessmentRelationship" }
-            ]
+                { "$ref": "#/$defs/security_VexVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "security_VexVulnAssessmentRelationship_props": {
             "allOf": [
@@ -2698,16 +2661,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "security_Vulnerability" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/security_Vulnerability_props" }
             ]
         },
         "security_Vulnerability_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/security_Vulnerability" }
-            ]
+                { "$ref": "#/$defs/security_Vulnerability" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "security_Vulnerability_props": {
             "allOf": [
@@ -2743,8 +2710,10 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "software_SoftwareArtifact" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/software_SoftwareArtifact_props" }
             ]
@@ -2756,8 +2725,10 @@
                 { "$ref": "#/$defs/software_File" },
                 { "$ref": "#/$defs/software_Package" },
                 { "$ref": "#/$defs/software_Snippet" },
-                { "$ref": "#/$defs/software_SoftwareArtifact" }
-            ]
+                { "$ref": "#/$defs/software_SoftwareArtifact" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "software_SoftwareArtifact_props": {
             "allOf": [
@@ -2884,8 +2855,10 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "Bom" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/Bom_props" }
             ]
@@ -2893,8 +2866,10 @@
         "Bom_derived": {
             "oneOf": [
                 { "$ref": "#/$defs/software_Sbom" },
-                { "$ref": "#/$defs/Bom" }
-            ]
+                { "$ref": "#/$defs/Bom" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "Bom_props": {
             "allOf": [
@@ -2909,16 +2884,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "expandedlicensing_CustomLicense" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/expandedlicensing_CustomLicense_props" }
             ]
         },
         "expandedlicensing_CustomLicense_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/expandedlicensing_CustomLicense" }
-            ]
+                { "$ref": "#/$defs/expandedlicensing_CustomLicense" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "expandedlicensing_CustomLicense_props": {
             "allOf": [
@@ -2933,16 +2912,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "security_VexAffectedVulnAssessmentRelationship" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/security_VexAffectedVulnAssessmentRelationship_props" }
             ]
         },
         "security_VexAffectedVulnAssessmentRelationship_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/security_VexAffectedVulnAssessmentRelationship" }
-            ]
+                { "$ref": "#/$defs/security_VexAffectedVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "security_VexAffectedVulnAssessmentRelationship_props": {
             "allOf": [
@@ -2977,16 +2960,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "security_VexFixedVulnAssessmentRelationship" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/security_VexFixedVulnAssessmentRelationship_props" }
             ]
         },
         "security_VexFixedVulnAssessmentRelationship_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/security_VexFixedVulnAssessmentRelationship" }
-            ]
+                { "$ref": "#/$defs/security_VexFixedVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "security_VexFixedVulnAssessmentRelationship_props": {
             "allOf": [
@@ -3001,16 +2988,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "security_VexNotAffectedVulnAssessmentRelationship" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/security_VexNotAffectedVulnAssessmentRelationship_props" }
             ]
         },
         "security_VexNotAffectedVulnAssessmentRelationship_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/security_VexNotAffectedVulnAssessmentRelationship" }
-            ]
+                { "$ref": "#/$defs/security_VexNotAffectedVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "security_VexNotAffectedVulnAssessmentRelationship_props": {
             "allOf": [
@@ -3050,16 +3041,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "security_VexUnderInvestigationVulnAssessmentRelationship" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/security_VexUnderInvestigationVulnAssessmentRelationship_props" }
             ]
         },
         "security_VexUnderInvestigationVulnAssessmentRelationship_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/security_VexUnderInvestigationVulnAssessmentRelationship" }
-            ]
+                { "$ref": "#/$defs/security_VexUnderInvestigationVulnAssessmentRelationship" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "security_VexUnderInvestigationVulnAssessmentRelationship_props": {
             "allOf": [
@@ -3074,16 +3069,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "software_File" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/software_File_props" }
             ]
         },
         "software_File_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/software_File" }
-            ]
+                { "$ref": "#/$defs/software_File" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "software_File_props": {
             "allOf": [
@@ -3111,8 +3110,10 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "software_Package" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/software_Package_props" }
             ]
@@ -3121,8 +3122,10 @@
             "oneOf": [
                 { "$ref": "#/$defs/ai_AIPackage" },
                 { "$ref": "#/$defs/dataset_Dataset" },
-                { "$ref": "#/$defs/software_Package" }
-            ]
+                { "$ref": "#/$defs/software_Package" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "software_Package_props": {
             "allOf": [
@@ -3167,16 +3170,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "software_Sbom" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/software_Sbom_props" }
             ]
         },
         "software_Sbom_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/software_Sbom" }
-            ]
+                { "$ref": "#/$defs/software_Sbom" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "software_Sbom_props": {
             "allOf": [
@@ -3211,16 +3218,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "software_Snippet" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/software_Snippet_props" }
             ]
         },
         "software_Snippet_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/software_Snippet" }
-            ]
+                { "$ref": "#/$defs/software_Snippet" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "software_Snippet_props": {
             "allOf": [
@@ -3244,46 +3255,32 @@
             ]
         },
         "prop_software_Snippet_software_byteRange": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/PositiveIntegerRange_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/PositiveIntegerRange_derived"
         },
         "prop_software_Snippet_software_lineRange": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/PositiveIntegerRange_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/PositiveIntegerRange_derived"
         },
         "prop_software_Snippet_software_snippetFromFile": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/software_File_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/software_File_derived"
         },
         "ai_AIPackage": {
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "ai_AIPackage" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/ai_AIPackage_props" }
             ]
         },
         "ai_AIPackage_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/ai_AIPackage" }
-            ]
+                { "$ref": "#/$defs/ai_AIPackage" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "ai_AIPackage_props": {
             "allOf": [
@@ -3414,13 +3411,7 @@
                     "type": "string"
         },
         "prop_ai_AIPackage_ai_hyperparameter": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/DictionaryEntry_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/DictionaryEntry_derived"
         },
         "prop_ai_AIPackage_ai_modelDataPreprocessing": {
                     "type": "string"
@@ -3436,22 +3427,10 @@
                 ]
         },
         "prop_ai_AIPackage_ai_metricDecisionThreshold": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/DictionaryEntry_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/DictionaryEntry_derived"
         },
         "prop_ai_AIPackage_ai_metric": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/DictionaryEntry_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/DictionaryEntry_derived"
         },
         "prop_ai_AIPackage_ai_domain": {
                     "type": "string"
@@ -3475,16 +3454,20 @@
             "allOf": [
                 {
                     "properties": {
+                        "spdxId":{ "$ref": "#/$defs/externalRef" },
                         "type": { "const": "dataset_Dataset" }
-                    }
+                    },
+                    "required": ["spdxId"]
                 },
                 { "$ref": "#/$defs/dataset_Dataset_props" }
             ]
         },
         "dataset_Dataset_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/dataset_Dataset" }
-            ]
+                { "$ref": "#/$defs/dataset_Dataset" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "dataset_Dataset_props": {
             "allOf": [
@@ -3608,13 +3591,7 @@
                     "type": "string"
         },
         "prop_dataset_Dataset_dataset_sensor": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/DictionaryEntry_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/DictionaryEntry_derived"
         },
         "prop_dataset_Dataset_dataset_knownBias": {
                     "type": "string"
@@ -3649,8 +3626,16 @@
                     "scrapingScript"
                 ]
         },
-        "idRef": {
+        "anyRef": {
             "type": "string"
+        },
+        "externalRef": {
+            "type": "string",
+            "pattern": "^(?!_:).*"
+        },
+        "localRef": {
+            "type": "string",
+            "pattern": "^_:.*"
         },
         "anyURI": {
             "type": "string"
@@ -3670,7 +3655,6 @@
         "SHACLClass": {
             "type": "object",
             "properties": {
-                "id": { "$ref": "#/$defs/idRef" },
                 "type": {
                     "enum": [
                         "CreationInfo",

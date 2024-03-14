@@ -356,7 +356,7 @@ def test_non_refable(import_test_context):
         non_ref._id = "_:blank"
 
 
-def test_mandatory_refable(import_test_context):
+def test_yes_refable(import_test_context):
     import model
 
     TEST_ID = "http://example.com/name"
@@ -365,7 +365,7 @@ def test_mandatory_refable(import_test_context):
     c1 = model.linkclass()
     c2 = model.linkclass()
 
-    ref = model.refmandatoryclass()
+    ref = model.refyesclass()
 
     # Mandatory reference fails because there is no ID
     c1.linkclassprop = ref
@@ -381,13 +381,13 @@ def test_mandatory_refable(import_test_context):
     # Assigning a reference allows the object to be serialized
     ref._id = TEST_ID
     result = s.serialize_data([c1])
-    # inline is allowed for non-@graphs
+    # inline is allowed
     assert result == {
         "@context": SPDX3_CONTEXT_URL,
         "@type": "link-class",
         "link-class-prop": {
             "@id": TEST_ID,
-            "@type": "ref-mandatory-class",
+            "@type": "ref-yes-class",
         },
     }
 
@@ -403,7 +403,57 @@ def test_mandatory_refable(import_test_context):
             },
             {
                 "@id": TEST_ID,
-                "@type": "ref-mandatory-class",
+                "@type": "ref-yes-class",
+            },
+        ],
+    }
+
+    # Assignment of a blank node value is not allowed
+    with pytest.raises(ValueError):
+        ref._id = "_:blank"
+
+
+def test_always_refable(import_test_context):
+    import model
+
+    TEST_ID = "http://example.com/name"
+
+    s = model.JSONLDSerializer()
+    c1 = model.linkclass()
+    c2 = model.linkclass()
+
+    ref = model.refalwaysclass()
+
+    # Mandatory reference fails because there is no ID
+    c1.linkclassprop = ref
+    with pytest.raises(ValueError):
+        s.serialize_data([c1])
+
+    # Even references from multiple objects fails because it would generate a
+    # blank node with is not referenceable
+    c2.linkclassprop = ref
+    with pytest.raises(ValueError):
+        s.serialize_data([c1, c2])
+
+    # Assigning a reference allows the object to be serialized
+    ref._id = TEST_ID
+    # inlining is not allowed since it is not a reference
+    with pytest.raises(ValueError):
+        s.serialize_data([c1])
+
+    # using a graph will force the object into the root @graph (even though not
+    # explicitly specified)
+    result = s.serialize_data([c1], force_graph=True)
+    assert result == {
+        "@context": SPDX3_CONTEXT_URL,
+        "@graph": [
+            {
+                "@type": "link-class",
+                "link-class-prop": TEST_ID,
+            },
+            {
+                "@id": TEST_ID,
+                "@type": "ref-always-class",
             },
         ],
     }
@@ -498,9 +548,6 @@ def test_optional_refable(import_test_context):
 
 def test_local_refable(import_test_context):
     import model
-
-    c1 = model.linkclass()
-    c2 = model.linkclass()
 
     ref = model.reflocalclass()
 

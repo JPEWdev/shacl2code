@@ -29,10 +29,38 @@
     "unevaluatedProperties": false,
 
     "$defs": {
+        "idpropclass": {
+            "allOf": [
+                {
+                    "properties": {
+                        "testid":{ "$ref": "#/$defs/anyRef" },
+                        "@type": { "const": "id-prop-class" }
+                    }
+                },
+                { "$ref": "#/$defs/idpropclass_props" }
+            ]
+        },
+        "idpropclass_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/idpropclass" },
+                { "$ref": "#/$defs/anyRef" }
+            ],
+            "unevaluatedProperties": false
+        },
+        "idpropclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/SHACLClass" },
+                {
+                    "properties": {
+                    }
+                }
+            ]
+        },
         "linkclass": {
             "allOf": [
                 {
                     "properties": {
+                        "@id":{ "$ref": "#/$defs/anyRef" },
                         "@type": { "const": "link-class" }
                     }
                 },
@@ -42,8 +70,14 @@
         "linkclass_derived": {
             "oneOf": [
                 { "$ref": "#/$defs/linkderivedclass" },
-                { "$ref": "#/$defs/linkclass" }
-            ]
+                { "$ref": "#/$defs/reflocalclass" },
+                { "$ref": "#/$defs/refnoclass" },
+                { "$ref": "#/$defs/refoptionalclass" },
+                { "$ref": "#/$defs/refyesclass" },
+                { "$ref": "#/$defs/linkclass" },
+                { "$ref": "#/$defs/anyRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "linkclass_props": {
             "allOf": [
@@ -71,36 +105,19 @@
             ]
         },
         "prop_linkclass_linkclassprop": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/linkclass_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/linkclass_derived"
         },
         "prop_linkclass_linkclasspropnoclass": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/linkclass_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/linkclass_derived"
         },
         "prop_linkclass_linkclasslistprop": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/linkclass_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/linkclass_derived"
         },
         "linkderivedclass": {
             "allOf": [
                 {
                     "properties": {
+                        "@id":{ "$ref": "#/$defs/anyRef" },
                         "@type": { "const": "link-derived-class" }
                     }
                 },
@@ -109,8 +126,10 @@
         },
         "linkderivedclass_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/linkderivedclass" }
-            ]
+                { "$ref": "#/$defs/linkderivedclass" },
+                { "$ref": "#/$defs/anyRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "linkderivedclass_props": {
             "allOf": [
@@ -125,6 +144,7 @@
             "allOf": [
                 {
                     "properties": {
+                        "@id":{ "$ref": "#/$defs/anyRef" },
                         "@type": { "const": "parent-class" }
                     }
                 },
@@ -136,8 +156,10 @@
                 { "$ref": "#/$defs/testclass" },
                 { "$ref": "#/$defs/testclassrequired" },
                 { "$ref": "#/$defs/testderivedclass" },
-                { "$ref": "#/$defs/parentclass" }
-            ]
+                { "$ref": "#/$defs/parentclass" },
+                { "$ref": "#/$defs/anyRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "parentclass_props": {
             "allOf": [
@@ -148,10 +170,141 @@
                 }
             ]
         },
+        "refalwaysclass": {
+            "allOf": [
+                {
+                    "properties": {
+                        "@id":{ "$ref": "#/$defs/externalRef" },
+                        "@type": { "const": "ref-always-class" }
+                    },
+                    "required": ["@id"]
+                },
+                { "$ref": "#/$defs/refalwaysclass_props" }
+            ]
+        },
+        "refalwaysclass_derived": {
+            "$ref": "#/$defs/externalRef",
+            "unevaluatedProperties": false
+        },
+        "refalwaysclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/linkclass_props" },
+                {
+                    "properties": {
+                    }
+                }
+            ]
+        },
+        "reflocalclass": {
+            "allOf": [
+                {
+                    "properties": {
+                        "@id":{ "$ref": "#/$defs/localRef" },
+                        "@type": { "const": "ref-local-class" }
+                    }
+                },
+                { "$ref": "#/$defs/reflocalclass_props" }
+            ]
+        },
+        "reflocalclass_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/reflocalclass" },
+                { "$ref": "#/$defs/localRef" }
+            ],
+            "unevaluatedProperties": false
+        },
+        "reflocalclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/linkclass_props" },
+                {
+                    "properties": {
+                    }
+                }
+            ]
+        },
+        "refnoclass": {
+            "allOf": [
+                {
+                    "properties": {
+                        "@type": { "const": "ref-no-class" }
+                    }
+                },
+                { "$ref": "#/$defs/refnoclass_props" }
+            ]
+        },
+        "refnoclass_derived": {
+            "$ref": "#/$defs/refnoclass",
+            "unevaluatedProperties": false
+        },
+        "refnoclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/linkclass_props" },
+                {
+                    "properties": {
+                    }
+                }
+            ]
+        },
+        "refoptionalclass": {
+            "allOf": [
+                {
+                    "properties": {
+                        "@id":{ "$ref": "#/$defs/anyRef" },
+                        "@type": { "const": "ref-optional-class" }
+                    }
+                },
+                { "$ref": "#/$defs/refoptionalclass_props" }
+            ]
+        },
+        "refoptionalclass_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/refoptionalclass" },
+                { "$ref": "#/$defs/anyRef" }
+            ],
+            "unevaluatedProperties": false
+        },
+        "refoptionalclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/linkclass_props" },
+                {
+                    "properties": {
+                    }
+                }
+            ]
+        },
+        "refyesclass": {
+            "allOf": [
+                {
+                    "properties": {
+                        "@id":{ "$ref": "#/$defs/externalRef" },
+                        "@type": { "const": "ref-yes-class" }
+                    },
+                    "required": ["@id"]
+                },
+                { "$ref": "#/$defs/refyesclass_props" }
+            ]
+        },
+        "refyesclass_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/refyesclass" },
+                { "$ref": "#/$defs/externalRef" }
+            ],
+            "unevaluatedProperties": false
+        },
+        "refyesclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/linkclass_props" },
+                {
+                    "properties": {
+                    }
+                }
+            ]
+        },
         "testanotherclass": {
             "allOf": [
                 {
                     "properties": {
+                        "@id":{ "$ref": "#/$defs/anyRef" },
                         "@type": { "const": "test-another-class" }
                     }
                 },
@@ -160,8 +313,10 @@
         },
         "testanotherclass_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/testanotherclass" }
-            ]
+                { "$ref": "#/$defs/testanotherclass" },
+                { "$ref": "#/$defs/anyRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "testanotherclass_props": {
             "allOf": [
@@ -176,6 +331,7 @@
             "allOf": [
                 {
                     "properties": {
+                        "@id":{ "$ref": "#/$defs/anyRef" },
                         "@type": { "const": "test-class" }
                     }
                 },
@@ -186,8 +342,10 @@
             "oneOf": [
                 { "$ref": "#/$defs/testclassrequired" },
                 { "$ref": "#/$defs/testderivedclass" },
-                { "$ref": "#/$defs/testclass" }
-            ]
+                { "$ref": "#/$defs/testclass" },
+                { "$ref": "#/$defs/anyRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "testclass_props": {
             "allOf": [
@@ -341,31 +499,13 @@
                     "type": "number"
         },
         "prop_testclass_testclassclassprop": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/testclass_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/testclass_derived"
         },
         "prop_testclass_testclassclasspropnoclass": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/testclass_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/testclass_derived"
         },
         "prop_testclass_testclassclasslistprop": {
-                "oneOf": [
-                    { "$ref": "#/$defs/idRef" },
-                    {
-                        "$ref": "#/$defs/testclass_derived",
-                        "unevaluatedProperties": false
-                    }
-                ]
+                "$ref": "#/$defs/testclass_derived"
         },
         "prop_testclass_testclassenumprop": {
                 "enum": [
@@ -400,6 +540,7 @@
             "allOf": [
                 {
                     "properties": {
+                        "@id":{ "$ref": "#/$defs/anyRef" },
                         "@type": { "const": "test-class-required" }
                     }
                 },
@@ -408,8 +549,10 @@
         },
         "testclassrequired_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/testclassrequired" }
-            ]
+                { "$ref": "#/$defs/testclassrequired" },
+                { "$ref": "#/$defs/anyRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "testclassrequired_props": {
             "allOf": [
@@ -449,6 +592,7 @@
             "allOf": [
                 {
                     "properties": {
+                        "@id":{ "$ref": "#/$defs/anyRef" },
                         "@type": { "const": "test-derived-class" }
                     }
                 },
@@ -457,8 +601,10 @@
         },
         "testderivedclass_derived": {
             "oneOf": [
-                { "$ref": "#/$defs/testderivedclass" }
-            ]
+                { "$ref": "#/$defs/testderivedclass" },
+                { "$ref": "#/$defs/anyRef" }
+            ],
+            "unevaluatedProperties": false
         },
         "testderivedclass_props": {
             "allOf": [
@@ -469,8 +615,16 @@
                 }
             ]
         },
-        "idRef": {
+        "anyRef": {
             "type": "string"
+        },
+        "externalRef": {
+            "type": "string",
+            "pattern": "^(?!_:).*"
+        },
+        "localRef": {
+            "type": "string",
+            "pattern": "^_:.*"
         },
         "anyURI": {
             "type": "string"
@@ -490,12 +644,17 @@
         "SHACLClass": {
             "type": "object",
             "properties": {
-                "@id": { "$ref": "#/$defs/idRef" },
                 "@type": {
                     "enum": [
+                        "id-prop-class",
                         "link-class",
                         "link-derived-class",
                         "parent-class",
+                        "ref-always-class",
+                        "ref-local-class",
+                        "ref-no-class",
+                        "ref-optional-class",
+                        "ref-yes-class",
                         "test-another-class",
                         "test-class",
                         "test-class-required",
@@ -507,9 +666,15 @@
         },
         "AnyClass": {
             "oneOf": [
+                { "$ref": "#/$defs/idpropclass" },
                 { "$ref": "#/$defs/linkclass" },
                 { "$ref": "#/$defs/linkderivedclass" },
                 { "$ref": "#/$defs/parentclass" },
+                { "$ref": "#/$defs/refalwaysclass" },
+                { "$ref": "#/$defs/reflocalclass" },
+                { "$ref": "#/$defs/refnoclass" },
+                { "$ref": "#/$defs/refoptionalclass" },
+                { "$ref": "#/$defs/refyesclass" },
                 { "$ref": "#/$defs/testanotherclass" },
                 { "$ref": "#/$defs/testclass" },
                 { "$ref": "#/$defs/testclassrequired" },

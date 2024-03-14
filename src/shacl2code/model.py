@@ -92,7 +92,7 @@ class Class:
     properties: typing.List[Property]
     comment: str = ""
     id_property: str = ""
-    referenceable: str = "optional"
+    refable: str = "optional"
 
 
 class Model(object):
@@ -166,14 +166,14 @@ class Model(object):
                 comment=str(self.model.value(cls_iri, RDFS.comment, default="")),
                 properties=[],
                 id_property=str_val(self.model.value(cls_iri, SPDXS.idPropertyName)),
-                referenceable=str(
+                refable=str(
                     self.model.value(cls_iri, SPDXS.referenceable, default="optional")
                 ),
             )
 
-            if c.referenceable not in ["no", "mandatory", "optional", "local"]:
+            if c.refable not in ["no", "local", "optional", "yes", "always"]:
                 raise ModelException(
-                    f"Class {c._id} has unknown '{SPDXS.referenceable}' value '{c.referenceable}'"
+                    f"Class {c._id} has unknown '{SPDXS.referenceable}' value '{c.refable}'"
                 )
 
             for obj_prop in self.model.objects(cls_iri, SH.property):

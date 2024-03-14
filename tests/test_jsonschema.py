@@ -598,7 +598,8 @@ def ref_tests(name, none, blank, iri, inline):
         *ref_tests("ref-no-class", True, False, False, True),
         *ref_tests("ref-local-class", True, True, False, True),
         *ref_tests("ref-optional-class", True, True, True, True),
-        *ref_tests("ref-mandatory-class", False, False, True, False),
+        *ref_tests("ref-yes-class", False, False, True, True),
+        *ref_tests("ref-always-class", False, False, True, False),
         # Alternate ID
         (
             True,

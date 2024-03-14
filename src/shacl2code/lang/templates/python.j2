@@ -32,8 +32,6 @@ class Property(ABC):
     class
     """
 
-    TYPE = None
-
     def __init__(self, *, pattern=None):
         self.pattern = pattern
 
@@ -77,7 +75,6 @@ class StringProp(Property):
     A scalar string property for an SHACL object
     """
 
-    TYPE = None
     VALID_TYPES = str
 
     def set(self, value):
@@ -91,8 +88,6 @@ class StringProp(Property):
 
 
 class AnyURIProp(StringProp):
-    TYPE = "http://www.w3.org/2001/XMLSchema#anyURI"
-
     def encode(self, encoder, value):
         encoder.write_iri(value)
 
@@ -105,7 +100,6 @@ class DateTimeProp(Property):
     A Date/Time Object
     """
 
-    TYPE = "https://spdx.org/rdf/v3/Core/DateTime"
     VALID_TYPES = datetime
     FORMAT_STR = "%Y-%m-%dT%H:%M:%SZ"
 
@@ -218,7 +212,7 @@ class ObjectProp(Property):
             encoder.write_iri(value)
             return
 
-        return value.encode(encoder)
+        return value.encode(encoder, is_reference=True)
 
     def decode(self, decoder, *, object_ids=None):
         iri = decoder.read_iri()
@@ -401,7 +395,8 @@ class Refable(Enum):
     no = 1
     local = 2
     optional = 3
-    mandatory = 4
+    yes = 4
+    always = 5
 
 
 @functools.total_ordering
@@ -519,7 +514,7 @@ class SHACLObject(object):
                     raise ValueError(
                         "{self.__class__.__name__} ({id(self)}) can only have local reference. Property '{iri}' cannot be set to '{value}' and must start with '_:'"
                     )
-            elif self.REFABLE == Refable.mandatory:
+            elif self.REFABLE in [Refable.yes, Refable.always]:
                 if value.startswith("_:"):
                     raise ValueError(
                         "{self.__class__.__name__} ({id(self)}) can has mandatory reference. Property '{iri}' cannot be set to '{value}'"
@@ -574,21 +569,26 @@ class SHACLObject(object):
         for obj in seen:
             yield obj
 
-    def encode(self, encoder):
+    def encode(self, encoder, *, is_reference=False):
         idname = self.ID_ALIAS or self._obj_iris["_id"]
         if self._id is not None and self.REFABLE == Refable.no:
             raise ValueError(
-                "{self.__class__.__name__} ({id(self)}) is not referenceable. Property '{idname}' must not be defined (currently '{self._id}')"
+                f"{self.__class__.__name__} ({id(self)}) is not referenceable. Property '{idname}' must not be defined (currently '{self._id}')"
             )
 
-        if not self._id and self.REFABLE == Refable.mandatory:
+        if not self._id and self.REFABLE in [Refable.yes, Refable.always]:
             raise ValueError(
-                "{self.__class__.__name__} ({id(self)}) must have a '{idname}' property to be referenceable"
+                f"{self.__class__.__name__} ({id(self)}) must have a '{idname}' property to be referenceable"
             )
 
         if self._id and self._obj_written:
             encoder.write_iri(self._id)
             return
+
+        if is_reference and self.REFABLE == Refable.always:
+            raise ValueError(
+                f"{self.__class__.__name__} ({id(self)}) must always be referenced by name, and cannot be inlined"
+            )
 
         self._obj_written = True
 
@@ -732,7 +732,7 @@ def encode_objects(encoder, objects, force_list=False):
         if value._id and value._id.startswith("_:"):
             del value._id
 
-        if value._id or value.REFABLE == Refable.mandatory:
+        if value._id or value.REFABLE == Refable.always:
             id_objects.add(value)
 
         ref_counts.setdefault(value, 0)
@@ -1305,7 +1305,7 @@ class {{ class.clsname }}(
     SHACLObject
 {%- endif -%}):
     TYPE = "{{ class._id }}"
-    REFABLE = Refable.{{ class.referenceable }}
+    REFABLE = Refable.{{ class.refable }}
     {%- if class.id_property %}
     ID_ALIAS = "{{ class.id_property }}"
     {%- endif %}

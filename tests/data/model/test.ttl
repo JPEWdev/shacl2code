@@ -307,10 +307,16 @@
     rdfs:range <link-class>
     .
 
-<ref-mandatory-class> a rdf:Class, sh:NodeShape, owl:Class ;
+<ref-no-class> a rdf:Class, sh:NodeShape, owl:Class ;
     rdfs:subClassOf <link-class> ;
-    rdfs:comment "A class with mandatory linking" ;
-    spdxs:referenceable "mandatory" 
+    rdfs:comment "A class with no linking" ;
+    spdxs:referenceable "no"
+    .
+
+<ref-local-class> a rdf:Class, sh:NodeShape, owl:Class ;
+    rdfs:subClassOf <link-class> ;
+    rdfs:comment "A class with local linking" ;
+    spdxs:referenceable "local"
     .
 
 <ref-optional-class> a rdf:Class, sh:NodeShape, owl:Class ;
@@ -319,16 +325,16 @@
     spdxs:referenceable "optional" 
     .
 
-<ref-no-class> a rdf:Class, sh:NodeShape, owl:Class ;
+<ref-yes-class> a rdf:Class, sh:NodeShape, owl:Class ;
     rdfs:subClassOf <link-class> ;
-    rdfs:comment "A class with no linking" ;
-    spdxs:referenceable "no" 
+    rdfs:comment "A class that must always have external reference" ;
+    spdxs:referenceable "yes"
     .
 
-<ref-local-class> a rdf:Class, sh:NodeShape, owl:Class ;
+<ref-always-class> a rdf:Class, sh:NodeShape, owl:Class ;
     rdfs:subClassOf <link-class> ;
-    rdfs:comment "A class with local linking" ;
-    spdxs:referenceable "local" 
+    rdfs:comment "A class that must always be linked" ;
+    spdxs:referenceable "always"
     .
 
 <id-prop-class> a rdf:Class, sh:NodeShape, owl:Class ;

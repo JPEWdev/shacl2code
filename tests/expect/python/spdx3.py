@@ -11,7 +11,10 @@ import hashlib
 import json
 import re
 import time
+from contextlib import contextmanager
 from datetime import datetime, timezone
+from enum import Enum
+from abc import ABC, abstractmethod
 
 
 def check_type(obj, types):
@@ -23,13 +26,11 @@ def check_type(obj, types):
         raise TypeError(f"Value must be of type {types.__name__}. Got {type(obj)}")
 
 
-class Property(object):
+class Property(ABC):
     """
     A generic SHACL object property. The different types will derive from this
     class
     """
-
-    TYPE = None
 
     def __init__(self, *, pattern=None):
         self.pattern = pattern
@@ -45,9 +46,6 @@ class Property(object):
     def set(self, value):
         return value
 
-    def get(self, value):
-        return value
-
     def check_min_count(self, value, min_count):
         return min_count == 1
 
@@ -60,24 +58,16 @@ class Property(object):
     def walk(self, value, callback, path):
         callback(value, path)
 
-    def serializer(self, value, context):
-        return value
-
-    def deserialize(self, data, context, *, object_ids=None):
-        if isinstance(data, dict) and "@value" in data:
-            if self.TYPE:
-                for t in ("@type", context.compact("@type")):
-                    if t in data and data[t] != self.TYPE:
-                        raise TypeError(
-                            f"Value must be of type {self.TYPE}, but got {data[t]}"
-                        )
-
-            return data["@value"]
-
-        return data
-
     def link_prop(self, value, link_cache, missing, visited):
         return value
+
+    @abstractmethod
+    def encode(self, encoder, value):
+        pass
+
+    @abstractmethod
+    def decode(self, decoder, *, object_ids=None):
+        pass
 
 
 class StringProp(Property):
@@ -85,18 +75,24 @@ class StringProp(Property):
     A scalar string property for an SHACL object
     """
 
-    TYPE = None
     VALID_TYPES = str
 
     def set(self, value):
         return str(value)
 
+    def encode(self, encoder, value):
+        encoder.write_string(value)
+
+    def decode(self, decoder, *, object_ids=None):
+        return decoder.read_string()
+
 
 class AnyURIProp(StringProp):
-    TYPE = "http://www.w3.org/2001/XMLSchema#anyURI"
+    def encode(self, encoder, value):
+        encoder.write_iri(value)
 
-    def validate(self, value):
-        super().validate(value)
+    def decode(self, decoder, *, object_ids=None):
+        return decoder.read_iri()
 
 
 class DateTimeProp(Property):
@@ -104,16 +100,26 @@ class DateTimeProp(Property):
     A Date/Time Object
     """
 
-    TYPE = "https://spdx.org/rdf/v3/Core/DateTime"
     VALID_TYPES = datetime
     FORMAT_STR = "%Y-%m-%dT%H:%M:%SZ"
 
     def set(self, value):
-        return value.astimezone(timezone.utc).strftime(self.FORMAT_STR)
+        return value.astimezone(timezone.utc)
 
-    def get(self, value):
+    def encode(self, encoder, value):
+        encoder.write_datetime(value)
+
+    def decode(self, decoder, *, object_ids=None):
+        return decoder.read_datetime()
+
+    @classmethod
+    def to_string(cls, value):
+        return value.astimezone(timezone.utc).strftime(cls.FORMAT_STR)
+
+    @classmethod
+    def from_string(cls, value):
         return datetime(
-            *(time.strptime(value, self.FORMAT_STR)[0:6]),
+            *(time.strptime(value, cls.FORMAT_STR)[0:6]),
             tzinfo=timezone.utc,
         )
 
@@ -123,6 +129,12 @@ class IntegerProp(Property):
 
     def set(self, value):
         return int(value)
+
+    def encode(self, encoder, value):
+        encoder.write_integer(value)
+
+    def decode(self, decoder, *, object_ids=None):
+        return decoder.read_integer()
 
 
 class PositiveIntegerProp(IntegerProp):
@@ -145,12 +157,24 @@ class BooleanProp(Property):
     def set(self, value):
         return bool(value)
 
+    def encode(self, encoder, value):
+        encoder.write_bool(value)
+
+    def decode(self, decoder, *, object_ids=None):
+        return decoder.read_bool()
+
 
 class FloatProp(Property):
     VALID_TYPES = (float, int)
 
     def set(self, value):
         return float(value)
+
+    def encode(self, encoder, value):
+        encoder.write_float(value)
+
+    def decode(self, decoder, *, object_ids=None):
+        return decoder.read_float()
 
 
 class ObjectProp(Property):
@@ -180,33 +204,24 @@ class ObjectProp(Property):
         else:
             callback(value, path)
 
-    def serializer(self, value, context):
+    def encode(self, encoder, value):
         if value is None:
-            return None
+            raise ValueError("Object cannot be None")
 
         if isinstance(value, str):
-            return value
+            encoder.write_iri(value)
+            return
 
-        return value.serializer(context)
+        return value.encode(encoder, is_reference=True)
 
-    def deserialize(self, data, context, *, object_ids=None):
-        if data is None:
-            return data
+    def decode(self, decoder, *, object_ids=None):
+        iri = decoder.read_iri()
+        if iri is not None:
+            if object_ids and iri in object_ids:
+                return object_ids[iri]
+            return iri
 
-        if isinstance(data, str):
-            if data in object_ids:
-                return object_ids[data]
-
-            return data
-
-        if isinstance(data, dict) and not any(
-            t in data for t in ("@type", context.compact("@type"))
-        ):
-            for n in ("@id", context.compact("@id")):
-                if n in data:
-                    return data[n]
-
-        return SHACLObject.deserialize(data, context, object_ids=object_ids)
+        return SHACLObject.deserialize(decoder, object_ids=object_ids)
 
     def link_prop(self, value, link_cache, missing, visited):
         if value is None:
@@ -237,12 +252,6 @@ class ListProxy(object):
             self.__data = data
         self.__prop = prop
 
-    def get_raw(self, key):
-        return self.__data[key]
-
-    def raw_items(self):
-        return iter(self.__data)
-
     def append(self, value):
         self.__prop.validate(value)
         self.__data.append(self.__prop.set(value))
@@ -259,7 +268,7 @@ class ListProxy(object):
         self.__data.sort(*args, **kwargs)
 
     def __getitem__(self, key):
-        return self.__prop.get(self.get_raw(key))
+        return self.__data[key]
 
     def __setitem__(self, key, value):
         if isinstance(key, slice):
@@ -274,11 +283,10 @@ class ListProxy(object):
         del self.__data[key]
 
     def __contains__(self, item):
-        return item in [self.__prop.get(d) for d in self.__data]
+        return item in self.__data
 
     def __iter__(self):
-        for v in self.__data:
-            yield self.__prop.get(v)
+        return iter(self.__data)
 
     def __len__(self):
         return len(self.__data)
@@ -293,7 +301,7 @@ class ListProxy(object):
         if isinstance(other, ListProxy):
             return self.__data == other.__data
 
-        return [self.__prop.get(d) for d in self.__data] == other
+        return self.__data == other
 
 
 class ListProp(Property):
@@ -339,30 +347,30 @@ class ListProp(Property):
         for idx, v in enumerate(value):
             self.prop.walk(v, callback, path + [f"[{idx}]"])
 
-    def deserialize(self, data, *args, **kwargs):
-        if isinstance(data, (list, tuple, set)):
-            data = [self.prop.deserialize(d, *args, **kwargs) for d in data]
-        else:
-            data = [self.prop.deserialize(data, *args, **kwargs)]
-
-        return ListProxy(self.prop, data=data)
-
     def link_prop(self, value, link_cache, missing, visited):
         if isinstance(value, ListProxy):
-            data = [
-                self.prop.link_prop(v, link_cache, missing, visited)
-                for v in value.raw_items()
-            ]
+            data = [self.prop.link_prop(v, link_cache, missing, visited) for v in value]
         else:
             data = [self.prop.link_prop(v, link_cache, missing, visited) for v in value]
 
         return ListProxy(self.prop, data=data)
 
-    def serializer(self, value, context):
+    def encode(self, encoder, value):
         check_type(value, ListProxy)
-        """"""
-        """"""
-        return [self.prop.serializer(v, context) for v in value.raw_items()]
+
+        with encoder.write_list() as list_s:
+            for v in value:
+                with list_s.write_list_item() as item_s:
+                    self.prop.encode(item_s, v)
+
+    def decode(self, decoder, *, object_ids=None):
+        data = []
+        for val_d in decoder.read_list():
+            v = self.prop.decode(val_d, object_ids=object_ids)
+            self.prop.validate(v)
+            data.append(v)
+
+        return ListProxy(self.prop, data=data)
 
 
 class EnumProp(Property):
@@ -376,17 +384,26 @@ class EnumProp(Property):
                 f"'{value}' is not a valid value for '{self.__class__.__name__}'"
             )
 
-    def deserialize(self, data, context, **kwargs):
-        value = super().deserialize(data, context, **kwargs)
-        return context.expand(value)
+    def encode(self, encoder, value):
+        encoder.write_enum(value, self)
 
-    def serializer(self, value, context):
-        return context.compact(value)
+    def decode(self, decoder, *, object_ids=None):
+        return decoder.read_enum(self)
+
+
+class Refable(Enum):
+    no = 1
+    local = 2
+    optional = 3
+    yes = 4
+    always = 5
 
 
 @functools.total_ordering
 class SHACLObject(object):
     DESERIALIZERS = {}
+    REFABLE = Refable.optional
+    ID_ALIAS = None
 
     def __init__(self):
         self._obj_data = {}
@@ -426,6 +443,9 @@ class SHACLObject(object):
         if name.startswith("_obj_"):
             return super().__setattr__(name, value)
 
+        if name == self.ID_ALIAS:
+            name = "_id"
+
         try:
             iri = self._obj_iris[name]
             self[iri] = value
@@ -444,6 +464,9 @@ class SHACLObject(object):
         if name == "_IRI":
             return self._obj_iris
 
+        if name == self.ID_ALIAS:
+            name = "_id"
+
         try:
             iri = self._obj_iris[name]
             return self[iri]
@@ -453,6 +476,9 @@ class SHACLObject(object):
             )
 
     def __delattr__(self, name):
+        if name == self.ID_ALIAS:
+            name = "_id"
+
         try:
             iri = self._obj_iris[name]
             del self[iri]
@@ -475,10 +501,25 @@ class SHACLObject(object):
             yield iri, prop, min_count, max_count, pyname
 
     def __getitem__(self, iri):
-        prop, _, _, _ = self.__get_prop(iri)
-        return prop.get(self._obj_data[iri])
+        return self._obj_data[iri]
 
     def __setitem__(self, iri, value):
+        if iri == "@id":
+            if self.REFABLE == Refable.no:
+                raise ValueError(
+                    "{self.__class__.__name__} ({id(self)}) is not referenceable. Property '{iri}' cannot be set to '{value}'"
+                )
+            elif self.REFABLE == Refable.local:
+                if not value.startswith("_:"):
+                    raise ValueError(
+                        "{self.__class__.__name__} ({id(self)}) can only have local reference. Property '{iri}' cannot be set to '{value}' and must start with '_:'"
+                    )
+            elif self.REFABLE in [Refable.yes, Refable.always]:
+                if value.startswith("_:"):
+                    raise ValueError(
+                        "{self.__class__.__name__} ({id(self)}) can has mandatory reference. Property '{iri}' cannot be set to '{value}'"
+                    )
+
         prop, _, _, _ = self.__get_prop(iri)
         prop.validate(value)
         self._obj_data[iri] = prop.set(value)
@@ -486,6 +527,9 @@ class SHACLObject(object):
     def __delitem__(self, iri):
         prop, _, _, _ = self.__get_prop(iri)
         self._obj_data[iri] = prop.init()
+
+    def __iter__(self):
+        return self._obj_properties.keys()
 
     def walk(self, callback, path=None):
         """
@@ -525,85 +569,86 @@ class SHACLObject(object):
         for obj in seen:
             yield obj
 
-    def serializer(self, context):
+    def encode(self, encoder, *, is_reference=False):
+        idname = self.ID_ALIAS or self._obj_iris["_id"]
+        if self._id is not None and self.REFABLE == Refable.no:
+            raise ValueError(
+                f"{self.__class__.__name__} ({id(self)}) is not referenceable. Property '{idname}' must not be defined (currently '{self._id}')"
+            )
+
+        if not self._id and self.REFABLE in [Refable.yes, Refable.always]:
+            raise ValueError(
+                f"{self.__class__.__name__} ({id(self)}) must have a '{idname}' property to be referenceable"
+            )
+
         if self._id and self._obj_written:
-            return self._id
+            encoder.write_iri(self._id)
+            return
+
+        if is_reference and self.REFABLE == Refable.always:
+            raise ValueError(
+                f"{self.__class__.__name__} ({id(self)}) must always be referenced by name, and cannot be inlined"
+            )
 
         self._obj_written = True
 
-        d = {
-            context.compact("@type"): context.compact(self.TYPE),
-        }
+        with encoder.write_object(self) as obj_s:
+            for iri, prop, min_count, max_count, pyname in self.__iter_props():
+                value = self._obj_data[iri]
+                if prop.elide(value):
+                    if min_count:
+                        raise ValueError(
+                            f"Property '{pyname}' in {self.__class__.__name__} ({id(self)}) is required (currently {value!r})"
+                        )
+                    continue
 
-        for iri, prop, min_count, max_count, pyname in self.__iter_props():
-            value = self._obj_data[iri]
-            if prop.elide(value):
-                if min_count:
-                    raise ValueError(
-                        f"Property '{pyname}' in {self.__class__.__name__} ({id(self)}) is required (currently {value!r})"
-                    )
-                continue
+                if min_count is not None:
+                    if not prop.check_min_count(value, min_count):
+                        raise ValueError(
+                            f"Property '{pyname}' in {self.__class__.__name__} ({id(self)}) requires a minimum of {min_count} elements"
+                        )
 
-            if min_count is not None:
-                if not prop.check_min_count(value, min_count):
-                    raise ValueError(
-                        f"Property '{pyname}' in {self.__class__.__name__} ({id(self)}) requires a minimum of {min_count} elements"
-                    )
+                if max_count is not None:
+                    if not prop.check_max_count(value, max_count):
+                        raise ValueError(
+                            f"Property '{pyname}' in {self.__class__.__name__} ({id(self)}) requires a maximum of {max_count} elements"
+                        )
 
-            if max_count is not None:
-                if not prop.check_max_count(value, max_count):
-                    raise ValueError(
-                        f"Property '{pyname}' in {self.__class__.__name__} ({id(self)}) requires a maximum of {max_count} elements"
-                    )
+                if iri == self._obj_iris["_id"]:
+                    continue
 
-            with context.vocab_push(iri):
-                d[context.compact(iri)] = prop.serializer(value, context)
-        return d
-
-    def to_jsonld(self, f, *args, **kwargs):
-        """
-        Serialize this object to a JSON LD file
-        """
-        return write_jsonld([self], f, *args, **kwargs)
+                with obj_s.write_property(iri) as prop_s:
+                    prop.encode(prop_s, value)
 
     @classmethod
-    def deserialize(cls, data, context, *, object_ids=None):
-        for t in ("@type", context.compact("@type")):
-            if t not in data:
-                continue
+    def decode(cls, decoder, *, object_ids=None):
+        typ, obj_d = decoder.read_object()
+        if typ is None:
+            raise TypeError("Unable to determine type for object")
 
-            typ = data[t]
-
-            if typ in cls.DESERIALIZERS:
-                break
-
-            typ = context.expand(typ)
-            if typ in cls.DESERIALIZERS:
-                break
-
-            raise Exception(f"Unknown type {data[t]}")
-        else:
-            raise Exception("Unable to determine type for object")
+        if typ not in cls.DESERIALIZERS:
+            raise TypeError(f"Unknown type {typ}")
 
         obj = cls.DESERIALIZERS[typ]()
-
-        _id = data.get("@id", None) or data.get(context.compact("@id"), None)
-        if _id and _id in object_ids:
-            return object_ids[_id]
+        _id = obj_d.read_object_id(obj.ID_ALIAS)
+        if _id is not None:
+            if object_ids is not None:
+                if _id in object_ids:
+                    return object_ids[_id]
+                object_ids[_id] = obj
+            obj._id = _id
 
         for iri, prop, _, _, _ in obj.__iter_props():
-            for n in (iri, context.compact(iri)):
-                if n in data:
-                    with context.vocab_push(iri):
-                        obj._obj_data[iri] = prop.deserialize(
-                            data[n],
-                            context,
-                            object_ids=object_ids,
-                        )
-                    break
+            if iri == obj._obj_iris["_id"]:
+                continue
 
-        if obj._id:
-            object_ids[obj._id] = obj
+            prop_d = obj_d.read_property(iri)
+            if prop_d is None:
+                continue
+
+            v = prop.decode(prop_d, object_ids=object_ids)
+            prop.validate(v)
+            obj._obj_data[iri] = v
 
         return obj
 
@@ -666,15 +711,14 @@ def make_context():
     return Context(CONTEXTS)
 
 
-def write_jsonld(objects, f, force_graph=False, **kwargs):
+def encode_objects(encoder, objects, force_list=False):
     """
-    Write a list of objects to a JSON LD file
+    Serialize a list of objects to a serialization encoder
 
-    If force_graph is True, a @graph node will always be written
+    If force_list is true, a list will always be written using the encoder.
     """
     ref_counts = {}
     id_objects = set()
-    context = make_context()
 
     def walk_callback(value, path):
         nonlocal ref_counts
@@ -688,7 +732,7 @@ def write_jsonld(objects, f, force_graph=False, **kwargs):
         if value._id and value._id.startswith("_:"):
             del value._id
 
-        if value._id:
+        if value._id or value.REFABLE == Refable.always:
             id_objects.add(value)
 
         ref_counts.setdefault(value, 0)
@@ -706,19 +750,18 @@ def write_jsonld(objects, f, force_graph=False, **kwargs):
         if not o._id:
             o._id = f"_:{o.__class__.__name__}{idx}"
 
-    use_graph = force_graph or len(objects) > 1
+    use_list = force_list or len(objects) > 1
 
     objects = set(objects)
 
-    if use_graph:
-        # If we are making a graph, put all ID objects in the root
+    if use_list:
+        # If we are making a list, put all ID objects in the root
         objects |= id_objects
 
     objects = list(objects)
     objects.sort()
 
-    if use_graph:
-        graph_data = []
+    if use_list:
         # Ensure top level objects are only written in the top level graph
         # node, and referenced by ID everywhere else. This is done by setting
         # the flag that indicates this object has been written for all the top
@@ -730,48 +773,23 @@ def write_jsonld(objects, f, force_graph=False, **kwargs):
         for o in objects:
             o._obj_written = True
 
-        for o in objects:
-            # Allow this specific object to be written now
-            o._obj_written = False
-            graph_data.append(o.serializer(context))
+        with encoder.write_list() as list_s:
+            for o in objects:
+                # Allow this specific object to be written now
+                o._obj_written = False
+                with list_s.write_list_item() as item_s:
+                    o.encode(item_s)
 
-        data = {"@graph": graph_data}
     else:
-        data = objects[0].serializer(context)
-
-    if len(CONTEXT_URLS) == 1:
-        data["@context"] = CONTEXT_URLS[0]
-    elif CONTEXT_URLS:
-        data["@context"] = CONTEXT_URLS
-
-    sha1 = hashlib.sha1()
-    for chunk in json.JSONEncoder(**kwargs).iterencode(data):
-        chunk = chunk.encode("utf-8")
-        f.write(chunk)
-        sha1.update(chunk)
-
-    return sha1.hexdigest()
+        objects[0].encode(encoder)
 
 
-def read_jsonld(f):
-    """
-    Read objects from a JSON LD file
-
-    Returns the list of top level objects in the file, and a set of all
-    object_ids that are present in the file
-
-    The returned objects are fully linked
-    """
-    context = make_context()
-    data = json.load(f)
+def decode_objects(decoder):
     object_ids = {}
-    if "@graph" not in data:
-        objects = [SHACLObject.deserialize(data, context, object_ids=object_ids)]
-    else:
-        objects = [
-            SHACLObject.deserialize(o, context, object_ids=object_ids)
-            for o in data["@graph"]
-        ]
+    objects = [
+        SHACLObject.decode(obj_d, object_ids=object_ids)
+        for obj_d in decoder.read_list()
+    ]
 
     for o in objects:
         o.link(object_ids)
@@ -785,6 +803,389 @@ def read_jsonld(f):
     object_ids = {k: v for k, v in object_ids.items() if not k.startswith("_:")}
 
     return objects, object_ids
+
+
+class Decoder(ABC):
+    @abstractmethod
+    def read_string(self):
+        pass
+
+    @abstractmethod
+    def read_integer(self):
+        pass
+
+    @abstractmethod
+    def read_iri(self):
+        pass
+
+    @abstractmethod
+    def read_enum(self, e):
+        pass
+
+    @abstractmethod
+    def read_bool(self):
+        pass
+
+    @abstractmethod
+    def read_float(self):
+        pass
+
+    @abstractmethod
+    def read_list(self):
+        pass
+
+    @abstractmethod
+    def read_property(self, iri):
+        pass
+
+    @abstractmethod
+    def read_object(self):
+        pass
+
+    @abstractmethod
+    def read_object_id(self, alias=None):
+        pass
+
+
+class JSONLDDeserializer(object):
+    class Helper(Decoder):
+        def __init__(self, data, context):
+            self.data = data
+            self.context = context
+
+        def read_string(self):
+            if isinstance(self.data, str):
+                return self.data
+            return None
+
+        def read_datetime(self):
+            if isinstance(self.data, str):
+                return DateTimeProp.from_string(self.data)
+            return None
+
+        def read_integer(self):
+            if isinstance(self.data, int):
+                return self.data
+            return None
+
+        def read_bool(self):
+            if isinstance(self.data, bool):
+                return self.data
+            return None
+
+        def read_float(self):
+            if isinstance(self.data, (int, float)):
+                return float(self.data)
+            return None
+
+        def read_iri(self):
+            if isinstance(self.data, str):
+                return self.context.expand(self.data)
+            return None
+
+        def read_enum(self, e):
+            if isinstance(self.data, str):
+                return self.context.expand_vocab(self.data)
+            return None
+
+        def read_list(self):
+            if isinstance(self.data, (list, tuple, set)):
+                for v in self.data:
+                    yield self.__class__(v, self.context)
+            else:
+                yield self
+
+        def read_property(self, iri):
+            for k in (iri, self.context.compact(iri)):
+                if k in self.data:
+                    return self.__class__(self.data[k], self.context)
+
+            return None
+
+        def read_object(self):
+            for k in ("@type", self.context.compact("@type")):
+                if k not in self.data:
+                    continue
+
+                typ = self.context.expand(self.data[k])
+                return typ, self
+
+            return None, self
+
+        def read_object_id(self, alias=None):
+            if alias and alias in self.data:
+                return self.data[alias]
+
+            for k in ("@id", self.context.compact("@id")):
+                if k in self.data:
+                    return self.data[k]
+
+            return None
+
+    def read(self, f):
+        context = make_context()
+        data = json.load(f)
+        if "@graph" in data:
+            h = self.Helper(data["@graph"], context)
+        else:
+            h = self.Helper(data, context)
+
+        return decode_objects(h)
+
+
+class Encoder(ABC):
+    @abstractmethod
+    def write_string(self, v):
+        pass
+
+    @abstractmethod
+    def write_datetime(self, v):
+        pass
+
+    @abstractmethod
+    def write_integer(self, v):
+        pass
+
+    @abstractmethod
+    def write_iri(self, v):
+        pass
+
+    @abstractmethod
+    def write_enum(self, v, e):
+        pass
+
+    @abstractmethod
+    def write_bool(self, v):
+        pass
+
+    @abstractmethod
+    def write_float(self, v):
+        pass
+
+    @abstractmethod
+    @contextmanager
+    def write_property(self, iri):
+        pass
+
+    @abstractmethod
+    @contextmanager
+    def write_object(self, o):
+        pass
+
+    @abstractmethod
+    @contextmanager
+    def write_list(self):
+        pass
+
+    @abstractmethod
+    @contextmanager
+    def write_list_item(self):
+        pass
+
+
+class JSONLDSerializer(object):
+    class Helper(Encoder):
+        def __init__(self, context, data=None):
+            self.data = data
+            if context is None:
+                self.context = make_context()
+            else:
+                self.context = context
+
+        def write_string(self, v):
+            self.data = v
+
+        def write_datetime(self, v):
+            self.data = DateTimeProp.to_string(v)
+
+        def write_integer(self, v):
+            self.data = v
+
+        def write_iri(self, v):
+            self.write_string(self.context.compact(v))
+
+        def write_enum(self, v, e):
+            self.write_string(self.context.compact_vocab(v))
+
+        def write_bool(self, v):
+            self.data = v
+
+        def write_float(self, v):
+            self.data = v
+
+        @contextmanager
+        def write_property(self, iri):
+            s = self.__class__(self.context, None)
+            with self.context.vocab_push(iri):
+                yield s
+            if s.data is not None:
+                self.data[self.context.compact(iri)] = s.data
+
+        @contextmanager
+        def write_object(self, o):
+            self.data = {
+                self.context.compact("@type"): self.context.compact(o.TYPE),
+            }
+            if o._id:
+                self.data[o.ID_ALIAS or o._IRI["_id"]] = self.context.compact(o._id)
+            yield self
+
+        @contextmanager
+        def write_list(self):
+            self.data = []
+            yield self
+            if not self.data:
+                self.data = None
+
+        @contextmanager
+        def write_list_item(self):
+            s = self.__class__(self.context, None)
+            yield s
+            if s.data is not None:
+                self.data.append(s.data)
+
+    def serialize_data(self, objects, force_graph=False):
+        context = make_context()
+        h = self.Helper(context)
+        encode_objects(h, objects, force_graph)
+        if isinstance(h.data, list):
+            data = {
+                "@graph": h.data,
+            }
+        else:
+            data = h.data
+
+        if len(CONTEXT_URLS) == 1:
+            data["@context"] = CONTEXT_URLS[0]
+        elif CONTEXT_URLS:
+            data["@context"] = CONTEXT_URLS
+
+        return data
+
+    def write(self, objects, f, force_graph=False, **kwargs):
+        """
+        Write a list of objects to a JSON LD file
+
+        If force_graph is True, a @graph node will always be written
+        """
+        data = self.serialize_data(objects, force_graph)
+
+        sha1 = hashlib.sha1()
+        for chunk in json.JSONEncoder(**kwargs).iterencode(data):
+            chunk = chunk.encode("utf-8")
+            f.write(chunk)
+            sha1.update(chunk)
+
+        return sha1.hexdigest()
+
+
+class JSONLDInlineSerializer(object):
+    class Helper(Encoder):
+        def __init__(self, f, context, sha1):
+            self.f = f
+            self.context = context
+            self.comma = False
+            self.sha1 = sha1
+
+        def write(self, s):
+            s = s.encode("utf-8")
+            self.f.write(s)
+            self.sha1.update(s)
+
+        def _write_comma(self):
+            if self.comma:
+                self.write(",")
+                self.comma = False
+
+        def _need_comma(self):
+            self.comma = True
+
+        def write_string(self, v):
+            self.write(f'"{v}"')
+
+        def write_datetime(self, v):
+            self.write('"' + DateTimeProp.to_string(v) + '"')
+
+        def write_integer(self, v):
+            self.write(f"{v}")
+
+        def write_iri(self, v):
+            self.write_string(self.context.compact(v))
+
+        def write_enum(self, v, e):
+            self.write_iri(v)
+
+        def write_bool(self, v):
+            if v:
+                self.write("true")
+            else:
+                self.write("false")
+
+        def write_float(self, v):
+            self.write(f"{v}")
+
+        @contextmanager
+        def write_property(self, iri):
+            self._write_comma()
+            p = self.context.compact(iri)
+            self.write(f'"{p}":')
+            with self.context.vocab_push(iri):
+                yield self
+            self.comma = True
+
+        @contextmanager
+        def write_object(self, o):
+            self._write_comma()
+
+            typname = self.context.compact("@type")
+            typval = self.context.compact(o.TYPE)
+            self.write("{")
+            if o._id:
+                idname = o.ID_ALIAS or o._IRI["_id"]
+                idval = self.context.compact(o._id)
+                self.write(f'"{idname}": "{idval}",')
+            self.write(f'"{typname}":"{typval}"')
+
+            self.comma = True
+            yield self
+
+            self.write("}")
+            self.comma = True
+
+        @contextmanager
+        def write_list(self):
+            self._write_comma()
+            self.write("[")
+            yield self.__class__(self.f, self.context, self.sha1)
+            self.write("]")
+            self.comma = True
+
+        @contextmanager
+        def write_list_item(self):
+            self._write_comma()
+            yield self.__class__(self.f, self.context, self.sha1)
+            self.comma = True
+
+    def write(self, objects, f):
+        """
+        Write a list of objects to a JSON LD file
+        """
+        sha1 = hashlib.sha1()
+        h = self.Helper(f, make_context(), sha1)
+        h.write('{"@context":')
+        if len(CONTEXT_URLS) == 1:
+            h.write(f'"{CONTEXT_URLS[0]}"')
+        elif CONTEXT_URLS:
+            h.write('["')
+            h.write('","'.join(CONTEXT_URLS))
+            h.write('"]')
+        h.write(",")
+
+        h.write('"@graph":')
+
+        encode_objects(h, objects, True)
+        h.write("}")
+        return sha1.hexdigest()
 
 
 def print_tree(objects, all_fields=False):
@@ -1710,6 +2111,8 @@ class https_rdfspdxorgv3SoftwareSoftwarePurpose(EnumProp):
 # Provides information about the creation of the Element.
 class https_rdfspdxorgv3CoreCreationInfo(SHACLObject):
     TYPE = "https://rdf.spdx.org/v3/Core/CreationInfo"
+    REFABLE = Refable.local
+    ID_ALIAS = "id"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -1755,6 +2158,7 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Core/CreationInfo"] = https_r
 # A key with an associated value.
 class https_rdfspdxorgv3CoreDictionaryEntry(SHACLObject):
     TYPE = "https://rdf.spdx.org/v3/Core/DictionaryEntry"
+    REFABLE = Refable.no
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -1780,6 +2184,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Core/DictionaryEntry"] = http
 # Base domain class from which all other SPDX-3.0 domain classes derive.
 class https_rdfspdxorgv3CoreElement(SHACLObject):
     TYPE = "https://rdf.spdx.org/v3/Core/Element"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -1849,6 +2255,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Core/Element"] = https_rdfspd
 # A collection of Elements, not necessarily with unifying context.
 class https_rdfspdxorgv3CoreElementCollection(https_rdfspdxorgv3CoreElement):
     TYPE = "https://rdf.spdx.org/v3/Core/ElementCollection"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -1879,6 +2287,7 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Core/ElementCollection"] = ht
 # A reference to a resource outside the scope of SPDX-3.0 content that uniquely identifies an Element.
 class https_rdfspdxorgv3CoreExternalIdentifier(SHACLObject):
     TYPE = "https://rdf.spdx.org/v3/Core/ExternalIdentifier"
+    REFABLE = Refable.no
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -1923,6 +2332,7 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Core/ExternalIdentifier"] = h
 # A map of Element identifiers that are used within a Document but defined external to that Document.
 class https_rdfspdxorgv3CoreExternalMap(SHACLObject):
     TYPE = "https://rdf.spdx.org/v3/Core/ExternalMap"
+    REFABLE = Refable.no
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -1960,6 +2370,7 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Core/ExternalMap"] = https_rd
 # A reference to a resource outside the scope of SPDX-3.0 content.
 class https_rdfspdxorgv3CoreExternalRef(SHACLObject):
     TYPE = "https://rdf.spdx.org/v3/Core/ExternalRef"
+    REFABLE = Refable.no
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -1996,6 +2407,7 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Core/ExternalRef"] = https_rd
 # Provides an independently reproducible mechanism that permits verification of a specific Element.
 class https_rdfspdxorgv3CoreIntegrityMethod(SHACLObject):
     TYPE = "https://rdf.spdx.org/v3/Core/IntegrityMethod"
+    REFABLE = Refable.no
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2014,6 +2426,7 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Core/IntegrityMethod"] = http
 # A mapping between prefixes and namespace partial URIs.
 class https_rdfspdxorgv3CoreNamespaceMap(SHACLObject):
     TYPE = "https://rdf.spdx.org/v3/Core/NamespaceMap"
+    REFABLE = Refable.no
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2040,6 +2453,7 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Core/NamespaceMap"] = https_r
 # An SPDX version 2.X compatible verification method for software packages.
 class https_rdfspdxorgv3CorePackageVerificationCode(https_rdfspdxorgv3CoreIntegrityMethod):
     TYPE = "https://rdf.spdx.org/v3/Core/PackageVerificationCode"
+    REFABLE = Refable.no
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2065,6 +2479,7 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Core/PackageVerificationCode"
 # A tuple of two positive integers that define a range.
 class https_rdfspdxorgv3CorePositiveIntegerRange(SHACLObject):
     TYPE = "https://rdf.spdx.org/v3/Core/PositiveIntegerRange"
+    REFABLE = Refable.no
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2091,6 +2506,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Core/PositiveIntegerRange"] =
 # Describes a relationship between one or more elements.
 class https_rdfspdxorgv3CoreRelationship(https_rdfspdxorgv3CoreElement):
     TYPE = "https://rdf.spdx.org/v3/Core/Relationship"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2141,6 +2558,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Core/Relationship"] = https_r
 # A collection of SPDX Elements that could potentially be serialized.
 class https_rdfspdxorgv3CoreSpdxDocument(https_rdfspdxorgv3CoreElementCollection):
     TYPE = "https://rdf.spdx.org/v3/Core/SpdxDocument"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2171,6 +2590,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Core/SpdxDocument"] = https_r
 # An element of hardware and/or software utilized to carry out a particular function.
 class https_rdfspdxorgv3CoreTool(https_rdfspdxorgv3CoreElement):
     TYPE = "https://rdf.spdx.org/v3/Core/Tool"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2184,6 +2605,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Core/Tool"] = https_rdfspdxor
 # which is not itself a standalone License.
 class https_rdfspdxorgv3ExpandedLicensingLicenseAddition(https_rdfspdxorgv3CoreElement):
     TYPE = "https://rdf.spdx.org/v3/ExpandedLicensing/LicenseAddition"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2234,6 +2657,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/ExpandedLicensing/LicenseAddi
 # A license exception that is listed on the SPDX Exceptions list.
 class https_rdfspdxorgv3ExpandedLicensingListedLicenseException(https_rdfspdxorgv3ExpandedLicensingLicenseAddition):
     TYPE = "https://rdf.spdx.org/v3/ExpandedLicensing/ListedLicenseException"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2260,6 +2685,7 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/ExpandedLicensing/ListedLicen
 # A characterization of some aspect of an Element that is associated with the Element in a generalized fashion.
 class https_rdfspdxorgv3ExtensionExtension(SHACLObject):
     TYPE = "https://rdf.spdx.org/v3/Extension/Extension"
+    REFABLE = Refable.optional
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2272,6 +2698,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Extension/Extension"] = https
 # Abstract ancestor class for all vulnerability assessments
 class https_rdfspdxorgv3SecurityVulnAssessmentRelationship(https_rdfspdxorgv3CoreRelationship):
     TYPE = "https://rdf.spdx.org/v3/Security/VulnAssessmentRelationship"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2317,6 +2745,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Security/VulnAssessmentRelati
 # according to the SPDX license expression syntax.
 class https_rdfspdxorgv3SimpleLicensingAnyLicenseInfo(https_rdfspdxorgv3CoreElement):
     TYPE = "https://rdf.spdx.org/v3/SimpleLicensing/AnyLicenseInfo"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2329,6 +2759,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/SimpleLicensing/AnyLicenseInf
 # An SPDX Element containing an SPDX license expression string.
 class https_rdfspdxorgv3SimpleLicensingLicenseExpression(https_rdfspdxorgv3SimpleLicensingAnyLicenseInfo):
     TYPE = "https://rdf.spdx.org/v3/SimpleLicensing/LicenseExpression"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2360,6 +2792,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/SimpleLicensing/LicenseExpres
 # A license or addition that is not listed on the SPDX License List.
 class https_rdfspdxorgv3SimpleLicensingSimpleLicensingText(https_rdfspdxorgv3CoreElement):
     TYPE = "https://rdf.spdx.org/v3/SimpleLicensing/SimpleLicensingText"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2379,6 +2813,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/SimpleLicensing/SimpleLicensi
 # Class that describes a build instance of software/artifacts.
 class https_rdfspdxorgv3BuildBuild(https_rdfspdxorgv3CoreElement):
     TYPE = "https://rdf.spdx.org/v3/Build/Build"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2446,6 +2882,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Build/Build"] = https_rdfspdx
 # Agent represents anything with the potential to act on a system.
 class https_rdfspdxorgv3CoreAgent(https_rdfspdxorgv3CoreElement):
     TYPE = "https://rdf.spdx.org/v3/Core/Agent"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2458,6 +2896,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Core/Agent"] = https_rdfspdxo
 # An assertion made in relation to one or more elements.
 class https_rdfspdxorgv3CoreAnnotation(https_rdfspdxorgv3CoreElement):
     TYPE = "https://rdf.spdx.org/v3/Core/Annotation"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2496,6 +2936,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Core/Annotation"] = https_rdf
 # A distinct article or unit within the digital domain.
 class https_rdfspdxorgv3CoreArtifact(https_rdfspdxorgv3CoreElement):
     TYPE = "https://rdf.spdx.org/v3/Core/Artifact"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2550,6 +2992,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Core/Artifact"] = https_rdfsp
 # A collection of Elements that have a shared context.
 class https_rdfspdxorgv3CoreBundle(https_rdfspdxorgv3CoreElementCollection):
     TYPE = "https://rdf.spdx.org/v3/Core/Bundle"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2569,6 +3013,7 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Core/Bundle"] = https_rdfspdx
 # A mathematically calculated representation of a grouping of data.
 class https_rdfspdxorgv3CoreHash(https_rdfspdxorgv3CoreIntegrityMethod):
     TYPE = "https://rdf.spdx.org/v3/Core/Hash"
+    REFABLE = Refable.no
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2595,6 +3040,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Core/Hash"] = https_rdfspdxor
 # Provide context for a relationship that occurs in the software lifecycle.
 class https_rdfspdxorgv3CoreLifecycleScopedRelationship(https_rdfspdxorgv3CoreRelationship):
     TYPE = "https://rdf.spdx.org/v3/Core/LifecycleScopedRelationship"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2613,6 +3060,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Core/LifecycleScopedRelations
 # A group of people who work together in an organized way for a shared purpose.
 class https_rdfspdxorgv3CoreOrganization(https_rdfspdxorgv3CoreAgent):
     TYPE = "https://rdf.spdx.org/v3/Core/Organization"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2625,6 +3074,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Core/Organization"] = https_r
 # An individual human being.
 class https_rdfspdxorgv3CorePerson(https_rdfspdxorgv3CoreAgent):
     TYPE = "https://rdf.spdx.org/v3/Core/Person"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2637,6 +3088,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Core/Person"] = https_rdfspdx
 # A software agent.
 class https_rdfspdxorgv3CoreSoftwareAgent(https_rdfspdxorgv3CoreAgent):
     TYPE = "https://rdf.spdx.org/v3/Core/SoftwareAgent"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2650,6 +3103,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Core/SoftwareAgent"] = https_
 # where all elements apply.
 class https_rdfspdxorgv3ExpandedLicensingConjunctiveLicenseSet(https_rdfspdxorgv3SimpleLicensingAnyLicenseInfo):
     TYPE = "https://rdf.spdx.org/v3/ExpandedLicensing/ConjunctiveLicenseSet"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2669,6 +3124,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/ExpandedLicensing/Conjunctive
 # A license addition that is not listed on the SPDX Exceptions List.
 class https_rdfspdxorgv3ExpandedLicensingCustomLicenseAddition(https_rdfspdxorgv3ExpandedLicensingLicenseAddition):
     TYPE = "https://rdf.spdx.org/v3/ExpandedLicensing/CustomLicenseAddition"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2682,6 +3139,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/ExpandedLicensing/CustomLicen
 # where only any one of the elements applies.
 class https_rdfspdxorgv3ExpandedLicensingDisjunctiveLicenseSet(https_rdfspdxorgv3SimpleLicensingAnyLicenseInfo):
     TYPE = "https://rdf.spdx.org/v3/ExpandedLicensing/DisjunctiveLicenseSet"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2701,6 +3160,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/ExpandedLicensing/Disjunctive
 # Abstract class representing a License or an OrLaterOperator.
 class https_rdfspdxorgv3ExpandedLicensingExtendableLicense(https_rdfspdxorgv3SimpleLicensingAnyLicenseInfo):
     TYPE = "https://rdf.spdx.org/v3/ExpandedLicensing/ExtendableLicense"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2713,6 +3174,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/ExpandedLicensing/ExtendableL
 # A concrete subclass of AnyLicenseInfo used by Individuals in the ExpandedLicensing profile.
 class https_rdfspdxorgv3ExpandedLicensingIndividualLicensingInfo(https_rdfspdxorgv3SimpleLicensingAnyLicenseInfo):
     TYPE = "https://rdf.spdx.org/v3/ExpandedLicensing/IndividualLicensingInfo"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2725,6 +3188,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/ExpandedLicensing/IndividualL
 # Abstract class for the portion of an AnyLicenseInfo representing a license.
 class https_rdfspdxorgv3ExpandedLicensingLicense(https_rdfspdxorgv3ExpandedLicensingExtendableLicense):
     TYPE = "https://rdf.spdx.org/v3/ExpandedLicensing/License"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2797,6 +3262,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/ExpandedLicensing/License"] =
 # A license that is listed on the SPDX License List.
 class https_rdfspdxorgv3ExpandedLicensingListedLicense(https_rdfspdxorgv3ExpandedLicensingLicense):
     TYPE = "https://rdf.spdx.org/v3/ExpandedLicensing/ListedLicense"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2824,6 +3291,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/ExpandedLicensing/ListedLicen
 # of the indicated License.
 class https_rdfspdxorgv3ExpandedLicensingOrLaterOperator(https_rdfspdxorgv3ExpandedLicensingExtendableLicense):
     TYPE = "https://rdf.spdx.org/v3/ExpandedLicensing/OrLaterOperator"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2844,6 +3313,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/ExpandedLicensing/OrLaterOper
 # text applied to it.
 class https_rdfspdxorgv3ExpandedLicensingWithAdditionOperator(https_rdfspdxorgv3SimpleLicensingAnyLicenseInfo):
     TYPE = "https://rdf.spdx.org/v3/ExpandedLicensing/WithAdditionOperator"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2870,6 +3341,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/ExpandedLicensing/WithAdditio
 # Provides a CVSS version 2.0 assessment for a vulnerability.
 class https_rdfspdxorgv3SecurityCvssV2VulnAssessmentRelationship(https_rdfspdxorgv3SecurityVulnAssessmentRelationship):
     TYPE = "https://rdf.spdx.org/v3/Security/CvssV2VulnAssessmentRelationship"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2896,6 +3369,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Security/CvssV2VulnAssessment
 # Provides a CVSS version 3 assessment for a vulnerability.
 class https_rdfspdxorgv3SecurityCvssV3VulnAssessmentRelationship(https_rdfspdxorgv3SecurityVulnAssessmentRelationship):
     TYPE = "https://rdf.spdx.org/v3/Security/CvssV3VulnAssessmentRelationship"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2929,6 +3404,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Security/CvssV3VulnAssessment
 # Provides a CVSS version 4 assessment for a vulnerability.
 class https_rdfspdxorgv3SecurityCvssV4VulnAssessmentRelationship(https_rdfspdxorgv3SecurityVulnAssessmentRelationship):
     TYPE = "https://rdf.spdx.org/v3/Security/CvssV4VulnAssessmentRelationship"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2962,6 +3439,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Security/CvssV4VulnAssessment
 # Provides an EPSS assessment for a vulnerability.
 class https_rdfspdxorgv3SecurityEpssVulnAssessmentRelationship(https_rdfspdxorgv3SecurityVulnAssessmentRelationship):
     TYPE = "https://rdf.spdx.org/v3/Security/EpssVulnAssessmentRelationship"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2995,6 +3474,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Security/EpssVulnAssessmentRe
 # Provides an exploit assessment of a vulnerability.
 class https_rdfspdxorgv3SecurityExploitCatalogVulnAssessmentRelationship(https_rdfspdxorgv3SecurityVulnAssessmentRelationship):
     TYPE = "https://rdf.spdx.org/v3/Security/ExploitCatalogVulnAssessmentRelationship"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -3028,6 +3509,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Security/ExploitCatalogVulnAs
 # Provides an SSVC assessment for a vulnerability.
 class https_rdfspdxorgv3SecuritySsvcVulnAssessmentRelationship(https_rdfspdxorgv3SecurityVulnAssessmentRelationship):
     TYPE = "https://rdf.spdx.org/v3/Security/SsvcVulnAssessmentRelationship"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -3047,6 +3530,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Security/SsvcVulnAssessmentRe
 # Asbtract ancestor class for all VEX relationships
 class https_rdfspdxorgv3SecurityVexVulnAssessmentRelationship(https_rdfspdxorgv3SecurityVulnAssessmentRelationship):
     TYPE = "https://rdf.spdx.org/v3/Security/VexVulnAssessmentRelationship"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -3071,6 +3556,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Security/VexVulnAssessmentRel
 # Specifies a vulnerability and its associated information.
 class https_rdfspdxorgv3SecurityVulnerability(https_rdfspdxorgv3CoreArtifact):
     TYPE = "https://rdf.spdx.org/v3/Security/Vulnerability"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -3101,6 +3588,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Security/Vulnerability"] = ht
 # A distinct article or unit related to Software.
 class https_rdfspdxorgv3SoftwareSoftwareArtifact(https_rdfspdxorgv3CoreArtifact):
     TYPE = "https://rdf.spdx.org/v3/Software/SoftwareArtifact"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -3147,6 +3636,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Software/SoftwareArtifact"] =
 # (provenence, composition, licensing, etc.) about a product.
 class https_rdfspdxorgv3CoreBom(https_rdfspdxorgv3CoreBundle):
     TYPE = "https://rdf.spdx.org/v3/Core/Bom"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -3159,6 +3650,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Core/Bom"] = https_rdfspdxorg
 # A license that is not listed on the SPDX License List.
 class https_rdfspdxorgv3ExpandedLicensingCustomLicense(https_rdfspdxorgv3ExpandedLicensingLicense):
     TYPE = "https://rdf.spdx.org/v3/ExpandedLicensing/CustomLicense"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -3172,6 +3665,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/ExpandedLicensing/CustomLicen
 # affected by the vulnerability.
 class https_rdfspdxorgv3SecurityVexAffectedVulnAssessmentRelationship(https_rdfspdxorgv3SecurityVexVulnAssessmentRelationship):
     TYPE = "https://rdf.spdx.org/v3/Security/VexAffectedVulnAssessmentRelationship"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -3199,6 +3694,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Security/VexAffectedVulnAsses
 # a fix has been applied and are no longer affected.
 class https_rdfspdxorgv3SecurityVexFixedVulnAssessmentRelationship(https_rdfspdxorgv3SecurityVexVulnAssessmentRelationship):
     TYPE = "https://rdf.spdx.org/v3/Security/VexFixedVulnAssessmentRelationship"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -3212,6 +3709,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Security/VexFixedVulnAssessme
 # not affected by the vulnerability.
 class https_rdfspdxorgv3SecurityVexNotAffectedVulnAssessmentRelationship(https_rdfspdxorgv3SecurityVexVulnAssessmentRelationship):
     TYPE = "https://rdf.spdx.org/v3/Security/VexNotAffectedVulnAssessmentRelationship"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -3247,6 +3746,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Security/VexNotAffectedVulnAs
 # investigated.
 class https_rdfspdxorgv3SecurityVexUnderInvestigationVulnAssessmentRelationship(https_rdfspdxorgv3SecurityVexVulnAssessmentRelationship):
     TYPE = "https://rdf.spdx.org/v3/Security/VexUnderInvestigationVulnAssessmentRelationship"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -3259,6 +3760,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Security/VexUnderInvestigatio
 # Refers to any object that stores content on a computer.
 class https_rdfspdxorgv3SoftwareFile(https_rdfspdxorgv3SoftwareSoftwareArtifact):
     TYPE = "https://rdf.spdx.org/v3/Software/File"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -3283,6 +3786,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Software/File"] = https_rdfsp
 # Refers to any unit of content that can be associated with a distribution of software.
 class https_rdfspdxorgv3SoftwarePackage(https_rdfspdxorgv3SoftwareSoftwareArtifact):
     TYPE = "https://rdf.spdx.org/v3/Software/Package"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -3326,6 +3831,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Software/Package"] = https_rd
 # A collection of SPDX Elements describing a single package.
 class https_rdfspdxorgv3SoftwareSbom(https_rdfspdxorgv3CoreBom):
     TYPE = "https://rdf.spdx.org/v3/Software/Sbom"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -3344,6 +3851,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Software/Sbom"] = https_rdfsp
 # Describes a certain part of a file.
 class https_rdfspdxorgv3SoftwareSnippet(https_rdfspdxorgv3SoftwareSoftwareArtifact):
     TYPE = "https://rdf.spdx.org/v3/Software/Snippet"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -3375,6 +3884,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/Software/Snippet"] = https_rd
 # Provides information about the fields in the AI package profile.
 class https_rdfspdxorgv3AIAIPackage(https_rdfspdxorgv3SoftwarePackage):
     TYPE = "https://rdf.spdx.org/v3/AI/AIPackage"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -3477,6 +3988,8 @@ SHACLObject.DESERIALIZERS["https://rdf.spdx.org/v3/AI/AIPackage"] = https_rdfspd
 # Provides information about the fields in the Dataset profile.
 class https_rdfspdxorgv3DatasetDataset(https_rdfspdxorgv3SoftwarePackage):
     TYPE = "https://rdf.spdx.org/v3/Dataset/Dataset"
+    REFABLE = Refable.yes
+    ID_ALIAS = "spdxId"
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -3607,30 +4120,50 @@ class Context(object):
 
         return contexts
 
-    def compact(self, _id, vocab=None):
+    def compact(self, _id):
+        return self.__compact_contexts(_id)
+
+    def compact_vocab(self, _id, vocab=None):
         with self.vocab_push(vocab):
             if not self.__vocabs:
                 v = ""
             else:
                 v = self.__vocabs[-1]
 
-            if v not in self.__compacted or _id not in self.__compacted[v]:
-                self.__compacted.setdefault(v, {})[_id] = self.__compact(
-                    _id,
-                    self.__get_vocab_contexts() + self.contexts,
-                )
-            return self.__compacted[v][_id]
+            return self.__compact_contexts(_id, v, self.__get_vocab_contexts())
 
-    def __compact(self, _id, contexts):
+    def __compact_contexts(self, _id, v="", apply_vocabs=False):
+        if v not in self.__compacted or _id not in self.__compacted[v]:
+            if apply_vocabs:
+                contexts = self.__get_vocab_contexts() + self.contexts
+            else:
+                contexts = self.contexts
+
+            self.__compacted.setdefault(v, {})[_id] = self.__compact(
+                _id,
+                contexts,
+                apply_vocabs,
+            )
+        return self.__compacted[v][_id]
+
+    def __compact(self, _id, contexts, apply_vocabs):
+        def remove_prefix(_id, value):
+            possible = set()
+            if _id.startswith(value):
+                tmp_id = _id[len(value) :]
+                possible.add(tmp_id)
+                possible |= collect_possible(tmp_id)
+            return possible
+
         def collect_possible(_id):
             possible = set()
             for ctx in contexts:
                 for name, value in ctx.items():
                     if name == "@vocab":
-                        if _id.startswith(value):
-                            tmp_id = _id[len(value) :]
-                            possible.add(tmp_id)
-                            possible |= collect_possible(tmp_id)
+                        if apply_vocabs:
+                            possible |= remove_prefix(_id, value)
+                    elif name == "@base":
+                        possible |= remove_prefix(_id, value)
                     else:
                         if isinstance(value, dict):
                             value = value["@id"]
@@ -3657,14 +4190,14 @@ class Context(object):
 
         return possible[0]
 
-    def expand(self, _id, vocab=""):
-        with self.vocab_push(vocab):
-            if not self.__vocabs:
-                v = ""
-            else:
-                v = self.__vocabs[-1]
+    def is_relative(self, _id):
+        import re
 
-            if v not in self.__expanded or _id not in self.__expanded[v]:
+        return not re.match(r"[^:]+:", _id)
+
+    def __expand_contexts(self, _id, v="", apply_vocabs=False):
+        if v not in self.__expanded or _id not in self.__expanded[v]:
+            if apply_vocabs:
                 contexts = self.__get_vocab_contexts() + self.contexts
 
                 # Apply contexts
@@ -3672,10 +4205,29 @@ class Context(object):
                     for name, value in ctx.items():
                         if name == "@vocab":
                             _id = value + _id
+            else:
+                contexts = self.contexts
 
-                self.__expanded.setdefault(v, {})[_id] = self.__expand(_id, contexts)
+            for ctx in contexts:
+                for name, value in ctx.items():
+                    if name == "@base" and self.is_relative(_id):
+                        _id = value + _id
 
-            return self.__expanded[v][_id]
+            self.__expanded.setdefault(v, {})[_id] = self.__expand(_id, contexts)
+
+        return self.__expanded[v][_id]
+
+    def expand(self, _id):
+        return self.__expand_contexts(_id)
+
+    def expand_vocab(self, _id, vocab=""):
+        with self.vocab_push(vocab):
+            if not self.__vocabs:
+                v = ""
+            else:
+                v = self.__vocabs[-1]
+
+            return self.__expand_contexts(_id, v, True)
 
     def __expand(self, _id, contexts):
         for ctx in contexts:
@@ -3711,7 +4263,8 @@ def main():
     args = parser.parse_args()
 
     with args.infile.open("r") as f:
-        objects, _ = read_jsonld(f)
+        d = JSONLDDeserializer()
+        objects, _ = d.read(f)
 
     if args.print:
         print_tree(objects)

@@ -61,18 +61,18 @@
             "allOf": [
                 {
                     "properties": {
-                        {%- if class.referenceable != "no" %}
+                        {%- if class.refable != "no" %}
                         "{{ class.id_property or context.compact("@id") }}":
-                        {%- if class.referenceable == "mandatory" -%}
+                        {%- if class.refable == "always" or class.refable == "yes" -%}
                             { "$ref": "#/$defs/externalRef" }
-                        {%- elif class.referenceable == "local" -%}
+                        {%- elif class.refable == "local" -%}
                             { "$ref": "#/$defs/localRef" }
-                        {%- elif class.referenceable == "optional" -%}
+                        {%- elif class.refable == "optional" -%}
                             { "$ref": "#/$defs/anyRef" }
                         {%- endif %},
                         {%- endif %}
                         "{{ context.compact("@type") }}": { "const": "{{ context.compact(class._id) }}" }
-                    }{%- if class.referenceable == "mandatory" %},
+                    }{%- if class.refable == "always" or class.refable == "yes" %},
                     "required": ["{{ class.id_property or context.compact("@id") }}"]
                     {%- endif %}
                 },
@@ -82,14 +82,16 @@
         "{{ class.clsname }}_derived": {
             {%- set ns = namespace(external_ref=False, local_ref=False, any_ref=False, json_refs=[]) %}
             {%- for d in get_all_derived(class) + [class._id] %}
-                {%- if class.referenceable == "mandatory" %}
+                {%- if class.refable == "always" or class.refable == "yes" %}
                     {%- set ns.external_ref = True %}
-                {%- elif class.referenceable == "local" %}
+                {%- elif class.refable == "local" %}
                     {%- set ns.local_ref = True %}
-                {%- elif class.referenceable == "optional" %}
+                {%- elif class.refable == "optional" %}
                     {%- set ns.any_ref = True %}
                 {%- endif %}
-                {%- set ns.json_refs = ns.json_refs + ["#/$defs/" + classes.get(d).clsname] %}
+                {%- if classes.get(d).refable != "always" %}
+                    {%- set ns.json_refs = ns.json_refs + ["#/$defs/" + classes.get(d).clsname] %}
+                {%- endif %}
             {%- endfor %}
             {%- if ns.any_ref %}
                 {%- set ns.json_refs = ns.json_refs + ["#/$defs/anyRef"] %}

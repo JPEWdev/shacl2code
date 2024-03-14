@@ -44,7 +44,7 @@ class ObjectSet(object):
 
 
 @pytest.fixture(scope="module")
-def import_test_context(tmp_path_factory):
+def test_context(tmp_path_factory):
     tmp_directory = tmp_path_factory.mktemp("pythontestcontext")
     outfile = tmp_directory / "model.py"
     subprocess.run(
@@ -62,6 +62,19 @@ def import_test_context(tmp_path_factory):
         ],
         check=True,
     )
+    outfile.chmod(0o755)
+    return (tmp_directory, outfile)
+
+
+@pytest.fixture(scope="module")
+def test_script(test_context):
+    _, script = test_context
+    return script
+
+
+@pytest.fixture(scope="module")
+def import_test_context(test_context):
+    tmp_directory, _ = test_context
 
     old_path = sys.path[:]
     sys.path.append(str(tmp_directory))
@@ -226,6 +239,24 @@ def test_roundtrip(import_test_context, tmp_path):
         digest = s.write(objects, f)
 
     check_file(outfile, expect_data, digest)
+
+
+def test_script_roundtrip(test_script, tmp_path):
+    inpath = DATA_DIR / "python" / "roundtrip.json"
+    outpath = tmp_path / "out.json"
+
+    subprocess.run(
+        [test_script, inpath, "--outfile", outpath],
+        check=True,
+    )
+
+    with inpath.open("r") as f:
+        expect_data = json.load(f)
+
+    with outpath.open("r") as f:
+        data = json.load(f)
+
+    assert data == expect_data
 
 
 def test_jsonschema_validation():

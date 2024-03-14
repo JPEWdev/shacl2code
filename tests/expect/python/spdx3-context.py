@@ -4743,7 +4743,8 @@ def main():
 
     if args.outfile:
         with args.outfile.open("wb") as f:
-            write_jsonld(objects, f)
+            s = JSONLDSerializer()
+            s.write(objects, f)
 
     return 0
 

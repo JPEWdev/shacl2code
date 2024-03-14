@@ -1,156 +1,164 @@
 Context: https://spdx.github.io/spdx-3-model/context.json
 
-https://spdx.org/rdf/v3/AI/SafetyRiskAssessmentType: SafetyRiskAssessmentType
+https://rdf.spdx.org/v3/AI/SafetyRiskAssessmentType: ai_SafetyRiskAssessmentType
 
-https://spdx.org/rdf/v3/Core/AnnotationType: AnnotationType
+https://rdf.spdx.org/v3/Core/AnnotationType: AnnotationType
 
-https://spdx.org/rdf/v3/Core/ExternalIdentifierType: ExternalIdentifierType
+https://rdf.spdx.org/v3/Core/ExternalIdentifierType: ExternalIdentifierType
 
-https://spdx.org/rdf/v3/Core/ExternalRefType: ExternalRefType
+https://rdf.spdx.org/v3/Core/ExternalRefType: ExternalRefType
 
-https://spdx.org/rdf/v3/Core/HashAlgorithm: HashAlgorithm
+https://rdf.spdx.org/v3/Core/HashAlgorithm: HashAlgorithm
 
-https://spdx.org/rdf/v3/Core/LifecycleScopeType: LifecycleScopeType
+https://rdf.spdx.org/v3/Core/LifecycleScopeType: LifecycleScopeType
 
-https://spdx.org/rdf/v3/Core/PresenceType: PresenceType
+https://rdf.spdx.org/v3/Core/PresenceType: PresenceType
 
-https://spdx.org/rdf/v3/Core/ProfileIdentifierType: ProfileIdentifierType
+https://rdf.spdx.org/v3/Core/ProfileIdentifierType: ProfileIdentifierType
 
-https://spdx.org/rdf/v3/Core/RelationshipCompleteness: RelationshipCompleteness
+https://rdf.spdx.org/v3/Core/RelationshipCompleteness: RelationshipCompleteness
 
-https://spdx.org/rdf/v3/Core/RelationshipType: RelationshipType
+https://rdf.spdx.org/v3/Core/RelationshipType: RelationshipType
 
-https://spdx.org/rdf/v3/Dataset/ConfidentialityLevelType: ConfidentialityLevelType
+https://rdf.spdx.org/v3/Core/SupportType: SupportType
 
-https://spdx.org/rdf/v3/Dataset/DatasetAvailabilityType: DatasetAvailabilityType
+https://rdf.spdx.org/v3/Dataset/ConfidentialityLevelType: dataset_ConfidentialityLevelType
 
-https://spdx.org/rdf/v3/Dataset/DatasetType: DatasetType
+https://rdf.spdx.org/v3/Dataset/DatasetAvailabilityType: dataset_DatasetAvailabilityType
 
-https://spdx.org/rdf/v3/Security/CvssSeverityType: CvssSeverityType
+https://rdf.spdx.org/v3/Dataset/DatasetType: dataset_DatasetType
 
-https://spdx.org/rdf/v3/Security/ExploitCatalogType: ExploitCatalogType
+https://rdf.spdx.org/v3/Security/CvssSeverityType: security_CvssSeverityType
 
-https://spdx.org/rdf/v3/Security/SsvcDecisionType: SsvcDecisionType
+https://rdf.spdx.org/v3/Security/ExploitCatalogType: security_ExploitCatalogType
 
-https://spdx.org/rdf/v3/Security/VexJustificationType: VexJustificationType
+https://rdf.spdx.org/v3/Security/SsvcDecisionType: security_SsvcDecisionType
 
-https://spdx.org/rdf/v3/Software/SbomType: SbomType
+https://rdf.spdx.org/v3/Security/VexJustificationType: security_VexJustificationType
 
-https://spdx.org/rdf/v3/Software/SoftwarePurpose: SoftwarePurpose
+https://rdf.spdx.org/v3/Software/SbomType: software_SbomType
 
+https://rdf.spdx.org/v3/Software/SoftwarePurpose: software_SoftwarePurpose
 
-https://spdx.org/rdf/v3/Core/CreationInfo: CreationInfo
 
-https://spdx.org/rdf/v3/Core/DictionaryEntry: DictionaryEntry
+https://rdf.spdx.org/v3/Core/CreationInfo: CreationInfo
 
-https://spdx.org/rdf/v3/Core/Element: Element
+https://rdf.spdx.org/v3/Core/DictionaryEntry: DictionaryEntry
 
-https://spdx.org/rdf/v3/Core/ElementCollection: ElementCollection
+https://rdf.spdx.org/v3/Core/Element: Element
 
-https://spdx.org/rdf/v3/Core/ExternalIdentifier: ExternalIdentifier
+https://rdf.spdx.org/v3/Core/ElementCollection: ElementCollection
 
-https://spdx.org/rdf/v3/Core/ExternalMap: ExternalMap
+https://rdf.spdx.org/v3/Core/ExternalIdentifier: ExternalIdentifier
 
-https://spdx.org/rdf/v3/Core/ExternalRef: ExternalRef
+https://rdf.spdx.org/v3/Core/ExternalMap: ExternalMap
 
-https://spdx.org/rdf/v3/Core/IntegrityMethod: IntegrityMethod
+https://rdf.spdx.org/v3/Core/ExternalRef: ExternalRef
 
-https://spdx.org/rdf/v3/Core/NamespaceMap: NamespaceMap
+https://rdf.spdx.org/v3/Core/IntegrityMethod: IntegrityMethod
 
-https://spdx.org/rdf/v3/Core/PositiveIntegerRange: PositiveIntegerRange
+https://rdf.spdx.org/v3/Core/NamespaceMap: NamespaceMap
 
-https://spdx.org/rdf/v3/Core/Relationship: Relationship
+https://rdf.spdx.org/v3/Core/PackageVerificationCode: PackageVerificationCode
 
-https://spdx.org/rdf/v3/Core/SpdxDocument: SpdxDocument
+https://rdf.spdx.org/v3/Core/PositiveIntegerRange: PositiveIntegerRange
 
-https://spdx.org/rdf/v3/Core/Tool: Tool
+https://rdf.spdx.org/v3/Core/Relationship: Relationship
 
-https://spdx.org/rdf/v3/ExpandedLicensing/LicenseAddition: LicenseAddition
+https://rdf.spdx.org/v3/Core/SpdxDocument: SpdxDocument
 
-https://spdx.org/rdf/v3/ExpandedLicensing/ListedLicenseException: ListedLicenseException
+https://rdf.spdx.org/v3/Core/Tool: Tool
 
-https://spdx.org/rdf/v3/Security/VulnAssessmentRelationship: VulnAssessmentRelationship
+https://rdf.spdx.org/v3/ExpandedLicensing/LicenseAddition: expandedlicensing_LicenseAddition
 
-https://spdx.org/rdf/v3/SimpleLicensing/AnyLicenseInfo: AnyLicenseInfo
+https://rdf.spdx.org/v3/ExpandedLicensing/ListedLicenseException: expandedlicensing_ListedLicenseException
 
-https://spdx.org/rdf/v3/SimpleLicensing/LicenseExpression: LicenseExpression
+https://rdf.spdx.org/v3/Extension/Extension: extension_Extension
 
-https://spdx.org/rdf/v3/SimpleLicensing/SimpleLicensingText: SimpleLicensingText
+https://rdf.spdx.org/v3/Security/VulnAssessmentRelationship: security_VulnAssessmentRelationship
 
-https://spdx.org/rdf/v3/Build/Build: Build
+https://rdf.spdx.org/v3/SimpleLicensing/AnyLicenseInfo: simplelicensing_AnyLicenseInfo
 
-https://spdx.org/rdf/v3/Core/Agent: Agent
+https://rdf.spdx.org/v3/SimpleLicensing/LicenseExpression: simplelicensing_LicenseExpression
 
-https://spdx.org/rdf/v3/Core/Annotation: Annotation
+https://rdf.spdx.org/v3/SimpleLicensing/SimpleLicensingText: simplelicensing_SimpleLicensingText
 
-https://spdx.org/rdf/v3/Core/Artifact: Artifact
+https://rdf.spdx.org/v3/Build/Build: build_Build
 
-https://spdx.org/rdf/v3/Core/Bundle: Bundle
+https://rdf.spdx.org/v3/Core/Agent: Agent
 
-https://spdx.org/rdf/v3/Core/Hash: Hash
+https://rdf.spdx.org/v3/Core/Annotation: Annotation
 
-https://spdx.org/rdf/v3/Core/LifecycleScopedRelationship: LifecycleScopedRelationship
+https://rdf.spdx.org/v3/Core/Artifact: Artifact
 
-https://spdx.org/rdf/v3/Core/Organization: Organization
+https://rdf.spdx.org/v3/Core/Bundle: Bundle
 
-https://spdx.org/rdf/v3/Core/Person: Person
+https://rdf.spdx.org/v3/Core/Hash: Hash
 
-https://spdx.org/rdf/v3/Core/SoftwareAgent: SoftwareAgent
+https://rdf.spdx.org/v3/Core/LifecycleScopedRelationship: LifecycleScopedRelationship
 
-https://spdx.org/rdf/v3/ExpandedLicensing/ConjunctiveLicenseSet: ConjunctiveLicenseSet
+https://rdf.spdx.org/v3/Core/Organization: Organization
 
-https://spdx.org/rdf/v3/ExpandedLicensing/CustomLicenseAddition: CustomLicenseAddition
+https://rdf.spdx.org/v3/Core/Person: Person
 
-https://spdx.org/rdf/v3/ExpandedLicensing/DisjunctiveLicenseSet: DisjunctiveLicenseSet
+https://rdf.spdx.org/v3/Core/SoftwareAgent: SoftwareAgent
 
-https://spdx.org/rdf/v3/ExpandedLicensing/ExtendableLicense: ExtendableLicense
+https://rdf.spdx.org/v3/ExpandedLicensing/ConjunctiveLicenseSet: expandedlicensing_ConjunctiveLicenseSet
 
-https://spdx.org/rdf/v3/ExpandedLicensing/License: License
+https://rdf.spdx.org/v3/ExpandedLicensing/CustomLicenseAddition: expandedlicensing_CustomLicenseAddition
 
-https://spdx.org/rdf/v3/ExpandedLicensing/ListedLicense: ListedLicense
+https://rdf.spdx.org/v3/ExpandedLicensing/DisjunctiveLicenseSet: expandedlicensing_DisjunctiveLicenseSet
 
-https://spdx.org/rdf/v3/ExpandedLicensing/OrLaterOperator: OrLaterOperator
+https://rdf.spdx.org/v3/ExpandedLicensing/ExtendableLicense: expandedlicensing_ExtendableLicense
 
-https://spdx.org/rdf/v3/ExpandedLicensing/WithAdditionOperator: WithAdditionOperator
+https://rdf.spdx.org/v3/ExpandedLicensing/IndividualLicensingInfo: expandedlicensing_IndividualLicensingInfo
 
-https://spdx.org/rdf/v3/Security/CvssV2VulnAssessmentRelationship: CvssV2VulnAssessmentRelationship
+https://rdf.spdx.org/v3/ExpandedLicensing/License: expandedlicensing_License
 
-https://spdx.org/rdf/v3/Security/CvssV3VulnAssessmentRelationship: CvssV3VulnAssessmentRelationship
+https://rdf.spdx.org/v3/ExpandedLicensing/ListedLicense: expandedlicensing_ListedLicense
 
-https://spdx.org/rdf/v3/Security/CvssV4VulnAssessmentRelationship: CvssV4VulnAssessmentRelationship
+https://rdf.spdx.org/v3/ExpandedLicensing/OrLaterOperator: expandedlicensing_OrLaterOperator
 
-https://spdx.org/rdf/v3/Security/EpssVulnAssessmentRelationship: EpssVulnAssessmentRelationship
+https://rdf.spdx.org/v3/ExpandedLicensing/WithAdditionOperator: expandedlicensing_WithAdditionOperator
 
-https://spdx.org/rdf/v3/Security/ExploitCatalogVulnAssessmentRelationship: ExploitCatalogVulnAssessmentRelationship
+https://rdf.spdx.org/v3/Security/CvssV2VulnAssessmentRelationship: security_CvssV2VulnAssessmentRelationship
 
-https://spdx.org/rdf/v3/Security/SsvcVulnAssessmentRelationship: SsvcVulnAssessmentRelationship
+https://rdf.spdx.org/v3/Security/CvssV3VulnAssessmentRelationship: security_CvssV3VulnAssessmentRelationship
 
-https://spdx.org/rdf/v3/Security/VexVulnAssessmentRelationship: VexVulnAssessmentRelationship
+https://rdf.spdx.org/v3/Security/CvssV4VulnAssessmentRelationship: security_CvssV4VulnAssessmentRelationship
 
-https://spdx.org/rdf/v3/Security/Vulnerability: Vulnerability
+https://rdf.spdx.org/v3/Security/EpssVulnAssessmentRelationship: security_EpssVulnAssessmentRelationship
 
-https://spdx.org/rdf/v3/Software/SoftwareArtifact: SoftwareArtifact
+https://rdf.spdx.org/v3/Security/ExploitCatalogVulnAssessmentRelationship: security_ExploitCatalogVulnAssessmentRelationship
 
-https://spdx.org/rdf/v3/Core/Bom: Bom
+https://rdf.spdx.org/v3/Security/SsvcVulnAssessmentRelationship: security_SsvcVulnAssessmentRelationship
 
-https://spdx.org/rdf/v3/ExpandedLicensing/CustomLicense: CustomLicense
+https://rdf.spdx.org/v3/Security/VexVulnAssessmentRelationship: security_VexVulnAssessmentRelationship
 
-https://spdx.org/rdf/v3/Security/VexAffectedVulnAssessmentRelationship: VexAffectedVulnAssessmentRelationship
+https://rdf.spdx.org/v3/Security/Vulnerability: security_Vulnerability
 
-https://spdx.org/rdf/v3/Security/VexFixedVulnAssessmentRelationship: VexFixedVulnAssessmentRelationship
+https://rdf.spdx.org/v3/Software/SoftwareArtifact: software_SoftwareArtifact
 
-https://spdx.org/rdf/v3/Security/VexNotAffectedVulnAssessmentRelationship: VexNotAffectedVulnAssessmentRelationship
+https://rdf.spdx.org/v3/Core/Bom: Bom
 
-https://spdx.org/rdf/v3/Security/VexUnderInvestigationVulnAssessmentRelationship: VexUnderInvestigationVulnAssessmentRelationship
+https://rdf.spdx.org/v3/ExpandedLicensing/CustomLicense: expandedlicensing_CustomLicense
 
-https://spdx.org/rdf/v3/Software/File: File
+https://rdf.spdx.org/v3/Security/VexAffectedVulnAssessmentRelationship: security_VexAffectedVulnAssessmentRelationship
 
-https://spdx.org/rdf/v3/Software/Package: Package
+https://rdf.spdx.org/v3/Security/VexFixedVulnAssessmentRelationship: security_VexFixedVulnAssessmentRelationship
 
-https://spdx.org/rdf/v3/Software/Sbom: Sbom
+https://rdf.spdx.org/v3/Security/VexNotAffectedVulnAssessmentRelationship: security_VexNotAffectedVulnAssessmentRelationship
 
-https://spdx.org/rdf/v3/Software/Snippet: Snippet
+https://rdf.spdx.org/v3/Security/VexUnderInvestigationVulnAssessmentRelationship: security_VexUnderInvestigationVulnAssessmentRelationship
 
-https://spdx.org/rdf/v3/AI/AIPackage: AIPackage
+https://rdf.spdx.org/v3/Software/File: software_File
 
-https://spdx.org/rdf/v3/Dataset/Dataset: Dataset
+https://rdf.spdx.org/v3/Software/Package: software_Package
+
+https://rdf.spdx.org/v3/Software/Sbom: software_Sbom
+
+https://rdf.spdx.org/v3/Software/Snippet: software_Snippet
+
+https://rdf.spdx.org/v3/AI/AIPackage: ai_AIPackage
+
+https://rdf.spdx.org/v3/Dataset/Dataset: dataset_Dataset

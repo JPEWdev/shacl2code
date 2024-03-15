@@ -2346,7 +2346,15 @@
             ]
         },
         "prop_security_CvssV2VulnAssessmentRelationship_security_score": {
-                    "type": "number"
+                    "oneOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "string",
+                            "pattern": "^-?[0-9]+(\\.[0-9]*)?$"
+                        }
+                    ]
         },
         "prop_security_CvssV2VulnAssessmentRelationship_security_vectorString": {
                     "type": "string"
@@ -2394,7 +2402,15 @@
             ]
         },
         "prop_security_CvssV3VulnAssessmentRelationship_security_score": {
-                    "type": "number"
+                    "oneOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "string",
+                            "pattern": "^-?[0-9]+(\\.[0-9]*)?$"
+                        }
+                    ]
         },
         "prop_security_CvssV3VulnAssessmentRelationship_security_severity": {
                 "enum": [
@@ -2451,7 +2467,15 @@
             ]
         },
         "prop_security_CvssV4VulnAssessmentRelationship_security_score": {
-                    "type": "number"
+                    "oneOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "string",
+                            "pattern": "^-?[0-9]+(\\.[0-9]*)?$"
+                        }
+                    ]
         },
         "prop_security_CvssV4VulnAssessmentRelationship_security_severity": {
                 "enum": [
@@ -2508,10 +2532,26 @@
             ]
         },
         "prop_security_EpssVulnAssessmentRelationship_security_probability": {
-                    "type": "number"
+                    "oneOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "string",
+                            "pattern": "^-?[0-9]+(\\.[0-9]*)?$"
+                        }
+                    ]
         },
         "prop_security_EpssVulnAssessmentRelationship_security_percentile": {
-                    "type": "number"
+                    "oneOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "string",
+                            "pattern": "^-?[0-9]+(\\.[0-9]*)?$"
+                        }
+                    ]
         },
         "prop_security_EpssVulnAssessmentRelationship_security_publishedTime": {
                     "pattern": "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$",

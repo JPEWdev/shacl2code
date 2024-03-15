@@ -71,7 +71,7 @@
                             { "$ref": "#/$defs/anyRef" }
                         {%- endif %},
                         {%- endif %}
-                        "{{ context.compact("@type") }}": { "const": "{{ context.compact(class._id) }}" }
+                        "{{ context.compact("@type") }}": { "const": "{{ context.compact_vocab(class._id) }}" }
                     }{%- if class.refable == "always" or class.refable == "yes" %},
                     "required": ["{{ class.id_property or context.compact("@id") }}"]
                     {%- endif %}
@@ -132,7 +132,7 @@
                             {{- required.append(prop.path) or "" }}
                         {%- endif %}
                         {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
-                        "{{ context.compact(prop.path) }}": {
+                        "{{ context.compact_vocab(prop.path) }}": {
                         {%- set prop_ref = "#/$defs/prop_" + class.clsname + "_" + prop.varname %}
                         {%- if is_list %}
                             "oneOf": [
@@ -161,7 +161,7 @@
                     }{% if required %},
                     "required": [
                         {%- for r in required %}
-                        "{{ context.compact(r) }}"{% if not loop.last %},{% endif %}
+                        "{{ context.compact_vocab(r) }}"{% if not loop.last %},{% endif %}
                         {%- endfor %}
                     ]
                     {%- endif %}
@@ -200,7 +200,15 @@
                 {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#boolean" %}
                     "type": "boolean"
                 {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#decimal" %}
-                    "type": "number"
+                    "oneOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "string",
+                            "pattern": "^-?[0-9]+(\\.[0-9]*)?$"
+                        }
+                    ]
                 {%- else %}
                     {{- abort("Unknown data type " + prop.datatype) }}
                 {%- endif %}
@@ -240,7 +248,7 @@
                 "{{ context.compact("@type") }}": {
                     "enum": [
                     {%- for class in classes %}
-                        "{{ context.compact(class._id) }}"{% if not loop.last %},{% endif %}
+                        "{{ context.compact_vocab(class._id) }}"{% if not loop.last %},{% endif %}
                     {%- endfor %}
                     ]
                 }

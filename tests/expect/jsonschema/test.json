@@ -492,7 +492,15 @@
                     "type": "boolean"
         },
         "prop_http_exampleorgtestclass_floatprop": {
-                    "type": "number"
+                    "oneOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "string",
+                            "pattern": "^-?[0-9]+(\\.[0-9]*)?$"
+                        }
+                    ]
         },
         "prop_http_exampleorgtestclass_classprop": {
                 "$ref": "#/$defs/http_exampleorgtestclass_derived"

@@ -1,5 +1,107 @@
 {
-    "@context": {
-        "@base": "http://example.org/"
+  "@context": {
+    "@base": "http://example.org/",
+    "test": "http://example.org",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "test-class/string-list-prop": {
+      "@id": "test:test-class/string-list-prop",
+      "@type": "xsd:string"
+    },
+    "test-class/string-list-no-datatype": {
+      "@id": "test:test-class/string-list-no-datatype",
+      "@type": "xsd:string"
+    },
+    "test-class/string-scalar-prop": {
+      "@id": "test:test-class/string-scalar-prop",
+      "@type": "xsd:string"
+    },
+    "test-class-required/string-scalar-prop": {
+      "@id": "test:test-class-required/string-scalar-prop",
+      "@type": "xsd:string"
+    },
+    "test-class-required/string-list-prop": {
+      "@id": "test:test-class-required/string-list-prop",
+      "@type": "xsd:string"
+    },
+    "test-class/named-property": {
+      "@id": "test:test-class/named-property",
+      "@type": "xsd:string"
+    },
+    "test-class/datetime-scalar-prop": {
+      "@id": "test:test-class/datetime-scalar-prop",
+      "@type": "xsd:dateTime"
+    },
+    "test-class/datetime-list-prop": {
+      "@id": "test:test-class/datetime-list-prop",
+      "@type": "xsd:dateTime"
+    },
+    "test-class/positive-integer-prop": {
+      "@id": "test:test-class/positive-integer-prop",
+      "@type": "xsd:positiveInteger"
+    },
+    "test-class/nonnegative-integer-prop": {
+      "@id": "test:test-class/nonnegative-integer-prop",
+      "@type": "xsd:nonNegativeInteger"
+    },
+    "test-class/integer-prop": {
+      "@id": "test:test-class/integer-prop",
+      "@type": "xsd:integer"
+    },
+    "test-class/anyuri-prop": {
+      "@id": "test:test-class/anyuri-prop",
+      "@type": "xsd:anyURI"
+    },
+    "test-class/boolean-prop": {
+      "@id": "test:test-class/boolean-prop",
+      "@type": "xsd:boolean"
+    },
+    "test-class/float-prop": {
+      "@id": "test:test-class/float-prop",
+      "@type": "xsd:decimal"
+    },
+    "test-class/class-prop": {
+      "@id": "test:test-class/class-prop",
+      "@type": "@id"
+    },
+    "test-class/class-prop-no-class": {
+      "@id": "test:test-class/class-prop-no-class",
+      "@type": "@id"
+    },
+    "test-class/class-list-prop": {
+      "@id": "test:test-class/class-list-prop",
+      "@type": "@id"
+    },
+    "test-class/enum-prop": {
+      "@id": "test:test-class/enum-prop",
+      "@type": "@id"
+    },
+    "test-class/enum-list-prop": {
+      "@id": "test:test-class/enum-list-prop",
+      "@type": "@id"
+    },
+    "test-class/enum-prop-no-class": {
+      "@id": "test:test-class/enum-prop-no-class",
+      "@type": "@id"
+    },
+    "test-class/regex": {
+      "@id": "test:test-class/regex",
+      "@type": "xsd:string"
+    },
+    "test-class/regex-list": {
+      "@id": "test:test-class/regex-list",
+      "@type": "xsd:string"
+    },
+    "link-class-prop": {
+      "@id": "test:link-class-prop",
+      "@type": "@id"
+    },
+    "link-class-prop-no-class": {
+      "@id": "test:link-class-prop-no-class",
+      "@type": "@id"
+    },
+    "link-class-list-prop": {
+      "@id": "test:link-class-list-prop",
+      "@type": "@id"
     }
+  }
 }

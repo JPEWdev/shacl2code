@@ -3,13 +3,15 @@
 #
 # SPDX-License-Identifier: MIT
 
+import hashlib
 import json
 import jsonschema
+import pyshacl
 import pytest
+import rdflib
 import re
 import subprocess
 import sys
-import hashlib
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 
@@ -43,8 +45,22 @@ class ObjectSet(object):
         return o
 
 
+@pytest.fixture(scope="session")
+def roundtrip(tmp_path_factory, model_server):
+    outfile = tmp_path_factory.mktemp("python-roundtrip") / "roundtrip.json"
+    with (DATA_DIR / "python" / "roundtrip.json").open("r") as f:
+        data = f.read()
+
+    data = data.replace("@CONTEXT_URL@", model_server + "/test-context.json")
+
+    with outfile.open("w") as f:
+        f.write(data)
+
+    yield outfile
+
+
 @pytest.fixture(scope="module")
-def test_context(tmp_path_factory):
+def test_context(tmp_path_factory, model_server):
     tmp_directory = tmp_path_factory.mktemp("pythontestcontext")
     outfile = tmp_directory / "model.py"
     subprocess.run(
@@ -53,9 +69,8 @@ def test_context(tmp_path_factory):
             "generate",
             "--input",
             TEST_MODEL,
-            "--context-url",
-            TEST_CONTEXT,
-            SPDX3_CONTEXT_URL,
+            "--context",
+            model_server + "/test-context.json",
             "python",
             "--output",
             outfile,
@@ -63,13 +78,13 @@ def test_context(tmp_path_factory):
         check=True,
     )
     outfile.chmod(0o755)
-    return (tmp_directory, outfile)
+    yield (tmp_directory, outfile)
 
 
 @pytest.fixture(scope="module")
 def test_script(test_context):
     _, script = test_context
-    return script
+    yield script
 
 
 @pytest.fixture(scope="module")
@@ -200,7 +215,7 @@ class TestOutput:
             assert "\t" not in line, f"Line {num + 1} has tabs"
 
 
-def test_roundtrip(import_test_context, tmp_path):
+def test_roundtrip(import_test_context, tmp_path, roundtrip):
     import model
 
     def check_file(p, expect, digest):
@@ -219,12 +234,11 @@ def test_roundtrip(import_test_context, tmp_path):
 
         assert data == expect
 
-    infile = DATA_DIR / "python" / "roundtrip.json"
-    with infile.open("r") as f:
+    with roundtrip.open("r") as f:
         d = model.JSONLDDeserializer()
         objects, _ = d.read(f)
 
-    with infile.open("r") as f:
+    with roundtrip.open("r") as f:
         expect_data = json.load(f)
 
     outfile = tmp_path / "out.json"
@@ -241,16 +255,15 @@ def test_roundtrip(import_test_context, tmp_path):
     check_file(outfile, expect_data, digest)
 
 
-def test_script_roundtrip(test_script, tmp_path):
-    inpath = DATA_DIR / "python" / "roundtrip.json"
+def test_script_roundtrip(test_script, tmp_path, roundtrip):
     outpath = tmp_path / "out.json"
 
     subprocess.run(
-        [test_script, inpath, "--outfile", outpath],
+        [test_script, roundtrip, "--outfile", outpath],
         check=True,
     )
 
-    with inpath.open("r") as f:
+    with roundtrip.open("r") as f:
         expect_data = json.load(f)
 
     with outpath.open("r") as f:
@@ -259,14 +272,11 @@ def test_script_roundtrip(test_script, tmp_path):
     assert data == expect_data
 
 
-def test_jsonschema_validation():
-    with (THIS_DIR / "expect" / "jsonschema" / "test-context.json").open("r") as f:
-        schema = json.load(f)
-
-    with (DATA_DIR / "python" / "roundtrip.json").open("r") as f:
+def test_jsonschema_validation(roundtrip, test_jsonschema):
+    with roundtrip.open("r") as f:
         data = json.load(f)
 
-    jsonschema.validate(data, schema=schema)
+    jsonschema.validate(data, schema=test_jsonschema)
 
 
 @pytest.mark.parametrize(
@@ -341,7 +351,7 @@ def test_blank_links(import_test_context, name, cls):
     assert c.linkclasslistprop == [expect, expect]
 
 
-def test_non_refable(import_test_context):
+def test_non_refable(import_test_context, test_context_url):
     import model
 
     s = model.JSONLDSerializer()
@@ -355,7 +365,7 @@ def test_non_refable(import_test_context):
     # A non-refable object should be inlined
     result = s.serialize_data([c1])
     assert result == {
-        "@context": SPDX3_CONTEXT_URL,
+        "@context": test_context_url,
         "@type": "link-class",
         "link-class-prop": {
             "@type": "ref-no-class",
@@ -374,7 +384,7 @@ def test_non_refable(import_test_context):
     # A non-refable class written as the root object is OK
     result = s.serialize_data([non_ref])
     assert result == {
-        "@context": SPDX3_CONTEXT_URL,
+        "@context": test_context_url,
         "@type": "ref-no-class",
     }
 
@@ -387,7 +397,7 @@ def test_non_refable(import_test_context):
         non_ref._id = "_:blank"
 
 
-def test_yes_refable(import_test_context):
+def test_yes_refable(import_test_context, test_context_url):
     import model
 
     TEST_ID = "http://example.com/name"
@@ -414,7 +424,7 @@ def test_yes_refable(import_test_context):
     result = s.serialize_data([c1])
     # inline is allowed
     assert result == {
-        "@context": SPDX3_CONTEXT_URL,
+        "@context": test_context_url,
         "@type": "link-class",
         "link-class-prop": {
             "@id": TEST_ID,
@@ -426,7 +436,7 @@ def test_yes_refable(import_test_context):
     # explicitly specified)
     result = s.serialize_data([c1], force_graph=True)
     assert result == {
-        "@context": SPDX3_CONTEXT_URL,
+        "@context": test_context_url,
         "@graph": [
             {
                 "@type": "link-class",
@@ -444,7 +454,7 @@ def test_yes_refable(import_test_context):
         ref._id = "_:blank"
 
 
-def test_always_refable(import_test_context):
+def test_always_refable(import_test_context, test_context_url):
     import model
 
     TEST_ID = "http://example.com/name"
@@ -476,7 +486,7 @@ def test_always_refable(import_test_context):
     # explicitly specified)
     result = s.serialize_data([c1], force_graph=True)
     assert result == {
-        "@context": SPDX3_CONTEXT_URL,
+        "@context": test_context_url,
         "@graph": [
             {
                 "@type": "link-class",
@@ -494,7 +504,7 @@ def test_always_refable(import_test_context):
         ref._id = "_:blank"
 
 
-def test_optional_refable(import_test_context):
+def test_optional_refable(import_test_context, test_context_url):
     # This is the normal object behavior, so not much to test here that isn't
     # covered elsewhere
     import model
@@ -508,7 +518,7 @@ def test_optional_refable(import_test_context):
     ref = model.refoptionalclass()
 
     INLINE_RESULT = {
-        "@context": SPDX3_CONTEXT_URL,
+        "@context": test_context_url,
         "@type": "link-class",
         "link-class-prop": {
             "@type": "ref-optional-class",
@@ -526,7 +536,7 @@ def test_optional_refable(import_test_context):
     assert result == INLINE_RESULT
 
     BLANK_RESULT = {
-        "@context": SPDX3_CONTEXT_URL,
+        "@context": test_context_url,
         "@graph": [
             {
                 "@type": "link-class",
@@ -559,7 +569,7 @@ def test_optional_refable(import_test_context):
     ref._id = TEST_ID
     result = s.serialize_data([c1, c2])
     assert result == {
-        "@context": SPDX3_CONTEXT_URL,
+        "@context": test_context_url,
         "@graph": [
             {
                 "@type": "link-class",
@@ -589,7 +599,7 @@ def test_local_refable(import_test_context):
     ref._id = "_:blank"
 
 
-def test_id_name(import_test_context):
+def test_id_name(import_test_context, test_context_url):
     import model
 
     s = model.JSONLDSerializer()
@@ -613,7 +623,7 @@ def test_id_name(import_test_context):
     c._id = TEST_ID
     result = s.serialize_data([c])
     assert result == {
-        "@context": SPDX3_CONTEXT_URL,
+        "@context": test_context_url,
         "@type": "id-prop-class",
         "testid": TEST_ID,
     }
@@ -1000,11 +1010,10 @@ def test_mandatory_properties(import_test_context, tmp_path):
             s.write([c], f)
 
 
-def test_iri(import_test_context):
+def test_iri(import_test_context, roundtrip):
     import model
 
-    infile = DATA_DIR / "python" / "roundtrip.json"
-    with infile.open("r") as f:
+    with roundtrip.open("r") as f:
         deserializer = model.JSONLDDeserializer()
         d = ObjectSet(*deserializer.read(f))
 
@@ -1020,3 +1029,19 @@ def test_iri(import_test_context):
         c._IRI["foo"]
 
     assert "foo" not in c._IRI
+
+
+def test_shacl(roundtrip):
+    model = rdflib.Graph()
+    model.parse(TEST_MODEL)
+
+    data = rdflib.Graph()
+    data.parse(roundtrip)
+
+    conforms, result_graph, result_text = pyshacl.validate(
+        data,
+        shacl_graph=model,
+        ont_graph=model,
+        meta_shacl=True,
+    )
+    assert conforms, result_text

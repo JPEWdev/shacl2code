@@ -186,7 +186,7 @@
     rdfs:range xsd:nonNegativeInteger
     .
 
-<test-class/nonnegative-integer-prop> a rdf:Property ;
+<test-class/integer-prop> a rdf:Property ;
     rdfs:comment "a non-negative integer" ;
     rdfs:range xsd:integer
     .

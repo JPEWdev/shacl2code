@@ -25,31 +25,6 @@ SPDX3_MODEL = DATA_DIR / "model" / "spdx3.jsonld"
 SPDX3_CONTEXT = DATA_DIR / "model" / "spdx3-context.json"
 SPDX3_CONTEXT_URL = "https://spdx.github.io/spdx-3-model/context.json"
 
-SPDX3_CONTEXT_ARGS = ["--context-url", SPDX3_CONTEXT, SPDX3_CONTEXT_URL]
-
-
-@pytest.fixture(scope="module")
-def test_schema():
-    p = subprocess.run(
-        [
-            "shacl2code",
-            "generate",
-            "--input",
-            TEST_MODEL,
-            "--context-url",
-            TEST_CONTEXT,
-            SPDX3_CONTEXT_URL,
-            "jsonschema",
-            "--output",
-            "-",
-        ],
-        check=True,
-        stdout=subprocess.PIPE,
-        encoding="utf-8",
-    )
-
-    return json.loads(p.stdout)
-
 
 @pytest.mark.parametrize(
     "args,expect",
@@ -168,8 +143,19 @@ class TestOutput:
             assert "\t" not in line, f"Line {num + 1} has tabs"
 
 
+CONTEXT = object()
+
+
+def replace_context(d, url):
+    for k, v in d.items():
+        if v is CONTEXT:
+            d[k] = url
+        elif isinstance(v, dict):
+            replace_context(v, url)
+
+
 BASE_OBJ = {
-    "@context": SPDX3_CONTEXT_URL,
+    "@context": CONTEXT,
     "@type": "test-class",
 }
 
@@ -179,14 +165,14 @@ def ref_tests(name, none, blank, iri, inline):
         (
             none,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@type": name,
             },
         ),
         (
             none and inline,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@type": "link-class",
                 "link-class-prop": {
                     "@type": name,
@@ -196,7 +182,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             blank,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@type": name,
                 "@id": "_:blank",
             },
@@ -204,7 +190,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             blank and inline,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@type": "link-class",
                 "link-class-prop": {
                     "@type": name,
@@ -215,7 +201,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             iri,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@type": name,
                 "@id": "http://example.com/name",
             },
@@ -223,7 +209,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             iri and inline,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@type": "link-class",
                 "link-class-prop": {
                     "@type": name,
@@ -241,7 +227,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             True,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@graph": [],
             },
         ),
@@ -264,7 +250,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             False,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@graph": [],
                 "foo": "bar",
             },
@@ -273,7 +259,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             True,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@graph": [
                     {
                         "@type": "link-class",
@@ -285,7 +271,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             False,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@graph": [
                     {
                         "@type": "link-class",
@@ -298,7 +284,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             True,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@graph": [
                     {
                         "@type": "link-class",
@@ -313,7 +299,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             True,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@graph": [
                     {
                         "@type": "link-class",
@@ -328,7 +314,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             True,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@graph": [
                     {
                         "@type": "link-derived-class",
@@ -343,7 +329,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             True,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@graph": [
                     {
                         "@type": "link-derived-class",
@@ -358,7 +344,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             True,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@graph": [
                     {
                         "@type": "link-class",
@@ -371,7 +357,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             False,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@graph": [
                     {
                         "@type": "link-class",
@@ -386,7 +372,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             True,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@graph": [
                     {
                         "@type": "test-class",
@@ -400,7 +386,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             False,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@graph": [
                     {
                         "@type": "test-class",
@@ -413,7 +399,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             False,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@graph": [
                     {
                         "@type": "test-class",
@@ -426,7 +412,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             True,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@graph": [
                     {
                         "@type": "test-class",
@@ -439,7 +425,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             True,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@graph": [
                     {
                         "@type": "test-class-required",
@@ -453,7 +439,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             False,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@graph": [
                     {
                         "@type": "test-class-required",
@@ -466,7 +452,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             False,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@graph": [
                     {
                         "@type": "test-class-required",
@@ -479,7 +465,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             False,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@graph": [
                     {
                         "@type": "test-class-required",
@@ -493,7 +479,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             False,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@graph": [
                     {
                         "@type": "test-class-required",
@@ -511,7 +497,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             True,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@type": "test-class",
             },
         ),
@@ -519,7 +505,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             False,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@type": "test-class",
                 "foo": "bar",
             },
@@ -543,7 +529,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             False,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@type": "foo",
             },
         ),
@@ -557,7 +543,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             True,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@type": "id-prop-class",
                 "testid": "_:blank",
             },
@@ -566,7 +552,7 @@ def ref_tests(name, none, blank, iri, inline):
         (
             False,
             {
-                "@context": SPDX3_CONTEXT_URL,
+                "@context": CONTEXT,
                 "@type": "id-prop-class",
                 "@id": "_:blank",
             },
@@ -575,12 +561,14 @@ def ref_tests(name, none, blank, iri, inline):
         (True, BASE_OBJ),
     ],
 )
-def test_schema_validation(test_schema, passes, data):
+def test_schema_validation(test_jsonschema, test_context_url, passes, data):
+    replace_context(data, test_context_url)
+
     if passes:
-        jsonschema.validate(data, schema=test_schema)
+        jsonschema.validate(data, schema=test_jsonschema)
     else:
         with pytest.raises(jsonschema.ValidationError):
-            jsonschema.validate(data, schema=test_schema)
+            jsonschema.validate(data, schema=test_jsonschema)
 
 
 def type_tests(name, *, good=[], bad=[], typ=[]):
@@ -640,7 +628,12 @@ def type_tests(name, *, good=[], bad=[], typ=[]):
             "test-class/nonnegative-integer-prop", good=[1, 0], bad=[-1], typ=[int]
         ),
         *type_tests("test-class/integer-prop", good=[1, 0, -1], typ=[int]),
-        *type_tests("test-class/float-prop", good=[-1.5, 0, 1.5], typ=[float]),
+        *type_tests(
+            "test-class/float-prop",
+            good=[-1.5, 0, 1.5, "1.5", "0.0", "-1.5", "1", "-1"],
+            bad=["a1", "a", ""],
+            typ=[float],
+        ),
         *type_tests(
             "test-class/datetime-scalar-prop",
             good=["2024-03-11T00:00:00Z"],
@@ -733,12 +726,13 @@ def type_tests(name, *, good=[], bad=[], typ=[]):
         ),
     ],
 )
-def test_schema_type_validation(test_schema, passes, name, val):
+def test_schema_type_validation(test_jsonschema, test_context_url, passes, name, val):
     data = BASE_OBJ.copy()
+    replace_context(data, test_context_url)
     data[name] = val
 
     if passes:
-        jsonschema.validate(data, schema=test_schema)
+        jsonschema.validate(data, schema=test_jsonschema)
     else:
         with pytest.raises(jsonschema.ValidationError):
-            jsonschema.validate(data, schema=test_schema)
+            jsonschema.validate(data, schema=test_jsonschema)

@@ -642,13 +642,13 @@ class SHACLObject(object):
             if iri == obj._obj_iris["_id"]:
                 continue
 
-            prop_d = obj_d.read_property(iri)
-            if prop_d is None:
-                continue
+            with obj_d.read_property(iri) as prop_d:
+                if prop_d is None:
+                    continue
 
-            v = prop.decode(prop_d, object_ids=object_ids)
-            prop.validate(v)
-            obj._obj_data[iri] = v
+                v = prop.decode(prop_d, object_ids=object_ids)
+                prop.validate(v)
+                obj._obj_data[iri] = v
 
         return obj
 
@@ -835,6 +835,7 @@ class Decoder(ABC):
         pass
 
     @abstractmethod
+    @contextmanager
     def read_property(self, iri):
         pass
 
@@ -847,88 +848,92 @@ class Decoder(ABC):
         pass
 
 
+class JSONLDDecoder(Decoder):
+    def __init__(self, data, context):
+        self.data = data
+        self.context = context
+
+    def read_string(self):
+        if isinstance(self.data, str):
+            return self.data
+        return None
+
+    def read_datetime(self):
+        if isinstance(self.data, str):
+            return DateTimeProp.from_string(self.data)
+        return None
+
+    def read_integer(self):
+        if isinstance(self.data, int):
+            return self.data
+        return None
+
+    def read_bool(self):
+        if isinstance(self.data, bool):
+            return self.data
+        return None
+
+    def read_float(self):
+        if isinstance(self.data, (int, float, str)):
+            return float(self.data)
+        return None
+
+    def read_iri(self):
+        if isinstance(self.data, str):
+            return self.context.expand(self.data)
+        return None
+
+    def read_enum(self, e):
+        if isinstance(self.data, str):
+            return self.context.expand_vocab(self.data)
+        return None
+
+    def read_list(self):
+        if isinstance(self.data, (list, tuple, set)):
+            for v in self.data:
+                yield self.__class__(v, self.context)
+        else:
+            yield self
+
+    @contextmanager
+    def read_property(self, iri):
+        for k in (iri, self.context.compact_vocab(iri)):
+            if k in self.data:
+                with self.context.vocab_push(iri):
+                    yield self.__class__(self.data[k], self.context)
+                return
+
+        yield None
+
+    def read_object(self):
+        for k in ("@type", self.context.compact("@type")):
+            if k not in self.data:
+                continue
+
+            typ = self.context.expand(self.data[k])
+            return typ, self
+
+        return None, self
+
+    def read_object_id(self, alias=None):
+        if alias and alias in self.data:
+            return self.data[alias]
+
+        for k in ("@id", self.context.compact("@id")):
+            if k in self.data:
+                return self.data[k]
+
+        return None
+
+
 class JSONLDDeserializer(object):
-    class Helper(Decoder):
-        def __init__(self, data, context):
-            self.data = data
-            self.context = context
-
-        def read_string(self):
-            if isinstance(self.data, str):
-                return self.data
-            return None
-
-        def read_datetime(self):
-            if isinstance(self.data, str):
-                return DateTimeProp.from_string(self.data)
-            return None
-
-        def read_integer(self):
-            if isinstance(self.data, int):
-                return self.data
-            return None
-
-        def read_bool(self):
-            if isinstance(self.data, bool):
-                return self.data
-            return None
-
-        def read_float(self):
-            if isinstance(self.data, (int, float)):
-                return float(self.data)
-            return None
-
-        def read_iri(self):
-            if isinstance(self.data, str):
-                return self.context.expand(self.data)
-            return None
-
-        def read_enum(self, e):
-            if isinstance(self.data, str):
-                return self.context.expand_vocab(self.data)
-            return None
-
-        def read_list(self):
-            if isinstance(self.data, (list, tuple, set)):
-                for v in self.data:
-                    yield self.__class__(v, self.context)
-            else:
-                yield self
-
-        def read_property(self, iri):
-            for k in (iri, self.context.compact(iri)):
-                if k in self.data:
-                    return self.__class__(self.data[k], self.context)
-
-            return None
-
-        def read_object(self):
-            for k in ("@type", self.context.compact("@type")):
-                if k not in self.data:
-                    continue
-
-                typ = self.context.expand(self.data[k])
-                return typ, self
-
-            return None, self
-
-        def read_object_id(self, alias=None):
-            if alias and alias in self.data:
-                return self.data[alias]
-
-            for k in ("@id", self.context.compact("@id")):
-                if k in self.data:
-                    return self.data[k]
-
-            return None
-
     def read(self, f):
         context = make_context()
         data = json.load(f)
         if "@graph" in data:
-            h = self.Helper(data["@graph"], context)
+            h = JSONLDDecoder(data["@graph"], context)
         else:
-            h = self.Helper(data, context)
+            h = JSONLDDecoder(data, context)
 
         return decode_objects(h)
 
@@ -983,70 +988,68 @@ class Encoder(ABC):
         pass
 
 
-class JSONLDSerializer(object):
-    class Helper(Encoder):
-        def __init__(self, context, data=None):
-            self.data = data
-            if context is None:
-                self.context = make_context()
-            else:
-                self.context = context
+class JSONLDEncoder(Encoder):
+    def __init__(self, context, data=None):
+        self.data = data
+        self.context = context
 
-        def write_string(self, v):
-            self.data = v
+    def write_string(self, v):
+        self.data = v
 
-        def write_datetime(self, v):
-            self.data = DateTimeProp.to_string(v)
+    def write_datetime(self, v):
+        self.data = DateTimeProp.to_string(v)
 
-        def write_integer(self, v):
-            self.data = v
+    def write_integer(self, v):
+        self.data = v
 
-        def write_iri(self, v):
-            self.write_string(self.context.compact(v))
+    def write_iri(self, v):
+        self.write_string(self.context.compact(v))
 
-        def write_enum(self, v, e):
-            self.write_string(self.context.compact_vocab(v))
+    def write_enum(self, v, e):
+        self.write_string(self.context.compact_vocab(v))
 
-        def write_bool(self, v):
-            self.data = v
+    def write_bool(self, v):
+        self.data = v
 
-        def write_float(self, v):
-            self.data = v
+    def write_float(self, v):
+        self.data = str(v)
 
-        @contextmanager
-        def write_property(self, iri):
-            s = self.__class__(self.context, None)
-            with self.context.vocab_push(iri):
-                yield s
-            if s.data is not None:
-                self.data[self.context.compact(iri)] = s.data
-
-        @contextmanager
-        def write_object(self, o):
-            self.data = {
-                self.context.compact("@type"): self.context.compact(o.TYPE),
-            }
-            if o._id:
-                self.data[o.ID_ALIAS or o._IRI["_id"]] = self.context.compact(o._id)
-            yield self
-
-        @contextmanager
-        def write_list(self):
-            self.data = []
-            yield self
-            if not self.data:
-                self.data = None
-
-        @contextmanager
-        def write_list_item(self):
-            s = self.__class__(self.context, None)
+    @contextmanager
+    def write_property(self, iri):
+        s = self.__class__(self.context, None)
+        with self.context.vocab_push(iri):
             yield s
-            if s.data is not None:
-                self.data.append(s.data)
+        if s.data is not None:
+            self.data[self.context.compact_vocab(iri)] = s.data
 
+    @contextmanager
+    def write_object(self, o):
+        self.data = {
+            self.context.compact("@type"): self.context.compact_vocab(o.TYPE),
+        }
+        if o._id:
+            self.data[o.ID_ALIAS or o._IRI["_id"]] = self.context.compact(o._id)
+        yield self
+
+    @contextmanager
+    def write_list(self):
+        self.data = []
+        yield self
+        if not self.data:
+            self.data = None
+
+    @contextmanager
+    def write_list_item(self):
+        s = self.__class__(self.context, None)
+        yield s
+        if s.data is not None:
+            self.data.append(s.data)
+
+
+class JSONLDSerializer(object):
     def serialize_data(self, objects, force_graph=False):
         context = make_context()
-        h = self.Helper(context)
+        h = JSONLDEncoder(context)
         encode_objects(h, objects, force_graph)
         if isinstance(h.data, list):
             data = {
@@ -1079,99 +1082,100 @@ class JSONLDSerializer(object):
         return sha1.hexdigest()
 
 
-class JSONLDInlineSerializer(object):
-    class Helper(Encoder):
-        def __init__(self, f, context, sha1):
-            self.f = f
-            self.context = context
+class JSONLDInlineEncoder(Encoder):
+    def __init__(self, f, context, sha1):
+        self.f = f
+        self.context = context
+        self.comma = False
+        self.sha1 = sha1
+
+    def write(self, s):
+        s = s.encode("utf-8")
+        self.f.write(s)
+        self.sha1.update(s)
+
+    def _write_comma(self):
+        if self.comma:
+            self.write(",")
             self.comma = False
-            self.sha1 = sha1
 
-        def write(self, s):
-            s = s.encode("utf-8")
-            self.f.write(s)
-            self.sha1.update(s)
+    def _need_comma(self):
+        self.comma = True
 
-        def _write_comma(self):
-            if self.comma:
-                self.write(",")
-                self.comma = False
+    def write_string(self, v):
+        self.write(f'"{v}"')
 
-        def _need_comma(self):
-            self.comma = True
+    def write_datetime(self, v):
+        self.write('"' + DateTimeProp.to_string(v) + '"')
 
-        def write_string(self, v):
-            self.write(f'"{v}"')
+    def write_integer(self, v):
+        self.write(f"{v}")
 
-        def write_datetime(self, v):
-            self.write('"' + DateTimeProp.to_string(v) + '"')
+    def write_iri(self, v):
+        self.write_string(self.context.compact(v))
 
-        def write_integer(self, v):
-            self.write(f"{v}")
+    def write_enum(self, v, e):
+        self.write_iri(v)
 
-        def write_iri(self, v):
-            self.write_string(self.context.compact(v))
+    def write_bool(self, v):
+        if v:
+            self.write("true")
+        else:
+            self.write("false")
 
-        def write_enum(self, v, e):
-            self.write_iri(v)
+    def write_float(self, v):
+        self.write(f'"{v}"')
 
-        def write_bool(self, v):
-            if v:
-                self.write("true")
-            else:
-                self.write("false")
-
-        def write_float(self, v):
-            self.write(f"{v}")
-
-        @contextmanager
-        def write_property(self, iri):
-            self._write_comma()
-            p = self.context.compact(iri)
-            self.write(f'"{p}":')
-            with self.context.vocab_push(iri):
-                yield self
-            self.comma = True
-
-        @contextmanager
-        def write_object(self, o):
-            self._write_comma()
-
-            typname = self.context.compact("@type")
-            typval = self.context.compact(o.TYPE)
-            self.write("{")
-            if o._id:
-                idname = o.ID_ALIAS or o._IRI["_id"]
-                idval = self.context.compact(o._id)
-                self.write(f'"{idname}": "{idval}",')
-            self.write(f'"{typname}":"{typval}"')
-
-            self.comma = True
+    @contextmanager
+    def write_property(self, iri):
+        self._write_comma()
+        p = self.context.compact(iri)
+        self.write(f'"{p}":')
+        with self.context.vocab_push(iri):
             yield self
+        self.comma = True
 
-            self.write("}")
-            self.comma = True
+    @contextmanager
+    def write_object(self, o):
+        self._write_comma()
 
-        @contextmanager
-        def write_list(self):
-            self._write_comma()
-            self.write("[")
-            yield self.__class__(self.f, self.context, self.sha1)
-            self.write("]")
-            self.comma = True
+        typname = self.context.compact("@type")
+        typval = self.context.compact_vocab(o.TYPE)
+        self.write("{")
+        if o._id:
+            idname = o.ID_ALIAS or o._IRI["_id"]
+            idval = self.context.compact(o._id)
+            self.write(f'"{idname}": "{idval}",')
+        self.write(f'"{typname}":"{typval}"')
 
-        @contextmanager
-        def write_list_item(self):
-            self._write_comma()
-            yield self.__class__(self.f, self.context, self.sha1)
-            self.comma = True
+        self.comma = True
+        yield self
 
+        self.write("}")
+        self.comma = True
+
+    @contextmanager
+    def write_list(self):
+        self._write_comma()
+        self.write("[")
+        yield self.__class__(self.f, self.context, self.sha1)
+        self.write("]")
+        self.comma = True
+
+    @contextmanager
+    def write_list_item(self):
+        self._write_comma()
+        yield self.__class__(self.f, self.context, self.sha1)
+        self.comma = True
+
+
+class JSONLDInlineSerializer(object):
     def write(self, objects, f):
         """
         Write a list of objects to a JSON LD file
         """
         sha1 = hashlib.sha1()
-        h = self.Helper(f, make_context(), sha1)
+        h = JSONLDInlineEncoder(f, make_context(), sha1)
         h.write('{"@context":')
         if len(CONTEXT_URLS) == 1:
             h.write(f'"{CONTEXT_URLS[0]}"')
@@ -1456,6 +1460,7 @@ class http_exampleorgtestclass(http_exampleorgparentclass):
             NonNegativeIntegerProp(),
             iri="http://example.org/test-class/nonnegative-integer-prop",
         )
+        # a non-negative integer
         self._add_property(
             "integerprop",
             IntegerProp(),

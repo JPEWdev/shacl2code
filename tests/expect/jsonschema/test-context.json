@@ -496,7 +496,15 @@
                     "type": "boolean"
         },
         "prop_testclass_testclassfloatprop": {
-                    "type": "number"
+                    "oneOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "string",
+                            "pattern": "^-?[0-9]+(\\.[0-9]*)?$"
+                        }
+                    ]
         },
         "prop_testclass_testclassclassprop": {
                 "$ref": "#/$defs/testclass_derived"

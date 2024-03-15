@@ -1,5 +1,5 @@
 {
-    "@context": "https://spdx.github.io/spdx-3-model/context.json",
+    "@context": "@CONTEXT_URL@",
     "@graph": [
         {
             "@id": "http://serialize.example.com/derived",
@@ -34,7 +34,7 @@
             "test-class/nonnegative-integer-prop": 0,
             "test-class/integer-prop": -1,
             "test-class/boolean-prop": true,
-            "test-class/float-prop": 0.1,
+            "test-class/float-prop": "0.1",
             "test-class/class-prop": "http://serialize.example.com/derived",
             "test-class/class-prop-no-class": "http://serialize.example.com/derived",
             "test-class/class-list-prop": [

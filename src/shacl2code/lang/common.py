@@ -57,6 +57,9 @@ class BasicJinjaRender(object):
     def get_additional_render_args(self):
         return {}
 
+    def get_extra_env(self):
+        return {}
+
     def output(self, model):
         def abort_helper(msg):
             raise TemplateRuntimeError(msg)
@@ -90,6 +93,8 @@ class BasicJinjaRender(object):
         env = Environment(
             loader=FileSystemLoader([self.__template.parent, THIS_DIR.parent])
         )
+        for k, v in self.get_extra_env().items():
+            env.globals[k] = v
         env.globals["abort"] = abort_helper
         env.globals["get_all_derived"] = get_all_derived
         template = env.get_template(self.__template.name)

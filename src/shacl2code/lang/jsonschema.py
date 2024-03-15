@@ -6,6 +6,17 @@
 from .common import BasicJinjaRender
 from .lang import language, TEMPLATE_DIR
 
+import re
+import keyword
+
+
+def varname(name):
+    name = str(name).replace("@", "_")
+    name = re.sub(r"[^a-zA-Z0-9_]", "", name)
+    while keyword.iskeyword(name):
+        name = name + "_"
+    return name
+
 
 @language("jsonschema")
 class JsonSchemaRender(BasicJinjaRender):
@@ -30,6 +41,11 @@ class JsonSchemaRender(BasicJinjaRender):
             action="store_true",
             help="Allow lists to be elided if they only contain a single element",
         )
+
+    def get_extra_env(self):
+        return {
+            "varname": varname,
+        }
 
     def get_additional_render_args(self):
         return self.__render_args

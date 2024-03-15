@@ -57,7 +57,7 @@
         {#- Classes are divided into 2 parts. The properties are separated into a separate object #}
         {#- so that a object can references the properties of its parent without needing the const #}
         {#- @type tag #}
-        "{{ class.clsname }}": {
+        "{{ varname(class.clsname) }}": {
             "allOf": [
                 {
                     "properties": {
@@ -76,10 +76,10 @@
                     "required": ["{{ class.id_property or context.compact("@id") }}"]
                     {%- endif %}
                 },
-                { "$ref": "#/$defs/{{ class.clsname }}_props" }
+                { "$ref": "#/$defs/{{ varname(class.clsname) }}_props" }
             ]
         },
-        "{{ class.clsname }}_derived": {
+        "{{ varname(class.clsname) }}_derived": {
             {%- set ns = namespace(external_ref=False, local_ref=False, any_ref=False, json_refs=[]) %}
             {%- for d in get_all_derived(class) + [class._id] %}
                 {%- if class.refable == "always" or class.refable == "yes" %}
@@ -90,7 +90,7 @@
                     {%- set ns.any_ref = True %}
                 {%- endif %}
                 {%- if classes.get(d).refable != "always" %}
-                    {%- set ns.json_refs = ns.json_refs + ["#/$defs/" + classes.get(d).clsname] %}
+                    {%- set ns.json_refs = ns.json_refs + ["#/$defs/" + varname(classes.get(d).clsname)] %}
                 {%- endif %}
             {%- endfor %}
             {%- if ns.any_ref %}
@@ -115,11 +115,11 @@
             {%- endif %}
             "unevaluatedProperties": false
         },
-        "{{ class.clsname }}_props": {
+        "{{ varname(class.clsname) }}_props": {
             "allOf": [
                 {%- if class.parent_ids %}
                 {%- for parent in class.parent_ids %}
-                { "$ref": "#/$defs/{{ classes.get(parent).clsname }}_props" },
+                { "$ref": "#/$defs/{{ varname(classes.get(parent).clsname) }}_props" },
                 {%- endfor %}
                 {%- else %}
                 { "$ref": "#/$defs/SHACLClass" },
@@ -133,7 +133,7 @@
                         {%- endif %}
                         {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
                         "{{ context.compact_vocab(prop.path) }}": {
-                        {%- set prop_ref = "#/$defs/prop_" + class.clsname + "_" + prop.varname %}
+                        {%- set prop_ref = "#/$defs/prop_" + varname(class.clsname) + "_" + varname(prop.varname) %}
                         {%- if is_list %}
                             "oneOf": [
                                 {
@@ -169,9 +169,9 @@
             ]
         },
         {%- for prop in class.properties %}
-        "prop_{{ class.clsname }}_{{ prop.varname }}": {
+        "prop_{{ varname(class.clsname) }}_{{ varname(prop.varname) }}": {
             {%- if prop.class_id %}
-                "$ref": "#/$defs/{{ classes.get(prop.class_id).clsname }}_derived"
+                "$ref": "#/$defs/{{ varname(classes.get(prop.class_id).clsname) }}_derived"
             {%- elif prop.enum_id %}
                 "enum": [
                 {%- for e in enums.get(prop.enum_id).values %}
@@ -258,7 +258,7 @@
         "AnyClass": {
             "oneOf": [
                 {%- for class in classes %}
-                { "$ref": "#/$defs/{{ class.clsname }}" }{% if not loop.last %},{% endif %}
+                { "$ref": "#/$defs/{{ varname(class.clsname) }}" }{% if not loop.last %},{% endif %}
                 {%- endfor %}
             ]
         }

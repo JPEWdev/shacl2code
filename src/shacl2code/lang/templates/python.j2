@@ -1276,11 +1276,11 @@ CONTEXT_URLS = [
 #{% if l %} {% endif %}{{ l.rstrip() }}
 {%- endfor %}
 {%- endif %}
-class {{ enum.clsname }}(EnumProp):
+class {{ varname(enum.clsname) }}(EnumProp):
     TYPE = "{{ enum._id }}"
     valid_values = [
         {%- for value in enum.values %}
-        ("{{ value.varname }}", "{{ value._id }}"),
+        ("{{ varname(value.varname) }}", "{{ value._id }}"),
         {%- endfor %}
     ]
     {%- for value in enum.values %}
@@ -1289,7 +1289,7 @@ class {{ enum.clsname }}(EnumProp):
     #{% if l %} {% endif %}{{ l.rstrip() }}
     {%- endfor %}
     {%- endif %}
-    {{ value.varname }} = "{{ value._id }}"
+    {{ varname(value.varname) }} = "{{ value._id }}"
     {%- endfor %}
 
 {% endfor %}
@@ -1300,10 +1300,10 @@ class {{ enum.clsname }}(EnumProp):
 #{% if l %} {% endif %}{{ l.rstrip() }}
 {%- endfor %}
 {%- endif %}
-class {{ class.clsname }}(
+class {{ varname(class.clsname) }}(
 {%- if class.parent_ids %}
     {%- for id in class.parent_ids %}
-        {{- classes.get(id).clsname }}{% if not loop.last %}, {% endif %}
+        {{- varname(classes.get(id).clsname) }}{% if not loop.last %}, {% endif %}
     {%- endfor %}
 {%- else -%}
     SHACLObject
@@ -1326,12 +1326,12 @@ class {{ class.clsname }}(
         {%- endfor %}
         {%- endif %}
         self._add_property(
-            "{{ prop.varname }}",
+            "{{ varname(prop.varname) }}",
             {% if is_list -%}ListProp({% endif %}
             {%- if prop.class_id -%}
-                ObjectProp({{ classes.get(prop.class_id).clsname }}, {% if prop.min_count and not is_list %}True{% else %}False{% endif %})
+                ObjectProp({{ varname(classes.get(prop.class_id).clsname) }}, {% if prop.min_count and not is_list %}True{% else %}False{% endif %})
             {%- elif prop.enum_id -%}
-                {{ enums.get(prop.enum_id).clsname }}()
+                {{ varname(enums.get(prop.enum_id).clsname) }}()
             {%- else -%}
                 {% if not prop.datatype in DATATYPE_CLASSES -%}
                     {{ abort("Unknown data type " + prop.datatype) -}}
@@ -1350,7 +1350,7 @@ class {{ class.clsname }}(
         self._set_init_props(**kwargs)
 
 
-SHACLObject.DESERIALIZERS["{{ class._id }}"] = {{ class.clsname }}
+SHACLObject.DESERIALIZERS["{{ class._id }}"] = {{ varname(class.clsname) }}
 
 {% endfor %}
 {% include "context.py" %}

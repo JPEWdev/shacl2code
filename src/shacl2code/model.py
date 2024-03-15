@@ -4,8 +4,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import keyword
-import re
 import typing
 from dataclasses import dataclass
 
@@ -21,14 +19,6 @@ class SPDXS(DefinedNamespace):
 
 class ModelException(Exception):
     pass
-
-
-def to_var_name(name):
-    name = str(name).replace("@", "_")
-    name = re.sub(r"[^a-zA-Z0-9_]", "", name)
-    while keyword.iskeyword(name):
-        name = name + "_"
-    return name
 
 
 def common_prefix(*s):
@@ -120,10 +110,8 @@ class Model(object):
                         self.model.value(
                             value_iri,
                             RDFS.label,
-                            default=to_var_name(
-                                remove_common_prefix(value_iri, cls_iri)
-                            ),
-                        )
+                            default=remove_common_prefix(value_iri, cls_iri),
+                        ),
                     ),
                     comment=str(self.model.value(value_iri, RDFS.comment, default="")),
                 )
@@ -180,15 +168,13 @@ class Model(object):
                 prop = self.model.value(obj_prop, SH.path)
 
                 p = Property(
-                    varname=to_var_name(
-                        self.model.value(
-                            obj_prop,
-                            SH.name,
-                            default=self.get_compact_id(
-                                prop,
-                                fallback=remove_common_prefix(prop, cls_iri),
-                            ),
-                        )
+                    varname=self.model.value(
+                        obj_prop,
+                        SH.name,
+                        default=self.get_compact_id(
+                            prop,
+                            fallback=remove_common_prefix(prop, cls_iri),
+                        ),
                     ),
                     path=str(prop),
                     comment=str(self.model.value(prop, RDFS.comment, default="")),
@@ -274,4 +260,4 @@ class Model(object):
         """
         Returns the name for a class that should be used in Code
         """
-        return to_var_name(self.get_compact_id(c).replace(":", "_"))
+        return self.get_compact_id(c).replace(":", "_")

@@ -28,3 +28,5 @@ http://example.org/test-class: test-class
 http://example.org/test-class-required: test-class-required
 
 http://example.org/test-derived-class: test-derived-class
+
+http://example.org/aaa-derived-class: aaa-derived-class

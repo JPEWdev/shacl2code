@@ -149,6 +149,7 @@
         },
         "http_exampleorgparentclass_derived": {
             "oneOf": [
+                { "$ref": "#/$defs/http_exampleorgaaaderivedclass" },
                 { "$ref": "#/$defs/http_exampleorgtestclass" },
                 { "$ref": "#/$defs/http_exampleorgtestclassrequired" },
                 { "$ref": "#/$defs/http_exampleorgtestderivedclass" },
@@ -449,6 +450,9 @@
                                     }
                                 }
                             ]
+                        },
+                        "http://example.org/import": {
+                            "$ref": "#/$defs/prop_http_exampleorgtestclass_import_"
                         }
                     }
                 }
@@ -540,6 +544,9 @@
                     "pattern": "^foo\\d",
                     "type": "string"
         },
+        "prop_http_exampleorgtestclass_import_": {
+                    "type": "string"
+        },
         "http_exampleorgtestclassrequired": {
             "allOf": [
                 {
@@ -619,6 +626,33 @@
                 }
             ]
         },
+        "http_exampleorgaaaderivedclass": {
+            "allOf": [
+                {
+                    "properties": {
+                        "@id":{ "$ref": "#/$defs/anyRef" },
+                        "@type": { "const": "http://example.org/aaa-derived-class" }
+                    }
+                },
+                { "$ref": "#/$defs/http_exampleorgaaaderivedclass_props" }
+            ]
+        },
+        "http_exampleorgaaaderivedclass_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/http_exampleorgaaaderivedclass" },
+                { "$ref": "#/$defs/anyRef" }
+            ],
+            "unevaluatedProperties": false
+        },
+        "http_exampleorgaaaderivedclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/http_exampleorgparentclass_props" },
+                {
+                    "properties": {
+                    }
+                }
+            ]
+        },
         "anyRef": {
             "type": "string"
         },
@@ -662,7 +696,8 @@
                         "http://example.org/test-another-class",
                         "http://example.org/test-class",
                         "http://example.org/test-class-required",
-                        "http://example.org/test-derived-class"
+                        "http://example.org/test-derived-class",
+                        "http://example.org/aaa-derived-class"
                     ]
                 }
             },
@@ -682,7 +717,8 @@
                 { "$ref": "#/$defs/http_exampleorgtestanotherclass" },
                 { "$ref": "#/$defs/http_exampleorgtestclass" },
                 { "$ref": "#/$defs/http_exampleorgtestclassrequired" },
-                { "$ref": "#/$defs/http_exampleorgtestderivedclass" }
+                { "$ref": "#/$defs/http_exampleorgtestderivedclass" },
+                { "$ref": "#/$defs/http_exampleorgaaaderivedclass" }
             ]
         }
     }

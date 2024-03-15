@@ -6,6 +6,11 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix spdxs: <https://rdf.spdx.org/ns/schema#> .
 
+<aaa-derived-class> a rdf:Class, sh:NodeShape, owl:Class ;
+    rdfs:subClassOf <parent-class> ;
+    rdfs:comment "Derived class that sorts before the parent to test ordering"
+    .
+
 <parent-class> a rdfs:Class, sh:NodeShape, owl:Class ;
     rdfs:comment "The parent class" ;
     .
@@ -35,7 +40,7 @@
     [
         sh:datatype xsd:dateTime ;
         sh:path <test-class/datetime-scalar-prop> ;
-        sh:maxCount 1 
+        sh:maxCount 1
     ],
     [
         sh:datatype xsd:dateTime ;
@@ -102,12 +107,17 @@
         sh:pattern "^foo\\d" ;
         sh:path <test-class/regex> ;
         sh:maxCount 1
-        
+
     ],
     [
         sh:datatype xsd:string ;
         sh:pattern "^foo\\d" ;
         sh:path <test-class/regex-list> ;
+    ],
+    [
+        sh:datatype xsd:string ;
+        sh:path <import> ;
+        sh:maxCount 1
     ]
     .
 
@@ -143,7 +153,7 @@
 
 <test-class/string-list-no-datatype> a rdf:Property ;
     rdfs:comment "A string list property with no sh:datatype" ;
-    rdfs:range xsd:string 
+    rdfs:range xsd:string
     .
 
 <test-class/string-scalar-prop> a rdf:Property ;
@@ -193,7 +203,7 @@
 
 <test-class/anyuri-prop> a rdf:Property ;
     rdfs:comment "a URI" ;
-    rdfs:range xsd:anyURI 
+    rdfs:range xsd:anyURI
     .
 
 <test-class/boolean-prop> a rdf:Property ;
@@ -203,7 +213,7 @@
 
 <test-class/float-prop> a rdf:Property ;
     rdfs:comment "a float property" ;
-    rdfs:range xsd:decimal 
+    rdfs:range xsd:decimal
     .
 
 <test-class/class-prop> a rdf:Property ;
@@ -220,7 +230,7 @@
     rdfs:comment "A test-class list property" ;
     rdfs:range <test-class>
     .
-    
+
 <test-class/enum-prop> a rdf:Property ;
     rdfs:comment "A enum property" ;
     rdfs:range <enumType>
@@ -230,7 +240,7 @@
     rdfs:comment "A enum list property" ;
     rdfs:range <enumType>
     .
-        
+
 <test-class/enum-prop-no-class> a rdf:Property ;
     rdfs:comment "A enum property with no sh:class" ;
     rdfs:range <enumType>
@@ -243,6 +253,11 @@
 
 <test-class/regex-list> a rdf:Property ;
     rdfs:comment "A regex validated string list" ;
+    rdfs:range xsd:string
+    .
+
+<import> a rdf:Property ;
+    rdfs:comment "A property that is a keyword" ;
     rdfs:range xsd:string
     .
 
@@ -265,7 +280,7 @@
     .
 
 <enumType/non-named-indivdual> a <enumType> ;
-    rdfs:comment "This value is not a named individual and won't appear in the output" 
+    rdfs:comment "This value is not a named individual and won't appear in the output"
     .
 
 # Classes to test links
@@ -322,7 +337,7 @@
 <ref-optional-class> a rdf:Class, sh:NodeShape, owl:Class ;
     rdfs:subClassOf <link-class> ;
     rdfs:comment "A class with optional linking" ;
-    spdxs:referenceable "optional" 
+    spdxs:referenceable "optional"
     .
 
 <ref-yes-class> a rdf:Class, sh:NodeShape, owl:Class ;

@@ -25,9 +25,6 @@ TEST_MODEL = THIS_DIR / "data" / "model" / "test.ttl"
 
 TEST_CONTEXT = THIS_DIR / "data" / "model" / "test-context.json"
 
-SPDX3_MODEL = THIS_DIR / "data" / "model" / "spdx3.jsonld"
-
-SPDX3_CONTEXT = THIS_DIR / "data" / "model" / "spdx3-context.json"
 SPDX3_CONTEXT_URL = "https://spdx.github.io/spdx-3-model/context.json"
 
 
@@ -102,14 +99,6 @@ def import_test_context(test_context):
 @pytest.mark.parametrize(
     "args,expect",
     [
-        (
-            ["--input", SPDX3_MODEL],
-            "spdx3.py",
-        ),
-        (
-            ["--input", SPDX3_MODEL, "--context-url", SPDX3_CONTEXT, SPDX3_CONTEXT_URL],
-            "spdx3-context.py",
-        ),
         (
             ["--input", TEST_MODEL],
             "test.py",
@@ -752,6 +741,8 @@ def type_tests(name, *typ):
         ("testclassregex", "fooa", ValueError),
         ("testclassregex", "afoo1", ValueError),
         *type_tests("testclassregex", str),
+        # Property that is a keyword
+        ("import_", "foo", "foo"),
     ],
 )
 def test_scalar_prop_validation(import_test_context, prop, value, expect):

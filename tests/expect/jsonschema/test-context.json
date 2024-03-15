@@ -153,6 +153,7 @@
         },
         "parentclass_derived": {
             "oneOf": [
+                { "$ref": "#/$defs/aaaderivedclass" },
                 { "$ref": "#/$defs/testclass" },
                 { "$ref": "#/$defs/testclassrequired" },
                 { "$ref": "#/$defs/testderivedclass" },
@@ -453,6 +454,9 @@
                                     }
                                 }
                             ]
+                        },
+                        "import": {
+                            "$ref": "#/$defs/prop_testclass_import_"
                         }
                     }
                 }
@@ -544,6 +548,9 @@
                     "pattern": "^foo\\d",
                     "type": "string"
         },
+        "prop_testclass_import_": {
+                    "type": "string"
+        },
         "testclassrequired": {
             "allOf": [
                 {
@@ -623,6 +630,33 @@
                 }
             ]
         },
+        "aaaderivedclass": {
+            "allOf": [
+                {
+                    "properties": {
+                        "@id":{ "$ref": "#/$defs/anyRef" },
+                        "@type": { "const": "aaa-derived-class" }
+                    }
+                },
+                { "$ref": "#/$defs/aaaderivedclass_props" }
+            ]
+        },
+        "aaaderivedclass_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/aaaderivedclass" },
+                { "$ref": "#/$defs/anyRef" }
+            ],
+            "unevaluatedProperties": false
+        },
+        "aaaderivedclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/parentclass_props" },
+                {
+                    "properties": {
+                    }
+                }
+            ]
+        },
         "anyRef": {
             "type": "string"
         },
@@ -666,7 +700,8 @@
                         "test-another-class",
                         "test-class",
                         "test-class-required",
-                        "test-derived-class"
+                        "test-derived-class",
+                        "aaa-derived-class"
                     ]
                 }
             },
@@ -686,7 +721,8 @@
                 { "$ref": "#/$defs/testanotherclass" },
                 { "$ref": "#/$defs/testclass" },
                 { "$ref": "#/$defs/testclassrequired" },
-                { "$ref": "#/$defs/testderivedclass" }
+                { "$ref": "#/$defs/testderivedclass" },
+                { "$ref": "#/$defs/aaaderivedclass" }
             ]
         }
     }

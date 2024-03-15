@@ -1638,6 +1638,12 @@ class testclass(parentclass):
             ListProp(StringProp(pattern=r"^foo\d",)),
             iri="http://example.org/test-class/regex-list",
         )
+        # A property that is a keyword
+        self._add_property(
+            "import_",
+            StringProp(),
+            iri="http://example.org/import",
+        )
         self._set_init_props(**kwargs)
 
 
@@ -1682,6 +1688,19 @@ class testderivedclass(testclass):
 
 
 SHACLObject.DESERIALIZERS["http://example.org/test-derived-class"] = testderivedclass
+
+
+# Derived class that sorts before the parent to test ordering
+class aaaderivedclass(parentclass):
+    TYPE = "http://example.org/aaa-derived-class"
+    REFABLE = Refable.optional
+
+    def __init__(self, **kwargs):
+        super().__init__()
+        self._set_init_props(**kwargs)
+
+
+SHACLObject.DESERIALIZERS["http://example.org/aaa-derived-class"] = aaaderivedclass
 
 
 # Copyright (c) 2024 Joshua Watt

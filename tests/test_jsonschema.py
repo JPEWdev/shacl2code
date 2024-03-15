@@ -20,23 +20,12 @@ TEST_MODEL = THIS_DIR / "data" / "model" / "test.ttl"
 
 TEST_CONTEXT = THIS_DIR / "data" / "model" / "test-context.json"
 
-SPDX3_MODEL = DATA_DIR / "model" / "spdx3.jsonld"
-
-SPDX3_CONTEXT = DATA_DIR / "model" / "spdx3-context.json"
 SPDX3_CONTEXT_URL = "https://spdx.github.io/spdx-3-model/context.json"
 
 
 @pytest.mark.parametrize(
     "args,expect",
     [
-        (
-            ["--input", SPDX3_MODEL],
-            "spdx3.json",
-        ),
-        (
-            ["--input", SPDX3_MODEL, "--context-url", SPDX3_CONTEXT, SPDX3_CONTEXT_URL],
-            "spdx3-context.json",
-        ),
         (
             ["--input", TEST_MODEL],
             "test.json",

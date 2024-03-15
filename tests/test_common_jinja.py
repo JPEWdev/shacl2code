@@ -9,22 +9,22 @@ from pathlib import Path
 
 THIS_DIR = Path(__file__).parent
 
-SPDX3_MODEL = THIS_DIR / "data" / "model" / "spdx3.jsonld"
+TEST_MODEL = THIS_DIR / "data" / "model" / "test.ttl"
 ABORT_TEMPLATE = THIS_DIR / "data" / "abort.j2"
 BAD_ID_TEMPLATE = THIS_DIR / "data" / "bad-id.j2"
 
 
-def test_jinja_abort(tmpdir):
+def test_jinja_abort(tmp_path):
     """
     Tests that an abort in Jinja causes generation to fail
     """
-    outfile = tmpdir.join("spdx3.txt")
+    outfile = tmp_path / "out.txt"
     p = subprocess.run(
         [
             "shacl2code",
             "generate",
             "--input",
-            SPDX3_MODEL,
+            TEST_MODEL,
             "jinja",
             "--output",
             outfile,
@@ -40,17 +40,17 @@ def test_jinja_abort(tmpdir):
     assert "Test abort" in p.stderr
 
 
-def test_bad_id_get(tmpdir):
+def test_bad_id_get(tmp_path):
     """
     Tests that getting an ID that doens't exists fails
     """
-    outfile = tmpdir.join("spdx3.txt")
+    outfile = tmp_path / "out.txt"
     p = subprocess.run(
         [
             "shacl2code",
             "generate",
             "--input",
-            SPDX3_MODEL,
+            TEST_MODEL,
             "jinja",
             "--output",
             outfile,

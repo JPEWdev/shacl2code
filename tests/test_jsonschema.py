@@ -51,53 +51,6 @@ def test_schema():
     return json.loads(p.stdout)
 
 
-@pytest.fixture(scope="module")
-def spdx3_schema():
-    p = subprocess.run(
-        [
-            "shacl2code",
-            "generate",
-            "--input",
-            SPDX3_MODEL,
-        ]
-        + SPDX3_CONTEXT_ARGS
-        + [
-            "jsonschema",
-            "--output",
-            "-",
-        ],
-        check=True,
-        stdout=subprocess.PIPE,
-        encoding="utf-8",
-    )
-
-    return json.loads(p.stdout)
-
-
-@pytest.fixture(scope="module")
-def spdx3_schema_elided_lists():
-    p = subprocess.run(
-        [
-            "shacl2code",
-            "generate",
-            "--input",
-            SPDX3_MODEL,
-        ]
-        + SPDX3_CONTEXT_ARGS
-        + [
-            "jsonschema",
-            "--output",
-            "-",
-            "--allow-elided-lists",
-        ],
-        check=True,
-        stdout=subprocess.PIPE,
-        encoding="utf-8",
-    )
-
-    return json.loads(p.stdout)
-
-
 @pytest.mark.parametrize(
     "args,expect",
     [

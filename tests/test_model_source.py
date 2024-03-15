@@ -186,18 +186,16 @@ def test_generation_stdin_auto_format():
     assert p.returncode != 0
 
 
-def test_generation_url(http_server):
+def test_generation_url(model_server):
     """
     Tests that shacl2code generates output from a model provided in a URL
     """
-    shutil.copyfile(TEST_MODEL, os.path.join(http_server.document_root, "model.ttl"))
-
     p = subprocess.run(
         [
             "shacl2code",
             "generate",
             "--input",
-            f"{http_server.uri}/model.ttl",
+            f"{model_server}/test.ttl",
             "jinja",
             "--output",
             "-",
@@ -263,11 +261,7 @@ def test_context_file_missing_url():
     assert p.returncode != 0, "Process exited successfully when an error was expected"
 
 
-def test_context_url(http_server):
-    shutil.copyfile(
-        TEST_CONTEXT, os.path.join(http_server.document_root, "context.json")
-    )
-
+def test_context_url(model_server):
     p = subprocess.run(
         [
             "shacl2code",
@@ -275,7 +269,7 @@ def test_context_url(http_server):
             "--input",
             TEST_MODEL,
             "--context-url",
-            f"{http_server.uri}/context.json",
+            f"{model_server}/test-context.json",
             TEST_CONTEXT_URL,
             "jinja",
             "--output",

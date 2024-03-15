@@ -17,6 +17,13 @@ THIS_DIR = THIS_FILE.parent
 MODEL_DIR = THIS_DIR / "data" / "model"
 
 
+@pytest.fixture
+def http_server():
+    with SimpleHTTPTestServer() as s:
+        s.start()
+        yield s
+
+
 @pytest.fixture(scope="session")
 def model_server():
     with SimpleHTTPTestServer() as s:

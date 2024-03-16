@@ -435,6 +435,9 @@ class SHACLObject(object):
                 f"'{iri}' is already defined for '{self.__class__.__name__}'"
             )
 
+        while hasattr(self, pyname):
+            pyname = pyname + "_"
+
         self._obj_iris[pyname] = iri
         self._obj_properties[iri] = (prop, min_count, max_count, pyname)
         self._obj_data[iri] = prop.init()
@@ -1537,6 +1540,12 @@ class http_example_org_test_class(http_example_org_parent_class):
             "import_",
             StringProp(),
             iri="http://example.org/import",
+        )
+        # A property that conflicts with an existing SHACLObject property
+        self._add_property(
+            "encode",
+            StringProp(),
+            iri="http://example.org/encode",
         )
         self._set_init_props(**kwargs)
 

@@ -457,6 +457,9 @@
                         },
                         "import": {
                             "$ref": "#/$defs/prop_testclass_import_"
+                        },
+                        "encode": {
+                            "$ref": "#/$defs/prop_testclass_encode"
                         }
                     }
                 }
@@ -549,6 +552,9 @@
                     "type": "string"
         },
         "prop_testclass_import_": {
+                    "type": "string"
+        },
+        "prop_testclass_encode": {
                     "type": "string"
         },
         "testclassrequired": {

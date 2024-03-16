@@ -118,6 +118,11 @@
         sh:datatype xsd:string ;
         sh:path <import> ;
         sh:maxCount 1
+    ],
+    [
+        sh:datatype xsd:string ;
+        sh:path <encode> ;
+        sh:maxCount 1
     ]
     .
 
@@ -258,6 +263,11 @@
 
 <import> a rdf:Property ;
     rdfs:comment "A property that is a keyword" ;
+    rdfs:range xsd:string
+    .
+
+<encode> a rdf:Property ;
+    rdfs:comment "A property that conflicts with an existing SHACLObject property" ;
     rdfs:range xsd:string
     .
 

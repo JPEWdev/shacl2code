@@ -435,6 +435,9 @@ class SHACLObject(object):
                 f"'{iri}' is already defined for '{self.__class__.__name__}'"
             )
 
+        while hasattr(self, pyname):
+            pyname = pyname + "_"
+
         self._obj_iris[pyname] = iri
         self._obj_properties[iri] = (prop, min_count, max_count, pyname)
         self._obj_data[iri] = prop.init()

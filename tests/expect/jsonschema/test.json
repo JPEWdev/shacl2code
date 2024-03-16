@@ -453,6 +453,9 @@
                         },
                         "http://example.org/import": {
                             "$ref": "#/$defs/prop_http_exampleorgtestclass_import_"
+                        },
+                        "http://example.org/encode": {
+                            "$ref": "#/$defs/prop_http_exampleorgtestclass_encode"
                         }
                     }
                 }
@@ -545,6 +548,9 @@
                     "type": "string"
         },
         "prop_http_exampleorgtestclass_import_": {
+                    "type": "string"
+        },
+        "prop_http_exampleorgtestclass_encode": {
                     "type": "string"
         },
         "http_exampleorgtestclassrequired": {

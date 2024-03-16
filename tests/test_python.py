@@ -747,6 +747,10 @@ def type_tests(name, *typ):
         *type_tests("test_class_regex", str),
         # Property that is a keyword
         ("import_", "foo", "foo"),
+        # A property that conflicts with an existing attribute
+        ("encode_", "foo", "foo"),
+        # Verify that existing attributes cannot be overwritten
+        ("encode", "foo", AttributeError),
     ],
 )
 def test_scalar_prop_validation(import_test_context, prop, value, expect):

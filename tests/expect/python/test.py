@@ -1240,7 +1240,7 @@ CONTEXT_URLS = [
 
 # ENUMERATIONS
 # An enumerated type
-class http_exampleorgenumType(EnumProp):
+class http_example_org_enumType(EnumProp):
     TYPE = "http://example.org/enumType"
     valid_values = [
         ("bar", "http://example.org/enumType/bar"),
@@ -1257,7 +1257,7 @@ class http_exampleorgenumType(EnumProp):
 
 # CLASSES
 # A class with an ID alias
-class http_exampleorgidpropclass(SHACLObject):
+class http_example_org_id_prop_class(SHACLObject):
     TYPE = "http://example.org/id-prop-class"
     REFABLE = Refable.optional
     ID_ALIAS = "testid"
@@ -1267,11 +1267,11 @@ class http_exampleorgidpropclass(SHACLObject):
         self._set_init_props(**kwargs)
 
 
-SHACLObject.DESERIALIZERS["http://example.org/id-prop-class"] = http_exampleorgidpropclass
+SHACLObject.DESERIALIZERS["http://example.org/id-prop-class"] = http_example_org_id_prop_class
 
 
 # A class to test links
-class http_exampleorglinkclass(SHACLObject):
+class http_example_org_link_class(SHACLObject):
     TYPE = "http://example.org/link-class"
     REFABLE = Refable.optional
 
@@ -1279,30 +1279,30 @@ class http_exampleorglinkclass(SHACLObject):
         super().__init__()
         # A link-class property
         self._add_property(
-            "prop",
-            ObjectProp(http_exampleorglinkclass, False),
-            iri="http://example.org/link-class-prop",
+            "link_prop",
+            ObjectProp(http_example_org_link_class, False),
+            iri="http://example.org/link-class-link-prop",
         )
         # A link-class property with no sh:class
         self._add_property(
-            "propnoclass",
-            ObjectProp(http_exampleorglinkclass, False),
-            iri="http://example.org/link-class-prop-no-class",
+            "link_prop_no_class",
+            ObjectProp(http_example_org_link_class, False),
+            iri="http://example.org/link-class-link-prop-no-class",
         )
         # A link-class list property
         self._add_property(
-            "listprop",
-            ListProp(ObjectProp(http_exampleorglinkclass, False)),
-            iri="http://example.org/link-class-list-prop",
+            "link_list_prop",
+            ListProp(ObjectProp(http_example_org_link_class, False)),
+            iri="http://example.org/link-class-link-list-prop",
         )
         self._set_init_props(**kwargs)
 
 
-SHACLObject.DESERIALIZERS["http://example.org/link-class"] = http_exampleorglinkclass
+SHACLObject.DESERIALIZERS["http://example.org/link-class"] = http_example_org_link_class
 
 
 # A class derived from link-class
-class http_exampleorglinkderivedclass(http_exampleorglinkclass):
+class http_example_org_link_derived_class(http_example_org_link_class):
     TYPE = "http://example.org/link-derived-class"
     REFABLE = Refable.optional
 
@@ -1311,11 +1311,11 @@ class http_exampleorglinkderivedclass(http_exampleorglinkclass):
         self._set_init_props(**kwargs)
 
 
-SHACLObject.DESERIALIZERS["http://example.org/link-derived-class"] = http_exampleorglinkderivedclass
+SHACLObject.DESERIALIZERS["http://example.org/link-derived-class"] = http_example_org_link_derived_class
 
 
 # The parent class
-class http_exampleorgparentclass(SHACLObject):
+class http_example_org_parent_class(SHACLObject):
     TYPE = "http://example.org/parent-class"
     REFABLE = Refable.optional
 
@@ -1324,11 +1324,11 @@ class http_exampleorgparentclass(SHACLObject):
         self._set_init_props(**kwargs)
 
 
-SHACLObject.DESERIALIZERS["http://example.org/parent-class"] = http_exampleorgparentclass
+SHACLObject.DESERIALIZERS["http://example.org/parent-class"] = http_example_org_parent_class
 
 
 # A class that must always be linked
-class http_exampleorgrefalwaysclass(http_exampleorglinkclass):
+class http_example_org_ref_always_class(http_example_org_link_class):
     TYPE = "http://example.org/ref-always-class"
     REFABLE = Refable.always
 
@@ -1337,11 +1337,11 @@ class http_exampleorgrefalwaysclass(http_exampleorglinkclass):
         self._set_init_props(**kwargs)
 
 
-SHACLObject.DESERIALIZERS["http://example.org/ref-always-class"] = http_exampleorgrefalwaysclass
+SHACLObject.DESERIALIZERS["http://example.org/ref-always-class"] = http_example_org_ref_always_class
 
 
 # A class with local linking
-class http_exampleorgreflocalclass(http_exampleorglinkclass):
+class http_example_org_ref_local_class(http_example_org_link_class):
     TYPE = "http://example.org/ref-local-class"
     REFABLE = Refable.local
 
@@ -1350,11 +1350,11 @@ class http_exampleorgreflocalclass(http_exampleorglinkclass):
         self._set_init_props(**kwargs)
 
 
-SHACLObject.DESERIALIZERS["http://example.org/ref-local-class"] = http_exampleorgreflocalclass
+SHACLObject.DESERIALIZERS["http://example.org/ref-local-class"] = http_example_org_ref_local_class
 
 
 # A class with no linking
-class http_exampleorgrefnoclass(http_exampleorglinkclass):
+class http_example_org_ref_no_class(http_example_org_link_class):
     TYPE = "http://example.org/ref-no-class"
     REFABLE = Refable.no
 
@@ -1363,11 +1363,11 @@ class http_exampleorgrefnoclass(http_exampleorglinkclass):
         self._set_init_props(**kwargs)
 
 
-SHACLObject.DESERIALIZERS["http://example.org/ref-no-class"] = http_exampleorgrefnoclass
+SHACLObject.DESERIALIZERS["http://example.org/ref-no-class"] = http_example_org_ref_no_class
 
 
 # A class with optional linking
-class http_exampleorgrefoptionalclass(http_exampleorglinkclass):
+class http_example_org_ref_optional_class(http_example_org_link_class):
     TYPE = "http://example.org/ref-optional-class"
     REFABLE = Refable.optional
 
@@ -1376,11 +1376,11 @@ class http_exampleorgrefoptionalclass(http_exampleorglinkclass):
         self._set_init_props(**kwargs)
 
 
-SHACLObject.DESERIALIZERS["http://example.org/ref-optional-class"] = http_exampleorgrefoptionalclass
+SHACLObject.DESERIALIZERS["http://example.org/ref-optional-class"] = http_example_org_ref_optional_class
 
 
 # A class that must always have external reference
-class http_exampleorgrefyesclass(http_exampleorglinkclass):
+class http_example_org_ref_yes_class(http_example_org_link_class):
     TYPE = "http://example.org/ref-yes-class"
     REFABLE = Refable.yes
 
@@ -1389,11 +1389,11 @@ class http_exampleorgrefyesclass(http_exampleorglinkclass):
         self._set_init_props(**kwargs)
 
 
-SHACLObject.DESERIALIZERS["http://example.org/ref-yes-class"] = http_exampleorgrefyesclass
+SHACLObject.DESERIALIZERS["http://example.org/ref-yes-class"] = http_example_org_ref_yes_class
 
 
 # Another class
-class http_exampleorgtestanotherclass(SHACLObject):
+class http_example_org_test_another_class(SHACLObject):
     TYPE = "http://example.org/test-another-class"
     REFABLE = Refable.optional
 
@@ -1402,11 +1402,11 @@ class http_exampleorgtestanotherclass(SHACLObject):
         self._set_init_props(**kwargs)
 
 
-SHACLObject.DESERIALIZERS["http://example.org/test-another-class"] = http_exampleorgtestanotherclass
+SHACLObject.DESERIALIZERS["http://example.org/test-another-class"] = http_example_org_test_another_class
 
 
 # The test class
-class http_exampleorgtestclass(http_exampleorgparentclass):
+class http_example_org_test_class(http_example_org_parent_class):
     TYPE = "http://example.org/test-class"
     REFABLE = Refable.optional
 
@@ -1414,19 +1414,19 @@ class http_exampleorgtestclass(http_exampleorgparentclass):
         super().__init__()
         # A string list property
         self._add_property(
-            "stringlistprop",
+            "string_list_prop",
             ListProp(StringProp()),
             iri="http://example.org/test-class/string-list-prop",
         )
         # A string list property with no sh:datatype
         self._add_property(
-            "stringlistnodatatype",
+            "string_list_no_datatype",
             ListProp(StringProp()),
             iri="http://example.org/test-class/string-list-no-datatype",
         )
         # A scalar string propery
         self._add_property(
-            "stringscalarprop",
+            "string_scalar_prop",
             StringProp(),
             iri="http://example.org/test-class/string-scalar-prop",
         )
@@ -1438,86 +1438,86 @@ class http_exampleorgtestclass(http_exampleorgparentclass):
         )
         # A scalar datetime property
         self._add_property(
-            "datetimescalarprop",
+            "datetime_scalar_prop",
             DateTimeProp(),
             iri="http://example.org/test-class/datetime-scalar-prop",
         )
         # A datetime list property
         self._add_property(
-            "datetimelistprop",
+            "datetime_list_prop",
             ListProp(DateTimeProp()),
             iri="http://example.org/test-class/datetime-list-prop",
         )
         # A positive integer
         self._add_property(
-            "positiveintegerprop",
+            "positive_integer_prop",
             PositiveIntegerProp(),
             iri="http://example.org/test-class/positive-integer-prop",
         )
         # a non-negative integer
         self._add_property(
-            "nonnegativeintegerprop",
+            "nonnegative_integer_prop",
             NonNegativeIntegerProp(),
             iri="http://example.org/test-class/nonnegative-integer-prop",
         )
         # a non-negative integer
         self._add_property(
-            "integerprop",
+            "integer_prop",
             IntegerProp(),
             iri="http://example.org/test-class/integer-prop",
         )
         # a URI
         self._add_property(
-            "anyuriprop",
+            "anyuri_prop",
             AnyURIProp(),
             iri="http://example.org/test-class/anyuri-prop",
         )
         # a boolean property
         self._add_property(
-            "booleanprop",
+            "boolean_prop",
             BooleanProp(),
             iri="http://example.org/test-class/boolean-prop",
         )
         # a float property
         self._add_property(
-            "floatprop",
+            "float_prop",
             FloatProp(),
             iri="http://example.org/test-class/float-prop",
         )
         # A test-class property
         self._add_property(
-            "classprop",
-            ObjectProp(http_exampleorgtestclass, False),
+            "class_prop",
+            ObjectProp(http_example_org_test_class, False),
             iri="http://example.org/test-class/class-prop",
         )
         # A test-class property with no sh:class
         self._add_property(
-            "classpropnoclass",
-            ObjectProp(http_exampleorgtestclass, False),
+            "class_prop_no_class",
+            ObjectProp(http_example_org_test_class, False),
             iri="http://example.org/test-class/class-prop-no-class",
         )
         # A test-class list property
         self._add_property(
-            "classlistprop",
-            ListProp(ObjectProp(http_exampleorgtestclass, False)),
+            "class_list_prop",
+            ListProp(ObjectProp(http_example_org_test_class, False)),
             iri="http://example.org/test-class/class-list-prop",
         )
         # A enum property
         self._add_property(
-            "enumprop",
-            http_exampleorgenumType(),
+            "enum_prop",
+            http_example_org_enumType(),
             iri="http://example.org/test-class/enum-prop",
         )
         # A enum list property
         self._add_property(
-            "enumlistprop",
-            ListProp(http_exampleorgenumType()),
+            "enum_list_prop",
+            ListProp(http_example_org_enumType()),
             iri="http://example.org/test-class/enum-list-prop",
         )
         # A enum property with no sh:class
         self._add_property(
-            "enumpropnoclass",
-            http_exampleorgenumType(),
+            "enum_prop_no_class",
+            http_example_org_enumType(),
             iri="http://example.org/test-class/enum-prop-no-class",
         )
         # A regex validated string
@@ -1528,7 +1528,7 @@ class http_exampleorgtestclass(http_exampleorgparentclass):
         )
         # A regex validated string list
         self._add_property(
-            "regexlist",
+            "regex_list",
             ListProp(StringProp(pattern=r"^foo\d",)),
             iri="http://example.org/test-class/regex-list",
         )
@@ -1541,10 +1541,10 @@ class http_exampleorgtestclass(http_exampleorgparentclass):
         self._set_init_props(**kwargs)
 
 
-SHACLObject.DESERIALIZERS["http://example.org/test-class"] = http_exampleorgtestclass
+SHACLObject.DESERIALIZERS["http://example.org/test-class"] = http_example_org_test_class
 
 
-class http_exampleorgtestclassrequired(http_exampleorgtestclass):
+class http_example_org_test_class_required(http_example_org_test_class):
     TYPE = "http://example.org/test-class-required"
     REFABLE = Refable.optional
 
@@ -1552,14 +1552,14 @@ class http_exampleorgtestclassrequired(http_exampleorgtestclass):
         super().__init__()
         # A required scalar string property
         self._add_property(
-            "requiredstringscalarprop",
+            "required_string_scalar_prop",
             StringProp(),
             iri="http://example.org/test-class/required-string-scalar-prop",
             min_count=1,
         )
         # A required string list property
         self._add_property(
-            "requiredstringlistprop",
+            "required_string_list_prop",
             ListProp(StringProp()),
             iri="http://example.org/test-class/required-string-list-prop",
             max_count=2,
@@ -1568,11 +1568,11 @@ class http_exampleorgtestclassrequired(http_exampleorgtestclass):
         self._set_init_props(**kwargs)
 
 
-SHACLObject.DESERIALIZERS["http://example.org/test-class-required"] = http_exampleorgtestclassrequired
+SHACLObject.DESERIALIZERS["http://example.org/test-class-required"] = http_example_org_test_class_required
 
 
 # A class derived from test-class
-class http_exampleorgtestderivedclass(http_exampleorgtestclass):
+class http_example_org_test_derived_class(http_example_org_test_class):
     TYPE = "http://example.org/test-derived-class"
     REFABLE = Refable.optional
 
@@ -1581,11 +1581,11 @@ class http_exampleorgtestderivedclass(http_exampleorgtestclass):
         self._set_init_props(**kwargs)
 
 
-SHACLObject.DESERIALIZERS["http://example.org/test-derived-class"] = http_exampleorgtestderivedclass
+SHACLObject.DESERIALIZERS["http://example.org/test-derived-class"] = http_example_org_test_derived_class
 
 
 # Derived class that sorts before the parent to test ordering
-class http_exampleorgaaaderivedclass(http_exampleorgparentclass):
+class http_example_org_aaa_derived_class(http_example_org_parent_class):
     TYPE = "http://example.org/aaa-derived-class"
     REFABLE = Refable.optional
 
@@ -1594,7 +1594,7 @@ class http_exampleorgaaaderivedclass(http_exampleorgparentclass):
         self._set_init_props(**kwargs)
 
 
-SHACLObject.DESERIALIZERS["http://example.org/aaa-derived-class"] = http_exampleorgaaaderivedclass
+SHACLObject.DESERIALIZERS["http://example.org/aaa-derived-class"] = http_example_org_aaa_derived_class
 
 
 # Copyright (c) 2024 Joshua Watt

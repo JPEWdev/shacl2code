@@ -84,18 +84,18 @@
                 { "$ref": "#/$defs/SHACLClass" },
                 {
                     "properties": {
-                        "link-class-prop": {
-                            "$ref": "#/$defs/prop_linkclass_linkclassprop"
+                        "link-class-link-prop": {
+                            "$ref": "#/$defs/prop_linkclass_linkclasslinkprop"
                         },
-                        "link-class-prop-no-class": {
-                            "$ref": "#/$defs/prop_linkclass_linkclasspropnoclass"
+                        "link-class-link-prop-no-class": {
+                            "$ref": "#/$defs/prop_linkclass_linkclasslinkpropnoclass"
                         },
-                        "link-class-list-prop": {
+                        "link-class-link-list-prop": {
                             "oneOf": [
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_linkclass_linkclasslistprop"
+                                        "$ref": "#/$defs/prop_linkclass_linkclasslinklistprop"
                                     }
                                 }
                             ]
@@ -104,13 +104,13 @@
                 }
             ]
         },
-        "prop_linkclass_linkclassprop": {
+        "prop_linkclass_linkclasslinkprop": {
                 "$ref": "#/$defs/linkclass_derived"
         },
-        "prop_linkclass_linkclasspropnoclass": {
+        "prop_linkclass_linkclasslinkpropnoclass": {
                 "$ref": "#/$defs/linkclass_derived"
         },
-        "prop_linkclass_linkclasslistprop": {
+        "prop_linkclass_linkclasslinklistprop": {
                 "$ref": "#/$defs/linkclass_derived"
         },
         "linkderivedclass": {

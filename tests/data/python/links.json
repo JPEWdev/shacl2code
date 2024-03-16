@@ -4,9 +4,9 @@
         {
             "@id": "http://serialize.example.com/self",
             "@type": "link-class",
-            "link-class-prop": "http://serialize.example.com/self",
-            "link-class-prop-no-class": "http://serialize.example.com/self",
-            "link-class-list-prop": [
+            "link-class-link-prop": "http://serialize.example.com/self",
+            "link-class-link-prop-no-class": "http://serialize.example.com/self",
+            "link-class-link-list-prop": [
                 "http://serialize.example.com/self",
                 "http://serialize.example.com/self"
             ]
@@ -14,9 +14,9 @@
         {
             "@id": "http://serialize.example.com/self-derived",
             "@type": "link-derived-class",
-            "link-class-prop": "http://serialize.example.com/self-derived",
-            "link-class-prop-no-class": "http://serialize.example.com/self-derived",
-            "link-class-list-prop": [
+            "link-class-link-prop": "http://serialize.example.com/self-derived",
+            "link-class-link-prop-no-class": "http://serialize.example.com/self-derived",
+            "link-class-link-list-prop": [
                 "http://serialize.example.com/self-derived",
                 "http://serialize.example.com/self-derived"
             ]
@@ -24,9 +24,9 @@
         {
             "@id": "http://serialize.example.com/base-to-derived",
             "@type": "link-class",
-            "link-class-prop": "http://serialize.example.com/self-derived",
-            "link-class-prop-no-class": "http://serialize.example.com/self-derived",
-            "link-class-list-prop": [
+            "link-class-link-prop": "http://serialize.example.com/self-derived",
+            "link-class-link-prop-no-class": "http://serialize.example.com/self-derived",
+            "link-class-link-list-prop": [
                 "http://serialize.example.com/self-derived",
                 "http://serialize.example.com/self-derived"
             ]
@@ -34,9 +34,9 @@
         {
             "@id": "http://serialize.example.com/derived-to-base",
             "@type": "link-derived-class",
-            "link-class-prop": "http://serialize.example.com/self",
-            "link-class-prop-no-class": "http://serialize.example.com/self",
-            "link-class-list-prop": [
+            "link-class-link-prop": "http://serialize.example.com/self",
+            "link-class-link-prop-no-class": "http://serialize.example.com/self",
+            "link-class-link-list-prop": [
                 "http://serialize.example.com/self",
                 "http://serialize.example.com/self"
             ]
@@ -52,9 +52,9 @@
         {
             "@id": "http://serialize.example.com/base-to-blank-base",
             "@type": "link-class",
-            "link-class-prop": "_:blank-base",
-            "link-class-prop-no-class": "_:blank-base",
-            "link-class-list-prop": [
+            "link-class-link-prop": "_:blank-base",
+            "link-class-link-prop-no-class": "_:blank-base",
+            "link-class-link-list-prop": [
                 "_:blank-base",
                 "_:blank-base"
             ]
@@ -62,9 +62,9 @@
         {
             "@id": "http://serialize.example.com/base-to-blank-derived",
             "@type": "link-class",
-            "link-class-prop": "_:blank-derived",
-            "link-class-prop-no-class": "_:blank-derived",
-            "link-class-list-prop": [
+            "link-class-link-prop": "_:blank-derived",
+            "link-class-link-prop-no-class": "_:blank-derived",
+            "link-class-link-list-prop": [
                 "_:blank-derived",
                 "_:blank-derived"
             ]
@@ -72,9 +72,9 @@
         {
             "@id": "http://serialize.example.com/derived-to-blank-base",
             "@type": "link-derived-class",
-            "link-class-prop": "_:blank-base",
-            "link-class-prop-no-class": "_:blank-base",
-            "link-class-list-prop": [
+            "link-class-link-prop": "_:blank-base",
+            "link-class-link-prop-no-class": "_:blank-base",
+            "link-class-link-list-prop": [
                 "_:blank-base",
                 "_:blank-base"
             ]
@@ -82,9 +82,9 @@
         {
             "@id": "http://serialize.example.com/derived-to-blank-derived",
             "@type": "link-derived-class",
-            "link-class-prop": "_:blank-derived",
-            "link-class-prop-no-class": "_:blank-derived",
-            "link-class-list-prop": [
+            "link-class-link-prop": "_:blank-derived",
+            "link-class-link-prop-no-class": "_:blank-derived",
+            "link-class-link-list-prop": [
                 "_:blank-derived",
                 "_:blank-derived"
             ]

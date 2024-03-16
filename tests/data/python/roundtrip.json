@@ -2,8 +2,17 @@
     "@context": "@CONTEXT_URL@",
     "@graph": [
         {
-            "@id": "http://serialize.example.com/derived",
-            "@type": "test-derived-class"
+            "@type": "link-class",
+            "link-class-link-prop": "http://serialize.example.com/link-derived-target",
+            "link-class-link-prop-no-class": "http://serialize.example.com/link-derived-target",
+            "link-class-link-list-prop": [
+                "http://serialize.example.com/link-derived-target",
+                "http://serialize.example.com/link-derived-target"
+            ]
+        },
+        {
+            "@id": "http://serialize.example.com/link-derived-target",
+            "@type": "link-derived-class"
         },
         {
             "@type": "test-class-required",
@@ -35,10 +44,10 @@
             "test-class/integer-prop": -1,
             "test-class/boolean-prop": true,
             "test-class/float-prop": "0.1",
-            "test-class/class-prop": "http://serialize.example.com/derived",
-            "test-class/class-prop-no-class": "http://serialize.example.com/derived",
+            "test-class/class-prop": "http://serialize.example.com/test-derived",
+            "test-class/class-prop-no-class": "http://serialize.example.com/test-derived",
             "test-class/class-list-prop": [
-                "http://serialize.example.com/derived",
+                "http://serialize.example.com/test-derived",
                 "http://serialize.example.com/test"
             ],
             "test-class/enum-prop": "enumType/foo",
@@ -46,6 +55,10 @@
             "test-class/regex": "foo1",
             "test-class/regex-list": ["foo2", "foo3"],
             "import": "foo"
+        },
+        {
+            "@id": "http://serialize.example.com/test-derived",
+            "@type": "test-derived-class"
         }
     ]
 }

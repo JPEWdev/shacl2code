@@ -110,7 +110,9 @@ class Model(object):
                         self.model.value(
                             value_iri,
                             RDFS.label,
-                            default=remove_common_prefix(value_iri, cls_iri),
+                            default=remove_common_prefix(value_iri, cls_iri).lstrip(
+                                "/"
+                            ),
                         ),
                     ),
                     comment=str(self.model.value(value_iri, RDFS.comment, default="")),
@@ -173,7 +175,7 @@ class Model(object):
                         SH.name,
                         default=self.get_compact_id(
                             prop,
-                            fallback=remove_common_prefix(prop, cls_iri),
+                            fallback=remove_common_prefix(prop, cls_iri).lstrip("/"),
                         ),
                     ),
                     path=str(prop),

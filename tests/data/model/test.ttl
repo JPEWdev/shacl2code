@@ -289,16 +289,16 @@
     rdfs:comment "A class to test links" ;
     sh:property [
         sh:class <link-class> ;
-        sh:path <link-class-prop> ;
+        sh:path <link-class-link-prop> ;
         sh:maxCount 1
     ],
     [
-        sh:path <link-class-prop-no-class> ;
+        sh:path <link-class-link-prop-no-class> ;
         sh:maxCount 1
     ],
     [
         sh:class <link-class> ;
-        sh:path <link-class-list-prop> ;
+        sh:path <link-class-link-list-prop> ;
     ]
     .
 
@@ -307,17 +307,17 @@
     rdfs:comment "A class derived from link-class"
     .
 
-<link-class-prop> a rdf:Property ;
+<link-class-link-prop> a rdf:Property ;
     rdfs:comment "A link-class property" ;
     rdfs:range <link-class>
     .
 
-<link-class-prop-no-class> a rdf:Property ;
+<link-class-link-prop-no-class> a rdf:Property ;
     rdfs:comment "A link-class property with no sh:class" ;
     rdfs:range <link-class>
     .
 
-<link-class-list-prop> a rdf:Property ;
+<link-class-link-list-prop> a rdf:Property ;
     rdfs:comment "A link-class list property" ;
     rdfs:range <link-class>
     .

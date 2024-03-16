@@ -80,18 +80,18 @@
                 { "$ref": "#/$defs/SHACLClass" },
                 {
                     "properties": {
-                        "http://example.org/link-class-prop": {
-                            "$ref": "#/$defs/prop_http_exampleorglinkclass_prop"
+                        "http://example.org/link-class-link-prop": {
+                            "$ref": "#/$defs/prop_http_exampleorglinkclass_linkprop"
                         },
-                        "http://example.org/link-class-prop-no-class": {
-                            "$ref": "#/$defs/prop_http_exampleorglinkclass_propnoclass"
+                        "http://example.org/link-class-link-prop-no-class": {
+                            "$ref": "#/$defs/prop_http_exampleorglinkclass_linkpropnoclass"
                         },
-                        "http://example.org/link-class-list-prop": {
+                        "http://example.org/link-class-link-list-prop": {
                             "oneOf": [
                                 {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/$defs/prop_http_exampleorglinkclass_listprop"
+                                        "$ref": "#/$defs/prop_http_exampleorglinkclass_linklistprop"
                                     }
                                 }
                             ]
@@ -100,13 +100,13 @@
                 }
             ]
         },
-        "prop_http_exampleorglinkclass_prop": {
+        "prop_http_exampleorglinkclass_linkprop": {
                 "$ref": "#/$defs/http_exampleorglinkclass_derived"
         },
-        "prop_http_exampleorglinkclass_propnoclass": {
+        "prop_http_exampleorglinkclass_linkpropnoclass": {
                 "$ref": "#/$defs/http_exampleorglinkclass_derived"
         },
-        "prop_http_exampleorglinkclass_listprop": {
+        "prop_http_exampleorglinkclass_linklistprop": {
                 "$ref": "#/$defs/http_exampleorglinkclass_derived"
         },
         "http_exampleorglinkderivedclass": {

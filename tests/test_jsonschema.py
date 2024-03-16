@@ -163,7 +163,7 @@ def ref_tests(name, none, blank, iri, inline):
             {
                 "@context": CONTEXT,
                 "@type": "link-class",
-                "link-class-prop": {
+                "link-class-link-prop": {
                     "@type": name,
                 },
             },
@@ -181,7 +181,7 @@ def ref_tests(name, none, blank, iri, inline):
             {
                 "@context": CONTEXT,
                 "@type": "link-class",
-                "link-class-prop": {
+                "link-class-link-prop": {
                     "@type": name,
                     "@id": "_:blank",
                 },
@@ -200,7 +200,7 @@ def ref_tests(name, none, blank, iri, inline):
             {
                 "@context": CONTEXT,
                 "@type": "link-class",
-                "link-class-prop": {
+                "link-class-link-prop": {
                     "@type": name,
                     "@id": "http://example.com/name",
                 },
@@ -277,7 +277,7 @@ def ref_tests(name, none, blank, iri, inline):
                 "@graph": [
                     {
                         "@type": "link-class",
-                        "link-class-prop": {
+                        "link-class-link-prop": {
                             "@type": "link-class",
                         },
                     }
@@ -292,7 +292,7 @@ def ref_tests(name, none, blank, iri, inline):
                 "@graph": [
                     {
                         "@type": "link-class",
-                        "link-class-prop": {
+                        "link-class-link-prop": {
                             "@type": "link-derived-class",
                         },
                     }
@@ -307,7 +307,7 @@ def ref_tests(name, none, blank, iri, inline):
                 "@graph": [
                     {
                         "@type": "link-derived-class",
-                        "link-class-prop": {
+                        "link-class-link-prop": {
                             "@type": "link-class",
                         },
                     }
@@ -322,7 +322,7 @@ def ref_tests(name, none, blank, iri, inline):
                 "@graph": [
                     {
                         "@type": "link-derived-class",
-                        "link-class-prop": {
+                        "link-class-link-prop": {
                             "@type": "link-derived-class",
                         },
                     }
@@ -337,7 +337,7 @@ def ref_tests(name, none, blank, iri, inline):
                 "@graph": [
                     {
                         "@type": "link-class",
-                        "link-class-prop": "http://serialize.example.org/test",
+                        "link-class-link-prop": "http://serialize.example.org/test",
                     }
                 ],
             },
@@ -350,7 +350,7 @@ def ref_tests(name, none, blank, iri, inline):
                 "@graph": [
                     {
                         "@type": "link-class",
-                        "link-class-prop": {
+                        "link-class-link-prop": {
                             "@type": "test-another-class",
                         },
                     }

@@ -296,12 +296,12 @@ def test_links(import_test_context, name, expect):
         deserializer = model.JSONLDDeserializer()
         d = ObjectSet(*deserializer.read(f))
 
-    c = d.get_obj(name, model.linkclass)
-    link = d.get_obj(expect, model.linkclass)
+    c = d.get_obj(name, model.link_class)
+    link = d.get_obj(expect, model.link_class)
 
-    assert c.linkclassprop is link
-    assert c.linkclasspropnoclass is link
-    assert c.linkclasslistprop == [link, link]
+    assert c.link_class_link_prop is link
+    assert c.link_class_link_prop_no_class is link
+    assert c.link_class_link_list_prop == [link, link]
 
 
 @pytest.mark.parametrize(
@@ -309,19 +309,19 @@ def test_links(import_test_context, name, expect):
     [
         (
             "http://serialize.example.com/base-to-blank-base",
-            "linkclass",
+            "link_class",
         ),
         (
             "http://serialize.example.com/base-to-blank-derived",
-            "linkderivedclass",
+            "link_derived_class",
         ),
         (
             "http://serialize.example.com/derived-to-blank-base",
-            "linkclass",
+            "link_class",
         ),
         (
             "http://serialize.example.com/derived-to-blank-derived",
-            "linkderivedclass",
+            "link_derived_class",
         ),
     ],
 )
@@ -332,39 +332,39 @@ def test_blank_links(import_test_context, name, cls):
         deserializer = model.JSONLDDeserializer()
         d = ObjectSet(*deserializer.read(f))
 
-    c = d.get_obj(name, model.linkclass)
+    c = d.get_obj(name, model.link_class)
 
-    expect = c.linkclassprop
+    expect = c.link_class_link_prop
     assert type(expect) is getattr(model, cls)
-    assert c.linkclasspropnoclass is expect
-    assert c.linkclasslistprop == [expect, expect]
+    assert c.link_class_link_prop_no_class is expect
+    assert c.link_class_link_list_prop == [expect, expect]
 
 
 def test_non_refable(import_test_context, test_context_url):
     import model
 
     s = model.JSONLDSerializer()
-    c1 = model.linkclass()
-    c2 = model.linkclass()
+    c1 = model.link_class()
+    c2 = model.link_class()
 
-    non_ref = model.refnoclass()
+    non_ref = model.ref_no_class()
 
-    c1.linkclassprop = non_ref
+    c1.link_class_link_prop = non_ref
 
     # A non-refable object should be inlined
     result = s.serialize_data([c1])
     assert result == {
         "@context": test_context_url,
         "@type": "link-class",
-        "link-class-prop": {
+        "link-class-link-prop": {
             "@type": "ref-no-class",
         },
     }
 
     # A non-refable class cannot be referenced from multiple objects, as this
     # would require creating a blank node reference
-    c1.linkclassprop = non_ref
-    c2.linkclassprop = non_ref
+    c1.link_class_link_prop = non_ref
+    c2.link_class_link_prop = non_ref
 
     with pytest.raises(ValueError):
         result = s.serialize_data([c1, c2])
@@ -389,22 +389,22 @@ def test_non_refable(import_test_context, test_context_url):
 def test_yes_refable(import_test_context, test_context_url):
     import model
 
-    TEST_ID = "http://example.com/name"
+    TEST_ID = "http://serialize.example.com/name"
 
     s = model.JSONLDSerializer()
-    c1 = model.linkclass()
-    c2 = model.linkclass()
+    c1 = model.link_class()
+    c2 = model.link_class()
 
-    ref = model.refyesclass()
+    ref = model.ref_yes_class()
 
     # Mandatory reference fails because there is no ID
-    c1.linkclassprop = ref
+    c1.link_class_link_prop = ref
     with pytest.raises(ValueError):
         s.serialize_data([c1])
 
     # Even references from multiple objects fails because it would generate a
     # blank node with is not referenceable
-    c2.linkclassprop = ref
+    c2.link_class_link_prop = ref
     with pytest.raises(ValueError):
         s.serialize_data([c1, c2])
 
@@ -415,7 +415,7 @@ def test_yes_refable(import_test_context, test_context_url):
     assert result == {
         "@context": test_context_url,
         "@type": "link-class",
-        "link-class-prop": {
+        "link-class-link-prop": {
             "@id": TEST_ID,
             "@type": "ref-yes-class",
         },
@@ -429,7 +429,7 @@ def test_yes_refable(import_test_context, test_context_url):
         "@graph": [
             {
                 "@type": "link-class",
-                "link-class-prop": TEST_ID,
+                "link-class-link-prop": TEST_ID,
             },
             {
                 "@id": TEST_ID,
@@ -446,22 +446,22 @@ def test_yes_refable(import_test_context, test_context_url):
 def test_always_refable(import_test_context, test_context_url):
     import model
 
-    TEST_ID = "http://example.com/name"
+    TEST_ID = "http://serialize.example.com/name"
 
     s = model.JSONLDSerializer()
-    c1 = model.linkclass()
-    c2 = model.linkclass()
+    c1 = model.link_class()
+    c2 = model.link_class()
 
-    ref = model.refalwaysclass()
+    ref = model.ref_always_class()
 
     # Mandatory reference fails because there is no ID
-    c1.linkclassprop = ref
+    c1.link_class_link_prop = ref
     with pytest.raises(ValueError):
         s.serialize_data([c1])
 
     # Even references from multiple objects fails because it would generate a
     # blank node with is not referenceable
-    c2.linkclassprop = ref
+    c2.link_class_link_prop = ref
     with pytest.raises(ValueError):
         s.serialize_data([c1, c2])
 
@@ -479,7 +479,7 @@ def test_always_refable(import_test_context, test_context_url):
         "@graph": [
             {
                 "@type": "link-class",
-                "link-class-prop": TEST_ID,
+                "link-class-link-prop": TEST_ID,
             },
             {
                 "@id": TEST_ID,
@@ -498,24 +498,24 @@ def test_optional_refable(import_test_context, test_context_url):
     # covered elsewhere
     import model
 
-    TEST_ID = "http://example.com/name"
+    TEST_ID = "http://serialize.example.com/name"
 
     s = model.JSONLDSerializer()
-    c1 = model.linkclass()
-    c2 = model.linkclass()
+    c1 = model.link_class()
+    c2 = model.link_class()
 
-    ref = model.refoptionalclass()
+    ref = model.ref_optional_class()
 
     INLINE_RESULT = {
         "@context": test_context_url,
         "@type": "link-class",
-        "link-class-prop": {
+        "link-class-link-prop": {
             "@type": "ref-optional-class",
         },
     }
 
     # Test that objects are inlined
-    c1.linkclassprop = ref
+    c1.link_class_link_prop = ref
     result = s.serialize_data([c1])
     assert result == INLINE_RESULT
 
@@ -529,14 +529,14 @@ def test_optional_refable(import_test_context, test_context_url):
         "@graph": [
             {
                 "@type": "link-class",
-                "link-class-prop": "_:refoptionalclass0",
+                "link-class-link-prop": "_:ref_optional_class0",
             },
             {
                 "@type": "link-class",
-                "link-class-prop": "_:refoptionalclass0",
+                "link-class-link-prop": "_:ref_optional_class0",
             },
             {
-                "@id": "_:refoptionalclass0",
+                "@id": "_:ref_optional_class0",
                 "@type": "ref-optional-class",
             },
         ],
@@ -545,7 +545,7 @@ def test_optional_refable(import_test_context, test_context_url):
     # Multiple links means the object will be moved to the @graph instead of
     # being inlined
     del ref._id
-    c2.linkclassprop = ref
+    c2.link_class_link_prop = ref
     result = s.serialize_data([c1, c2])
     assert result == BLANK_RESULT
 
@@ -562,11 +562,11 @@ def test_optional_refable(import_test_context, test_context_url):
         "@graph": [
             {
                 "@type": "link-class",
-                "link-class-prop": TEST_ID,
+                "link-class-link-prop": TEST_ID,
             },
             {
                 "@type": "link-class",
-                "link-class-prop": TEST_ID,
+                "link-class-link-prop": TEST_ID,
             },
             {
                 "@id": TEST_ID,
@@ -579,7 +579,7 @@ def test_optional_refable(import_test_context, test_context_url):
 def test_local_refable(import_test_context):
     import model
 
-    ref = model.reflocalclass()
+    ref = model.ref_local_class()
 
     with pytest.raises(ValueError):
         ref._id = "http://example.com/name"
@@ -592,9 +592,9 @@ def test_id_name(import_test_context, test_context_url):
     import model
 
     s = model.JSONLDSerializer()
-    c = model.idpropclass()
+    c = model.id_prop_class()
 
-    TEST_ID = "http://example.com/name"
+    TEST_ID = "http://serialize.example.com/name"
 
     # Assign alternate ID
     c.testid = TEST_ID
@@ -651,96 +651,100 @@ def type_tests(name, *typ):
     "prop,value,expect",
     [
         # postive integer
-        ("testclasspositiveintegerprop", -1, ValueError),
-        ("testclasspositiveintegerprop", 0, ValueError),
-        ("testclasspositiveintegerprop", 1, 1),
-        ("testclasspositiveintegerprop", False, ValueError),
-        ("testclasspositiveintegerprop", True, 1),
-        *type_tests("testclasspositiveintegerprop", int),
+        ("test_class_positive_integer_prop", -1, ValueError),
+        ("test_class_positive_integer_prop", 0, ValueError),
+        ("test_class_positive_integer_prop", 1, 1),
+        ("test_class_positive_integer_prop", False, ValueError),
+        ("test_class_positive_integer_prop", True, 1),
+        *type_tests("test_class_positive_integer_prop", int),
         # non-negative integer
-        ("testclassnonnegativeintegerprop", -1, ValueError),
-        ("testclassnonnegativeintegerprop", 0, 0),
-        ("testclassnonnegativeintegerprop", 1, 1),
-        ("testclassnonnegativeintegerprop", False, 0),
-        ("testclassnonnegativeintegerprop", True, 1),
-        *type_tests("testclassnonnegativeintegerprop", int),
+        ("test_class_nonnegative_integer_prop", -1, ValueError),
+        ("test_class_nonnegative_integer_prop", 0, 0),
+        ("test_class_nonnegative_integer_prop", 1, 1),
+        ("test_class_nonnegative_integer_prop", False, 0),
+        ("test_class_nonnegative_integer_prop", True, 1),
+        *type_tests("test_class_nonnegative_integer_prop", int),
         # integer
-        ("testclassintegerprop", -1, -1),
-        ("testclassintegerprop", 0, 0),
-        ("testclassintegerprop", 1, 1),
-        ("testclassintegerprop", False, 0),
-        ("testclassintegerprop", True, 1),
-        *type_tests("testclassintegerprop", int),
+        ("test_class_integer_prop", -1, -1),
+        ("test_class_integer_prop", 0, 0),
+        ("test_class_integer_prop", 1, 1),
+        ("test_class_integer_prop", False, 0),
+        ("test_class_integer_prop", True, 1),
+        *type_tests("test_class_integer_prop", int),
         # float
-        ("testclassfloatprop", -1, -1.0),
-        ("testclassfloatprop", -1.0, -1.0),
-        ("testclassfloatprop", 0, 0.0),
-        ("testclassfloatprop", 0.0, 0.0),
-        ("testclassfloatprop", 1, 1.0),
-        ("testclassfloatprop", 1.0, 1.0),
-        ("testclassfloatprop", False, 0.0),
-        ("testclassfloatprop", True, 1.0),
-        *type_tests("testclassfloatprop", int, float),
+        ("test_class_float_prop", -1, -1.0),
+        ("test_class_float_prop", -1.0, -1.0),
+        ("test_class_float_prop", 0, 0.0),
+        ("test_class_float_prop", 0.0, 0.0),
+        ("test_class_float_prop", 1, 1.0),
+        ("test_class_float_prop", 1.0, 1.0),
+        ("test_class_float_prop", False, 0.0),
+        ("test_class_float_prop", True, 1.0),
+        *type_tests("test_class_float_prop", int, float),
         # boolean
-        ("testclassbooleanprop", True, True),
-        ("testclassbooleanprop", False, False),
-        *type_tests("testclassbooleanprop", bool),
+        ("test_class_boolean_prop", True, True),
+        ("test_class_boolean_prop", False, False),
+        *type_tests("test_class_boolean_prop", bool),
         # datetime
         (
-            "testclassdatetimescalarprop",
+            "test_class_datetime_scalar_prop",
             # Local time to UTC
             datetime(2024, 3, 11, 0, 0, 0),
             datetime(2024, 3, 11, 0, 0, 0).astimezone(timezone.utc),
         ),
         (
-            "testclassdatetimescalarprop",
+            "test_class_datetime_scalar_prop",
             # Explict timezone to UTC
             datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone(-timedelta(hours=6))),
             datetime(2024, 3, 11, 6, 0, 0, tzinfo=timezone.utc),
         ),
         (
-            "testclassdatetimescalarprop",
+            "test_class_datetime_scalar_prop",
             # Already in UTC
             datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone.utc),
             datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone.utc),
         ),
-        *type_tests("testclassdatetimescalarprop", datetime),
+        *type_tests("test_class_datetime_scalar_prop", datetime),
         # String
-        ("testclassstringscalarprop", "foo", "foo"),
-        ("testclassstringscalarprop", "", ""),
-        *type_tests("testclassstringscalarprop", str),
+        ("test_class_string_scalar_prop", "foo", "foo"),
+        ("test_class_string_scalar_prop", "", ""),
+        *type_tests("test_class_string_scalar_prop", str),
         # Named property
         ("named_property", "foo", "foo"),
         ("named_property", "", ""),
         *type_tests("named_property", str),
         # Enumerated value
         (
-            "testclassenumprop",
+            "test_class_enum_prop",
             "http://example.org/enumType/foo",
             "http://example.org/enumType/foo",
         ),
-        ("testclassenumprop", "foo", ValueError),
-        *type_tests("testclassenumprop", str),
+        ("test_class_enum_prop", "foo", ValueError),
+        *type_tests("test_class_enum_prop", str),
         # Object
-        ("testclassclassprop", lambda model: model.testclass(), SAME_AS_VALUE),
-        ("testclassclassprop", lambda model: model.testderivedclass(), SAME_AS_VALUE),
-        ("testclassclassprop", lambda model: model.testanotherclass(), TypeError),
-        ("testclassclassprop", lambda model: model.parentclass(), TypeError),
-        ("testclassclassprop", "_:blanknode", "_:blanknode"),
+        ("test_class_class_prop", lambda model: model.test_class(), SAME_AS_VALUE),
         (
-            "testclassclassprop",
+            "test_class_class_prop",
+            lambda model: model.test_derived_class(),
+            SAME_AS_VALUE,
+        ),
+        ("test_class_class_prop", lambda model: model.test_another_class(), TypeError),
+        ("test_class_class_prop", lambda model: model.parent_class(), TypeError),
+        ("test_class_class_prop", "_:blanknode", "_:blanknode"),
+        (
+            "test_class_class_prop",
             "http://serialize.example.org/test",
             "http://serialize.example.org/test",
         ),
-        *type_tests("testclassclassprop", str),
+        *type_tests("test_class_class_prop", str),
         # Pattern validated
-        ("testclassregex", "foo1", "foo1"),
-        ("testclassregex", "foo2", "foo2"),
-        ("testclassregex", "foo2a", "foo2a"),
-        ("testclassregex", "bar", ValueError),
-        ("testclassregex", "fooa", ValueError),
-        ("testclassregex", "afoo1", ValueError),
-        *type_tests("testclassregex", str),
+        ("test_class_regex", "foo1", "foo1"),
+        ("test_class_regex", "foo2", "foo2"),
+        ("test_class_regex", "foo2a", "foo2a"),
+        ("test_class_regex", "bar", ValueError),
+        ("test_class_regex", "fooa", ValueError),
+        ("test_class_regex", "afoo1", ValueError),
+        *type_tests("test_class_regex", str),
         # Property that is a keyword
         ("import_", "foo", "foo"),
     ],
@@ -748,7 +752,7 @@ def type_tests(name, *typ):
 def test_scalar_prop_validation(import_test_context, prop, value, expect):
     import model
 
-    c = model.testclass()
+    c = model.test_class()
 
     if callable(value):
         value = value(model)
@@ -804,12 +808,12 @@ def list_type_tests(name, *typ):
     "prop,value,expect",
     [
         # string
-        ("testclassstringlistprop", ["foo", "bar"], ["foo", "bar"]),
-        ("testclassstringlistprop", [""], [""]),
-        *list_type_tests("testclassstringlistprop", str),
+        ("test_class_string_list_prop", ["foo", "bar"], ["foo", "bar"]),
+        ("test_class_string_list_prop", [""], [""]),
+        *list_type_tests("test_class_string_list_prop", str),
         # datetime
         (
-            "testclassdatetimelistprop",
+            "test_class_datetime_list_prop",
             [
                 datetime(2024, 3, 11, 0, 0, 0),
                 datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone(-timedelta(hours=6))),
@@ -821,10 +825,10 @@ def list_type_tests(name, *typ):
                 datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone.utc),
             ],
         ),
-        *list_type_tests("testclassdatetimelistprop", datetime),
+        *list_type_tests("test_class_datetime_list_prop", datetime),
         # Enumerate type
         (
-            "testclassenumlistprop",
+            "test_class_enum_list_prop",
             [
                 "http://example.org/enumType/foo",
                 "http://example.org/enumType/bar",
@@ -837,20 +841,20 @@ def list_type_tests(name, *typ):
             ],
         ),
         (
-            "testclassenumlistprop",
+            "test_class_enum_list_prop",
             [
                 "http://example.org/enumType/foo",
                 "foo",
             ],
             ValueError,
         ),
-        *list_type_tests("testclassenumlistprop", str),
+        *list_type_tests("test_class_enum_list_prop", str),
         # Object
         (
-            "testclassclasslistprop",
+            "test_class_class_list_prop",
             lambda model: [
-                model.testclass(),
-                model.testderivedclass(),
+                model.test_class(),
+                model.test_derived_class(),
                 "_:blanknode",
                 "http://serialize.example.org/test",
                 "http://serialize.example.org/test",
@@ -858,19 +862,19 @@ def list_type_tests(name, *typ):
             SAME_AS_VALUE,
         ),
         (
-            "testclassclasslistprop",
-            lambda model: [model.testanotherclass()],
+            "test_class_class_list_prop",
+            lambda model: [model.test_another_class()],
             TypeError,
         ),
         (
-            "testclassclasslistprop",
-            lambda model: [model.parentclass()],
+            "test_class_class_list_prop",
+            lambda model: [model.parent_class()],
             TypeError,
         ),
-        *list_type_tests("testclassclasslistprop", str),
+        *list_type_tests("test_class_class_list_prop", str),
         # Pattern validated
         (
-            "testclassregexlist",
+            "test_class_regex_list",
             [
                 "foo1",
                 "foo2",
@@ -882,17 +886,17 @@ def list_type_tests(name, *typ):
                 "foo2a",
             ],
         ),
-        ("testclassregexlist", ["bar"], ValueError),
-        ("testclassregexlist", ["fooa"], ValueError),
-        ("testclassregexlist", ["afoo1"], ValueError),
-        *list_type_tests("testclassregexlist", str),
+        ("test_class_regex_list", ["bar"], ValueError),
+        ("test_class_regex_list", ["fooa"], ValueError),
+        ("test_class_regex_list", ["afoo1"], ValueError),
+        *list_type_tests("test_class_regex_list", str),
         # TODO Add more list tests
     ],
 )
 def test_list_prop_validation(import_test_context, prop, value, expect):
     import model
 
-    c = model.testclass()
+    c = model.test_class()
 
     if callable(value):
         value = value(model)
@@ -944,10 +948,10 @@ def test_enum_var_names(import_test_context):
     assert type(model.enumType.foo) is str
     assert model.enumType.foo == "http://example.org/enumType/foo"
 
-    c = model.testclass()
+    c = model.test_class()
 
     for name, value in model.enumType.valid_values:
-        c.testclassenumprop = value
+        c.test_class_enum_prop = value
         assert getattr(model.enumType, name) == value
 
 
@@ -962,9 +966,9 @@ def test_mandatory_properties(import_test_context, tmp_path):
     outfile = tmp_path / "test.json"
 
     def base_obj():
-        c = model.testclassrequired()
-        c.testclassrequiredstringscalarprop = "foo"
-        c.testclassrequiredstringlistprop = ["bar", "baz"]
+        c = model.test_class_required()
+        c.test_class_required_string_scalar_prop = "foo"
+        c.test_class_required_string_list_prop = ["bar", "baz"]
         return c
 
     # First validate that the base object is actually valid
@@ -974,28 +978,28 @@ def test_mandatory_properties(import_test_context, tmp_path):
 
     # Required scalar property
     c = base_obj()
-    del c.testclassrequiredstringscalarprop
+    del c.test_class_required_string_scalar_prop
     with outfile.open("wb") as f:
         with pytest.raises(ValueError):
             s.write([c], f)
 
     # Array that is deleted
     c = base_obj()
-    del c.testclassrequiredstringlistprop
+    del c.test_class_required_string_list_prop
     with outfile.open("wb") as f:
         with pytest.raises(ValueError):
             s.write([c], f)
 
     # Array initialized to empty list
     c = base_obj()
-    c.testclassrequiredstringlistprop = []
+    c.test_class_required_string_list_prop = []
     with outfile.open("wb") as f:
         with pytest.raises(ValueError):
             s.write([c], f)
 
     # Array with too many items
     c = base_obj()
-    c.testclassrequiredstringlistprop.append("too many")
+    c.test_class_required_string_list_prop.append("too many")
     with outfile.open("wb") as f:
         with pytest.raises(ValueError):
             s.write([c], f)
@@ -1008,7 +1012,7 @@ def test_iri(import_test_context, roundtrip):
         deserializer = model.JSONLDDeserializer()
         d = ObjectSet(*deserializer.read(f))
 
-    c = d.get_obj("http://serialize.example.com/test", model.testclass)
+    c = d.get_obj("http://serialize.example.com/test", model.test_class)
 
     assert c._IRI["_id"] == "@id"
     assert c._IRI["named_property"] == "http://example.org/test-class/named-property"

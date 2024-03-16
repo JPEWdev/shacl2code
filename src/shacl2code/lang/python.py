@@ -11,8 +11,14 @@ import keyword
 
 
 def varname(name):
-    name = str(name).replace("@", "_")
-    name = re.sub(r"[^a-zA-Z0-9_]", "", name)
+    # Any invalid characters at the beginning of the name are removed (except
+    # "@")
+    name = re.sub(r"^[^a-zA-Z0-9_@]*", "", name)
+    # Any other invalid characters are replaced with "_" (including "@")
+    name = re.sub(r"[^a-zA-Z0-9_]", "_", name)
+    # Consolidate runs of "_" to a single one
+    name = re.sub(r"__+", "_", name)
+    # Add a _ to anything that is a python keyword
     while keyword.iskeyword(name):
         name = name + "_"
     return name

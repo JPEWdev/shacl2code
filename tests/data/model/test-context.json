@@ -91,15 +91,15 @@
       "@id": "test:test-class/regex-list",
       "@type": "xsd:string"
     },
-    "link-class-prop": {
+    "link-class-link-prop": {
       "@id": "test:link-class-prop",
       "@type": "@id"
     },
-    "link-class-prop-no-class": {
+    "link-class-link-prop-no-class": {
       "@id": "test:link-class-prop-no-class",
       "@type": "@id"
     },
-    "link-class-list-prop": {
+    "link-class-link-list-prop": {
       "@id": "test:link-class-list-prop",
       "@type": "@id"
     }

@@ -84,12 +84,6 @@
                 { "$ref": "#/$defs/SHACLClass" },
                 {
                     "properties": {
-                        "link-class-link-prop": {
-                            "$ref": "#/$defs/prop_linkclass_linkclasslinkprop"
-                        },
-                        "link-class-link-prop-no-class": {
-                            "$ref": "#/$defs/prop_linkclass_linkclasslinkpropnoclass"
-                        },
                         "link-class-link-list-prop": {
                             "oneOf": [
                                 {
@@ -99,18 +93,24 @@
                                     }
                                 }
                             ]
+                        },
+                        "link-class-link-prop": {
+                            "$ref": "#/$defs/prop_linkclass_linkclasslinkprop"
+                        },
+                        "link-class-link-prop-no-class": {
+                            "$ref": "#/$defs/prop_linkclass_linkclasslinkpropnoclass"
                         }
                     }
                 }
             ]
         },
+        "prop_linkclass_linkclasslinklistprop": {
+                "$ref": "#/$defs/linkclass_derived"
+        },
         "prop_linkclass_linkclasslinkprop": {
                 "$ref": "#/$defs/linkclass_derived"
         },
         "prop_linkclass_linkclasslinkpropnoclass": {
-                "$ref": "#/$defs/linkclass_derived"
-        },
-        "prop_linkclass_linkclasslinklistprop": {
                 "$ref": "#/$defs/linkclass_derived"
         },
         "linkderivedclass": {
@@ -353,68 +353,17 @@
                 { "$ref": "#/$defs/parentclass_props" },
                 {
                     "properties": {
-                        "test-class/string-list-prop": {
-                            "oneOf": [
-                                {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/$defs/prop_testclass_testclassstringlistprop"
-                                    }
-                                }
-                            ]
+                        "encode": {
+                            "$ref": "#/$defs/prop_testclass_encode"
                         },
-                        "test-class/string-list-no-datatype": {
-                            "oneOf": [
-                                {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/$defs/prop_testclass_testclassstringlistnodatatype"
-                                    }
-                                }
-                            ]
-                        },
-                        "test-class/string-scalar-prop": {
-                            "$ref": "#/$defs/prop_testclass_testclassstringscalarprop"
-                        },
-                        "test-class/named-property": {
-                            "$ref": "#/$defs/prop_testclass_named_property"
-                        },
-                        "test-class/datetime-scalar-prop": {
-                            "$ref": "#/$defs/prop_testclass_testclassdatetimescalarprop"
-                        },
-                        "test-class/datetime-list-prop": {
-                            "oneOf": [
-                                {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/$defs/prop_testclass_testclassdatetimelistprop"
-                                    }
-                                }
-                            ]
-                        },
-                        "test-class/positive-integer-prop": {
-                            "$ref": "#/$defs/prop_testclass_testclasspositiveintegerprop"
-                        },
-                        "test-class/nonnegative-integer-prop": {
-                            "$ref": "#/$defs/prop_testclass_testclassnonnegativeintegerprop"
-                        },
-                        "test-class/integer-prop": {
-                            "$ref": "#/$defs/prop_testclass_testclassintegerprop"
+                        "import": {
+                            "$ref": "#/$defs/prop_testclass_import_"
                         },
                         "test-class/anyuri-prop": {
                             "$ref": "#/$defs/prop_testclass_testclassanyuriprop"
                         },
                         "test-class/boolean-prop": {
                             "$ref": "#/$defs/prop_testclass_testclassbooleanprop"
-                        },
-                        "test-class/float-prop": {
-                            "$ref": "#/$defs/prop_testclass_testclassfloatprop"
-                        },
-                        "test-class/class-prop": {
-                            "$ref": "#/$defs/prop_testclass_testclassclassprop"
-                        },
-                        "test-class/class-prop-no-class": {
-                            "$ref": "#/$defs/prop_testclass_testclassclasspropnoclass"
                         },
                         "test-class/class-list-prop": {
                             "oneOf": [
@@ -426,8 +375,24 @@
                                 }
                             ]
                         },
-                        "test-class/enum-prop": {
-                            "$ref": "#/$defs/prop_testclass_testclassenumprop"
+                        "test-class/class-prop": {
+                            "$ref": "#/$defs/prop_testclass_testclassclassprop"
+                        },
+                        "test-class/class-prop-no-class": {
+                            "$ref": "#/$defs/prop_testclass_testclassclasspropnoclass"
+                        },
+                        "test-class/datetime-list-prop": {
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/prop_testclass_testclassdatetimelistprop"
+                                    }
+                                }
+                            ]
+                        },
+                        "test-class/datetime-scalar-prop": {
+                            "$ref": "#/$defs/prop_testclass_testclassdatetimescalarprop"
                         },
                         "test-class/enum-list-prop": {
                             "oneOf": [
@@ -439,8 +404,26 @@
                                 }
                             ]
                         },
+                        "test-class/enum-prop": {
+                            "$ref": "#/$defs/prop_testclass_testclassenumprop"
+                        },
                         "test-class/enum-prop-no-class": {
                             "$ref": "#/$defs/prop_testclass_testclassenumpropnoclass"
+                        },
+                        "test-class/float-prop": {
+                            "$ref": "#/$defs/prop_testclass_testclassfloatprop"
+                        },
+                        "test-class/integer-prop": {
+                            "$ref": "#/$defs/prop_testclass_testclassintegerprop"
+                        },
+                        "test-class/named-property": {
+                            "$ref": "#/$defs/prop_testclass_named_property"
+                        },
+                        "test-class/nonnegative-integer-prop": {
+                            "$ref": "#/$defs/prop_testclass_testclassnonnegativeintegerprop"
+                        },
+                        "test-class/positive-integer-prop": {
+                            "$ref": "#/$defs/prop_testclass_testclasspositiveintegerprop"
                         },
                         "test-class/regex": {
                             "$ref": "#/$defs/prop_testclass_testclassregex"
@@ -455,46 +438,38 @@
                                 }
                             ]
                         },
-                        "import": {
-                            "$ref": "#/$defs/prop_testclass_import_"
+                        "test-class/string-list-no-datatype": {
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/prop_testclass_testclassstringlistnodatatype"
+                                    }
+                                }
+                            ]
                         },
-                        "encode": {
-                            "$ref": "#/$defs/prop_testclass_encode"
+                        "test-class/string-list-prop": {
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/prop_testclass_testclassstringlistprop"
+                                    }
+                                }
+                            ]
+                        },
+                        "test-class/string-scalar-prop": {
+                            "$ref": "#/$defs/prop_testclass_testclassstringscalarprop"
                         }
                     }
                 }
             ]
         },
-        "prop_testclass_testclassstringlistprop": {
+        "prop_testclass_encode": {
                     "type": "string"
         },
-        "prop_testclass_testclassstringlistnodatatype": {
+        "prop_testclass_import_": {
                     "type": "string"
-        },
-        "prop_testclass_testclassstringscalarprop": {
-                    "type": "string"
-        },
-        "prop_testclass_named_property": {
-                    "type": "string"
-        },
-        "prop_testclass_testclassdatetimescalarprop": {
-                    "type": "string",
-                    "pattern": "^[0-9]{4}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-6][0-9]:[0-6][0-9]Z$"
-        },
-        "prop_testclass_testclassdatetimelistprop": {
-                    "type": "string",
-                    "pattern": "^[0-9]{4}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-6][0-9]:[0-6][0-9]Z$"
-        },
-        "prop_testclass_testclasspositiveintegerprop": {
-                    "type": "integer",
-                    "minimum": 1
-        },
-        "prop_testclass_testclassnonnegativeintegerprop": {
-                    "type": "integer",
-                    "minimum": 0
-        },
-        "prop_testclass_testclassintegerprop": {
-                    "type": "integer"
         },
         "prop_testclass_testclassanyuriprop": {
                     "$ref": "#/$defs/anyURI"
@@ -502,16 +477,8 @@
         "prop_testclass_testclassbooleanprop": {
                     "type": "boolean"
         },
-        "prop_testclass_testclassfloatprop": {
-                    "oneOf": [
-                        {
-                            "type": "number"
-                        },
-                        {
-                            "type": "string",
-                            "pattern": "^-?[0-9]+(\\.[0-9]*)?$"
-                        }
-                    ]
+        "prop_testclass_testclassclasslistprop": {
+                "$ref": "#/$defs/testclass_derived"
         },
         "prop_testclass_testclassclassprop": {
                 "$ref": "#/$defs/testclass_derived"
@@ -519,17 +486,22 @@
         "prop_testclass_testclassclasspropnoclass": {
                 "$ref": "#/$defs/testclass_derived"
         },
-        "prop_testclass_testclassclasslistprop": {
-                "$ref": "#/$defs/testclass_derived"
+        "prop_testclass_testclassdatetimelistprop": {
+                    "type": "string",
+                    "pattern": "^[0-9]{4}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-6][0-9]:[0-6][0-9]Z$"
         },
-        "prop_testclass_testclassenumprop": {
+        "prop_testclass_testclassdatetimescalarprop": {
+                    "type": "string",
+                    "pattern": "^[0-9]{4}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-6][0-9]:[0-6][0-9]Z$"
+        },
+        "prop_testclass_testclassenumlistprop": {
                 "enum": [
                     "enumType/bar",
                     "enumType/foo",
                     "enumType/nolabel"
                 ]
         },
-        "prop_testclass_testclassenumlistprop": {
+        "prop_testclass_testclassenumprop": {
                 "enum": [
                     "enumType/bar",
                     "enumType/foo",
@@ -543,6 +515,31 @@
                     "enumType/nolabel"
                 ]
         },
+        "prop_testclass_testclassfloatprop": {
+                    "oneOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "string",
+                            "pattern": "^-?[0-9]+(\\.[0-9]*)?$"
+                        }
+                    ]
+        },
+        "prop_testclass_testclassintegerprop": {
+                    "type": "integer"
+        },
+        "prop_testclass_named_property": {
+                    "type": "string"
+        },
+        "prop_testclass_testclassnonnegativeintegerprop": {
+                    "type": "integer",
+                    "minimum": 0
+        },
+        "prop_testclass_testclasspositiveintegerprop": {
+                    "type": "integer",
+                    "minimum": 1
+        },
         "prop_testclass_testclassregex": {
                     "pattern": "^foo\\d",
                     "type": "string"
@@ -551,10 +548,13 @@
                     "pattern": "^foo\\d",
                     "type": "string"
         },
-        "prop_testclass_import_": {
+        "prop_testclass_testclassstringlistnodatatype": {
                     "type": "string"
         },
-        "prop_testclass_encode": {
+        "prop_testclass_testclassstringlistprop": {
+                    "type": "string"
+        },
+        "prop_testclass_testclassstringscalarprop": {
                     "type": "string"
         },
         "testclassrequired": {
@@ -580,9 +580,6 @@
                 { "$ref": "#/$defs/testclass_props" },
                 {
                     "properties": {
-                        "test-class/required-string-scalar-prop": {
-                            "$ref": "#/$defs/prop_testclassrequired_testclassrequiredstringscalarprop"
-                        },
                         "test-class/required-string-list-prop": {
                             "oneOf": [
                                 {
@@ -594,19 +591,22 @@
                                     }
                                 }
                             ]
+                        },
+                        "test-class/required-string-scalar-prop": {
+                            "$ref": "#/$defs/prop_testclassrequired_testclassrequiredstringscalarprop"
                         }
                     },
                     "required": [
-                        "test-class/required-string-scalar-prop",
-                        "test-class/required-string-list-prop"
+                        "test-class/required-string-list-prop",
+                        "test-class/required-string-scalar-prop"
                     ]
                 }
             ]
         },
-        "prop_testclassrequired_testclassrequiredstringscalarprop": {
+        "prop_testclassrequired_testclassrequiredstringlistprop": {
                     "type": "string"
         },
-        "prop_testclassrequired_testclassrequiredstringlistprop": {
+        "prop_testclassrequired_testclassrequiredstringscalarprop": {
                     "type": "string"
         },
         "testderivedclass": {

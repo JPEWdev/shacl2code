@@ -1280,6 +1280,12 @@ class http_example_org_link_class(SHACLObject):
 
     def __init__(self, **kwargs):
         super().__init__()
+        # A link-class list property
+        self._add_property(
+            "link_list_prop",
+            ListProp(ObjectProp(http_example_org_link_class, False)),
+            iri="http://example.org/link-class-link-list-prop",
+        )
         # A link-class property
         self._add_property(
             "link_prop",
@@ -1291,12 +1297,6 @@ class http_example_org_link_class(SHACLObject):
             "link_prop_no_class",
             ObjectProp(http_example_org_link_class, False),
             iri="http://example.org/link-class-link-prop-no-class",
-        )
-        # A link-class list property
-        self._add_property(
-            "link_list_prop",
-            ListProp(ObjectProp(http_example_org_link_class, False)),
-            iri="http://example.org/link-class-link-list-prop",
         )
         self._set_init_props(**kwargs)
 
@@ -1415,59 +1415,17 @@ class http_example_org_test_class(http_example_org_parent_class):
 
     def __init__(self, **kwargs):
         super().__init__()
-        # A string list property
+        # A property that conflicts with an existing SHACLObject property
         self._add_property(
-            "string_list_prop",
-            ListProp(StringProp()),
-            iri="http://example.org/test-class/string-list-prop",
-        )
-        # A string list property with no sh:datatype
-        self._add_property(
-            "string_list_no_datatype",
-            ListProp(StringProp()),
-            iri="http://example.org/test-class/string-list-no-datatype",
-        )
-        # A scalar string propery
-        self._add_property(
-            "string_scalar_prop",
+            "encode",
             StringProp(),
-            iri="http://example.org/test-class/string-scalar-prop",
+            iri="http://example.org/encode",
         )
-        # A named property
+        # A property that is a keyword
         self._add_property(
-            "named_property",
+            "import_",
             StringProp(),
-            iri="http://example.org/test-class/named-property",
-        )
-        # A scalar datetime property
-        self._add_property(
-            "datetime_scalar_prop",
-            DateTimeProp(),
-            iri="http://example.org/test-class/datetime-scalar-prop",
-        )
-        # A datetime list property
-        self._add_property(
-            "datetime_list_prop",
-            ListProp(DateTimeProp()),
-            iri="http://example.org/test-class/datetime-list-prop",
-        )
-        # A positive integer
-        self._add_property(
-            "positive_integer_prop",
-            PositiveIntegerProp(),
-            iri="http://example.org/test-class/positive-integer-prop",
-        )
-        # a non-negative integer
-        self._add_property(
-            "nonnegative_integer_prop",
-            NonNegativeIntegerProp(),
-            iri="http://example.org/test-class/nonnegative-integer-prop",
-        )
-        # a non-negative integer
-        self._add_property(
-            "integer_prop",
-            IntegerProp(),
-            iri="http://example.org/test-class/integer-prop",
+            iri="http://example.org/import",
         )
         # a URI
         self._add_property(
@@ -1481,11 +1439,11 @@ class http_example_org_test_class(http_example_org_parent_class):
             BooleanProp(),
             iri="http://example.org/test-class/boolean-prop",
         )
-        # a float property
+        # A test-class list property
         self._add_property(
-            "float_prop",
-            FloatProp(),
-            iri="http://example.org/test-class/float-prop",
+            "class_list_prop",
+            ListProp(ObjectProp(http_example_org_test_class, False)),
+            iri="http://example.org/test-class/class-list-prop",
         )
         # A test-class property
         self._add_property(
@@ -1499,17 +1457,17 @@ class http_example_org_test_class(http_example_org_parent_class):
             ObjectProp(http_example_org_test_class, False),
             iri="http://example.org/test-class/class-prop-no-class",
         )
-        # A test-class list property
+        # A datetime list property
         self._add_property(
-            "class_list_prop",
-            ListProp(ObjectProp(http_example_org_test_class, False)),
-            iri="http://example.org/test-class/class-list-prop",
+            "datetime_list_prop",
+            ListProp(DateTimeProp()),
+            iri="http://example.org/test-class/datetime-list-prop",
         )
-        # A enum property
+        # A scalar datetime property
         self._add_property(
-            "enum_prop",
-            http_example_org_enumType(),
-            iri="http://example.org/test-class/enum-prop",
+            "datetime_scalar_prop",
+            DateTimeProp(),
+            iri="http://example.org/test-class/datetime-scalar-prop",
         )
         # A enum list property
         self._add_property(
@@ -1517,11 +1475,47 @@ class http_example_org_test_class(http_example_org_parent_class):
             ListProp(http_example_org_enumType()),
             iri="http://example.org/test-class/enum-list-prop",
         )
+        # A enum property
+        self._add_property(
+            "enum_prop",
+            http_example_org_enumType(),
+            iri="http://example.org/test-class/enum-prop",
+        )
         # A enum property with no sh:class
         self._add_property(
             "enum_prop_no_class",
             http_example_org_enumType(),
             iri="http://example.org/test-class/enum-prop-no-class",
+        )
+        # a float property
+        self._add_property(
+            "float_prop",
+            FloatProp(),
+            iri="http://example.org/test-class/float-prop",
+        )
+        # a non-negative integer
+        self._add_property(
+            "integer_prop",
+            IntegerProp(),
+            iri="http://example.org/test-class/integer-prop",
+        )
+        # A named property
+        self._add_property(
+            "named_property",
+            StringProp(),
+            iri="http://example.org/test-class/named-property",
+        )
+        # a non-negative integer
+        self._add_property(
+            "nonnegative_integer_prop",
+            NonNegativeIntegerProp(),
+            iri="http://example.org/test-class/nonnegative-integer-prop",
+        )
+        # A positive integer
+        self._add_property(
+            "positive_integer_prop",
+            PositiveIntegerProp(),
+            iri="http://example.org/test-class/positive-integer-prop",
         )
         # A regex validated string
         self._add_property(
@@ -1535,17 +1529,23 @@ class http_example_org_test_class(http_example_org_parent_class):
             ListProp(StringProp(pattern=r"^foo\d",)),
             iri="http://example.org/test-class/regex-list",
         )
-        # A property that is a keyword
+        # A string list property with no sh:datatype
         self._add_property(
-            "import_",
-            StringProp(),
-            iri="http://example.org/import",
+            "string_list_no_datatype",
+            ListProp(StringProp()),
+            iri="http://example.org/test-class/string-list-no-datatype",
         )
-        # A property that conflicts with an existing SHACLObject property
+        # A string list property
         self._add_property(
-            "encode",
+            "string_list_prop",
+            ListProp(StringProp()),
+            iri="http://example.org/test-class/string-list-prop",
+        )
+        # A scalar string propery
+        self._add_property(
+            "string_scalar_prop",
             StringProp(),
-            iri="http://example.org/encode",
+            iri="http://example.org/test-class/string-scalar-prop",
         )
         self._set_init_props(**kwargs)
 
@@ -1559,19 +1559,19 @@ class http_example_org_test_class_required(http_example_org_test_class):
 
     def __init__(self, **kwargs):
         super().__init__()
-        # A required scalar string property
-        self._add_property(
-            "required_string_scalar_prop",
-            StringProp(),
-            iri="http://example.org/test-class/required-string-scalar-prop",
-            min_count=1,
-        )
         # A required string list property
         self._add_property(
             "required_string_list_prop",
             ListProp(StringProp()),
             iri="http://example.org/test-class/required-string-list-prop",
             max_count=2,
+            min_count=1,
+        )
+        # A required scalar string property
+        self._add_property(
+            "required_string_scalar_prop",
+            StringProp(),
+            iri="http://example.org/test-class/required-string-scalar-prop",
             min_count=1,
         )
         self._set_init_props(**kwargs)

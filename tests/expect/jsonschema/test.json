@@ -80,12 +80,6 @@
                 { "$ref": "#/$defs/SHACLClass" },
                 {
                     "properties": {
-                        "http://example.org/link-class-link-prop": {
-                            "$ref": "#/$defs/prop_http_exampleorglinkclass_linkprop"
-                        },
-                        "http://example.org/link-class-link-prop-no-class": {
-                            "$ref": "#/$defs/prop_http_exampleorglinkclass_linkpropnoclass"
-                        },
                         "http://example.org/link-class-link-list-prop": {
                             "oneOf": [
                                 {
@@ -95,18 +89,24 @@
                                     }
                                 }
                             ]
+                        },
+                        "http://example.org/link-class-link-prop": {
+                            "$ref": "#/$defs/prop_http_exampleorglinkclass_linkprop"
+                        },
+                        "http://example.org/link-class-link-prop-no-class": {
+                            "$ref": "#/$defs/prop_http_exampleorglinkclass_linkpropnoclass"
                         }
                     }
                 }
             ]
         },
+        "prop_http_exampleorglinkclass_linklistprop": {
+                "$ref": "#/$defs/http_exampleorglinkclass_derived"
+        },
         "prop_http_exampleorglinkclass_linkprop": {
                 "$ref": "#/$defs/http_exampleorglinkclass_derived"
         },
         "prop_http_exampleorglinkclass_linkpropnoclass": {
-                "$ref": "#/$defs/http_exampleorglinkclass_derived"
-        },
-        "prop_http_exampleorglinkclass_linklistprop": {
                 "$ref": "#/$defs/http_exampleorglinkclass_derived"
         },
         "http_exampleorglinkderivedclass": {
@@ -349,68 +349,17 @@
                 { "$ref": "#/$defs/http_exampleorgparentclass_props" },
                 {
                     "properties": {
-                        "http://example.org/test-class/string-list-prop": {
-                            "oneOf": [
-                                {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/$defs/prop_http_exampleorgtestclass_stringlistprop"
-                                    }
-                                }
-                            ]
+                        "http://example.org/encode": {
+                            "$ref": "#/$defs/prop_http_exampleorgtestclass_encode"
                         },
-                        "http://example.org/test-class/string-list-no-datatype": {
-                            "oneOf": [
-                                {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/$defs/prop_http_exampleorgtestclass_stringlistnodatatype"
-                                    }
-                                }
-                            ]
-                        },
-                        "http://example.org/test-class/string-scalar-prop": {
-                            "$ref": "#/$defs/prop_http_exampleorgtestclass_stringscalarprop"
-                        },
-                        "http://example.org/test-class/named-property": {
-                            "$ref": "#/$defs/prop_http_exampleorgtestclass_named_property"
-                        },
-                        "http://example.org/test-class/datetime-scalar-prop": {
-                            "$ref": "#/$defs/prop_http_exampleorgtestclass_datetimescalarprop"
-                        },
-                        "http://example.org/test-class/datetime-list-prop": {
-                            "oneOf": [
-                                {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/$defs/prop_http_exampleorgtestclass_datetimelistprop"
-                                    }
-                                }
-                            ]
-                        },
-                        "http://example.org/test-class/positive-integer-prop": {
-                            "$ref": "#/$defs/prop_http_exampleorgtestclass_positiveintegerprop"
-                        },
-                        "http://example.org/test-class/nonnegative-integer-prop": {
-                            "$ref": "#/$defs/prop_http_exampleorgtestclass_nonnegativeintegerprop"
-                        },
-                        "http://example.org/test-class/integer-prop": {
-                            "$ref": "#/$defs/prop_http_exampleorgtestclass_integerprop"
+                        "http://example.org/import": {
+                            "$ref": "#/$defs/prop_http_exampleorgtestclass_import_"
                         },
                         "http://example.org/test-class/anyuri-prop": {
                             "$ref": "#/$defs/prop_http_exampleorgtestclass_anyuriprop"
                         },
                         "http://example.org/test-class/boolean-prop": {
                             "$ref": "#/$defs/prop_http_exampleorgtestclass_booleanprop"
-                        },
-                        "http://example.org/test-class/float-prop": {
-                            "$ref": "#/$defs/prop_http_exampleorgtestclass_floatprop"
-                        },
-                        "http://example.org/test-class/class-prop": {
-                            "$ref": "#/$defs/prop_http_exampleorgtestclass_classprop"
-                        },
-                        "http://example.org/test-class/class-prop-no-class": {
-                            "$ref": "#/$defs/prop_http_exampleorgtestclass_classpropnoclass"
                         },
                         "http://example.org/test-class/class-list-prop": {
                             "oneOf": [
@@ -422,8 +371,24 @@
                                 }
                             ]
                         },
-                        "http://example.org/test-class/enum-prop": {
-                            "$ref": "#/$defs/prop_http_exampleorgtestclass_enumprop"
+                        "http://example.org/test-class/class-prop": {
+                            "$ref": "#/$defs/prop_http_exampleorgtestclass_classprop"
+                        },
+                        "http://example.org/test-class/class-prop-no-class": {
+                            "$ref": "#/$defs/prop_http_exampleorgtestclass_classpropnoclass"
+                        },
+                        "http://example.org/test-class/datetime-list-prop": {
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/prop_http_exampleorgtestclass_datetimelistprop"
+                                    }
+                                }
+                            ]
+                        },
+                        "http://example.org/test-class/datetime-scalar-prop": {
+                            "$ref": "#/$defs/prop_http_exampleorgtestclass_datetimescalarprop"
                         },
                         "http://example.org/test-class/enum-list-prop": {
                             "oneOf": [
@@ -435,8 +400,26 @@
                                 }
                             ]
                         },
+                        "http://example.org/test-class/enum-prop": {
+                            "$ref": "#/$defs/prop_http_exampleorgtestclass_enumprop"
+                        },
                         "http://example.org/test-class/enum-prop-no-class": {
                             "$ref": "#/$defs/prop_http_exampleorgtestclass_enumpropnoclass"
+                        },
+                        "http://example.org/test-class/float-prop": {
+                            "$ref": "#/$defs/prop_http_exampleorgtestclass_floatprop"
+                        },
+                        "http://example.org/test-class/integer-prop": {
+                            "$ref": "#/$defs/prop_http_exampleorgtestclass_integerprop"
+                        },
+                        "http://example.org/test-class/named-property": {
+                            "$ref": "#/$defs/prop_http_exampleorgtestclass_named_property"
+                        },
+                        "http://example.org/test-class/nonnegative-integer-prop": {
+                            "$ref": "#/$defs/prop_http_exampleorgtestclass_nonnegativeintegerprop"
+                        },
+                        "http://example.org/test-class/positive-integer-prop": {
+                            "$ref": "#/$defs/prop_http_exampleorgtestclass_positiveintegerprop"
                         },
                         "http://example.org/test-class/regex": {
                             "$ref": "#/$defs/prop_http_exampleorgtestclass_regex"
@@ -451,46 +434,38 @@
                                 }
                             ]
                         },
-                        "http://example.org/import": {
-                            "$ref": "#/$defs/prop_http_exampleorgtestclass_import_"
+                        "http://example.org/test-class/string-list-no-datatype": {
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/prop_http_exampleorgtestclass_stringlistnodatatype"
+                                    }
+                                }
+                            ]
                         },
-                        "http://example.org/encode": {
-                            "$ref": "#/$defs/prop_http_exampleorgtestclass_encode"
+                        "http://example.org/test-class/string-list-prop": {
+                            "oneOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/$defs/prop_http_exampleorgtestclass_stringlistprop"
+                                    }
+                                }
+                            ]
+                        },
+                        "http://example.org/test-class/string-scalar-prop": {
+                            "$ref": "#/$defs/prop_http_exampleorgtestclass_stringscalarprop"
                         }
                     }
                 }
             ]
         },
-        "prop_http_exampleorgtestclass_stringlistprop": {
+        "prop_http_exampleorgtestclass_encode": {
                     "type": "string"
         },
-        "prop_http_exampleorgtestclass_stringlistnodatatype": {
+        "prop_http_exampleorgtestclass_import_": {
                     "type": "string"
-        },
-        "prop_http_exampleorgtestclass_stringscalarprop": {
-                    "type": "string"
-        },
-        "prop_http_exampleorgtestclass_named_property": {
-                    "type": "string"
-        },
-        "prop_http_exampleorgtestclass_datetimescalarprop": {
-                    "type": "string",
-                    "pattern": "^[0-9]{4}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-6][0-9]:[0-6][0-9]Z$"
-        },
-        "prop_http_exampleorgtestclass_datetimelistprop": {
-                    "type": "string",
-                    "pattern": "^[0-9]{4}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-6][0-9]:[0-6][0-9]Z$"
-        },
-        "prop_http_exampleorgtestclass_positiveintegerprop": {
-                    "type": "integer",
-                    "minimum": 1
-        },
-        "prop_http_exampleorgtestclass_nonnegativeintegerprop": {
-                    "type": "integer",
-                    "minimum": 0
-        },
-        "prop_http_exampleorgtestclass_integerprop": {
-                    "type": "integer"
         },
         "prop_http_exampleorgtestclass_anyuriprop": {
                     "$ref": "#/$defs/anyURI"
@@ -498,16 +473,8 @@
         "prop_http_exampleorgtestclass_booleanprop": {
                     "type": "boolean"
         },
-        "prop_http_exampleorgtestclass_floatprop": {
-                    "oneOf": [
-                        {
-                            "type": "number"
-                        },
-                        {
-                            "type": "string",
-                            "pattern": "^-?[0-9]+(\\.[0-9]*)?$"
-                        }
-                    ]
+        "prop_http_exampleorgtestclass_classlistprop": {
+                "$ref": "#/$defs/http_exampleorgtestclass_derived"
         },
         "prop_http_exampleorgtestclass_classprop": {
                 "$ref": "#/$defs/http_exampleorgtestclass_derived"
@@ -515,17 +482,22 @@
         "prop_http_exampleorgtestclass_classpropnoclass": {
                 "$ref": "#/$defs/http_exampleorgtestclass_derived"
         },
-        "prop_http_exampleorgtestclass_classlistprop": {
-                "$ref": "#/$defs/http_exampleorgtestclass_derived"
+        "prop_http_exampleorgtestclass_datetimelistprop": {
+                    "type": "string",
+                    "pattern": "^[0-9]{4}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-6][0-9]:[0-6][0-9]Z$"
         },
-        "prop_http_exampleorgtestclass_enumprop": {
+        "prop_http_exampleorgtestclass_datetimescalarprop": {
+                    "type": "string",
+                    "pattern": "^[0-9]{4}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-6][0-9]:[0-6][0-9]Z$"
+        },
+        "prop_http_exampleorgtestclass_enumlistprop": {
                 "enum": [
                     "http://example.org/enumType/bar",
                     "http://example.org/enumType/foo",
                     "http://example.org/enumType/nolabel"
                 ]
         },
-        "prop_http_exampleorgtestclass_enumlistprop": {
+        "prop_http_exampleorgtestclass_enumprop": {
                 "enum": [
                     "http://example.org/enumType/bar",
                     "http://example.org/enumType/foo",
@@ -539,6 +511,31 @@
                     "http://example.org/enumType/nolabel"
                 ]
         },
+        "prop_http_exampleorgtestclass_floatprop": {
+                    "oneOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "string",
+                            "pattern": "^-?[0-9]+(\\.[0-9]*)?$"
+                        }
+                    ]
+        },
+        "prop_http_exampleorgtestclass_integerprop": {
+                    "type": "integer"
+        },
+        "prop_http_exampleorgtestclass_named_property": {
+                    "type": "string"
+        },
+        "prop_http_exampleorgtestclass_nonnegativeintegerprop": {
+                    "type": "integer",
+                    "minimum": 0
+        },
+        "prop_http_exampleorgtestclass_positiveintegerprop": {
+                    "type": "integer",
+                    "minimum": 1
+        },
         "prop_http_exampleorgtestclass_regex": {
                     "pattern": "^foo\\d",
                     "type": "string"
@@ -547,10 +544,13 @@
                     "pattern": "^foo\\d",
                     "type": "string"
         },
-        "prop_http_exampleorgtestclass_import_": {
+        "prop_http_exampleorgtestclass_stringlistnodatatype": {
                     "type": "string"
         },
-        "prop_http_exampleorgtestclass_encode": {
+        "prop_http_exampleorgtestclass_stringlistprop": {
+                    "type": "string"
+        },
+        "prop_http_exampleorgtestclass_stringscalarprop": {
                     "type": "string"
         },
         "http_exampleorgtestclassrequired": {
@@ -576,9 +576,6 @@
                 { "$ref": "#/$defs/http_exampleorgtestclass_props" },
                 {
                     "properties": {
-                        "http://example.org/test-class/required-string-scalar-prop": {
-                            "$ref": "#/$defs/prop_http_exampleorgtestclassrequired_requiredstringscalarprop"
-                        },
                         "http://example.org/test-class/required-string-list-prop": {
                             "oneOf": [
                                 {
@@ -590,19 +587,22 @@
                                     }
                                 }
                             ]
+                        },
+                        "http://example.org/test-class/required-string-scalar-prop": {
+                            "$ref": "#/$defs/prop_http_exampleorgtestclassrequired_requiredstringscalarprop"
                         }
                     },
                     "required": [
-                        "http://example.org/test-class/required-string-scalar-prop",
-                        "http://example.org/test-class/required-string-list-prop"
+                        "http://example.org/test-class/required-string-list-prop",
+                        "http://example.org/test-class/required-string-scalar-prop"
                     ]
                 }
             ]
         },
-        "prop_http_exampleorgtestclassrequired_requiredstringscalarprop": {
+        "prop_http_exampleorgtestclassrequired_requiredstringlistprop": {
                     "type": "string"
         },
-        "prop_http_exampleorgtestclassrequired_requiredstringlistprop": {
+        "prop_http_exampleorgtestclassrequired_requiredstringscalarprop": {
                     "type": "string"
         },
         "http_exampleorgtestderivedclass": {

@@ -215,6 +215,8 @@ class Model(object):
 
                 c.properties.append(p)
 
+            c.properties.sort(key=lambda p: p.path)
+
             self.classes.append(c)
             classes_by_iri[str(cls_iri)] = c
 

@@ -221,7 +221,7 @@ class ObjectProp(Property):
                 return object_ids[iri]
             return iri
 
-        return SHACLObject.deserialize(decoder, object_ids=object_ids)
+        return SHACLObject.decode(decoder, object_ids=object_ids)
 
     def link_prop(self, value, link_cache, missing, visited):
         if value is None:

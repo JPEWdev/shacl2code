@@ -15,6 +15,13 @@
             "@type": "link-derived-class"
         },
         {
+            "@type": "test-class",
+            "@id": "http://serialize.example.com/nested-parent",
+            "test-class/class-prop": {
+                "@type": "test-class"
+            }
+        },
+        {
             "@type": "test-class-required",
             "@id": "http://serialize.example.com/required",
             "test-class/required-string-scalar-prop": "hello",

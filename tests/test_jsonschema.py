@@ -666,6 +666,17 @@ def type_tests(name, *, good=[], bad=[], typ=[]):
             typ=[str],
         ),
         *type_tests(
+            "test-class/regex-datetime",
+            good=[
+                "2024-03-11T00:00:00Z",
+            ],
+            bad=[
+                "2024-03-11T00:00:00",
+                "2024-03-11T00:00:00+1:00",
+            ],
+            typ=[],
+        ),
+        *type_tests(
             "test-class/string-list-prop",
             good=[["foo", "bar"], [""]],
             typ=[str, list],

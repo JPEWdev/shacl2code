@@ -179,15 +179,26 @@
                 {%- endfor %}
                 ]
             {%- else %}
-                {%- if prop.pattern %}
-                    "pattern": "{{ prop.pattern | replace("\\", "\\\\") }}",
-                {%- endif %}
                 {%- if prop.datatype == "http://www.w3.org/2001/XMLSchema#string" %}
+                    {%- if prop.pattern %}
+                    "pattern": "{{ prop.pattern | replace("\\", "\\\\") }}",
+                    {%- endif %}
                     "type": "string"
                 {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#dateTime" %}
                     "type": "string",
-                    "pattern": "^[0-9]{4}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-6][0-9]:[0-6][0-9]Z$"
+                    "allOf": [
+                        {
+                            "pattern": "^[0-9]{4}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-6][0-9]:[0-6][0-9](Z|[+-][0-9]{2}:[0-9]{2})$"
+                        }{%- if prop.pattern %},
+                        {
+                            "pattern": "{{ prop.pattern | replace("\\", "\\\\") }}"
+                        }
+                        {%- endif %}
+                    ]
                 {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#anyURI" %}
+                    {%- if prop.pattern %}
+                    "pattern": "{{ prop.pattern | replace("\\", "\\\\") }}",
+                    {%- endif %}
                     "$ref": "#/$defs/anyURI"
                 {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#positiveInteger" %}
                     "type": "integer",

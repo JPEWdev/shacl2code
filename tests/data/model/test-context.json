@@ -91,6 +91,10 @@
       "@id": "test:test-class/regex-list",
       "@type": "xsd:string"
     },
+    "test-class/regex-datetime": {
+        "@id": "test:test-class/regex-datetime",
+        "@type": "xsd:dateTime"
+    },
     "link-class-link-prop": {
       "@id": "test:link-class-prop",
       "@type": "@id"

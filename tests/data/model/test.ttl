@@ -123,6 +123,12 @@
         sh:datatype xsd:string ;
         sh:path <encode> ;
         sh:maxCount 1
+    ],
+    [
+        sh:datatype xsd:dateTime ;
+        sh:path <test-class/regex-datetime> ;
+        sh:maxCount 1 ;
+        sh:pattern "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$" 
     ]
     .
 
@@ -269,6 +275,11 @@
 <encode> a rdf:Property ;
     rdfs:comment "A property that conflicts with an existing SHACLObject property" ;
     rdfs:range xsd:string
+    .
+
+<test-class/regex-datetime> a rdf:Property ;
+    rdfs:comment "A regex dateTime" ;
+    rdfs:range xsd:dateTime
     .
 
 <enumType> a rdfs:Class, owl:Class ;

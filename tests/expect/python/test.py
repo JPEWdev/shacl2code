@@ -12,7 +12,7 @@ import json
 import re
 import time
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from enum import Enum
 from abc import ABC, abstractmethod
 
@@ -40,7 +40,9 @@ class Property(ABC):
 
     def validate(self, value):
         check_type(value, self.VALID_TYPES)
-        if self.pattern is not None and not re.search(self.pattern, self.set(value)):
+        if self.pattern is not None and not re.search(
+            self.pattern, self.to_string(value)
+        ):
             raise ValueError(f"Value is not correctly formatted. Got '{value}'")
 
     def set(self, value):
@@ -60,6 +62,10 @@ class Property(ABC):
 
     def link_prop(self, value, link_cache, missing, visited):
         return value
+
+    @classmethod
+    def to_string(cls, value):
+        return str(value)
 
     @abstractmethod
     def encode(self, encoder, value):
@@ -101,27 +107,49 @@ class DateTimeProp(Property):
     """
 
     VALID_TYPES = datetime
-    FORMAT_STR = "%Y-%m-%dT%H:%M:%SZ"
+    UTC_FORMAT_STR = "%Y-%m-%dT%H:%M:%SZ"
+    REGEX = r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})$"
 
     def set(self, value):
-        return value.astimezone(timezone.utc)
+        return self._normalize(value)
 
     def encode(self, encoder, value):
         encoder.write_datetime(value)
 
     def decode(self, decoder, *, object_ids=None):
-        return decoder.read_datetime()
+        return self._normalize(decoder.read_datetime())
+
+    @classmethod
+    def _normalize(cls, value):
+        if value.utcoffset() is None:
+            value = value.astimezone()
+        offset = value.utcoffset()
+        if offset % timedelta(minutes=1):
+            offset = offset - (offset % timedelta(minutes=1))
+            value = value.replace(tzinfo=timezone(offset))
+        value = value.replace(microsecond=0)
+        return value
 
     @classmethod
     def to_string(cls, value):
-        return value.astimezone(timezone.utc).strftime(cls.FORMAT_STR)
+        value = cls._normalize(value)
+        if value.tzinfo == timezone.utc:
+            return value.strftime(cls.UTC_FORMAT_STR)
+        return value.isoformat()
 
     @classmethod
     def from_string(cls, value):
-        return datetime(
-            *(time.strptime(value, cls.FORMAT_STR)[0:6]),
-            tzinfo=timezone.utc,
-        )
+        if not re.match(cls.REGEX, value):
+            raise ValueError(f"'{value}' is not a correctly formatted datetime")
+        if "Z" in value:
+            d = datetime(
+                *(time.strptime(value, cls.UTC_FORMAT_STR)[0:6]),
+                tzinfo=timezone.utc,
+            )
+        else:
+            d = datetime.fromisoformat(value)
+
+        return cls._normalize(d)
 
 
 class IntegerProp(Property):
@@ -1522,6 +1550,12 @@ class http_example_org_test_class(http_example_org_parent_class):
             "regex",
             StringProp(pattern=r"^foo\d",),
             iri="http://example.org/test-class/regex",
+        )
+        # A regex dateTime
+        self._add_property(
+            "regex_datetime",
+            DateTimeProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
+            iri="http://example.org/test-class/regex-datetime",
         )
         # A regex validated string list
         self._add_property(

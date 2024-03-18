@@ -60,6 +60,7 @@
             "test-class/enum-prop": "enumType/foo",
             "test-class/enum-prop-no-class": "enumType/bar",
             "test-class/regex": "foo1",
+            "test-class/regex-datetime": "2024-03-11T00:00:00Z",
             "test-class/regex-list": ["foo2", "foo3"],
             "import": "foo",
             "encode": "foo"

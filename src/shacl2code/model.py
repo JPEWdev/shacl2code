@@ -10,6 +10,12 @@ from dataclasses import dataclass
 from rdflib import URIRef
 from rdflib.namespace import RDF, RDFS, OWL, SH, DefinedNamespace, Namespace
 
+PATTERN_DATATYPES = [
+    "http://www.w3.org/2001/XMLSchema#string",
+    "http://www.w3.org/2001/XMLSchema#dateTime",
+    "http://www.w3.org/2001/XMLSchema#anyURI",
+]
+
 
 class SPDXS(DefinedNamespace):
     referenceable: URIRef
@@ -198,8 +204,6 @@ class Model(object):
 
                 elif range_id := self.model.value(obj_prop, SH.datatype):
                     p.datatype = str(range_id)
-                    if pattern := self.model.value(obj_prop, SH.pattern):
-                        p.pattern = str(pattern)
 
                 elif range_id := self.model.value(prop, RDFS.range):
                     if range_id in enum_iris:
@@ -212,6 +216,17 @@ class Model(object):
                         p.datatype = str(range_id)
                 else:
                     raise ModelException(f"Prop '{prop}' is missing range")
+
+                if pattern := self.model.value(obj_prop, SH.pattern):
+                    if not p.datatype:
+                        raise ModelException(
+                            f"Property '{prop}' is not a datatype and may not have a pattern"
+                        )
+                    if p.datatype not in PATTERN_DATATYPES:
+                        raise ModelException(
+                            f"Property '{prop}' of type '{p.datatype}' cannot have a pattern. Must be one of type {' '.join(PATTERN_DATATYPES)}"
+                        )
+                    p.pattern = str(pattern)
 
                 c.properties.append(p)
 

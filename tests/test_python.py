@@ -529,14 +529,14 @@ def test_optional_refable(import_test_context, test_context_url):
         "@graph": [
             {
                 "@type": "link-class",
-                "link-class-link-prop": "_:ref_optional_class0",
+                "link-class-link-prop": "_:ref_optional_class1",
             },
             {
                 "@type": "link-class",
-                "link-class-link-prop": "_:ref_optional_class0",
+                "link-class-link-prop": "_:ref_optional_class1",
             },
             {
-                "@id": "_:ref_optional_class0",
+                "@id": "_:ref_optional_class1",
                 "@type": "ref-optional-class",
             },
         ],

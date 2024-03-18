@@ -68,7 +68,7 @@ class Property(ABC):
         return str(value)
 
     @abstractmethod
-    def encode(self, encoder, value):
+    def encode(self, encoder, value, state):
         pass
 
     @abstractmethod
@@ -86,7 +86,7 @@ class StringProp(Property):
     def set(self, value):
         return str(value)
 
-    def encode(self, encoder, value):
+    def encode(self, encoder, value, state):
         encoder.write_string(value)
 
     def decode(self, decoder, *, object_ids=None):
@@ -94,7 +94,7 @@ class StringProp(Property):
 
 
 class AnyURIProp(StringProp):
-    def encode(self, encoder, value):
+    def encode(self, encoder, value, state):
         encoder.write_iri(value)
 
     def decode(self, decoder, *, object_ids=None):
@@ -113,7 +113,7 @@ class DateTimeProp(Property):
     def set(self, value):
         return self._normalize(value)
 
-    def encode(self, encoder, value):
+    def encode(self, encoder, value, state):
         encoder.write_datetime(value)
 
     def decode(self, decoder, *, object_ids=None):
@@ -158,7 +158,7 @@ class IntegerProp(Property):
     def set(self, value):
         return int(value)
 
-    def encode(self, encoder, value):
+    def encode(self, encoder, value, state):
         encoder.write_integer(value)
 
     def decode(self, decoder, *, object_ids=None):
@@ -185,7 +185,7 @@ class BooleanProp(Property):
     def set(self, value):
         return bool(value)
 
-    def encode(self, encoder, value):
+    def encode(self, encoder, value, state):
         encoder.write_bool(value)
 
     def decode(self, decoder, *, object_ids=None):
@@ -198,7 +198,7 @@ class FloatProp(Property):
     def set(self, value):
         return float(value)
 
-    def encode(self, encoder, value):
+    def encode(self, encoder, value, state):
         encoder.write_float(value)
 
     def decode(self, decoder, *, object_ids=None):
@@ -232,7 +232,7 @@ class ObjectProp(Property):
         else:
             callback(value, path)
 
-    def encode(self, encoder, value):
+    def encode(self, encoder, value, state):
         if value is None:
             raise ValueError("Object cannot be None")
 
@@ -240,7 +240,7 @@ class ObjectProp(Property):
             encoder.write_iri(value)
             return
 
-        return value.encode(encoder, is_reference=True)
+        return value.encode(encoder, state, is_reference=True)
 
     def decode(self, decoder, *, object_ids=None):
         iri = decoder.read_iri()
@@ -383,13 +383,13 @@ class ListProp(Property):
 
         return ListProxy(self.prop, data=data)
 
-    def encode(self, encoder, value):
+    def encode(self, encoder, value, state):
         check_type(value, ListProxy)
 
         with encoder.write_list() as list_s:
             for v in value:
                 with list_s.write_list_item() as item_s:
-                    self.prop.encode(item_s, v)
+                    self.prop.encode(item_s, v, state)
 
     def decode(self, decoder, *, object_ids=None):
         data = []
@@ -412,7 +412,7 @@ class EnumProp(Property):
                 f"'{value}' is not a valid value for '{self.__class__.__name__}'"
             )
 
-    def encode(self, encoder, value):
+    def encode(self, encoder, value, state):
         encoder.write_enum(value, self)
 
     def decode(self, decoder, *, object_ids=None):
@@ -437,7 +437,6 @@ class SHACLObject(object):
         self._obj_data = {}
         self._obj_properties = {}
         self._obj_iris = {}
-        self._obj_written = False
         self._obj_metadata = {}
 
         self._add_property("_id", StringProp(), iri="@id")
@@ -538,17 +537,17 @@ class SHACLObject(object):
         if iri == "@id":
             if self.REFABLE == Refable.no:
                 raise ValueError(
-                    "{self.__class__.__name__} ({id(self)}) is not referenceable. Property '{iri}' cannot be set to '{value}'"
+                    f"{self.__class__.__name__} ({id(self)}) is not referenceable. Property '{iri}' cannot be set to '{value}'"
                 )
             elif self.REFABLE == Refable.local:
                 if not value.startswith("_:"):
                     raise ValueError(
-                        "{self.__class__.__name__} ({id(self)}) can only have local reference. Property '{iri}' cannot be set to '{value}' and must start with '_:'"
+                        f"{self.__class__.__name__} ({id(self)}) can only have local reference. Property '{iri}' cannot be set to '{value}' and must start with '_:'"
                     )
             elif self.REFABLE in [Refable.yes, Refable.always]:
                 if value.startswith("_:"):
                     raise ValueError(
-                        "{self.__class__.__name__} ({id(self)}) can has mandatory reference. Property '{iri}' cannot be set to '{value}'"
+                        f"{self.__class__.__name__} ({id(self)}) can has mandatory reference. Property '{iri}' cannot be set to '{value}'"
                     )
 
         prop, _, _, _ = self.__get_prop(iri)
@@ -600,20 +599,19 @@ class SHACLObject(object):
         for obj in seen:
             yield obj
 
-    def encode(self, encoder, *, is_reference=False):
+    def encode(self, encoder, state, *, is_reference=False):
         idname = self.ID_ALIAS or self._obj_iris["_id"]
-        if self._id is not None and self.REFABLE == Refable.no:
-            raise ValueError(
-                f"{self.__class__.__name__} ({id(self)}) is not referenceable. Property '{idname}' must not be defined (currently '{self._id}')"
-            )
-
         if not self._id and self.REFABLE in [Refable.yes, Refable.always]:
             raise ValueError(
                 f"{self.__class__.__name__} ({id(self)}) must have a '{idname}' property to be referenceable"
             )
 
-        if self._id and self._obj_written:
-            encoder.write_iri(self._id)
+        if state.is_written(self):
+            if self.REFABLE == Refable.no:
+                raise ValueError(
+                    f"{self.__class__.__name__} ({id(self)}) is not referenceable"
+                )
+            encoder.write_iri(state.get_object_id(self))
             return
 
         if is_reference and self.REFABLE == Refable.always:
@@ -621,9 +619,13 @@ class SHACLObject(object):
                 f"{self.__class__.__name__} ({id(self)}) must always be referenced by name, and cannot be inlined"
             )
 
-        self._obj_written = True
+        state.add_written(self)
 
-        with encoder.write_object(self) as obj_s:
+        with encoder.write_object(
+            self,
+            state.get_object_id(self),
+            bool(self._id) or state.is_refed(self),
+        ) as obj_s:
             for iri, prop, min_count, max_count, pyname in self.__iter_props():
                 value = self._obj_data[iri]
                 if prop.elide(value):
@@ -649,7 +651,7 @@ class SHACLObject(object):
                     continue
 
                 with obj_s.write_property(iri) as prop_s:
-                    prop.encode(prop_s, value)
+                    prop.encode(prop_s, value, state)
 
     @classmethod
     def decode(cls, decoder, *, object_ids=None):
@@ -742,6 +744,35 @@ def make_context():
     return Context(CONTEXTS)
 
 
+class EncodeState(object):
+    def __init__(self):
+        self.ref_objects = set()
+        self.written_objects = set()
+        self.blank_objects = {}
+
+    def get_object_id(self, o):
+        if o._id:
+            return o._id
+
+        if o not in self.blank_objects:
+            _id = f"_:{o.__class__.__name__}{len(self.blank_objects)}"
+            self.blank_objects[o] = _id
+
+        return self.blank_objects[o]
+
+    def is_refed(self, o):
+        return o in self.ref_objects
+
+    def add_refed(self, o):
+        self.ref_objects.add(o)
+
+    def is_written(self, o):
+        return o in self.written_objects
+
+    def add_written(self, o):
+        self.written_objects.add(o)
+
+
 def encode_objects(encoder, objects, force_list=False):
     """
     Serialize a list of objects to a serialization encoder
@@ -749,27 +780,28 @@ def encode_objects(encoder, objects, force_list=False):
     If force_list is true, a list will always be written using the encoder.
     """
     ref_counts = {}
-    id_objects = set()
+    state = EncodeState()
 
     def walk_callback(value, path):
+        nonlocal state
         nonlocal ref_counts
 
         if not isinstance(value, SHACLObject):
             return True
-
-        value._obj_written = False
 
         # Remove blank node ID for re-assignment
         if value._id and value._id.startswith("_:"):
             del value._id
 
         if value._id or value.REFABLE == Refable.always:
-            id_objects.add(value)
+            state.add_refed(value)
 
+        # If the object is referenced more than once, add it to the set of
+        # referenced objects
         ref_counts.setdefault(value, 0)
         ref_counts[value] += 1
         if ref_counts[value] > 1:
-            id_objects.add(value)
+            state.add_refed(value)
             return False
 
         return True
@@ -777,17 +809,14 @@ def encode_objects(encoder, objects, force_list=False):
     for o in objects:
         o.walk(walk_callback)
 
-    for idx, o in enumerate(id_objects):
-        if not o._id:
-            o._id = f"_:{o.__class__.__name__}{idx}"
-
     use_list = force_list or len(objects) > 1
 
     objects = set(objects)
 
     if use_list:
-        # If we are making a list, put all ID objects in the root
-        objects |= id_objects
+        # If we are making a list add all the objects referred to by reference
+        # to the list
+        objects |= state.ref_objects
 
     objects = list(objects)
     objects.sort()
@@ -802,17 +831,17 @@ def encode_objects(encoder, objects, force_list=False):
         # serialized into the @graph, it will serialize as a string instead of
         # the actual object
         for o in objects:
-            o._obj_written = True
+            state.written_objects.add(o)
 
         with encoder.write_list() as list_s:
             for o in objects:
                 # Allow this specific object to be written now
-                o._obj_written = False
+                state.written_objects.remove(o)
                 with list_s.write_list_item() as item_s:
-                    o.encode(item_s)
+                    o.encode(item_s, state)
 
     else:
-        objects[0].encode(encoder)
+        objects[0].encode(encoder, state)
 
 
 def decode_objects(decoder):
@@ -1005,7 +1034,7 @@ class Encoder(ABC):
 
     @abstractmethod
     @contextmanager
-    def write_object(self, o):
+    def write_object(self, o, _id, needs_id):
         pass
 
     @abstractmethod
@@ -1054,12 +1083,14 @@ class JSONLDEncoder(Encoder):
             self.data[self.context.compact_vocab(iri)] = s.data
 
     @contextmanager
-    def write_object(self, o):
+    def write_object(self, o, _id, needs_id):
         self.data = {
             self.context.compact("@type"): self.context.compact_vocab(o.TYPE),
         }
-        if o._id:
-            self.data[o.ID_ALIAS or o._IRI["_id"]] = self.context.compact(o._id)
+        if needs_id:
+            self.data[o.ID_ALIAS or self.context.compact("@id")] = self.context.compact(
+                _id
+            )
         yield self
 
     @contextmanager
@@ -1167,15 +1198,15 @@ class JSONLDInlineEncoder(Encoder):
         self.comma = True
 
     @contextmanager
-    def write_object(self, o):
+    def write_object(self, o, _id, needs_id):
         self._write_comma()
 
         typname = self.context.compact("@type")
         typval = self.context.compact_vocab(o.TYPE)
         self.write("{")
-        if o._id:
-            idname = o.ID_ALIAS or o._IRI["_id"]
-            idval = self.context.compact(o._id)
+        if needs_id:
+            idname = o.ID_ALIAS or self.context.compact("@id")
+            idval = self.context.compact(_id)
             self.write(f'"{idname}": "{idval}",')
         self.write(f'"{typname}":"{typval}"')
 

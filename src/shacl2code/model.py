@@ -112,15 +112,7 @@ class Model(object):
 
                 v = EnumValue(
                     _id=str(value_iri),
-                    varname=str(
-                        self.model.value(
-                            value_iri,
-                            RDFS.label,
-                            default=remove_common_prefix(value_iri, cls_iri).lstrip(
-                                "/"
-                            ),
-                        ),
-                    ),
+                    varname=remove_common_prefix(value_iri, cls_iri).lstrip("/"),
                     comment=str(self.model.value(value_iri, RDFS.comment, default="")),
                 )
                 enum_values.append(v)

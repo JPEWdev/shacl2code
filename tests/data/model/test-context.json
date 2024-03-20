@@ -1,7 +1,7 @@
 {
   "@context": {
     "@base": "http://example.org/",
-    "test": "http://example.org",
+    "test": "http://example.org/",
     "xsd": "http://www.w3.org/2001/XMLSchema#",
     "test-class/string-list-prop": {
       "@id": "test:test-class/string-list-prop",
@@ -15,12 +15,12 @@
       "@id": "test:test-class/string-scalar-prop",
       "@type": "xsd:string"
     },
-    "test-class-required/string-scalar-prop": {
-      "@id": "test:test-class-required/string-scalar-prop",
+    "test-class/required-string-scalar-prop": {
+      "@id": "test:test-class/required-string-scalar-prop",
       "@type": "xsd:string"
     },
-    "test-class-required/string-list-prop": {
-      "@id": "test:test-class-required/string-list-prop",
+    "test-class/required-string-list-prop": {
+      "@id": "test:test-class/required-string-list-prop",
       "@type": "xsd:string"
     },
     "test-class/named-property": {
@@ -34,6 +34,10 @@
     "test-class/datetime-list-prop": {
       "@id": "test:test-class/datetime-list-prop",
       "@type": "xsd:dateTime"
+    },
+    "test-class/datetimestamp-scalar-prop": {
+      "@id": "test:test-class/datetimestamp-scalar-prop",
+      "@type": "xsd:dateTimeStamp"
     },
     "test-class/positive-integer-prop": {
       "@id": "test:test-class/positive-integer-prop",
@@ -92,8 +96,12 @@
       "@type": "xsd:string"
     },
     "test-class/regex-datetime": {
-        "@id": "test:test-class/regex-datetime",
-        "@type": "xsd:dateTime"
+      "@id": "test:test-class/regex-datetime",
+      "@type": "xsd:dateTime"
+    },
+    "test-class/regex-datetimestamp": {
+      "@id": "test:test-class/regex-datetimestamp",
+      "@type": "xsd:dateTimeStamp"
     },
     "link-class-link-prop": {
       "@id": "test:link-class-prop",

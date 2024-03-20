@@ -13,6 +13,7 @@ from rdflib.namespace import RDF, RDFS, OWL, SH, DefinedNamespace, Namespace
 PATTERN_DATATYPES = [
     "http://www.w3.org/2001/XMLSchema#string",
     "http://www.w3.org/2001/XMLSchema#dateTime",
+    "http://www.w3.org/2001/XMLSchema#dateTimeStamp",
     "http://www.w3.org/2001/XMLSchema#anyURI",
 ]
 

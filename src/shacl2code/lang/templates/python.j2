@@ -43,7 +43,9 @@ class Property(ABC):
         if self.pattern is not None and not re.search(
             self.pattern, self.to_string(value)
         ):
-            raise ValueError(f"Value is not correctly formatted. Got '{value}'")
+            raise ValueError(
+                f"Value is not correctly formatted. Got '{self.to_string(value)}'"
+            )
 
     def set(self, value):
         return value
@@ -63,8 +65,7 @@ class Property(ABC):
     def link_prop(self, value, link_cache, missing, visited):
         return value
 
-    @classmethod
-    def to_string(cls, value):
+    def to_string(self, value):
         return str(value)
 
     @abstractmethod
@@ -87,10 +88,10 @@ class StringProp(Property):
         return str(value)
 
     def encode(self, encoder, value, state):
-        encoder.write_string(value)
+        encoder.write_string(self, value)
 
     def decode(self, decoder, *, object_ids=None):
-        return decoder.read_string()
+        return decoder.read_string(self)
 
 
 class AnyURIProp(StringProp):
@@ -103,24 +104,23 @@ class AnyURIProp(StringProp):
 
 class DateTimeProp(Property):
     """
-    A Date/Time Object
+    A Date/Time Object with optional timezone
     """
 
     VALID_TYPES = datetime
     UTC_FORMAT_STR = "%Y-%m-%dT%H:%M:%SZ"
-    REGEX = r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})$"
+    REGEX = r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})?$"
 
     def set(self, value):
         return self._normalize(value)
 
     def encode(self, encoder, value, state):
-        encoder.write_datetime(value)
+        encoder.write_datetime(self, value)
 
     def decode(self, decoder, *, object_ids=None):
-        return self._normalize(decoder.read_datetime())
+        return self._normalize(decoder.read_datetime(self))
 
-    @classmethod
-    def _normalize(cls, value):
+    def _normalize(self, value):
         if value.utcoffset() is None:
             value = value.astimezone()
         offset = value.utcoffset()
@@ -130,26 +130,32 @@ class DateTimeProp(Property):
         value = value.replace(microsecond=0)
         return value
 
-    @classmethod
-    def to_string(cls, value):
-        value = cls._normalize(value)
+    def to_string(self, value):
+        value = self._normalize(value)
         if value.tzinfo == timezone.utc:
-            return value.strftime(cls.UTC_FORMAT_STR)
+            return value.strftime(self.UTC_FORMAT_STR)
         return value.isoformat()
 
-    @classmethod
-    def from_string(cls, value):
-        if not re.match(cls.REGEX, value):
+    def from_string(self, value):
+        if not re.match(self.REGEX, value):
             raise ValueError(f"'{value}' is not a correctly formatted datetime")
         if "Z" in value:
             d = datetime(
-                *(time.strptime(value, cls.UTC_FORMAT_STR)[0:6]),
+                *(time.strptime(value, self.UTC_FORMAT_STR)[0:6]),
                 tzinfo=timezone.utc,
             )
         else:
             d = datetime.fromisoformat(value)
 
-        return cls._normalize(d)
+        return self._normalize(d)
+
+
+class DateTimeStampProp(DateTimeProp):
+    """
+    A Date/Time Object with required timestamp
+    """
+
+    REGEX = r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})$"
 
 
 class IntegerProp(Property):
@@ -159,10 +165,10 @@ class IntegerProp(Property):
         return int(value)
 
     def encode(self, encoder, value, state):
-        encoder.write_integer(value)
+        encoder.write_integer(self, value)
 
     def decode(self, decoder, *, object_ids=None):
-        return decoder.read_integer()
+        return decoder.read_integer(self)
 
 
 class PositiveIntegerProp(IntegerProp):
@@ -186,10 +192,10 @@ class BooleanProp(Property):
         return bool(value)
 
     def encode(self, encoder, value, state):
-        encoder.write_bool(value)
+        encoder.write_bool(self, value)
 
     def decode(self, decoder, *, object_ids=None):
-        return decoder.read_bool()
+        return decoder.read_bool(self)
 
 
 class FloatProp(Property):
@@ -199,10 +205,10 @@ class FloatProp(Property):
         return float(value)
 
     def encode(self, encoder, value, state):
-        encoder.write_float(value)
+        encoder.write_float(self, value)
 
     def decode(self, decoder, *, object_ids=None):
-        return decoder.read_float()
+        return decoder.read_float(self)
 
 
 class ObjectProp(Property):
@@ -413,7 +419,7 @@ class EnumProp(Property):
             )
 
     def encode(self, encoder, value, state):
-        encoder.write_enum(value, self)
+        encoder.write_enum(self, value)
 
     def decode(self, decoder, *, object_ids=None):
         return decoder.read_enum(self)
@@ -867,11 +873,11 @@ def decode_objects(decoder):
 
 class Decoder(ABC):
     @abstractmethod
-    def read_string(self):
+    def read_string(self, prop):
         pass
 
     @abstractmethod
-    def read_integer(self):
+    def read_integer(self, prop):
         pass
 
     @abstractmethod
@@ -879,15 +885,15 @@ class Decoder(ABC):
         pass
 
     @abstractmethod
-    def read_enum(self, e):
+    def read_enum(self, prop):
         pass
 
     @abstractmethod
-    def read_bool(self):
+    def read_bool(self, prop):
         pass
 
     @abstractmethod
-    def read_float(self):
+    def read_float(self, prop):
         pass
 
     @abstractmethod
@@ -913,27 +919,27 @@ class JSONLDDecoder(Decoder):
         self.data = data
         self.context = context
 
-    def read_string(self):
+    def read_string(self, prop):
         if isinstance(self.data, str):
             return self.data
         return None
 
-    def read_datetime(self):
+    def read_datetime(self, prop):
         if isinstance(self.data, str):
-            return DateTimeProp.from_string(self.data)
+            return prop.from_string(self.data)
         return None
 
-    def read_integer(self):
+    def read_integer(self, prop):
         if isinstance(self.data, int):
             return self.data
         return None
 
-    def read_bool(self):
+    def read_bool(self, prop):
         if isinstance(self.data, bool):
             return self.data
         return None
 
-    def read_float(self):
+    def read_float(self, prop):
         if isinstance(self.data, (int, float, str)):
             return float(self.data)
         return None
@@ -943,7 +949,7 @@ class JSONLDDecoder(Decoder):
             return self.context.expand(self.data)
         return None
 
-    def read_enum(self, e):
+    def read_enum(self, prop):
         if isinstance(self.data, str):
             return self.context.expand_vocab(self.data)
         return None
@@ -1000,15 +1006,15 @@ class JSONLDDeserializer(object):
 
 class Encoder(ABC):
     @abstractmethod
-    def write_string(self, v):
+    def write_string(self, prop, v):
         pass
 
     @abstractmethod
-    def write_datetime(self, v):
+    def write_datetime(self, prop, v):
         pass
 
     @abstractmethod
-    def write_integer(self, v):
+    def write_integer(self, prop, v):
         pass
 
     @abstractmethod
@@ -1016,15 +1022,15 @@ class Encoder(ABC):
         pass
 
     @abstractmethod
-    def write_enum(self, v, e):
+    def write_enum(self, prop, v):
         pass
 
     @abstractmethod
-    def write_bool(self, v):
+    def write_bool(self, prop, v):
         pass
 
     @abstractmethod
-    def write_float(self, v):
+    def write_float(self, prop, v):
         pass
 
     @abstractmethod
@@ -1053,25 +1059,25 @@ class JSONLDEncoder(Encoder):
         self.data = data
         self.context = context
 
-    def write_string(self, v):
+    def write_string(self, prop, v):
         self.data = v
 
-    def write_datetime(self, v):
-        self.data = DateTimeProp.to_string(v)
+    def write_datetime(self, prop, v):
+        self.data = prop.to_string(v)
 
-    def write_integer(self, v):
+    def write_integer(self, prop, v):
         self.data = v
 
     def write_iri(self, v):
-        self.write_string(self.context.compact(v))
+        self.data = self.context.compact(v)
 
-    def write_enum(self, v, e):
-        self.write_string(self.context.compact_vocab(v))
+    def write_enum(self, prop, v):
+        self.write_string(prop, self.context.compact_vocab(v))
 
-    def write_bool(self, v):
+    def write_bool(self, prop, v):
         self.data = v
 
-    def write_float(self, v):
+    def write_float(self, prop, v):
         self.data = str(v)
 
     @contextmanager
@@ -1164,28 +1170,28 @@ class JSONLDInlineEncoder(Encoder):
     def _need_comma(self):
         self.comma = True
 
-    def write_string(self, v):
+    def write_string(self, prop, v):
         self.write(f'"{v}"')
 
-    def write_datetime(self, v):
-        self.write('"' + DateTimeProp.to_string(v) + '"')
+    def write_datetime(self, prop, v):
+        self.write('"' + prop.to_string(v) + '"')
 
-    def write_integer(self, v):
+    def write_integer(self, prop, v):
         self.write(f"{v}")
 
     def write_iri(self, v):
-        self.write_string(self.context.compact(v))
+        self.write(f'"{self.context.compact(v)}"')
 
-    def write_enum(self, v, e):
+    def write_enum(self, prop, v):
         self.write_iri(v)
 
-    def write_bool(self, v):
+    def write_bool(self, prop, v):
         if v:
             self.write("true")
         else:
             self.write("false")
 
-    def write_float(self, v):
+    def write_float(self, prop, v):
         self.write(f'"{v}"')
 
     @contextmanager
@@ -1302,6 +1308,7 @@ DATATYPE_CLASSES = {
     "http://www.w3.org/2001/XMLSchema#boolean": "BooleanProp",
     "http://www.w3.org/2001/XMLSchema#decimal": "FloatProp",
     "http://www.w3.org/2001/XMLSchema#dateTime": "DateTimeProp",
+    "http://www.w3.org/2001/XMLSchema#dateTimeStamp": "DateTimeStampProp",
 }
 %}
 

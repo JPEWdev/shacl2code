@@ -45,6 +45,7 @@
             "test-class/named-property": "hello",
             "test-class/datetime-scalar-prop": "2024-03-11T00:00:00Z",
             "test-class/datetime-list-prop": ["2024-03-11T00:00:00Z"],
+            "test-class/datetimestamp-scalar-prop": "2024-03-11T00:00:00Z",
             "test-class/positive-integer-prop": 1,
             "test-class/anyuri-prop": "http://foo.bar.com/",
             "test-class/nonnegative-integer-prop": 0,
@@ -60,7 +61,8 @@
             "test-class/enum-prop": "enumType/foo",
             "test-class/enum-prop-no-class": "enumType/bar",
             "test-class/regex": "foo1",
-            "test-class/regex-datetime": "2024-03-11T00:00:00Z",
+            "test-class/regex-datetime": "2024-03-11T00:00:00+01:00",
+            "test-class/regex-datetimestamp": "2024-03-11T00:00:00Z",
             "test-class/regex-list": ["foo2", "foo3"],
             "import": "foo",
             "encode": "foo"

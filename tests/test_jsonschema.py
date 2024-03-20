@@ -625,8 +625,24 @@ def type_tests(name, *, good=[], bad=[], typ=[]):
         ),
         *type_tests(
             "test-class/datetime-scalar-prop",
-            good=["2024-03-11T00:00:00Z"],
+            good=[
+                "2024-03-11T00:00:00+00:00",
+                "2024-03-11T00:00:00Z",
+                "2024-03-11T00:00:00",
+            ],
             bad=["abc"],
+            typ=[str],
+        ),
+        *type_tests(
+            "test-class/datetimestamp-scalar-prop",
+            good=[
+                "2024-03-11T00:00:00+00:00",
+                "2024-03-11T00:00:00Z",
+            ],
+            bad=[
+                "abc",
+                "2024-03-11T00:00:00",
+            ],
             typ=[str],
         ),
         *type_tests("test-class/string-scalar-prop", good=["foo", ""], typ=[str]),
@@ -668,11 +684,25 @@ def type_tests(name, *, good=[], bad=[], typ=[]):
         *type_tests(
             "test-class/regex-datetime",
             good=[
+                "2024-03-11T00:00:00+01:00",
+            ],
+            bad=[
+                "2024-03-11T00:00:00+1:00",
+                "2024-03-11T00:00:00+00:00",
+                "2024-03-11T00:00:00",
+                "2024-03-11T00:00:00Z",
+            ],
+            typ=[],
+        ),
+        *type_tests(
+            "test-class/regex-datetimestamp",
+            good=[
                 "2024-03-11T00:00:00Z",
             ],
             bad=[
                 "2024-03-11T00:00:00",
                 "2024-03-11T00:00:00+1:00",
+                "2024-03-11T00:00:00+00:00",
             ],
             typ=[],
         ),

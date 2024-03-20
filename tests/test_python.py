@@ -713,14 +713,8 @@ def type_tests(name, *typ):
         (
             "test_class_datetime_scalar_prop",
             # Microseconds are ignored
-            datetime(2024, 3, 11, 0, 0, 0, 999, tzinfo=timezone.utc),
-            datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone.utc),
-        ),
-        (
-            "test_class_datetime_scalar_prop",
-            # Microseconds are ignored
-            datetime(2024, 3, 11, 0, 0, 0, 999, tzinfo=timezone.utc),
-            datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone.utc),
+            datetime(2024, 3, 11, 0, 0, 0, 999),
+            datetime(2024, 3, 11, 0, 0, 0).astimezone(),
         ),
         (
             "test_class_datetime_scalar_prop",
@@ -747,6 +741,62 @@ def type_tests(name, *typ):
             ),
         ),
         *type_tests("test_class_datetime_scalar_prop", datetime),
+        # datetimestamp
+        (
+            # Local time
+            "test_class_datetimestamp_scalar_prop",
+            datetime(2024, 3, 11, 0, 0, 0),
+            datetime(2024, 3, 11, 0, 0, 0).astimezone(),
+        ),
+        (
+            # Explict timezone
+            "test_class_datetimestamp_scalar_prop",
+            datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone(-timedelta(hours=6))),
+            SAME_AS_VALUE,
+        ),
+        (
+            # Explict timezone
+            "test_class_datetimestamp_scalar_prop",
+            datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone(timedelta(hours=0))),
+            SAME_AS_VALUE,
+        ),
+        (
+            "test_class_datetimestamp_scalar_prop",
+            # UTC
+            datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone.utc),
+            SAME_AS_VALUE,
+        ),
+        (
+            "test_class_datetimestamp_scalar_prop",
+            # Microseconds are ignored
+            datetime(2024, 3, 11, 0, 0, 0, 999, tzinfo=timezone.utc),
+            datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone.utc),
+        ),
+        (
+            "test_class_datetimestamp_scalar_prop",
+            # Minutes timezone
+            datetime(
+                2024, 3, 11, 0, 0, 0, tzinfo=timezone(timedelta(hours=-1, minutes=21))
+            ),
+            SAME_AS_VALUE,
+        ),
+        (
+            "test_class_datetimestamp_scalar_prop",
+            # Seconds from timezone are dropped
+            datetime(
+                2024,
+                3,
+                11,
+                0,
+                0,
+                0,
+                tzinfo=timezone(timedelta(hours=-1, minutes=21, seconds=31)),
+            ),
+            datetime(
+                2024, 3, 11, 0, 0, 0, tzinfo=timezone(timedelta(hours=-1, minutes=21))
+            ),
+        ),
+        *type_tests("test_class_datetimestamp_scalar_prop", datetime),
         # String
         ("test_class_string_scalar_prop", "foo", "foo"),
         ("test_class_string_scalar_prop", "", ""),
@@ -790,16 +840,37 @@ def type_tests(name, *typ):
         # Pattern validated dateTime
         (
             "test_class_regex_datetime",
+            datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone(timedelta(hours=1))),
+            SAME_AS_VALUE,
+        ),
+        (
+            "test_class_regex_datetime",
             datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone(-timedelta(hours=6))),
             ValueError,
         ),
         (
             "test_class_regex_datetime",
+            datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone.utc),
+            ValueError,
+        ),
+        (
+            "test_class_regex_datetime",
+            datetime(2024, 3, 11, 0, 0, 0),
+            ValueError,
+        ),
+        # Pattern validated dateTimeStamp
+        (
+            "test_class_regex_datetimestamp",
+            datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone(-timedelta(hours=6))),
+            ValueError,
+        ),
+        (
+            "test_class_regex_datetimestamp",
             datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone(timedelta(hours=0))),
             datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone.utc),
         ),
         (
-            "test_class_regex_datetime",
+            "test_class_regex_datetimestamp",
             datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone.utc),
             SAME_AS_VALUE,
         ),
@@ -1018,6 +1089,11 @@ def test_list_prop_validation(import_test_context, prop, value, expect):
         for v in value:
             getattr(c, prop).append(v)
 
+        import pprint
+
+        pprint.pprint(getattr(c, prop))
+        pprint.pprint(expect)
+
         assert getattr(c, prop) == expect
         for idx, v in enumerate(expect):
             assert getattr(c, prop)[idx] == v
@@ -1042,6 +1118,60 @@ def test_list_prop_validation(import_test_context, prop, value, expect):
 
         for v in expect:
             assert v in getattr(c, prop)
+
+
+@pytest.mark.parametrize(
+    "value,expect",
+    [
+        (
+            "2024-03-11T01:02:03",
+            datetime(2024, 3, 11, 1, 2, 3).astimezone(),
+        ),
+        (
+            "2024-03-11T01:02:03Z",
+            datetime(2024, 3, 11, 1, 2, 3, tzinfo=timezone.utc),
+        ),
+        (
+            "2024-03-11T01:02:03+00:00",
+            datetime(2024, 3, 11, 1, 2, 3, tzinfo=timezone.utc),
+        ),
+        (
+            "2024-03-11T01:02:03+03:00",
+            datetime(2024, 3, 11, 1, 2, 3, tzinfo=timezone(timedelta(hours=3))),
+        ),
+        (
+            "2024-03-11T01:02:03-03:00",
+            datetime(2024, 3, 11, 1, 2, 3, tzinfo=timezone(timedelta(hours=-3))),
+        ),
+        (
+            "2024-03-11T01:02:03+03:21",
+            datetime(
+                2024, 3, 11, 1, 2, 3, tzinfo=timezone(timedelta(hours=3, minutes=21))
+            ),
+        ),
+        # Microseconds not allowed
+        (
+            "2024-03-11T01:02:03.999Z",
+            ValueError,
+        ),
+        # Timezone with seconds not allowed
+        (
+            "2024-03-11T01:02:03+03:00:01",
+            ValueError,
+        ),
+    ],
+)
+def test_datetime_from_string(import_test_context, value, expect):
+    import model
+
+    p = model.DateTimeProp()
+
+    if isinstance(expect, type) and issubclass(expect, Exception):
+        with pytest.raises(expect):
+            p.from_string(value)
+    else:
+        v = p.from_string(value)
+        assert v == expect
 
 
 @pytest.mark.parametrize(
@@ -1086,14 +1216,16 @@ def test_list_prop_validation(import_test_context, prop, value, expect):
         ),
     ],
 )
-def test_datetime_from_string(import_test_context, value, expect):
+def test_datetimestamp_from_string(import_test_context, value, expect):
     import model
+
+    p = model.DateTimeStampProp()
 
     if isinstance(expect, type) and issubclass(expect, Exception):
         with pytest.raises(expect):
-            model.DateTimeProp.from_string(value)
+            p.from_string(value)
     else:
-        v = model.DateTimeProp.from_string(value)
+        v = p.from_string(value)
         assert v == expect
 
 
@@ -1157,11 +1289,13 @@ def test_datetime_from_string(import_test_context, value, expect):
 def test_datetime_to_string(import_test_context, value, expect):
     import model
 
+    p = model.DateTimeProp()
+
     if isinstance(expect, type) and issubclass(expect, Exception):
         with pytest.raises(expect):
-            model.DateTimeProp.to_string(value)
+            p.to_string(value)
     else:
-        v = model.DateTimeProp.to_string(value)
+        v = p.to_string(value)
         assert v == expect
         assert re.match(
             model.DateTimeProp.REGEX, v
@@ -1263,6 +1397,5 @@ def test_shacl(roundtrip):
         data,
         shacl_graph=model,
         ont_graph=model,
-        meta_shacl=True,
     )
     assert conforms, result_text

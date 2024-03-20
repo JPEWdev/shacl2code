@@ -22,7 +22,7 @@
     sh:property [
         sh:datatype xsd:string ;
         sh:path <test-class/string-list-prop>
-    ] ,
+    ],
     [
         sh:path <test-class/string-list-no-datatype>
     ],
@@ -45,6 +45,11 @@
     [
         sh:datatype xsd:dateTime ;
         sh:path <test-class/datetime-list-prop> ;
+    ],
+    [
+        sh:datatype xsd:dateTimeStamp ;
+        sh:path <test-class/datetimestamp-scalar-prop> ;
+        sh:maxCount 1
     ],
     [
         sh:datatype xsd:positiveInteger ;
@@ -128,7 +133,13 @@
         sh:datatype xsd:dateTime ;
         sh:path <test-class/regex-datetime> ;
         sh:maxCount 1 ;
-        sh:pattern "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$" 
+        sh:pattern "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\+01:00$"
+    ],
+    [
+        sh:datatype xsd:dateTimeStamp ;
+        sh:path <test-class/regex-datetimestamp> ;
+        sh:maxCount 1 ;
+        sh:pattern "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$"
     ]
     .
 
@@ -195,6 +206,11 @@
 <test-class/datetime-list-prop> a rdf:Property ;
     rdfs:comment "A datetime list property" ;
     rdfs:range xsd:dateTime
+    .
+
+<test-class/datetimestamp-scalar-prop> a rdf:Property ;
+    rdfs:comment "A scalar dateTimeStamp property";
+    rdfs:range xsd:dateTimeStamp
     .
 
 <test-class/positive-integer-prop> a rdf:Property ;
@@ -280,6 +296,11 @@
 <test-class/regex-datetime> a rdf:Property ;
     rdfs:comment "A regex dateTime" ;
     rdfs:range xsd:dateTime
+    .
+
+<test-class/regex-datetimestamp> a rdf:Property ;
+    rdfs:comment "A regex dateTimeStamp" ;
+    rdfs:range xsd:dateTimeStamp
     .
 
 <enumType> a rdfs:Class, owl:Class ;

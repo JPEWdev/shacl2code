@@ -88,10 +88,10 @@ class StringProp(Property):
         return str(value)
 
     def encode(self, encoder, value, state):
-        encoder.write_string(self, value)
+        encoder.write_string(value)
 
     def decode(self, decoder, *, object_ids=None):
-        return decoder.read_string(self)
+        return decoder.read_string()
 
 
 class AnyURIProp(StringProp):
@@ -115,10 +115,14 @@ class DateTimeProp(Property):
         return self._normalize(value)
 
     def encode(self, encoder, value, state):
-        encoder.write_datetime(self, value)
+        encoder.write_datetime(self.to_string(value))
 
     def decode(self, decoder, *, object_ids=None):
-        return self._normalize(decoder.read_datetime(self))
+        s = decoder.read_datetime()
+        if s is None:
+            return None
+        v = self.from_string(s)
+        return self._normalize(v)
 
     def _normalize(self, value):
         if value.utcoffset() is None:
@@ -165,10 +169,10 @@ class IntegerProp(Property):
         return int(value)
 
     def encode(self, encoder, value, state):
-        encoder.write_integer(self, value)
+        encoder.write_integer(value)
 
     def decode(self, decoder, *, object_ids=None):
-        return decoder.read_integer(self)
+        return decoder.read_integer()
 
 
 class PositiveIntegerProp(IntegerProp):
@@ -192,10 +196,10 @@ class BooleanProp(Property):
         return bool(value)
 
     def encode(self, encoder, value, state):
-        encoder.write_bool(self, value)
+        encoder.write_bool(value)
 
     def decode(self, decoder, *, object_ids=None):
-        return decoder.read_bool(self)
+        return decoder.read_bool()
 
 
 class FloatProp(Property):
@@ -205,10 +209,10 @@ class FloatProp(Property):
         return float(value)
 
     def encode(self, encoder, value, state):
-        encoder.write_float(self, value)
+        encoder.write_float(value)
 
     def decode(self, decoder, *, object_ids=None):
-        return decoder.read_float(self)
+        return decoder.read_float()
 
 
 class ObjectProp(Property):
@@ -419,7 +423,7 @@ class EnumProp(Property):
             )
 
     def encode(self, encoder, value, state):
-        encoder.write_enum(self, value)
+        encoder.write_enum(value, self)
 
     def decode(self, decoder, *, object_ids=None):
         return decoder.read_enum(self)
@@ -873,11 +877,15 @@ def decode_objects(decoder):
 
 class Decoder(ABC):
     @abstractmethod
-    def read_string(self, prop):
+    def read_string(self):
         pass
 
     @abstractmethod
-    def read_integer(self, prop):
+    def read_datetime(self):
+        pass
+
+    @abstractmethod
+    def read_integer(self):
         pass
 
     @abstractmethod
@@ -885,15 +893,15 @@ class Decoder(ABC):
         pass
 
     @abstractmethod
-    def read_enum(self, prop):
+    def read_enum(self, e):
         pass
 
     @abstractmethod
-    def read_bool(self, prop):
+    def read_bool(self):
         pass
 
     @abstractmethod
-    def read_float(self, prop):
+    def read_float(self):
         pass
 
     @abstractmethod
@@ -919,27 +927,25 @@ class JSONLDDecoder(Decoder):
         self.data = data
         self.context = context
 
-    def read_string(self, prop):
+    def read_string(self):
         if isinstance(self.data, str):
             return self.data
         return None
 
-    def read_datetime(self, prop):
-        if isinstance(self.data, str):
-            return prop.from_string(self.data)
-        return None
+    def read_datetime(self):
+        return self.read_string()
 
-    def read_integer(self, prop):
+    def read_integer(self):
         if isinstance(self.data, int):
             return self.data
         return None
 
-    def read_bool(self, prop):
+    def read_bool(self):
         if isinstance(self.data, bool):
             return self.data
         return None
 
-    def read_float(self, prop):
+    def read_float(self):
         if isinstance(self.data, (int, float, str)):
             return float(self.data)
         return None
@@ -949,7 +955,7 @@ class JSONLDDecoder(Decoder):
             return self.context.expand(self.data)
         return None
 
-    def read_enum(self, prop):
+    def read_enum(self, e):
         if isinstance(self.data, str):
             return self.context.expand_vocab(self.data)
         return None
@@ -1006,15 +1012,15 @@ class JSONLDDeserializer(object):
 
 class Encoder(ABC):
     @abstractmethod
-    def write_string(self, prop, v):
+    def write_string(self, v):
         pass
 
     @abstractmethod
-    def write_datetime(self, prop, v):
+    def write_datetime(self, v):
         pass
 
     @abstractmethod
-    def write_integer(self, prop, v):
+    def write_integer(self, v):
         pass
 
     @abstractmethod
@@ -1022,15 +1028,15 @@ class Encoder(ABC):
         pass
 
     @abstractmethod
-    def write_enum(self, prop, v):
+    def write_enum(self, v, e):
         pass
 
     @abstractmethod
-    def write_bool(self, prop, v):
+    def write_bool(self, v):
         pass
 
     @abstractmethod
-    def write_float(self, prop, v):
+    def write_float(self, v):
         pass
 
     @abstractmethod
@@ -1059,25 +1065,25 @@ class JSONLDEncoder(Encoder):
         self.data = data
         self.context = context
 
-    def write_string(self, prop, v):
+    def write_string(self, v):
         self.data = v
 
-    def write_datetime(self, prop, v):
-        self.data = prop.to_string(v)
+    def write_datetime(self, v):
+        self.data = v
 
-    def write_integer(self, prop, v):
+    def write_integer(self, v):
         self.data = v
 
     def write_iri(self, v):
-        self.data = self.context.compact(v)
+        self.write_string(self.context.compact(v))
 
-    def write_enum(self, prop, v):
-        self.write_string(prop, self.context.compact_vocab(v))
+    def write_enum(self, v, e):
+        self.write_string(self.context.compact_vocab(v))
 
-    def write_bool(self, prop, v):
+    def write_bool(self, v):
         self.data = v
 
-    def write_float(self, prop, v):
+    def write_float(self, v):
         self.data = str(v)
 
     @contextmanager
@@ -1170,28 +1176,28 @@ class JSONLDInlineEncoder(Encoder):
     def _need_comma(self):
         self.comma = True
 
-    def write_string(self, prop, v):
+    def write_string(self, v):
         self.write(f'"{v}"')
 
-    def write_datetime(self, prop, v):
-        self.write('"' + prop.to_string(v) + '"')
+    def write_datetime(self, v):
+        self.write_string(v)
 
-    def write_integer(self, prop, v):
+    def write_integer(self, v):
         self.write(f"{v}")
 
     def write_iri(self, v):
-        self.write(f'"{self.context.compact(v)}"')
+        self.write_string(self.context.compact(v))
 
-    def write_enum(self, prop, v):
+    def write_enum(self, v, e):
         self.write_iri(v)
 
-    def write_bool(self, prop, v):
+    def write_bool(self, v):
         if v:
             self.write("true")
         else:
             self.write("false")
 
-    def write_float(self, prop, v):
+    def write_float(self, v):
         self.write(f'"{v}"')
 
     @contextmanager

@@ -878,47 +878,142 @@ def decode_objects(decoder):
 class Decoder(ABC):
     @abstractmethod
     def read_string(self):
+        """
+        Consume the next item as a string.
+
+        Returns the string value of the next item, or `None` if the next item
+        is not a string
+        """
         pass
 
     @abstractmethod
     def read_datetime(self):
+        """
+        Consumes the next item as a date & time string
+
+        Returns the string value of the next item, if it is a ISO datetime, or
+        `None` if the next item is not a ISO datetime string.
+
+        Note that validation of the string is done by the caller, so a minimal
+        implementation can just check if the next item is a string without
+        worrying about the format
+        """
         pass
 
     @abstractmethod
     def read_integer(self):
+        """
+        Consumes the next item as an integer
+
+        Returns the integer value of the next item, or `None` if the next item
+        is not an integer
+        """
         pass
 
     @abstractmethod
     def read_iri(self):
+        """
+        Consumes the next item as an IRI string
+
+        Returns the string value of the next item an IRI, or `None` if the next
+        item is not an IRI.
+
+        The returned string should be either a fully-qualified IRI, or a blank
+        node ID; accounting for context is the responsibility of the `Decoder`
+        """
         pass
 
     @abstractmethod
     def read_enum(self, e):
+        """
+        Consumes the next item as an Enum value string
+
+        Returns the fully qualified IRI of the next enum item, or `None` if the
+        next item is not an enum value.
+
+        The returned string should be either a fully-qualified IRI; accounting
+        for context is the responsibility of the `Decoder`
+
+        The callee is responsible for validating that the returned IRI is
+        actually a member of the specified Enum, so the `Decoder` does not need
+        to check that, but can if it wishes
+        """
         pass
 
     @abstractmethod
     def read_bool(self):
+        """
+        Consume the next item as a boolean value
+
+        Returns the boolean value of the next item, or `None` if the next item
+        is not a boolean
+        """
         pass
 
     @abstractmethod
     def read_float(self):
+        """
+        Consume the next item as a float value
+
+        Returns the float value of the next item, or `None` if the next item is
+        not a float
+        """
         pass
 
     @abstractmethod
     def read_list(self):
+        """
+        Consume the next item as a list generator
+
+        This should generate a `Decoder` object for each item in the list. The
+        generated `Decoder` can be used to read the corresponding item from the
+        list
+        """
+        pass
+
+    @abstractmethod
+    def read_object(self):
+        """
+        Consume next item as an object
+
+        A context manager that "enters" the next item as a object and yields a
+        `Decoder` that can read properties from it. If the next item is not an
+        object, yields `None`
+
+        Properties will be read out of the object using `read_property` and
+        `read_object_id`
+        """
         pass
 
     @abstractmethod
     @contextmanager
     def read_property(self, iri):
-        pass
+        """
+        Read property from object
 
-    @abstractmethod
-    def read_object(self):
+        A context manager that yields a `Decoder` that can be used to read the
+        value of the property with the given IRI in the current object, or
+        `None` if the property does not exist in the current object.
+
+        Note that the provided IRI will be fully qualified; checking for
+        compacted property names is the responsibility of the `Decoder`
+        """
         pass
 
     @abstractmethod
     def read_object_id(self, alias=None):
+        """
+        Read current object ID property
+
+        Returns the ID of the current object if one is defined, or `None` if
+        the current object has no ID.
+
+        The ID must be a fully qualified IRI or a blank node; accounting for
+        context is the responsibility of the `Decoder`
+
+        If `alias` is provided, is is a hint as to another name by which the ID
+        might be found, if the `Decoder` supports aliases for an ID
+        """
         pass
 
 
@@ -1013,50 +1108,131 @@ class JSONLDDeserializer(object):
 class Encoder(ABC):
     @abstractmethod
     def write_string(self, v):
+        """
+        Write a string value
+
+        Encodes the value as a string in the output
+        """
         pass
 
     @abstractmethod
     def write_datetime(self, v):
+        """
+        Write a date & time string
+
+        Encodes the value as an ISO datetime string
+
+        Note: The provided string is already correctly encoded as an ISO datetime
+        """
         pass
 
     @abstractmethod
     def write_integer(self, v):
+        """
+        Write an integer value
+
+        Encodes the value as an integer in the output
+        """
         pass
 
     @abstractmethod
     def write_iri(self, v):
+        """
+        Write IRI
+
+        Encodes the string as an IRI. Note that the string will be either a
+        fully qualified IRI or a blank node ID. Applying context is the
+        responsibility of the `Encoder`
+        """
         pass
 
     @abstractmethod
     def write_enum(self, v, e):
+        """
+        Write enum value IRI
+
+        Encodes the string enum value IRI. Note that the string will be a fully
+        qualified IRI. Applying context is the responsibility of the `Encoder`
+        """
         pass
 
     @abstractmethod
     def write_bool(self, v):
+        """
+        Write boolean
+
+        Encodes the value as a boolean in the output
+        """
         pass
 
     @abstractmethod
     def write_float(self, v):
-        pass
+        """
+        Write float
 
-    @abstractmethod
-    @contextmanager
-    def write_property(self, iri):
+        Encodes the value as a floating point number in the output
+        """
         pass
 
     @abstractmethod
     @contextmanager
     def write_object(self, o, _id, needs_id):
+        """
+        Write object
+
+        A context manager that yields an `Encoder` that can be used to encode
+        the given object properties.
+
+        The provided ID will always be a valid ID (even if o._id is `None`), in
+        case the `Encoder` _must_ have an ID. `needs_id` is a hint to indicate
+        to the `Encoder` if an ID must be written or not (if that is even an
+        option). If it is `True`, the `Encoder` must encode an ID for the
+        object. If `False`, the encoder is not required to encode an ID and may
+        omit it.
+
+        The ID will be either a fully qualified IRI, or a blank node ID.
+        Applying context is the responsibility of the `Encoder`
+
+        Properties will be written the object using `write_property`
+        """
+        pass
+
+    @abstractmethod
+    @contextmanager
+    def write_property(self, iri):
+        """
+        Write object property
+
+        A context manager that yields an `Encoder` that can be used to encode
+        the value for the property with the given IRI in the current object
+
+        Note that the IRI will be fully qualified. Compacting the IRI to encode
+        the property name is the responsibility of the `Encoder`
+        """
         pass
 
     @abstractmethod
     @contextmanager
     def write_list(self):
+        """
+        Write list
+
+        A context manager that yields an `Encoder` that can be used to encode a
+        list.
+
+        Each item of the list will be added using `write_list_item`
+        """
         pass
 
     @abstractmethod
     @contextmanager
     def write_list_item(self):
+        """
+        Write list item
+
+        A context manager that yields an `Encoder` that can be used to encode
+        the value for a list item
+        """
         pass
 
 

@@ -523,10 +523,10 @@ def ref_tests(name, none, blank, iri, inline):
             },
         ),
         # Referenceable tests
-        *ref_tests("ref-no-class", True, False, False, True),
+        *ref_tests("ref-never-class", True, False, False, True),
         *ref_tests("ref-local-class", True, True, False, True),
         *ref_tests("ref-optional-class", True, True, True, True),
-        *ref_tests("ref-yes-class", False, False, True, True),
+        *ref_tests("ref-external-class", False, False, True, True),
         *ref_tests("ref-always-class", False, False, True, False),
         # Alternate ID
         (
@@ -543,6 +543,24 @@ def ref_tests(name, none, blank, iri, inline):
             {
                 "@context": CONTEXT,
                 "@type": "id-prop-class",
+                "@id": "_:blank",
+            },
+        ),
+        # Alternate ID in inherited class
+        (
+            True,
+            {
+                "@context": CONTEXT,
+                "@type": "inherited-id-prop-class",
+                "testid": "_:blank",
+            },
+        ),
+        # @id not allowed for alternate ID classes
+        (
+            False,
+            {
+                "@context": CONTEXT,
+                "@type": "inherited-id-prop-class",
                 "@id": "_:blank",
             },
         ),

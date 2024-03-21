@@ -18,10 +18,26 @@ PATTERN_DATATYPES = [
 ]
 
 
-class SPDXS(DefinedNamespace):
-    referenceable: URIRef
+class SHACL2CODE(DefinedNamespace):
+    refable: URIRef
     idPropertyName: URIRef
-    _NS = Namespace("https://rdf.spdx.org/ns/schema#")
+
+    AlwaysRefable: URIRef
+    ExternalRefable: URIRef
+    OptionalRefable: URIRef
+    LocalRefable: URIRef
+    NeverRefable: URIRef
+
+    _NS = Namespace("https://jpewdev.github.io/shacl2code/schema#")
+
+
+POSSIBLE_REFABLE = [
+    SHACL2CODE.NeverRefable,
+    SHACL2CODE.LocalRefable,
+    SHACL2CODE.OptionalRefable,
+    SHACL2CODE.ExternalRefable,
+    SHACL2CODE.AlwaysRefable,
+]
 
 
 class ModelException(Exception):
@@ -142,6 +158,24 @@ class Model(object):
                 return v
             return str(v)
 
+        def get_inherited_value(subject, predicate, default=None):
+            def get_value(subject, predicate):
+                value = self.model.value(subject, predicate)
+                if value is not None:
+                    return value
+
+                for parent in self.model.objects(subject, RDFS.subClassOf):
+                    value = get_value(parent, predicate)
+                    if value is not None:
+                        return value
+
+                return None
+
+            value = get_value(subject, predicate)
+            if value is not None:
+                return value
+            return default
+
         for cls_iri in class_iris:
             c = Class(
                 _id=str(cls_iri),
@@ -154,15 +188,18 @@ class Model(object):
                 clsname=self.get_class_name(cls_iri),
                 comment=str(self.model.value(cls_iri, RDFS.comment, default="")),
                 properties=[],
-                id_property=str_val(self.model.value(cls_iri, SPDXS.idPropertyName)),
-                refable=str(
-                    self.model.value(cls_iri, SPDXS.referenceable, default="optional")
+                id_property=str_val(
+                    get_inherited_value(cls_iri, SHACL2CODE.idPropertyName)
+                ),
+                refable=get_inherited_value(
+                    cls_iri, SHACL2CODE.refable, SHACL2CODE.OptionalRefable
                 ),
             )
 
-            if c.refable not in ["no", "local", "optional", "yes", "always"]:
+            if c.refable not in POSSIBLE_REFABLE:
                 raise ModelException(
-                    f"Class {c._id} has unknown '{SPDXS.referenceable}' value '{c.refable}'"
+                    f"Class {c._id} has unknown '{SHACL2CODE.refable}' value '{c.refable}'. Must be one of:\n"
+                    + "\n".join(POSSIBLE_REFABLE)
                 )
 
             for obj_prop in self.model.objects(cls_iri, SH.property):

@@ -430,17 +430,17 @@ class EnumProp(Property):
 
 
 class Refable(Enum):
-    no = 1
-    local = 2
-    optional = 3
-    yes = 4
-    always = 5
+    AlwaysRefable = 1
+    ExternalRefable = 2
+    OptionalRefable = 3
+    LocalRefable = 4
+    NeverRefable = 5
 
 
 @functools.total_ordering
 class SHACLObject(object):
     DESERIALIZERS = {}
-    REFABLE = Refable.optional
+    REFABLE = Refable.OptionalRefable
     ID_ALIAS = None
 
     def __init__(self):
@@ -545,16 +545,16 @@ class SHACLObject(object):
 
     def __setitem__(self, iri, value):
         if iri == "@id":
-            if self.REFABLE == Refable.no:
+            if self.REFABLE == Refable.NeverRefable:
                 raise ValueError(
                     f"{self.__class__.__name__} ({id(self)}) is not referenceable. Property '{iri}' cannot be set to '{value}'"
                 )
-            elif self.REFABLE == Refable.local:
+            elif self.REFABLE == Refable.LocalRefable:
                 if not value.startswith("_:"):
                     raise ValueError(
                         f"{self.__class__.__name__} ({id(self)}) can only have local reference. Property '{iri}' cannot be set to '{value}' and must start with '_:'"
                     )
-            elif self.REFABLE in [Refable.yes, Refable.always]:
+            elif self.REFABLE in [Refable.ExternalRefable, Refable.AlwaysRefable]:
                 if value.startswith("_:"):
                     raise ValueError(
                         f"{self.__class__.__name__} ({id(self)}) can has mandatory reference. Property '{iri}' cannot be set to '{value}'"
@@ -611,20 +611,23 @@ class SHACLObject(object):
 
     def encode(self, encoder, state, *, is_reference=False):
         idname = self.ID_ALIAS or self._obj_iris["_id"]
-        if not self._id and self.REFABLE in [Refable.yes, Refable.always]:
+        if not self._id and self.REFABLE in [
+            Refable.ExternalRefable,
+            Refable.AlwaysRefable,
+        ]:
             raise ValueError(
                 f"{self.__class__.__name__} ({id(self)}) must have a '{idname}' property to be referenceable"
             )
 
         if state.is_written(self):
-            if self.REFABLE == Refable.no:
+            if self.REFABLE == Refable.NeverRefable:
                 raise ValueError(
                     f"{self.__class__.__name__} ({id(self)}) is not referenceable"
                 )
             encoder.write_iri(state.get_object_id(self))
             return
 
-        if is_reference and self.REFABLE == Refable.always:
+        if is_reference and self.REFABLE == Refable.AlwaysRefable:
             raise ValueError(
                 f"{self.__class__.__name__} ({id(self)}) must always be referenced by name, and cannot be inlined"
             )
@@ -803,7 +806,7 @@ def encode_objects(encoder, objects, force_list=False):
         if value._id and value._id.startswith("_:"):
             del value._id
 
-        if value._id or value.REFABLE == Refable.always:
+        if value._id or value.REFABLE == Refable.AlwaysRefable:
             state.add_refed(value)
 
         # If the object is referenced more than once, add it to the set of
@@ -1560,15 +1563,13 @@ class {{ varname(class.clsname) }}(
     SHACLObject
 {%- endif -%}):
     TYPE = "{{ class._id }}"
-    REFABLE = Refable.{{ class.refable }}
+    REFABLE = Refable.{{ class.refable.split("#")[-1] }}
     {%- if class.id_property %}
     ID_ALIAS = "{{ class.id_property }}"
     {%- endif %}
 
     def __init__(self, **kwargs):
         super().__init__()
-        {%- if class.id_property %}
-        {%- endif %}
         {%- for prop in class.properties %}
         {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
         {%- if prop.comment %}

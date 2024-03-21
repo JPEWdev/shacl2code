@@ -347,7 +347,7 @@ def test_non_refable(import_test_context, test_context_url):
     c1 = model.link_class()
     c2 = model.link_class()
 
-    non_ref = model.ref_no_class()
+    non_ref = model.ref_never_class()
 
     c1.link_class_link_prop = non_ref
 
@@ -357,7 +357,7 @@ def test_non_refable(import_test_context, test_context_url):
         "@context": test_context_url,
         "@type": "link-class",
         "link-class-link-prop": {
-            "@type": "ref-no-class",
+            "@type": "ref-never-class",
         },
     }
 
@@ -374,7 +374,7 @@ def test_non_refable(import_test_context, test_context_url):
     result = s.serialize_data([non_ref])
     assert result == {
         "@context": test_context_url,
-        "@type": "ref-no-class",
+        "@type": "ref-never-class",
     }
 
     # A non-refable class cannot have an explicit ID assigned
@@ -386,7 +386,11 @@ def test_non_refable(import_test_context, test_context_url):
         non_ref._id = "_:blank"
 
 
-def test_yes_refable(import_test_context, test_context_url):
+@pytest.mark.parametrize(
+    "cls",
+    ["ref_external_class", "ref_inherited_external_class"],
+)
+def test_external_refable(import_test_context, test_context_url, cls):
     import model
 
     TEST_ID = "http://serialize.example.com/name"
@@ -395,7 +399,7 @@ def test_yes_refable(import_test_context, test_context_url):
     c1 = model.link_class()
     c2 = model.link_class()
 
-    ref = model.ref_yes_class()
+    ref = getattr(model, cls)()
 
     # Mandatory reference fails because there is no ID
     c1.link_class_link_prop = ref
@@ -417,7 +421,7 @@ def test_yes_refable(import_test_context, test_context_url):
         "@type": "link-class",
         "link-class-link-prop": {
             "@id": TEST_ID,
-            "@type": "ref-yes-class",
+            "@type": cls.replace("_", "-"),
         },
     }
 
@@ -433,7 +437,7 @@ def test_yes_refable(import_test_context, test_context_url):
             },
             {
                 "@id": TEST_ID,
-                "@type": "ref-yes-class",
+                "@type": cls.replace("_", "-"),
             },
         ],
     }
@@ -588,11 +592,15 @@ def test_local_refable(import_test_context):
     ref._id = "_:blank"
 
 
-def test_id_name(import_test_context, test_context_url):
+@pytest.mark.parametrize(
+    "cls",
+    ["id_prop_class", "inherited_id_prop_class"],
+)
+def test_id_name(import_test_context, test_context_url, cls):
     import model
 
     s = model.JSONLDSerializer()
-    c = model.id_prop_class()
+    c = getattr(model, cls)()
 
     TEST_ID = "http://serialize.example.com/name"
 
@@ -613,7 +621,7 @@ def test_id_name(import_test_context, test_context_url):
     result = s.serialize_data([c])
     assert result == {
         "@context": test_context_url,
-        "@type": "id-prop-class",
+        "@type": cls.replace("_", "-"),
         "testid": TEST_ID,
     }
 

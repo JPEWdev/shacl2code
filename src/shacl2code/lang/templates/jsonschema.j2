@@ -61,18 +61,18 @@
             "allOf": [
                 {
                     "properties": {
-                        {%- if class.refable != "no" %}
+                        {%- if class.refable != SHACL2CODE.NeverRefable %}
                         "{{ class.id_property or context.compact("@id") }}":
-                        {%- if class.refable == "always" or class.refable == "yes" -%}
+                        {%- if class.refable == SHACL2CODE.AlwaysRefable or class.refable == SHACL2CODE.ExternalRefable -%}
                             { "$ref": "#/$defs/externalRef" }
-                        {%- elif class.refable == "local" -%}
+                        {%- elif class.refable == SHACL2CODE.LocalRefable -%}
                             { "$ref": "#/$defs/localRef" }
-                        {%- elif class.refable == "optional" -%}
+                        {%- elif class.refable == SHACL2CODE.OptionalRefable -%}
                             { "$ref": "#/$defs/anyRef" }
                         {%- endif %},
                         {%- endif %}
                         "{{ context.compact("@type") }}": { "const": "{{ context.compact_vocab(class._id) }}" }
-                    }{%- if class.refable == "always" or class.refable == "yes" %},
+                    }{%- if class.refable == SHACL2CODE.AlwaysRefable or class.refable == SHACL2CODE.ExternalRefable %},
                     "required": ["{{ class.id_property or context.compact("@id") }}"]
                     {%- endif %}
                 },
@@ -82,14 +82,14 @@
         "{{ varname(class.clsname) }}_derived": {
             {%- set ns = namespace(external_ref=False, local_ref=False, any_ref=False, json_refs=[]) %}
             {%- for d in get_all_derived(class) + [class._id] %}
-                {%- if class.refable == "always" or class.refable == "yes" %}
+                {%- if class.refable == SHACL2CODE.AlwaysRefable or class.refable == SHACL2CODE.ExternalRefable %}
                     {%- set ns.external_ref = True %}
-                {%- elif class.refable == "local" %}
+                {%- elif class.refable == SHACL2CODE.LocalRefable %}
                     {%- set ns.local_ref = True %}
-                {%- elif class.refable == "optional" %}
+                {%- elif class.refable == SHACL2CODE.OptionalRefable %}
                     {%- set ns.any_ref = True %}
                 {%- endif %}
-                {%- if classes.get(d).refable != "always" %}
+                {%- if classes.get(d).refable != SHACL2CODE.AlwaysRefable %}
                     {%- set ns.json_refs = ns.json_refs + ["#/$defs/" + varname(classes.get(d).clsname)] %}
                 {%- endif %}
             {%- endfor %}

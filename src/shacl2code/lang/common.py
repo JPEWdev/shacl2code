@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 from contextlib import contextmanager
 from jinja2 import Environment, FileSystemLoader, TemplateRuntimeError
+from ..model import SHACL2CODE
 
 THIS_DIR = Path(__file__).parent
 
@@ -97,6 +98,7 @@ class BasicJinjaRender(object):
             env.globals[k] = v
         env.globals["abort"] = abort_helper
         env.globals["get_all_derived"] = get_all_derived
+        env.globals["SHACL2CODE"] = SHACL2CODE
         template = env.get_template(self.__template.name)
 
         classes = ObjectList(model.classes)

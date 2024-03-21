@@ -430,17 +430,17 @@ class EnumProp(Property):
 
 
 class Refable(Enum):
-    no = 1
-    local = 2
-    optional = 3
-    yes = 4
-    always = 5
+    AlwaysRefable = 1
+    ExternalRefable = 2
+    OptionalRefable = 3
+    LocalRefable = 4
+    NeverRefable = 5
 
 
 @functools.total_ordering
 class SHACLObject(object):
     DESERIALIZERS = {}
-    REFABLE = Refable.optional
+    REFABLE = Refable.OptionalRefable
     ID_ALIAS = None
 
     def __init__(self):
@@ -545,16 +545,16 @@ class SHACLObject(object):
 
     def __setitem__(self, iri, value):
         if iri == "@id":
-            if self.REFABLE == Refable.no:
+            if self.REFABLE == Refable.NeverRefable:
                 raise ValueError(
                     f"{self.__class__.__name__} ({id(self)}) is not referenceable. Property '{iri}' cannot be set to '{value}'"
                 )
-            elif self.REFABLE == Refable.local:
+            elif self.REFABLE == Refable.LocalRefable:
                 if not value.startswith("_:"):
                     raise ValueError(
                         f"{self.__class__.__name__} ({id(self)}) can only have local reference. Property '{iri}' cannot be set to '{value}' and must start with '_:'"
                     )
-            elif self.REFABLE in [Refable.yes, Refable.always]:
+            elif self.REFABLE in [Refable.ExternalRefable, Refable.AlwaysRefable]:
                 if value.startswith("_:"):
                     raise ValueError(
                         f"{self.__class__.__name__} ({id(self)}) can has mandatory reference. Property '{iri}' cannot be set to '{value}'"
@@ -611,20 +611,23 @@ class SHACLObject(object):
 
     def encode(self, encoder, state, *, is_reference=False):
         idname = self.ID_ALIAS or self._obj_iris["_id"]
-        if not self._id and self.REFABLE in [Refable.yes, Refable.always]:
+        if not self._id and self.REFABLE in [
+            Refable.ExternalRefable,
+            Refable.AlwaysRefable,
+        ]:
             raise ValueError(
                 f"{self.__class__.__name__} ({id(self)}) must have a '{idname}' property to be referenceable"
             )
 
         if state.is_written(self):
-            if self.REFABLE == Refable.no:
+            if self.REFABLE == Refable.NeverRefable:
                 raise ValueError(
                     f"{self.__class__.__name__} ({id(self)}) is not referenceable"
                 )
             encoder.write_iri(state.get_object_id(self))
             return
 
-        if is_reference and self.REFABLE == Refable.always:
+        if is_reference and self.REFABLE == Refable.AlwaysRefable:
             raise ValueError(
                 f"{self.__class__.__name__} ({id(self)}) must always be referenced by name, and cannot be inlined"
             )
@@ -803,7 +806,7 @@ def encode_objects(encoder, objects, force_list=False):
         if value._id and value._id.startswith("_:"):
             del value._id
 
-        if value._id or value.REFABLE == Refable.always:
+        if value._id or value.REFABLE == Refable.AlwaysRefable:
             state.add_refed(value)
 
         # If the object is referenced more than once, add it to the set of
@@ -1509,7 +1512,7 @@ class http_example_org_enumType(EnumProp):
 # A class with an ID alias
 class http_example_org_id_prop_class(SHACLObject):
     TYPE = "http://example.org/id-prop-class"
-    REFABLE = Refable.optional
+    REFABLE = Refable.OptionalRefable
     ID_ALIAS = "testid"
 
     def __init__(self, **kwargs):
@@ -1520,10 +1523,24 @@ class http_example_org_id_prop_class(SHACLObject):
 SHACLObject.DESERIALIZERS["http://example.org/id-prop-class"] = http_example_org_id_prop_class
 
 
+# A class that inherits its idPropertyName from the parent
+class http_example_org_inherited_id_prop_class(http_example_org_id_prop_class):
+    TYPE = "http://example.org/inherited-id-prop-class"
+    REFABLE = Refable.OptionalRefable
+    ID_ALIAS = "testid"
+
+    def __init__(self, **kwargs):
+        super().__init__()
+        self._set_init_props(**kwargs)
+
+
+SHACLObject.DESERIALIZERS["http://example.org/inherited-id-prop-class"] = http_example_org_inherited_id_prop_class
+
+
 # A class to test links
 class http_example_org_link_class(SHACLObject):
     TYPE = "http://example.org/link-class"
-    REFABLE = Refable.optional
+    REFABLE = Refable.OptionalRefable
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -1554,7 +1571,7 @@ SHACLObject.DESERIALIZERS["http://example.org/link-class"] = http_example_org_li
 # A class derived from link-class
 class http_example_org_link_derived_class(http_example_org_link_class):
     TYPE = "http://example.org/link-derived-class"
-    REFABLE = Refable.optional
+    REFABLE = Refable.OptionalRefable
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -1567,7 +1584,7 @@ SHACLObject.DESERIALIZERS["http://example.org/link-derived-class"] = http_exampl
 # The parent class
 class http_example_org_parent_class(SHACLObject):
     TYPE = "http://example.org/parent-class"
-    REFABLE = Refable.optional
+    REFABLE = Refable.OptionalRefable
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -1580,7 +1597,7 @@ SHACLObject.DESERIALIZERS["http://example.org/parent-class"] = http_example_org_
 # A class that must always be linked
 class http_example_org_ref_always_class(http_example_org_link_class):
     TYPE = "http://example.org/ref-always-class"
-    REFABLE = Refable.always
+    REFABLE = Refable.AlwaysRefable
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -1590,10 +1607,36 @@ class http_example_org_ref_always_class(http_example_org_link_class):
 SHACLObject.DESERIALIZERS["http://example.org/ref-always-class"] = http_example_org_ref_always_class
 
 
+# A class that must always have external reference
+class http_example_org_ref_external_class(http_example_org_link_class):
+    TYPE = "http://example.org/ref-external-class"
+    REFABLE = Refable.ExternalRefable
+
+    def __init__(self, **kwargs):
+        super().__init__()
+        self._set_init_props(**kwargs)
+
+
+SHACLObject.DESERIALIZERS["http://example.org/ref-external-class"] = http_example_org_ref_external_class
+
+
+# A class that inherits refable from it's parent
+class http_example_org_ref_inherited_external_class(http_example_org_ref_external_class):
+    TYPE = "http://example.org/ref-inherited-external-class"
+    REFABLE = Refable.ExternalRefable
+
+    def __init__(self, **kwargs):
+        super().__init__()
+        self._set_init_props(**kwargs)
+
+
+SHACLObject.DESERIALIZERS["http://example.org/ref-inherited-external-class"] = http_example_org_ref_inherited_external_class
+
+
 # A class with local linking
 class http_example_org_ref_local_class(http_example_org_link_class):
     TYPE = "http://example.org/ref-local-class"
-    REFABLE = Refable.local
+    REFABLE = Refable.LocalRefable
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -1604,22 +1647,22 @@ SHACLObject.DESERIALIZERS["http://example.org/ref-local-class"] = http_example_o
 
 
 # A class with no linking
-class http_example_org_ref_no_class(http_example_org_link_class):
-    TYPE = "http://example.org/ref-no-class"
-    REFABLE = Refable.no
+class http_example_org_ref_never_class(http_example_org_link_class):
+    TYPE = "http://example.org/ref-never-class"
+    REFABLE = Refable.NeverRefable
 
     def __init__(self, **kwargs):
         super().__init__()
         self._set_init_props(**kwargs)
 
 
-SHACLObject.DESERIALIZERS["http://example.org/ref-no-class"] = http_example_org_ref_no_class
+SHACLObject.DESERIALIZERS["http://example.org/ref-never-class"] = http_example_org_ref_never_class
 
 
 # A class with optional linking
 class http_example_org_ref_optional_class(http_example_org_link_class):
     TYPE = "http://example.org/ref-optional-class"
-    REFABLE = Refable.optional
+    REFABLE = Refable.OptionalRefable
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -1629,23 +1672,10 @@ class http_example_org_ref_optional_class(http_example_org_link_class):
 SHACLObject.DESERIALIZERS["http://example.org/ref-optional-class"] = http_example_org_ref_optional_class
 
 
-# A class that must always have external reference
-class http_example_org_ref_yes_class(http_example_org_link_class):
-    TYPE = "http://example.org/ref-yes-class"
-    REFABLE = Refable.yes
-
-    def __init__(self, **kwargs):
-        super().__init__()
-        self._set_init_props(**kwargs)
-
-
-SHACLObject.DESERIALIZERS["http://example.org/ref-yes-class"] = http_example_org_ref_yes_class
-
-
 # Another class
 class http_example_org_test_another_class(SHACLObject):
     TYPE = "http://example.org/test-another-class"
-    REFABLE = Refable.optional
+    REFABLE = Refable.OptionalRefable
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -1658,7 +1688,7 @@ SHACLObject.DESERIALIZERS["http://example.org/test-another-class"] = http_exampl
 # The test class
 class http_example_org_test_class(http_example_org_parent_class):
     TYPE = "http://example.org/test-class"
-    REFABLE = Refable.optional
+    REFABLE = Refable.OptionalRefable
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -1820,7 +1850,7 @@ SHACLObject.DESERIALIZERS["http://example.org/test-class"] = http_example_org_te
 
 class http_example_org_test_class_required(http_example_org_test_class):
     TYPE = "http://example.org/test-class-required"
-    REFABLE = Refable.optional
+    REFABLE = Refable.OptionalRefable
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -1848,7 +1878,7 @@ SHACLObject.DESERIALIZERS["http://example.org/test-class-required"] = http_examp
 # A class derived from test-class
 class http_example_org_test_derived_class(http_example_org_test_class):
     TYPE = "http://example.org/test-derived-class"
-    REFABLE = Refable.optional
+    REFABLE = Refable.OptionalRefable
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -1861,7 +1891,7 @@ SHACLObject.DESERIALIZERS["http://example.org/test-derived-class"] = http_exampl
 # Derived class that sorts before the parent to test ordering
 class http_example_org_aaa_derived_class(http_example_org_parent_class):
     TYPE = "http://example.org/aaa-derived-class"
-    REFABLE = Refable.optional
+    REFABLE = Refable.OptionalRefable
 
     def __init__(self, **kwargs):
         super().__init__()

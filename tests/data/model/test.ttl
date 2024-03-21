@@ -4,7 +4,7 @@
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-@prefix spdxs: <https://rdf.spdx.org/ns/schema#> .
+@prefix shtocode: <https://jpewdev.github.io/shacl2code/schema#> .
 
 <aaa-derived-class> a rdf:Class, sh:NodeShape, owl:Class ;
     rdfs:subClassOf <parent-class> ;
@@ -364,37 +364,48 @@
     rdfs:range <link-class>
     .
 
-<ref-no-class> a rdf:Class, sh:NodeShape, owl:Class ;
+<ref-never-class> a rdf:Class, sh:NodeShape, owl:Class ;
     rdfs:subClassOf <link-class> ;
     rdfs:comment "A class with no linking" ;
-    spdxs:referenceable "no"
+    shtocode:refable shtocode:NeverRefable
     .
 
 <ref-local-class> a rdf:Class, sh:NodeShape, owl:Class ;
     rdfs:subClassOf <link-class> ;
     rdfs:comment "A class with local linking" ;
-    spdxs:referenceable "local"
+    shtocode:refable shtocode:LocalRefable
     .
 
 <ref-optional-class> a rdf:Class, sh:NodeShape, owl:Class ;
     rdfs:subClassOf <link-class> ;
     rdfs:comment "A class with optional linking" ;
-    spdxs:referenceable "optional"
+    shtocode:refable shtocode:OptionalRefable
     .
 
-<ref-yes-class> a rdf:Class, sh:NodeShape, owl:Class ;
+<ref-external-class> a rdf:Class, sh:NodeShape, owl:Class ;
     rdfs:subClassOf <link-class> ;
     rdfs:comment "A class that must always have external reference" ;
-    spdxs:referenceable "yes"
+    shtocode:refable shtocode:ExternalRefable
     .
 
 <ref-always-class> a rdf:Class, sh:NodeShape, owl:Class ;
     rdfs:subClassOf <link-class> ;
     rdfs:comment "A class that must always be linked" ;
-    spdxs:referenceable "always"
+    shtocode:refable shtocode:AlwaysRefable
+    .
+
+<ref-inherited-external-class> a rdf:Class, sh:NodeShape, owl:Class ;
+    rdfs:subClassOf <ref-external-class> ;
+    rdfs:comment "A class that inherits refable from it's parent"
     .
 
 <id-prop-class> a rdf:Class, sh:NodeShape, owl:Class ;
     rdfs:comment "A class with an ID alias" ;
-    spdxs:idPropertyName "testid"
+    shtocode:idPropertyName "testid"
     .
+
+<inherited-id-prop-class> a rdf:Class, sh:NodeShape, owl:Class ;
+    rdfs:subClassOf <id-prop-class> ;
+    rdfs:comment "A class that inherits its idPropertyName from the parent"
+    .
+

@@ -5,6 +5,8 @@ http://example.org/enumType: enumType
 
 http://example.org/id-prop-class: id-prop-class
 
+http://example.org/inherited-id-prop-class: inherited-id-prop-class
+
 http://example.org/link-class: link-class
 
 http://example.org/link-derived-class: link-derived-class
@@ -13,13 +15,15 @@ http://example.org/parent-class: parent-class
 
 http://example.org/ref-always-class: ref-always-class
 
+http://example.org/ref-external-class: ref-external-class
+
+http://example.org/ref-inherited-external-class: ref-inherited-external-class
+
 http://example.org/ref-local-class: ref-local-class
 
-http://example.org/ref-no-class: ref-no-class
+http://example.org/ref-never-class: ref-never-class
 
 http://example.org/ref-optional-class: ref-optional-class
-
-http://example.org/ref-yes-class: ref-yes-class
 
 http://example.org/test-another-class: test-another-class
 

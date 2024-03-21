@@ -19,18 +19,19 @@ from .lang import LANGUAGES
 def main(args=None):
     def handle_generate(parser, args):
         graph = rdflib.Graph()
-        if args.input == "-":
-            if args.input_format == "auto":
-                print("ERROR: Input format must be specified with stdin")
-                parser.print_help()
-                return 1
+        for inmodel in args.input:
+            if inmodel == "-":
+                if args.input_format == "auto":
+                    print("ERROR: Input format must be specified with stdin")
+                    parser.print_help()
+                    return 1
 
-            graph.parse(sys.stdin, format=args.input_format)
-        else:
-            if args.input_format == "auto":
-                graph.parse(args.input)
+                graph.parse(sys.stdin, format=args.input_format)
             else:
-                graph.parse(args.input, format=args.input_format)
+                if args.input_format == "auto":
+                    graph.parse(inmodel)
+                else:
+                    graph.parse(inmodel, format=args.input_format)
 
         contexts = []
         for c in args.context:
@@ -83,6 +84,8 @@ def main(args=None):
         "--input",
         "-i",
         help="Input model (path, URL, or '-')",
+        action="append",
+        default=[],
         required=True,
     )
     generate_parser.add_argument(

@@ -430,11 +430,11 @@ class EnumProp(Property):
 
 
 class Refable(Enum):
-    AlwaysRefable = 1
-    ExternalRefable = 2
+    NeverRefable = 1
+    LocalRefable = 2
     OptionalRefable = 3
-    LocalRefable = 4
-    NeverRefable = 5
+    ExternalRefable = 4
+    ForcedRefable = 5
 
 
 @functools.total_ordering
@@ -554,7 +554,7 @@ class SHACLObject(object):
                     raise ValueError(
                         f"{self.__class__.__name__} ({id(self)}) can only have local reference. Property '{iri}' cannot be set to '{value}' and must start with '_:'"
                     )
-            elif self.REFABLE in [Refable.ExternalRefable, Refable.AlwaysRefable]:
+            elif self.REFABLE in [Refable.ExternalRefable, Refable.ForcedRefable]:
                 if value.startswith("_:"):
                     raise ValueError(
                         f"{self.__class__.__name__} ({id(self)}) can has mandatory reference. Property '{iri}' cannot be set to '{value}'"
@@ -613,7 +613,7 @@ class SHACLObject(object):
         idname = self.ID_ALIAS or self._obj_iris["_id"]
         if not self._id and self.REFABLE in [
             Refable.ExternalRefable,
-            Refable.AlwaysRefable,
+            Refable.ForcedRefable,
         ]:
             raise ValueError(
                 f"{self.__class__.__name__} ({id(self)}) must have a '{idname}' property to be referenceable"
@@ -627,7 +627,7 @@ class SHACLObject(object):
             encoder.write_iri(state.get_object_id(self))
             return
 
-        if is_reference and self.REFABLE == Refable.AlwaysRefable:
+        if is_reference and self.REFABLE == Refable.ForcedRefable:
             raise ValueError(
                 f"{self.__class__.__name__} ({id(self)}) must always be referenced by name, and cannot be inlined"
             )
@@ -806,7 +806,7 @@ def encode_objects(encoder, objects, force_list=False):
         if value._id and value._id.startswith("_:"):
             del value._id
 
-        if value._id or value.REFABLE == Refable.AlwaysRefable:
+        if value._id or value.REFABLE == Refable.ForcedRefable:
             state.add_refed(value)
 
         # If the object is referenced more than once, add it to the set of

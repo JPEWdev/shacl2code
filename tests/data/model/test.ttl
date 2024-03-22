@@ -4,7 +4,7 @@
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-@prefix shtocode: <https://jpewdev.github.io/shacl2code/schema#> .
+@prefix sh-to-code: <https://jpewdev.github.io/shacl2code/schema#> .
 
 <aaa-derived-class> a rdf:Class, sh:NodeShape, owl:Class ;
     rdfs:subClassOf <parent-class> ;
@@ -367,31 +367,31 @@
 <ref-never-class> a rdf:Class, sh:NodeShape, owl:Class ;
     rdfs:subClassOf <link-class> ;
     rdfs:comment "A class with no linking" ;
-    shtocode:refable shtocode:NeverRefable
+    sh-to-code:refable sh-to-code:NeverRefable
     .
 
 <ref-local-class> a rdf:Class, sh:NodeShape, owl:Class ;
     rdfs:subClassOf <link-class> ;
     rdfs:comment "A class with local linking" ;
-    shtocode:refable shtocode:LocalRefable
+    sh-to-code:refable sh-to-code:LocalRefable
     .
 
 <ref-optional-class> a rdf:Class, sh:NodeShape, owl:Class ;
     rdfs:subClassOf <link-class> ;
     rdfs:comment "A class with optional linking" ;
-    shtocode:refable shtocode:OptionalRefable
+    sh-to-code:refable sh-to-code:OptionalRefable
     .
 
 <ref-external-class> a rdf:Class, sh:NodeShape, owl:Class ;
     rdfs:subClassOf <link-class> ;
     rdfs:comment "A class that must always have external reference" ;
-    shtocode:refable shtocode:ExternalRefable
+    sh-to-code:refable sh-to-code:ExternalRefable
     .
 
-<ref-always-class> a rdf:Class, sh:NodeShape, owl:Class ;
+<ref-forced-class> a rdf:Class, sh:NodeShape, owl:Class ;
     rdfs:subClassOf <link-class> ;
     rdfs:comment "A class that must always be linked" ;
-    shtocode:refable shtocode:AlwaysRefable
+    sh-to-code:refable sh-to-code:ForcedRefable
     .
 
 <ref-inherited-external-class> a rdf:Class, sh:NodeShape, owl:Class ;
@@ -401,7 +401,7 @@
 
 <id-prop-class> a rdf:Class, sh:NodeShape, owl:Class ;
     rdfs:comment "A class with an ID alias" ;
-    shtocode:idPropertyName "testid"
+    sh-to-code:idPropertyName "testid"
     .
 
 <inherited-id-prop-class> a rdf:Class, sh:NodeShape, owl:Class ;

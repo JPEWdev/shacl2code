@@ -22,11 +22,26 @@ class SHACL2CODE(DefinedNamespace):
     refable: URIRef
     idPropertyName: URIRef
 
-    AlwaysRefable: URIRef
-    ExternalRefable: URIRef
-    OptionalRefable: URIRef
-    LocalRefable: URIRef
+    # Object should never be referenced (in more than one location). For
+    # bindings where specifying an ID is optional (e.g. an implict blank node
+    # is allowed), the object should never have an ID and should always rely on
+    # an implicit blank node and should be inlined where it is referenced
     NeverRefable: URIRef
+
+    # The object may or may not have an ID, but if it does have one it must be
+    # a blank node
+    LocalRefable: URIRef
+
+    # Any type of ID is allowed (or none). This is the default if unspecified
+    OptionalRefable: URIRef
+
+    # The object must have an externally referenceable ID (a fully qualified
+    # IRI); blank nodes or no ID is not allowed.
+    ExternalRefable: URIRef
+
+    # Same as ExtenalRefable, but the object is not allowed to be inlined (if
+    # possible)
+    ForcedRefable: URIRef
 
     _NS = Namespace("https://jpewdev.github.io/shacl2code/schema#")
 
@@ -36,7 +51,7 @@ POSSIBLE_REFABLE = [
     SHACL2CODE.LocalRefable,
     SHACL2CODE.OptionalRefable,
     SHACL2CODE.ExternalRefable,
-    SHACL2CODE.AlwaysRefable,
+    SHACL2CODE.ForcedRefable,
 ]
 
 

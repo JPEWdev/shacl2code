@@ -430,11 +430,11 @@ class EnumProp(Property):
 
 
 class Refable(Enum):
-    AlwaysRefable = 1
-    ExternalRefable = 2
+    NeverRefable = 1
+    LocalRefable = 2
     OptionalRefable = 3
-    LocalRefable = 4
-    NeverRefable = 5
+    ExternalRefable = 4
+    AlwaysRefable = 5
 
 
 @functools.total_ordering

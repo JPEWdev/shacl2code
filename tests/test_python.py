@@ -447,7 +447,7 @@ def test_external_refable(import_test_context, test_context_url, cls):
         ref._id = "_:blank"
 
 
-def test_always_refable(import_test_context, test_context_url):
+def test_forced_refable(import_test_context, test_context_url):
     import model
 
     TEST_ID = "http://serialize.example.com/name"
@@ -456,7 +456,7 @@ def test_always_refable(import_test_context, test_context_url):
     c1 = model.link_class()
     c2 = model.link_class()
 
-    ref = model.ref_always_class()
+    ref = model.ref_forced_class()
 
     # Mandatory reference fails because there is no ID
     c1.link_class_link_prop = ref
@@ -487,7 +487,7 @@ def test_always_refable(import_test_context, test_context_url):
             },
             {
                 "@id": TEST_ID,
-                "@type": "ref-always-class",
+                "@type": "ref-forced-class",
             },
         ],
     }

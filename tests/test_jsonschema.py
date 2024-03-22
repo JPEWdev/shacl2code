@@ -527,7 +527,7 @@ def ref_tests(name, none, blank, iri, inline):
         *ref_tests("ref-local-class", True, True, False, True),
         *ref_tests("ref-optional-class", True, True, True, True),
         *ref_tests("ref-external-class", False, False, True, True),
-        *ref_tests("ref-always-class", False, False, True, False),
+        *ref_tests("ref-forced-class", False, False, True, False),
         # Alternate ID
         (
             True,

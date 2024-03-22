@@ -414,6 +414,10 @@ class ListProp(Property):
 class EnumProp(Property):
     VALID_TYPES = str
 
+    def __init__(self, *, pattern=None, context=[]):
+        super().__init__(pattern=pattern)
+        self.context = context
+
     def validate(self, value):
         super().validate(value)
 
@@ -423,10 +427,19 @@ class EnumProp(Property):
             )
 
     def encode(self, encoder, value, state):
+        for iri, compact in self.context:
+            if iri == value:
+                encoder.write_enum(value, self, compact)
+                return
+
         encoder.write_enum(value, self)
 
     def decode(self, decoder, *, object_ids=None):
-        return decoder.read_enum(self)
+        v = decoder.read_enum(self)
+        for iri, compact in self.context:
+            if v == compact:
+                return iri
+        return v
 
 
 class NodeKind(Enum):
@@ -440,6 +453,7 @@ class SHACLObject(object):
     DESERIALIZERS = {}
     NODE_KIND = NodeKind.BlankNodeOrIRI
     ID_ALIAS = None
+    COMPACT_TYPE = None
 
     def __init__(self):
         self._obj_data = {}
@@ -460,6 +474,7 @@ class SHACLObject(object):
         iri,
         min_count=None,
         max_count=None,
+        compact=None,
     ):
         if pyname in self._obj_iris:
             raise KeyError(
@@ -474,7 +489,7 @@ class SHACLObject(object):
             pyname = pyname + "_"
 
         self._obj_iris[pyname] = iri
-        self._obj_properties[iri] = (prop, min_count, max_count, pyname)
+        self._obj_properties[iri] = (prop, min_count, max_count, pyname, compact)
         self._obj_data[iri] = prop.init()
 
     def __setattr__(self, name, value):
@@ -535,8 +550,7 @@ class SHACLObject(object):
 
     def __iter_props(self):
         for iri, v in self._obj_properties.items():
-            prop, min_count, max_count, pyname = v
-            yield iri, prop, min_count, max_count, pyname
+            yield iri, *v
 
     def __getitem__(self, iri):
         return self._obj_data[iri]
@@ -554,12 +568,12 @@ class SHACLObject(object):
                         f"{self.__class__.__name__} ({id(self)}) can only have an IRI value. Property '{iri}' cannot be set to '{value}'"
                     )
 
-        prop, _, _, _ = self.__get_prop(iri)
+        prop, _, _, _, _ = self.__get_prop(iri)
         prop.validate(value)
         self._obj_data[iri] = prop.set(value)
 
     def __delitem__(self, iri):
-        prop, _, _, _ = self.__get_prop(iri)
+        prop, _, _, _, _ = self.__get_prop(iri)
         self._obj_data[iri] = prop.init()
 
     def __iter__(self):
@@ -577,7 +591,7 @@ class SHACLObject(object):
             path = ["."]
 
         if callback(self, path):
-            for iri, prop, _, _, _ in self.__iter_props():
+            for iri, prop, _, _, _, _ in self.__iter_props():
                 prop.walk(self._obj_data[iri], callback, path + [f".{iri}"])
 
     def child_objects(self):
@@ -621,7 +635,7 @@ class SHACLObject(object):
             state.get_object_id(self),
             bool(self._id) or state.is_refed(self),
         ) as obj_s:
-            for iri, prop, min_count, max_count, pyname in self.__iter_props():
+            for iri, prop, min_count, max_count, pyname, compact in self.__iter_props():
                 value = self._obj_data[iri]
                 if prop.elide(value):
                     if min_count:
@@ -645,7 +659,7 @@ class SHACLObject(object):
                 if iri == self._obj_iris["_id"]:
                     continue
 
-                with obj_s.write_property(iri) as prop_s:
+                with obj_s.write_property(iri, compact) as prop_s:
                     prop.encode(prop_s, value, state)
 
     @classmethod
@@ -666,11 +680,11 @@ class SHACLObject(object):
                 object_ids[_id] = obj
             obj._id = _id
 
-        for iri, prop, _, _, _ in obj.__iter_props():
+        for iri, prop, _, _, _, compact in obj.__iter_props():
             if iri == obj._obj_iris["_id"]:
                 continue
 
-            with obj_d.read_property(iri) as prop_d:
+            with obj_d.read_property(iri, compact) as prop_d:
                 if prop_d is None:
                     continue
 
@@ -686,7 +700,7 @@ class SHACLObject(object):
 
         visited.add(self)
 
-        for iri, prop, _, _, _ in self.__iter_props():
+        for iri, prop, _, _, _, _ in self.__iter_props():
             self._obj_data[iri] = prop.link_prop(
                 self._obj_data[iri],
                 link_cache,
@@ -732,11 +746,6 @@ class SHACLObject(object):
             )
 
         return sort_key(self) < sort_key(other)
-
-
-def make_context():
-    global CONTEXTS
-    return Context(CONTEXTS)
 
 
 class EncodeState(object):
@@ -906,7 +915,7 @@ class Decoder(ABC):
         item is not an IRI.
 
         The returned string should be either a fully-qualified IRI, or a blank
-        node ID; accounting for context is the responsibility of the `Decoder`
+        node ID
         """
         pass
 
@@ -917,9 +926,6 @@ class Decoder(ABC):
 
         Returns the fully qualified IRI of the next enum item, or `None` if the
         next item is not an enum value.
-
-        The returned string should be either a fully-qualified IRI; accounting
-        for context is the responsibility of the `Decoder`
 
         The callee is responsible for validating that the returned IRI is
         actually a member of the specified Enum, so the `Decoder` does not need
@@ -974,7 +980,7 @@ class Decoder(ABC):
 
     @abstractmethod
     @contextmanager
-    def read_property(self, iri):
+    def read_property(self, iri, compact=None):
         """
         Read property from object
 
@@ -982,8 +988,9 @@ class Decoder(ABC):
         value of the property with the given IRI in the current object, or
         `None` if the property does not exist in the current object.
 
-        Note that the provided IRI will be fully qualified; checking for
-        compacted property names is the responsibility of the `Decoder`
+        Note that the provided IRI will be fully qualified. If `compact` is
+        provided and the serialization supports compacted IRIs, it should be
+        preferred to the full IRI.
         """
         pass
 
@@ -995,8 +1002,7 @@ class Decoder(ABC):
         Returns the ID of the current object if one is defined, or `None` if
         the current object has no ID.
 
-        The ID must be a fully qualified IRI or a blank node; accounting for
-        context is the responsibility of the `Decoder`
+        The ID must be a fully qualified IRI or a blank node
 
         If `alias` is provided, is is a hint as to another name by which the ID
         might be found, if the `Decoder` supports aliases for an ID
@@ -1005,9 +1011,8 @@ class Decoder(ABC):
 
 
 class JSONLDDecoder(Decoder):
-    def __init__(self, data, context):
+    def __init__(self, data):
         self.data = data
-        self.context = context
 
     def read_string(self):
         if isinstance(self.data, str):
@@ -1034,60 +1039,53 @@ class JSONLDDecoder(Decoder):
 
     def read_iri(self):
         if isinstance(self.data, str):
-            return self.context.expand(self.data)
+            return self.data
         return None
 
     def read_enum(self, e):
         if isinstance(self.data, str):
-            return self.context.expand_vocab(self.data)
+            return self.data
         return None
 
     def read_list(self):
         if isinstance(self.data, (list, tuple, set)):
             for v in self.data:
-                yield self.__class__(v, self.context)
+                yield self.__class__(v)
         else:
             yield self
 
-    @contextmanager
-    def read_property(self, iri):
-        for k in (iri, self.context.compact_vocab(iri)):
-            if k in self.data:
-                with self.context.vocab_push(iri):
-                    yield self.__class__(self.data[k], self.context)
-                return
+    def __get_value(self, *keys):
+        for k in keys:
+            if k and k in self.data:
+                return self.data[k]
+        return None
 
-        yield None
+    @contextmanager
+    def read_property(self, iri, compact=None):
+        v = self.__get_value(compact, iri)
+        if v is not None:
+            yield self.__class__(v)
+        else:
+            yield None
 
     def read_object(self):
-        for k in ("@type", self.context.compact("@type")):
-            if k not in self.data:
-                continue
-
-            typ = self.context.expand(self.data[k])
+        typ = self.__get_value("@type", "@type")
+        if typ is not None:
             return typ, self
 
         return None, self
 
     def read_object_id(self, alias=None):
-        if alias and alias in self.data:
-            return self.data[alias]
-
-        for k in ("@id", self.context.compact("@id")):
-            if k in self.data:
-                return self.data[k]
-
-        return None
+        return self.__get_value(alias, "@id")
 
 
 class JSONLDDeserializer(object):
     def read(self, f):
-        context = make_context()
         data = json.load(f)
         if "@graph" in data:
-            h = JSONLDDecoder(data["@graph"], context)
+            h = JSONLDDecoder(data["@graph"])
         else:
-            h = JSONLDDecoder(data, context)
+            h = JSONLDDecoder(data)
 
         return decode_objects(h)
 
@@ -1123,23 +1121,25 @@ class Encoder(ABC):
         pass
 
     @abstractmethod
-    def write_iri(self, v):
+    def write_iri(self, v, compact=None):
         """
         Write IRI
 
         Encodes the string as an IRI. Note that the string will be either a
-        fully qualified IRI or a blank node ID. Applying context is the
-        responsibility of the `Encoder`
+        fully qualified IRI or a blank node ID. If `compact` is provided and
+        the serialization supports compacted IRIs, it should be preferred to
+        the full IRI
         """
         pass
 
     @abstractmethod
-    def write_enum(self, v, e):
+    def write_enum(self, v, e, compact=None):
         """
         Write enum value IRI
 
         Encodes the string enum value IRI. Note that the string will be a fully
-        qualified IRI. Applying context is the responsibility of the `Encoder`
+        qualified IRI. If `compact` is provided and the serialization supports
+        compacted IRIs, it should be preferred to the full IRI.
         """
         pass
 
@@ -1177,8 +1177,7 @@ class Encoder(ABC):
         object. If `False`, the encoder is not required to encode an ID and may
         omit it.
 
-        The ID will be either a fully qualified IRI, or a blank node ID.
-        Applying context is the responsibility of the `Encoder`
+        The ID will be either a fully qualified IRI, or a blank node IRI.
 
         Properties will be written the object using `write_property`
         """
@@ -1186,15 +1185,16 @@ class Encoder(ABC):
 
     @abstractmethod
     @contextmanager
-    def write_property(self, iri):
+    def write_property(self, iri, compact=None):
         """
         Write object property
 
         A context manager that yields an `Encoder` that can be used to encode
         the value for the property with the given IRI in the current object
 
-        Note that the IRI will be fully qualified. Compacting the IRI to encode
-        the property name is the responsibility of the `Encoder`
+        Note that the IRI will be fully qualified. If `compact` is provided and
+        the serialization supports compacted IRIs, it should be preferred to
+        the full IRI.
         """
         pass
 
@@ -1224,9 +1224,8 @@ class Encoder(ABC):
 
 
 class JSONLDEncoder(Encoder):
-    def __init__(self, context, data=None):
+    def __init__(self, data=None):
         self.data = data
-        self.context = context
 
     def write_string(self, v):
         self.data = v
@@ -1237,11 +1236,11 @@ class JSONLDEncoder(Encoder):
     def write_integer(self, v):
         self.data = v
 
-    def write_iri(self, v):
-        self.write_string(self.context.compact(v))
+    def write_iri(self, v, compact=None):
+        self.write_string(compact or v)
 
-    def write_enum(self, v, e):
-        self.write_string(self.context.compact_vocab(v))
+    def write_enum(self, v, e, compact=None):
+        self.write_string(compact or v)
 
     def write_bool(self, v):
         self.data = v
@@ -1250,22 +1249,19 @@ class JSONLDEncoder(Encoder):
         self.data = str(v)
 
     @contextmanager
-    def write_property(self, iri):
-        s = self.__class__(self.context, None)
-        with self.context.vocab_push(iri):
-            yield s
+    def write_property(self, iri, compact=None):
+        s = self.__class__(None)
+        yield s
         if s.data is not None:
-            self.data[self.context.compact_vocab(iri)] = s.data
+            self.data[compact or iri] = s.data
 
     @contextmanager
     def write_object(self, o, _id, needs_id):
         self.data = {
-            self.context.compact("@type"): self.context.compact_vocab(o.TYPE),
+            "@type": o.COMPACT_TYPE or o.TYPE,
         }
         if needs_id:
-            self.data[o.ID_ALIAS or self.context.compact("@id")] = self.context.compact(
-                _id
-            )
+            self.data[o.ID_ALIAS or "@id"] = _id
         yield self
 
     @contextmanager
@@ -1277,7 +1273,7 @@ class JSONLDEncoder(Encoder):
 
     @contextmanager
     def write_list_item(self):
-        s = self.__class__(self.context, None)
+        s = self.__class__(None)
         yield s
         if s.data is not None:
             self.data.append(s.data)
@@ -1285,8 +1281,7 @@ class JSONLDEncoder(Encoder):
 
 class JSONLDSerializer(object):
     def serialize_data(self, objects, force_graph=False):
-        context = make_context()
-        h = JSONLDEncoder(context)
+        h = JSONLDEncoder()
         encode_objects(h, objects, force_graph)
         if isinstance(h.data, list):
             data = {
@@ -1320,9 +1315,8 @@ class JSONLDSerializer(object):
 
 
 class JSONLDInlineEncoder(Encoder):
-    def __init__(self, f, context, sha1):
+    def __init__(self, f, sha1):
         self.f = f
-        self.context = context
         self.comma = False
         self.sha1 = sha1
 
@@ -1348,11 +1342,11 @@ class JSONLDInlineEncoder(Encoder):
     def write_integer(self, v):
         self.write(f"{v}")
 
-    def write_iri(self, v):
-        self.write_string(self.context.compact(v))
+    def write_iri(self, v, compact=None):
+        self.write_string(compact or v)
 
-    def write_enum(self, v, e):
-        self.write_iri(v)
+    def write_enum(self, v, e, compact=None):
+        self.write_iri(v, compact)
 
     def write_bool(self, v):
         if v:
@@ -1364,25 +1358,24 @@ class JSONLDInlineEncoder(Encoder):
         self.write(f'"{v}"')
 
     @contextmanager
-    def write_property(self, iri):
+    def write_property(self, iri, compact=None):
         self._write_comma()
-        p = self.context.compact(iri)
-        self.write(f'"{p}":')
-        with self.context.vocab_push(iri):
-            yield self
+        self.write(f'"{compact or iri}":')
+        yield self
         self.comma = True
 
     @contextmanager
     def write_object(self, o, _id, needs_id):
         self._write_comma()
 
-        typname = self.context.compact("@type")
-        typval = self.context.compact_vocab(o.TYPE)
         self.write("{")
         if needs_id:
-            idname = o.ID_ALIAS or self.context.compact("@id")
-            idval = self.context.compact(_id)
+            idname = o.ID_ALIAS or "@id"
+            idval = _id
             self.write(f'"{idname}": "{idval}",')
+
+        typname = "@type"
+        typval = o.COMPACT_TYPE or o.TYPE
         self.write(f'"{typname}":"{typval}"')
 
         self.comma = True
@@ -1395,14 +1388,14 @@ class JSONLDInlineEncoder(Encoder):
     def write_list(self):
         self._write_comma()
         self.write("[")
-        yield self.__class__(self.f, self.context, self.sha1)
+        yield self.__class__(self.f, self.sha1)
         self.write("]")
         self.comma = True
 
     @contextmanager
     def write_list_item(self):
         self._write_comma()
-        yield self.__class__(self.f, self.context, self.sha1)
+        yield self.__class__(self.f, self.sha1)
         self.comma = True
 
 
@@ -1412,7 +1405,7 @@ class JSONLDInlineSerializer(object):
         Write a list of objects to a JSON LD file
         """
         sha1 = hashlib.sha1()
-        h = JSONLDInlineEncoder(f, make_context(), sha1)
+        h = JSONLDInlineEncoder(f, sha1)
         h.write('{"@context":')
         if len(CONTEXT_URLS) == 1:
             h.write(f'"{CONTEXT_URLS[0]}"')
@@ -1468,8 +1461,6 @@ def print_tree(objects, all_fields=False):
 # fmt: off
 """Format Guard"""
 
-CONTEXTS = [
-]
 
 CONTEXT_URLS = [
 ]
@@ -1700,19 +1691,22 @@ class http_example_org_test_class(http_example_org_parent_class):
         # A enum list property
         self._add_property(
             "enum_list_prop",
-            ListProp(http_example_org_enumType()),
+            ListProp(http_example_org_enumType(context=[
+            ])),
             iri="http://example.org/test-class/enum-list-prop",
         )
         # A enum property
         self._add_property(
             "enum_prop",
-            http_example_org_enumType(),
+            http_example_org_enumType(context=[
+            ]),
             iri="http://example.org/test-class/enum-prop",
         )
         # A enum property with no sh:class
         self._add_property(
             "enum_prop_no_class",
-            http_example_org_enumType(),
+            http_example_org_enumType(context=[
+            ]),
             iri="http://example.org/test-class/enum-prop-no-class",
         )
         # a float property
@@ -1857,175 +1851,6 @@ class http_example_org_derived_node_kind_iri(http_example_org_node_kind_iri):
 
 
 SHACLObject.DESERIALIZERS["http://example.org/derived-node-kind-iri"] = http_example_org_derived_node_kind_iri
-
-
-# Copyright (c) 2024 Joshua Watt
-#
-# SPDX-License-Identifier: MIT
-
-
-class Context(object):
-    from contextlib import contextmanager
-
-    def __init__(self, contexts=[]):
-        self.contexts = [c for c in contexts if c]
-        self.__vocabs = []
-        self.__expanded = {}
-        self.__compacted = {}
-
-    @contextmanager
-    def vocab_push(self, vocab):
-        if not vocab:
-            yield self
-            return
-
-        self.__vocabs.append(vocab)
-        try:
-            yield self
-        finally:
-            self.__vocabs.pop()
-
-    def __get_vocab_contexts(self):
-        contexts = []
-
-        for v in self.__vocabs:
-            for ctx in self.contexts:
-                # Check for vocabulary contexts
-                for name, value in ctx.items():
-                    if (
-                        isinstance(value, dict)
-                        and value["@type"] == "@vocab"
-                        and v == self.__expand(value["@id"], self.contexts)
-                    ):
-                        contexts.insert(0, value["@context"])
-
-        return contexts
-
-    def compact(self, _id):
-        return self.__compact_contexts(_id)
-
-    def compact_vocab(self, _id, vocab=None):
-        with self.vocab_push(vocab):
-            if not self.__vocabs:
-                v = ""
-            else:
-                v = self.__vocabs[-1]
-
-            return self.__compact_contexts(_id, v, self.__get_vocab_contexts())
-
-    def __compact_contexts(self, _id, v="", apply_vocabs=False):
-        if v not in self.__compacted or _id not in self.__compacted[v]:
-            if apply_vocabs:
-                contexts = self.__get_vocab_contexts() + self.contexts
-            else:
-                contexts = self.contexts
-
-            self.__compacted.setdefault(v, {})[_id] = self.__compact(
-                _id,
-                contexts,
-                apply_vocabs,
-            )
-        return self.__compacted[v][_id]
-
-    def __compact(self, _id, contexts, apply_vocabs):
-        def remove_prefix(_id, value):
-            possible = set()
-            if _id.startswith(value):
-                tmp_id = _id[len(value) :]
-                possible.add(tmp_id)
-                possible |= collect_possible(tmp_id)
-            return possible
-
-        def collect_possible(_id):
-            possible = set()
-            for ctx in contexts:
-                for name, value in ctx.items():
-                    if name == "@vocab":
-                        if apply_vocabs:
-                            possible |= remove_prefix(_id, value)
-                    elif name == "@base":
-                        possible |= remove_prefix(_id, value)
-                    else:
-                        if isinstance(value, dict):
-                            value = value["@id"]
-
-                        if _id == value:
-                            possible.add(name)
-                            possible |= collect_possible(name)
-                        elif _id.startswith(value):
-                            tmp_id = name + ":" + _id[len(value) :].lstrip("/")
-                            possible.add(tmp_id)
-                            possible |= collect_possible(tmp_id)
-
-            return possible
-
-        possible = collect_possible(_id)
-        if not possible:
-            return _id
-
-        # To select from the possible identifiers, choose the one that has the
-        # least context (fewest ":"), then the shortest, and finally
-        # alphabetically
-        possible = list(possible)
-        possible.sort(key=lambda p: (p.count(":"), len(p), p))
-
-        return possible[0]
-
-    def is_relative(self, _id):
-        import re
-
-        return not re.match(r"[^:]+:", _id)
-
-    def __expand_contexts(self, _id, v="", apply_vocabs=False):
-        if v not in self.__expanded or _id not in self.__expanded[v]:
-            if apply_vocabs:
-                contexts = self.__get_vocab_contexts() + self.contexts
-
-                # Apply contexts
-                for ctx in contexts:
-                    for name, value in ctx.items():
-                        if name == "@vocab":
-                            _id = value + _id
-            else:
-                contexts = self.contexts
-
-            for ctx in contexts:
-                for name, value in ctx.items():
-                    if name == "@base" and self.is_relative(_id):
-                        _id = value + _id
-
-            self.__expanded.setdefault(v, {})[_id] = self.__expand(_id, contexts)
-
-        return self.__expanded[v][_id]
-
-    def expand(self, _id):
-        return self.__expand_contexts(_id)
-
-    def expand_vocab(self, _id, vocab=""):
-        with self.vocab_push(vocab):
-            if not self.__vocabs:
-                v = ""
-            else:
-                v = self.__vocabs[-1]
-
-            return self.__expand_contexts(_id, v, True)
-
-    def __expand(self, _id, contexts):
-        for ctx in contexts:
-            if ":" not in _id:
-                if _id in ctx:
-                    if isinstance(ctx[_id], dict):
-                        return self.__expand(ctx[_id]["@id"], contexts)
-                    return self.__expand(ctx[_id], contexts)
-                continue
-
-            prefix, suffix = _id.split(":", 1)
-            if prefix not in ctx:
-                continue
-
-            return self.__expand(prefix, contexts) + suffix
-
-        return _id
 
 
 """Format Guard"""

@@ -61,10 +61,10 @@
             "allOf": [
                 {
                     "properties": {
-                        "{{ class.id_property or context.compact("@id") }}": { "$ref": "#/$defs/{{ class.node_kind.split("#")[-1] }}" },
+                        "{{ class.id_property or "@id" }}": { "$ref": "#/$defs/{{ class.node_kind.split("#")[-1] }}" },
                         "{{ context.compact("@type") }}": { "const": "{{ context.compact_vocab(class._id) }}" }
                     }{%- if class.node_kind == SH.IRI %},
-                    "required": ["{{ class.id_property or context.compact("@id") }}"]
+                    "required": ["{{ class.id_property or "@id" }}"]
                     {%- endif %}
                 },
                 { "$ref": "#/$defs/{{ varname(class.clsname) }}_props" }

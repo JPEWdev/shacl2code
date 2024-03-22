@@ -250,7 +250,7 @@ class ObjectProp(Property):
             encoder.write_iri(value)
             return
 
-        return value.encode(encoder, state, is_reference=True)
+        return value.encode(encoder, state)
 
     def decode(self, decoder, *, object_ids=None):
         iri = decoder.read_iri()
@@ -429,18 +429,16 @@ class EnumProp(Property):
         return decoder.read_enum(self)
 
 
-class Refable(Enum):
-    NeverRefable = 1
-    LocalRefable = 2
-    OptionalRefable = 3
-    ExternalRefable = 4
-    ForcedRefable = 5
+class NodeKind(Enum):
+    BlankNode = 1
+    IRI = 2
+    BlankNodeOrIRI = 3
 
 
 @functools.total_ordering
 class SHACLObject(object):
     DESERIALIZERS = {}
-    REFABLE = Refable.OptionalRefable
+    NODE_KIND = NodeKind.BlankNodeOrIRI
     ID_ALIAS = None
 
     def __init__(self):
@@ -545,19 +543,15 @@ class SHACLObject(object):
 
     def __setitem__(self, iri, value):
         if iri == "@id":
-            if self.REFABLE == Refable.NeverRefable:
-                raise ValueError(
-                    f"{self.__class__.__name__} ({id(self)}) is not referenceable. Property '{iri}' cannot be set to '{value}'"
-                )
-            elif self.REFABLE == Refable.LocalRefable:
+            if self.NODE_KIND == NodeKind.BlankNode:
                 if not value.startswith("_:"):
                     raise ValueError(
                         f"{self.__class__.__name__} ({id(self)}) can only have local reference. Property '{iri}' cannot be set to '{value}' and must start with '_:'"
                     )
-            elif self.REFABLE in [Refable.ExternalRefable, Refable.ForcedRefable]:
+            elif self.NODE_KIND == NodeKind.IRI:
                 if value.startswith("_:"):
                     raise ValueError(
-                        f"{self.__class__.__name__} ({id(self)}) can has mandatory reference. Property '{iri}' cannot be set to '{value}'"
+                        f"{self.__class__.__name__} ({id(self)}) can only have an IRI value. Property '{iri}' cannot be set to '{value}'"
                     )
 
         prop, _, _, _ = self.__get_prop(iri)
@@ -609,28 +603,16 @@ class SHACLObject(object):
         for obj in seen:
             yield obj
 
-    def encode(self, encoder, state, *, is_reference=False):
+    def encode(self, encoder, state):
         idname = self.ID_ALIAS or self._obj_iris["_id"]
-        if not self._id and self.REFABLE in [
-            Refable.ExternalRefable,
-            Refable.ForcedRefable,
-        ]:
+        if not self._id and self.NODE_KIND == NodeKind.IRI:
             raise ValueError(
-                f"{self.__class__.__name__} ({id(self)}) must have a '{idname}' property to be referenceable"
+                f"{self.__class__.__name__} ({id(self)}) must have a IRI for property '{idname}'"
             )
 
         if state.is_written(self):
-            if self.REFABLE == Refable.NeverRefable:
-                raise ValueError(
-                    f"{self.__class__.__name__} ({id(self)}) is not referenceable"
-                )
             encoder.write_iri(state.get_object_id(self))
             return
-
-        if is_reference and self.REFABLE == Refable.ForcedRefable:
-            raise ValueError(
-                f"{self.__class__.__name__} ({id(self)}) must always be referenced by name, and cannot be inlined"
-            )
 
         state.add_written(self)
 
@@ -806,7 +788,7 @@ def encode_objects(encoder, objects, force_list=False):
         if value._id and value._id.startswith("_:"):
             del value._id
 
-        if value._id or value.REFABLE == Refable.ForcedRefable:
+        if value._id:
             state.add_refed(value)
 
         # If the object is referenced more than once, add it to the set of
@@ -820,6 +802,8 @@ def encode_objects(encoder, objects, force_list=False):
         return True
 
     for o in objects:
+        if o._id:
+            state.add_refed(o)
         o.walk(walk_callback)
 
     use_list = force_list or len(objects) > 1
@@ -1563,7 +1547,7 @@ class {{ varname(class.clsname) }}(
     SHACLObject
 {%- endif -%}):
     TYPE = "{{ class._id }}"
-    REFABLE = Refable.{{ class.refable.split("#")[-1] }}
+    NODE_KIND = NodeKind.{{ class.node_kind.split("#")[-1] }}
     {%- if class.id_property %}
     ID_ALIAS = "{{ class.id_property }}"
     {%- endif %}

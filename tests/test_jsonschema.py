@@ -149,23 +149,13 @@ BASE_OBJ = {
 }
 
 
-def ref_tests(name, none, blank, iri, inline):
+def node_kind_tests(name, blank, iri):
     return [
         (
-            none,
+            blank,
             {
                 "@context": CONTEXT,
                 "@type": name,
-            },
-        ),
-        (
-            none and inline,
-            {
-                "@context": CONTEXT,
-                "@type": "link-class",
-                "link-class-link-prop": {
-                    "@type": name,
-                },
             },
         ),
         (
@@ -177,7 +167,17 @@ def ref_tests(name, none, blank, iri, inline):
             },
         ),
         (
-            blank and inline,
+            blank,
+            {
+                "@context": CONTEXT,
+                "@type": "link-class",
+                "link-class-link-prop": {
+                    "@type": name,
+                },
+            },
+        ),
+        (
+            blank,
             {
                 "@context": CONTEXT,
                 "@type": "link-class",
@@ -196,7 +196,7 @@ def ref_tests(name, none, blank, iri, inline):
             },
         ),
         (
-            iri and inline,
+            iri,
             {
                 "@context": CONTEXT,
                 "@type": "link-class",
@@ -522,12 +522,11 @@ def ref_tests(name, none, blank, iri, inline):
                 "@type": "foo",
             },
         ),
-        # Referenceable tests
-        *ref_tests("ref-never-class", True, False, False, True),
-        *ref_tests("ref-local-class", True, True, False, True),
-        *ref_tests("ref-optional-class", True, True, True, True),
-        *ref_tests("ref-external-class", False, False, True, True),
-        *ref_tests("ref-forced-class", False, False, True, False),
+        # Node Kind tests
+        *node_kind_tests("node-kind-blank", True, False),
+        *node_kind_tests("node-kind-iri", False, True),
+        *node_kind_tests("node-kind-iri-or-blank", True, True),
+        *node_kind_tests("derived-node-kind-iri", False, True),
         # Alternate ID
         (
             True,

@@ -250,7 +250,7 @@ class ObjectProp(Property):
             encoder.write_iri(value)
             return
 
-        return value.encode(encoder, state, is_reference=True)
+        return value.encode(encoder, state)
 
     def decode(self, decoder, *, object_ids=None):
         iri = decoder.read_iri()
@@ -429,18 +429,16 @@ class EnumProp(Property):
         return decoder.read_enum(self)
 
 
-class Refable(Enum):
-    NeverRefable = 1
-    LocalRefable = 2
-    OptionalRefable = 3
-    ExternalRefable = 4
-    AlwaysRefable = 5
+class NodeKind(Enum):
+    BlankNode = 1
+    IRI = 2
+    BlankNodeOrIRI = 3
 
 
 @functools.total_ordering
 class SHACLObject(object):
     DESERIALIZERS = {}
-    REFABLE = Refable.OptionalRefable
+    NODE_KIND = NodeKind.BlankNodeOrIRI
     ID_ALIAS = None
 
     def __init__(self):
@@ -545,19 +543,15 @@ class SHACLObject(object):
 
     def __setitem__(self, iri, value):
         if iri == "@id":
-            if self.REFABLE == Refable.NeverRefable:
-                raise ValueError(
-                    f"{self.__class__.__name__} ({id(self)}) is not referenceable. Property '{iri}' cannot be set to '{value}'"
-                )
-            elif self.REFABLE == Refable.LocalRefable:
+            if self.NODE_KIND == NodeKind.BlankNode:
                 if not value.startswith("_:"):
                     raise ValueError(
                         f"{self.__class__.__name__} ({id(self)}) can only have local reference. Property '{iri}' cannot be set to '{value}' and must start with '_:'"
                     )
-            elif self.REFABLE in [Refable.ExternalRefable, Refable.AlwaysRefable]:
+            elif self.NODE_KIND == NodeKind.IRI:
                 if value.startswith("_:"):
                     raise ValueError(
-                        f"{self.__class__.__name__} ({id(self)}) can has mandatory reference. Property '{iri}' cannot be set to '{value}'"
+                        f"{self.__class__.__name__} ({id(self)}) can only have an IRI value. Property '{iri}' cannot be set to '{value}'"
                     )
 
         prop, _, _, _ = self.__get_prop(iri)
@@ -609,28 +603,16 @@ class SHACLObject(object):
         for obj in seen:
             yield obj
 
-    def encode(self, encoder, state, *, is_reference=False):
+    def encode(self, encoder, state):
         idname = self.ID_ALIAS or self._obj_iris["_id"]
-        if not self._id and self.REFABLE in [
-            Refable.ExternalRefable,
-            Refable.AlwaysRefable,
-        ]:
+        if not self._id and self.NODE_KIND == NodeKind.IRI:
             raise ValueError(
-                f"{self.__class__.__name__} ({id(self)}) must have a '{idname}' property to be referenceable"
+                f"{self.__class__.__name__} ({id(self)}) must have a IRI for property '{idname}'"
             )
 
         if state.is_written(self):
-            if self.REFABLE == Refable.NeverRefable:
-                raise ValueError(
-                    f"{self.__class__.__name__} ({id(self)}) is not referenceable"
-                )
             encoder.write_iri(state.get_object_id(self))
             return
-
-        if is_reference and self.REFABLE == Refable.AlwaysRefable:
-            raise ValueError(
-                f"{self.__class__.__name__} ({id(self)}) must always be referenced by name, and cannot be inlined"
-            )
 
         state.add_written(self)
 
@@ -806,7 +788,7 @@ def encode_objects(encoder, objects, force_list=False):
         if value._id and value._id.startswith("_:"):
             del value._id
 
-        if value._id or value.REFABLE == Refable.AlwaysRefable:
+        if value._id:
             state.add_refed(value)
 
         # If the object is referenced more than once, add it to the set of
@@ -820,6 +802,8 @@ def encode_objects(encoder, objects, force_list=False):
         return True
 
     for o in objects:
+        if o._id:
+            state.add_refed(o)
         o.walk(walk_callback)
 
     use_list = force_list or len(objects) > 1
@@ -1630,7 +1614,7 @@ class enumType(EnumProp):
 # A class with an ID alias
 class id_prop_class(SHACLObject):
     TYPE = "http://example.org/id-prop-class"
-    REFABLE = Refable.OptionalRefable
+    NODE_KIND = NodeKind.BlankNodeOrIRI
     ID_ALIAS = "testid"
 
     def __init__(self, **kwargs):
@@ -1644,7 +1628,7 @@ SHACLObject.DESERIALIZERS["http://example.org/id-prop-class"] = id_prop_class
 # A class that inherits its idPropertyName from the parent
 class inherited_id_prop_class(id_prop_class):
     TYPE = "http://example.org/inherited-id-prop-class"
-    REFABLE = Refable.OptionalRefable
+    NODE_KIND = NodeKind.BlankNodeOrIRI
     ID_ALIAS = "testid"
 
     def __init__(self, **kwargs):
@@ -1658,7 +1642,7 @@ SHACLObject.DESERIALIZERS["http://example.org/inherited-id-prop-class"] = inheri
 # A class to test links
 class link_class(SHACLObject):
     TYPE = "http://example.org/link-class"
-    REFABLE = Refable.OptionalRefable
+    NODE_KIND = NodeKind.BlankNodeOrIRI
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -1689,7 +1673,7 @@ SHACLObject.DESERIALIZERS["http://example.org/link-class"] = link_class
 # A class derived from link-class
 class link_derived_class(link_class):
     TYPE = "http://example.org/link-derived-class"
-    REFABLE = Refable.OptionalRefable
+    NODE_KIND = NodeKind.BlankNodeOrIRI
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -1699,10 +1683,49 @@ class link_derived_class(link_class):
 SHACLObject.DESERIALIZERS["http://example.org/link-derived-class"] = link_derived_class
 
 
+# A class that must be a blank node
+class node_kind_blank(link_class):
+    TYPE = "http://example.org/node-kind-blank"
+    NODE_KIND = NodeKind.BlankNode
+
+    def __init__(self, **kwargs):
+        super().__init__()
+        self._set_init_props(**kwargs)
+
+
+SHACLObject.DESERIALIZERS["http://example.org/node-kind-blank"] = node_kind_blank
+
+
+# A class that must be an IRI
+class node_kind_iri(link_class):
+    TYPE = "http://example.org/node-kind-iri"
+    NODE_KIND = NodeKind.IRI
+
+    def __init__(self, **kwargs):
+        super().__init__()
+        self._set_init_props(**kwargs)
+
+
+SHACLObject.DESERIALIZERS["http://example.org/node-kind-iri"] = node_kind_iri
+
+
+# A class that can be either a blank node or an IRI
+class node_kind_iri_or_blank(link_class):
+    TYPE = "http://example.org/node-kind-iri-or-blank"
+    NODE_KIND = NodeKind.BlankNodeOrIRI
+
+    def __init__(self, **kwargs):
+        super().__init__()
+        self._set_init_props(**kwargs)
+
+
+SHACLObject.DESERIALIZERS["http://example.org/node-kind-iri-or-blank"] = node_kind_iri_or_blank
+
+
 # The parent class
 class parent_class(SHACLObject):
     TYPE = "http://example.org/parent-class"
-    REFABLE = Refable.OptionalRefable
+    NODE_KIND = NodeKind.BlankNodeOrIRI
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -1712,88 +1735,10 @@ class parent_class(SHACLObject):
 SHACLObject.DESERIALIZERS["http://example.org/parent-class"] = parent_class
 
 
-# A class that must always be linked
-class ref_always_class(link_class):
-    TYPE = "http://example.org/ref-always-class"
-    REFABLE = Refable.AlwaysRefable
-
-    def __init__(self, **kwargs):
-        super().__init__()
-        self._set_init_props(**kwargs)
-
-
-SHACLObject.DESERIALIZERS["http://example.org/ref-always-class"] = ref_always_class
-
-
-# A class that must always have external reference
-class ref_external_class(link_class):
-    TYPE = "http://example.org/ref-external-class"
-    REFABLE = Refable.ExternalRefable
-
-    def __init__(self, **kwargs):
-        super().__init__()
-        self._set_init_props(**kwargs)
-
-
-SHACLObject.DESERIALIZERS["http://example.org/ref-external-class"] = ref_external_class
-
-
-# A class that inherits refable from it's parent
-class ref_inherited_external_class(ref_external_class):
-    TYPE = "http://example.org/ref-inherited-external-class"
-    REFABLE = Refable.ExternalRefable
-
-    def __init__(self, **kwargs):
-        super().__init__()
-        self._set_init_props(**kwargs)
-
-
-SHACLObject.DESERIALIZERS["http://example.org/ref-inherited-external-class"] = ref_inherited_external_class
-
-
-# A class with local linking
-class ref_local_class(link_class):
-    TYPE = "http://example.org/ref-local-class"
-    REFABLE = Refable.LocalRefable
-
-    def __init__(self, **kwargs):
-        super().__init__()
-        self._set_init_props(**kwargs)
-
-
-SHACLObject.DESERIALIZERS["http://example.org/ref-local-class"] = ref_local_class
-
-
-# A class with no linking
-class ref_never_class(link_class):
-    TYPE = "http://example.org/ref-never-class"
-    REFABLE = Refable.NeverRefable
-
-    def __init__(self, **kwargs):
-        super().__init__()
-        self._set_init_props(**kwargs)
-
-
-SHACLObject.DESERIALIZERS["http://example.org/ref-never-class"] = ref_never_class
-
-
-# A class with optional linking
-class ref_optional_class(link_class):
-    TYPE = "http://example.org/ref-optional-class"
-    REFABLE = Refable.OptionalRefable
-
-    def __init__(self, **kwargs):
-        super().__init__()
-        self._set_init_props(**kwargs)
-
-
-SHACLObject.DESERIALIZERS["http://example.org/ref-optional-class"] = ref_optional_class
-
-
 # Another class
 class test_another_class(SHACLObject):
     TYPE = "http://example.org/test-another-class"
-    REFABLE = Refable.OptionalRefable
+    NODE_KIND = NodeKind.BlankNodeOrIRI
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -1806,7 +1751,7 @@ SHACLObject.DESERIALIZERS["http://example.org/test-another-class"] = test_anothe
 # The test class
 class test_class(parent_class):
     TYPE = "http://example.org/test-class"
-    REFABLE = Refable.OptionalRefable
+    NODE_KIND = NodeKind.BlankNodeOrIRI
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -1968,7 +1913,7 @@ SHACLObject.DESERIALIZERS["http://example.org/test-class"] = test_class
 
 class test_class_required(test_class):
     TYPE = "http://example.org/test-class-required"
-    REFABLE = Refable.OptionalRefable
+    NODE_KIND = NodeKind.BlankNodeOrIRI
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -1996,7 +1941,7 @@ SHACLObject.DESERIALIZERS["http://example.org/test-class-required"] = test_class
 # A class derived from test-class
 class test_derived_class(test_class):
     TYPE = "http://example.org/test-derived-class"
-    REFABLE = Refable.OptionalRefable
+    NODE_KIND = NodeKind.BlankNodeOrIRI
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2009,7 +1954,7 @@ SHACLObject.DESERIALIZERS["http://example.org/test-derived-class"] = test_derive
 # Derived class that sorts before the parent to test ordering
 class aaa_derived_class(parent_class):
     TYPE = "http://example.org/aaa-derived-class"
-    REFABLE = Refable.OptionalRefable
+    NODE_KIND = NodeKind.BlankNodeOrIRI
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -2017,6 +1962,19 @@ class aaa_derived_class(parent_class):
 
 
 SHACLObject.DESERIALIZERS["http://example.org/aaa-derived-class"] = aaa_derived_class
+
+
+# A class that derives its nodeKind from parent
+class derived_node_kind_iri(node_kind_iri):
+    TYPE = "http://example.org/derived-node-kind-iri"
+    NODE_KIND = NodeKind.IRI
+
+    def __init__(self, **kwargs):
+        super().__init__()
+        self._set_init_props(**kwargs)
+
+
+SHACLObject.DESERIALIZERS["http://example.org/derived-node-kind-iri"] = derived_node_kind_iri
 
 
 # Copyright (c) 2024 Joshua Watt

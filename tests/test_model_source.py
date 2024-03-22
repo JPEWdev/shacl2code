@@ -372,7 +372,7 @@ def test_context_args(http_server):
     [
         "bad-reference.jsonld",
         "missing-range.ttl",
-        "bad-referenceable.ttl",
+        "bad-node-kind.ttl",
         "bad-pattern-class.ttl",
         "bad-pattern-integer.ttl",
     ],

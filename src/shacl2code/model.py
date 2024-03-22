@@ -19,40 +19,9 @@ PATTERN_DATATYPES = [
 
 
 class SHACL2CODE(DefinedNamespace):
-    refable: URIRef
     idPropertyName: URIRef
 
-    # Object should never be referenced (in more than one location). For
-    # bindings where specifying an ID is optional (e.g. an implict blank node
-    # is allowed), the object should never have an ID and should always rely on
-    # an implicit blank node and should be inlined where it is referenced
-    NeverRefable: URIRef
-
-    # The object may or may not have an ID, but if it does have one it must be
-    # a blank node
-    LocalRefable: URIRef
-
-    # Any type of ID is allowed (or none). This is the default if unspecified
-    OptionalRefable: URIRef
-
-    # The object must have an externally referenceable ID (a fully qualified
-    # IRI); blank nodes or no ID is not allowed.
-    ExternalRefable: URIRef
-
-    # Same as ExtenalRefable, but the object is not allowed to be inlined (if
-    # possible)
-    ForcedRefable: URIRef
-
     _NS = Namespace("https://jpewdev.github.io/shacl2code/schema#")
-
-
-POSSIBLE_REFABLE = [
-    SHACL2CODE.NeverRefable,
-    SHACL2CODE.LocalRefable,
-    SHACL2CODE.OptionalRefable,
-    SHACL2CODE.ExternalRefable,
-    SHACL2CODE.ForcedRefable,
-]
 
 
 class ModelException(Exception):
@@ -120,7 +89,7 @@ class Class:
     properties: typing.List[Property]
     comment: str = ""
     id_property: str = ""
-    refable: str = "optional"
+    node_kind: str = None
 
 
 class Model(object):
@@ -206,15 +175,12 @@ class Model(object):
                 id_property=str_val(
                     get_inherited_value(cls_iri, SHACL2CODE.idPropertyName)
                 ),
-                refable=get_inherited_value(
-                    cls_iri, SHACL2CODE.refable, SHACL2CODE.OptionalRefable
-                ),
+                node_kind=get_inherited_value(cls_iri, SH.nodeKind, SH.BlankNodeOrIRI),
             )
 
-            if c.refable not in POSSIBLE_REFABLE:
+            if c.node_kind not in (SH.IRI, SH.BlankNode, SH.BlankNodeOrIRI):
                 raise ModelException(
-                    f"Class {c._id} has unknown '{SHACL2CODE.refable}' value '{c.refable}'. Must be one of:\n"
-                    + "\n".join(POSSIBLE_REFABLE)
+                    f"Class {c._id} has unsupported '{SH.nodeKind}' value '{c.node_kind}'"
                 )
 
             for obj_prop in self.model.objects(cls_iri, SH.property):

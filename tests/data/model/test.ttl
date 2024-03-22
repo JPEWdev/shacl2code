@@ -364,41 +364,6 @@
     rdfs:range <link-class>
     .
 
-<ref-never-class> a rdf:Class, sh:NodeShape, owl:Class ;
-    rdfs:subClassOf <link-class> ;
-    rdfs:comment "A class with no linking" ;
-    sh-to-code:refable sh-to-code:NeverRefable
-    .
-
-<ref-local-class> a rdf:Class, sh:NodeShape, owl:Class ;
-    rdfs:subClassOf <link-class> ;
-    rdfs:comment "A class with local linking" ;
-    sh-to-code:refable sh-to-code:LocalRefable
-    .
-
-<ref-optional-class> a rdf:Class, sh:NodeShape, owl:Class ;
-    rdfs:subClassOf <link-class> ;
-    rdfs:comment "A class with optional linking" ;
-    sh-to-code:refable sh-to-code:OptionalRefable
-    .
-
-<ref-external-class> a rdf:Class, sh:NodeShape, owl:Class ;
-    rdfs:subClassOf <link-class> ;
-    rdfs:comment "A class that must always have external reference" ;
-    sh-to-code:refable sh-to-code:ExternalRefable
-    .
-
-<ref-forced-class> a rdf:Class, sh:NodeShape, owl:Class ;
-    rdfs:subClassOf <link-class> ;
-    rdfs:comment "A class that must always be linked" ;
-    sh-to-code:refable sh-to-code:ForcedRefable
-    .
-
-<ref-inherited-external-class> a rdf:Class, sh:NodeShape, owl:Class ;
-    rdfs:subClassOf <ref-external-class> ;
-    rdfs:comment "A class that inherits refable from it's parent"
-    .
-
 <id-prop-class> a rdf:Class, sh:NodeShape, owl:Class ;
     rdfs:comment "A class with an ID alias" ;
     sh-to-code:idPropertyName "testid"
@@ -409,3 +374,25 @@
     rdfs:comment "A class that inherits its idPropertyName from the parent"
     .
 
+<node-kind-blank> a rdf:Class, sh:NodeShape, owl:Class ;
+    rdfs:subClassOf <link-class> ;
+    rdfs:comment "A class that must be a blank node" ;
+    sh:nodeKind sh:BlankNode
+    .
+
+<node-kind-iri> a rdf:Class, sh:NodeShape, owl:Class ;
+    rdfs:subClassOf <link-class> ;
+    rdfs:comment "A class that must be an IRI" ;
+    sh:nodeKind sh:IRI
+    .
+
+<node-kind-iri-or-blank> a rdf:Class, sh:NodeShape, owl:Class ;
+    rdfs:subClassOf <link-class> ;
+    rdfs:comment "A class that can be either a blank node or an IRI" ;
+    sh:nodeKind sh:BlankNodeOrIRI
+    .
+
+<derived-node-kind-iri> a rdf:Class, sh:NodeShape, owl:Class ;
+    rdfs:subClassOf <node-kind-iri> ;
+    rdfs:comment "A class that derives its nodeKind from parent" ;
+    .

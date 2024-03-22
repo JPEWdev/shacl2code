@@ -340,256 +340,174 @@ def test_blank_links(import_test_context, name, cls):
     assert c.link_class_link_list_prop == [expect, expect]
 
 
-def test_non_refable(import_test_context, test_context_url):
+def test_node_kind_blank(import_test_context, test_context_url):
     import model
 
     s = model.JSONLDSerializer()
     c1 = model.link_class()
     c2 = model.link_class()
 
-    non_ref = model.ref_never_class()
+    c1._id = "http://example.com/c1"
+    c2._id = "http://example.com/c2"
 
-    c1.link_class_link_prop = non_ref
-
-    # A non-refable object should be inlined
-    result = s.serialize_data([c1])
-    assert result == {
-        "@context": test_context_url,
-        "@type": "link-class",
-        "link-class-link-prop": {
-            "@type": "ref-never-class",
-        },
-    }
-
-    # A non-refable class cannot be referenced from multiple objects, as this
-    # would require creating a blank node reference
-    c1.link_class_link_prop = non_ref
-    c2.link_class_link_prop = non_ref
-
-    with pytest.raises(ValueError):
-        result = s.serialize_data([c1, c2])
-        print(result)
-
-    # A non-refable class written as the root object is OK
-    result = s.serialize_data([non_ref])
-    assert result == {
-        "@context": test_context_url,
-        "@type": "ref-never-class",
-    }
-
-    # A non-refable class cannot have an explicit ID assigned
-    with pytest.raises(ValueError):
-        non_ref._id = "http://example.org/name"
-
-    # Or a blank node
-    with pytest.raises(ValueError):
-        non_ref._id = "_:blank"
-
-
-@pytest.mark.parametrize(
-    "cls",
-    ["ref_external_class", "ref_inherited_external_class"],
-)
-def test_external_refable(import_test_context, test_context_url, cls):
-    import model
-
-    TEST_ID = "http://serialize.example.com/name"
-
-    s = model.JSONLDSerializer()
-    c1 = model.link_class()
-    c2 = model.link_class()
-
-    ref = getattr(model, cls)()
-
-    # Mandatory reference fails because there is no ID
-    c1.link_class_link_prop = ref
-    with pytest.raises(ValueError):
-        s.serialize_data([c1])
-
-    # Even references from multiple objects fails because it would generate a
-    # blank node with is not referenceable
-    c2.link_class_link_prop = ref
-    with pytest.raises(ValueError):
-        s.serialize_data([c1, c2])
-
-    # Assigning a reference allows the object to be serialized
-    ref._id = TEST_ID
-    result = s.serialize_data([c1])
-    # inline is allowed
-    assert result == {
-        "@context": test_context_url,
-        "@type": "link-class",
-        "link-class-link-prop": {
-            "@id": TEST_ID,
-            "@type": cls.replace("_", "-"),
-        },
-    }
-
-    # using a graph will force the object into the root @graph (even though not
-    # explicitly specified)
-    result = s.serialize_data([c1], force_graph=True)
-    assert result == {
-        "@context": test_context_url,
-        "@graph": [
-            {
-                "@type": "link-class",
-                "link-class-link-prop": TEST_ID,
-            },
-            {
-                "@id": TEST_ID,
-                "@type": cls.replace("_", "-"),
-            },
-        ],
-    }
-
-    # Assignment of a blank node value is not allowed
-    with pytest.raises(ValueError):
-        ref._id = "_:blank"
-
-
-def test_forced_refable(import_test_context, test_context_url):
-    import model
-
-    TEST_ID = "http://serialize.example.com/name"
-
-    s = model.JSONLDSerializer()
-    c1 = model.link_class()
-    c2 = model.link_class()
-
-    ref = model.ref_forced_class()
-
-    # Mandatory reference fails because there is no ID
-    c1.link_class_link_prop = ref
-    with pytest.raises(ValueError):
-        s.serialize_data([c1])
-
-    # Even references from multiple objects fails because it would generate a
-    # blank node with is not referenceable
-    c2.link_class_link_prop = ref
-    with pytest.raises(ValueError):
-        s.serialize_data([c1, c2])
-
-    # Assigning a reference allows the object to be serialized
-    ref._id = TEST_ID
-    # inlining is not allowed since it is not a reference
-    with pytest.raises(ValueError):
-        s.serialize_data([c1])
-
-    # using a graph will force the object into the root @graph (even though not
-    # explicitly specified)
-    result = s.serialize_data([c1], force_graph=True)
-    assert result == {
-        "@context": test_context_url,
-        "@graph": [
-            {
-                "@type": "link-class",
-                "link-class-link-prop": TEST_ID,
-            },
-            {
-                "@id": TEST_ID,
-                "@type": "ref-forced-class",
-            },
-        ],
-    }
-
-    # Assignment of a blank node value is not allowed
-    with pytest.raises(ValueError):
-        ref._id = "_:blank"
-
-
-def test_optional_refable(import_test_context, test_context_url):
-    # This is the normal object behavior, so not much to test here that isn't
-    # covered elsewhere
-    import model
-
-    TEST_ID = "http://serialize.example.com/name"
-
-    s = model.JSONLDSerializer()
-    c1 = model.link_class()
-    c2 = model.link_class()
-
-    ref = model.ref_optional_class()
-
-    INLINE_RESULT = {
-        "@context": test_context_url,
-        "@type": "link-class",
-        "link-class-link-prop": {
-            "@type": "ref-optional-class",
-        },
-    }
-
-    # Test that objects are inlined
-    c1.link_class_link_prop = ref
-    result = s.serialize_data([c1])
-    assert result == INLINE_RESULT
-
-    # Explict blank node assignment is not preserved
-    ref._id = "_:blank"
-    result = s.serialize_data([c1])
-    assert result == INLINE_RESULT
-
-    BLANK_RESULT = {
-        "@context": test_context_url,
-        "@graph": [
-            {
-                "@type": "link-class",
-                "link-class-link-prop": "_:ref_optional_class1",
-            },
-            {
-                "@type": "link-class",
-                "link-class-link-prop": "_:ref_optional_class1",
-            },
-            {
-                "@id": "_:ref_optional_class1",
-                "@type": "ref-optional-class",
-            },
-        ],
-    }
-
-    # Multiple links means the object will be moved to the @graph instead of
-    # being inlined
-    del ref._id
-    c2.link_class_link_prop = ref
-    result = s.serialize_data([c1, c2])
-    assert result == BLANK_RESULT
-
-    # Explicit blank node assignment, but it's not preserved in serialization
-    ref._id = "_:blank"
-    result = s.serialize_data([c1, c2])
-    assert result == BLANK_RESULT
-
-    # Assign a non-blank node id (which is preserved)
-    ref._id = TEST_ID
-    result = s.serialize_data([c1, c2])
-    assert result == {
-        "@context": test_context_url,
-        "@graph": [
-            {
-                "@type": "link-class",
-                "link-class-link-prop": TEST_ID,
-            },
-            {
-                "@type": "link-class",
-                "link-class-link-prop": TEST_ID,
-            },
-            {
-                "@id": TEST_ID,
-                "@type": "ref-optional-class",
-            },
-        ],
-    }
-
-
-def test_local_refable(import_test_context):
-    import model
-
-    ref = model.ref_local_class()
+    ref = model.node_kind_blank()
 
     with pytest.raises(ValueError):
         ref._id = "http://example.com/name"
 
-    # Blank node assignment is fine, but not preserved when serializing
+    # Blank node assignment is fine but not preserved when serializing
     ref._id = "_:blank"
+
+    # No blank ID is written out for one reference (inline)
+    c1.link_class_link_prop = ref
+    result = s.serialize_data([c1, c2])
+    assert result == {
+        "@context": test_context_url,
+        "@graph": [
+            {
+                "@type": "link-class",
+                "@id": "http://example.com/c1",
+                "link-class-link-prop": {
+                    "@type": "node-kind-blank",
+                },
+            },
+            {
+                "@type": "link-class",
+                "@id": "http://example.com/c2",
+            },
+        ],
+    }
+
+    # Blank node is written out for multiple references
+    c2.link_class_link_prop = ref
+    result = s.serialize_data([c1, c2])
+    assert result == {
+        "@context": test_context_url,
+        "@graph": [
+            {
+                "@type": "node-kind-blank",
+                "@id": "_:node_kind_blank0",
+            },
+            {
+                "@type": "link-class",
+                "@id": "http://example.com/c1",
+                "link-class-link-prop": "_:node_kind_blank0",
+            },
+            {
+                "@type": "link-class",
+                "@id": "http://example.com/c2",
+                "link-class-link-prop": "_:node_kind_blank0",
+            },
+        ],
+    }
+
+    # Listing in the root graph requires a blank node be written
+    result = s.serialize_data([c1, ref])
+    assert result == {
+        "@context": test_context_url,
+        "@graph": [
+            {
+                "@type": "node-kind-blank",
+                "@id": "_:node_kind_blank0",
+            },
+            {
+                "@type": "link-class",
+                "@id": "http://example.com/c1",
+                "link-class-link-prop": "_:node_kind_blank0",
+            },
+        ],
+    }
+
+
+@pytest.mark.parametrize(
+    "cls",
+    ["node_kind_iri", "derived_node_kind_iri"],
+)
+def test_node_kind_iri(import_test_context, test_context_url, cls):
+    import model
+
+    TEST_ID = "http://serialize.example.com/name"
+    TYP = cls.replace("_", "-")
+
+    s = model.JSONLDSerializer()
+    c1 = model.link_class()
+    c2 = model.link_class()
+
+    c1._id = "http://example.com/c1"
+    c2._id = "http://example.com/c2"
+
+    ref = getattr(model, cls)()
+
+    with pytest.raises(ValueError):
+        ref._id = "_:blank"
+
+    # serializing without an ID is not allowed
+    with pytest.raises(ValueError):
+        s.serialize_data([ref])
+
+    # Inlining not allowed
+    ref._id = TEST_ID
+
+    c1.link_class_link_prop = ref
+    result = s.serialize_data([c1, c2])
+    assert result == {
+        "@context": test_context_url,
+        "@graph": [
+            {
+                "@type": "link-class",
+                "@id": "http://example.com/c1",
+                "link-class-link-prop": TEST_ID,
+            },
+            {
+                "@type": "link-class",
+                "@id": "http://example.com/c2",
+            },
+            {
+                "@type": TYP,
+                "@id": TEST_ID,
+            },
+        ],
+    }
+
+    # Multiple references
+    c2.link_class_link_prop = ref
+    result = s.serialize_data([c1, c2])
+    assert result == {
+        "@context": test_context_url,
+        "@graph": [
+            {
+                "@type": "link-class",
+                "@id": "http://example.com/c1",
+                "link-class-link-prop": TEST_ID,
+            },
+            {
+                "@type": "link-class",
+                "@id": "http://example.com/c2",
+                "link-class-link-prop": TEST_ID,
+            },
+            {
+                "@type": TYP,
+                "@id": TEST_ID,
+            },
+        ],
+    }
+
+    # Listing in the root graph forces reference
+    result = s.serialize_data([c1, ref])
+    assert result == {
+        "@context": test_context_url,
+        "@graph": [
+            {
+                "@type": "link-class",
+                "@id": "http://example.com/c1",
+                "link-class-link-prop": TEST_ID,
+            },
+            {
+                "@type": TYP,
+                "@id": TEST_ID,
+            },
+        ],
+    }
 
 
 @pytest.mark.parametrize(

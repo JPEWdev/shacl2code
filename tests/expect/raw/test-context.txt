@@ -11,19 +11,13 @@ http://example.org/link-class: link-class
 
 http://example.org/link-derived-class: link-derived-class
 
+http://example.org/node-kind-blank: node-kind-blank
+
+http://example.org/node-kind-iri: node-kind-iri
+
+http://example.org/node-kind-iri-or-blank: node-kind-iri-or-blank
+
 http://example.org/parent-class: parent-class
-
-http://example.org/ref-always-class: ref-always-class
-
-http://example.org/ref-external-class: ref-external-class
-
-http://example.org/ref-inherited-external-class: ref-inherited-external-class
-
-http://example.org/ref-local-class: ref-local-class
-
-http://example.org/ref-never-class: ref-never-class
-
-http://example.org/ref-optional-class: ref-optional-class
 
 http://example.org/test-another-class: test-another-class
 
@@ -34,3 +28,5 @@ http://example.org/test-class-required: test-class-required
 http://example.org/test-derived-class: test-derived-class
 
 http://example.org/aaa-derived-class: aaa-derived-class
+
+http://example.org/derived-node-kind-iri: derived-node-kind-iri

@@ -61,18 +61,9 @@
             "allOf": [
                 {
                     "properties": {
-                        {%- if class.refable != SHACL2CODE.NeverRefable %}
-                        "{{ class.id_property or context.compact("@id") }}":
-                        {%- if class.refable == SHACL2CODE.ForcedRefable or class.refable == SHACL2CODE.ExternalRefable -%}
-                            { "$ref": "#/$defs/externalRef" }
-                        {%- elif class.refable == SHACL2CODE.LocalRefable -%}
-                            { "$ref": "#/$defs/localRef" }
-                        {%- elif class.refable == SHACL2CODE.OptionalRefable -%}
-                            { "$ref": "#/$defs/anyRef" }
-                        {%- endif %},
-                        {%- endif %}
+                        "{{ class.id_property or context.compact("@id") }}": { "$ref": "#/$defs/{{ class.node_kind.split("#")[-1] }}" },
                         "{{ context.compact("@type") }}": { "const": "{{ context.compact_vocab(class._id) }}" }
-                    }{%- if class.refable == SHACL2CODE.ForcedRefable or class.refable == SHACL2CODE.ExternalRefable %},
+                    }{%- if class.node_kind == SH.IRI %},
                     "required": ["{{ class.id_property or context.compact("@id") }}"]
                     {%- endif %}
                 },
@@ -82,27 +73,9 @@
         "{{ varname(class.clsname) }}_derived": {
             {%- set ns = namespace(external_ref=False, local_ref=False, any_ref=False, json_refs=[]) %}
             {%- for d in get_all_derived(class) + [class._id] %}
-                {%- if class.refable == SHACL2CODE.ForcedRefable or class.refable == SHACL2CODE.ExternalRefable %}
-                    {%- set ns.external_ref = True %}
-                {%- elif class.refable == SHACL2CODE.LocalRefable %}
-                    {%- set ns.local_ref = True %}
-                {%- elif class.refable == SHACL2CODE.OptionalRefable %}
-                    {%- set ns.any_ref = True %}
-                {%- endif %}
-                {%- if classes.get(d).refable != SHACL2CODE.ForcedRefable %}
-                    {%- set ns.json_refs = ns.json_refs + ["#/$defs/" + varname(classes.get(d).clsname)] %}
-                {%- endif %}
+                {%- set ns.json_refs = ns.json_refs + ["#/$defs/" + varname(classes.get(d).clsname)] %}
             {%- endfor %}
-            {%- if ns.any_ref %}
-                {%- set ns.json_refs = ns.json_refs + ["#/$defs/anyRef"] %}
-            {%- else %}
-                {%- if ns.local_ref %}
-                    {%- set ns.json_refs = ns.json_refs + ["#/$defs/localRef"] %}
-                {%- endif %}
-                {%- if ns.external_ref %}
-                    {%- set ns.json_refs = ns.json_refs + ["#/$defs/externalRef"] %}
-                {%- endif %}
-            {%- endif %}
+            {%- set ns.json_refs = ns.json_refs + ["#/$defs/BlankNodeOrIRI"] %}
 
             {%- if ns.json_refs | length == 1 %}
             "$ref": "{{ ns.json_refs[0] }}",
@@ -238,16 +211,19 @@
         },
         {%- endfor %}
     {%- endfor %}
-        "anyRef": {
-            "type": "string"
-        },
-        "externalRef": {
+        "IRI": {
             "type": "string",
             "pattern": "^(?!_:).*"
         },
-        "localRef": {
+        "BlankNode": {
             "type": "string",
             "pattern": "^_:.*"
+        },
+        "BlankNodeOrIRI": {
+            "oneOf": [
+                { "$ref": "#/$defs/IRI" },
+                { "$ref": "#/$defs/BlankNode" }
+            ]
         },
         "anyURI": {
             "type": "string"

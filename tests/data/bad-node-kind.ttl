@@ -8,5 +8,5 @@
 
 <test-class> a rdfs:Class, sh:NodeShape, owl:Class ;
     rdfs:comment "The test class" ;
-    sh-to-code:refable "unknown"
+    sh:nodeKind sh:Literal
     .

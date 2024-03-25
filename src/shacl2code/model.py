@@ -129,7 +129,8 @@ class Model(object):
                 )
                 self.enums.append(e)
                 enum_iris.add(cls_iri)
-            else:
+
+            if (cls_iri, RDF.type, SH.NodeShape) in self.model:
                 class_iris.add(cls_iri)
 
         def int_val(v):

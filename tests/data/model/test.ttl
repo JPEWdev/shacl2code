@@ -6,17 +6,17 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix sh-to-code: <https://jpewdev.github.io/shacl2code/schema#> .
 
-<aaa-derived-class> a rdf:Class, sh:NodeShape, owl:Class ;
+<aaa-derived-class> a sh:NodeShape, owl:Class ;
     rdfs:subClassOf <parent-class> ;
     rdfs:comment "Derived class that sorts before the parent to test ordering"
     .
 
-<parent-class> a rdfs:Class, sh:NodeShape, owl:Class ;
+<parent-class> a sh:NodeShape, owl:Class ;
     rdfs:comment "The parent class" ;
     .
 
 
-<test-class> a rdfs:Class, sh:NodeShape, owl:Class ;
+<test-class> a sh:NodeShape, owl:Class ;
     rdfs:subClassOf <parent-class> ;
     rdfs:comment "The test class" ;
     sh:property [
@@ -143,7 +143,7 @@
     ]
     .
 
-<test-class-required> a rdfs:Class, sh:NodeShape, owl:Class ;
+<test-class-required> a sh:NodeShape, owl:Class ;
     rdfs:subClassOf <test-class> ;
     sh:property [
         sh:datatype xsd:string ;
@@ -159,12 +159,12 @@
     ]
     .
 
-<test-derived-class> a rdfs:Class, sh:NodeShape, owl:Class ;
+<test-derived-class> a sh:NodeShape, owl:Class ;
     rdfs:subClassOf <test-class> ;
     rdfs:comment "A class derived from test-class"
     .
 
-<test-another-class> a rdfs:Class, sh:NodeShape, owl:Class ;
+<test-another-class> a sh:NodeShape, owl:Class ;
     rdfs:comment "Another class"
     .
 
@@ -303,7 +303,7 @@
     rdfs:range xsd:dateTimeStamp
     .
 
-<enumType> a rdfs:Class, owl:Class ;
+<enumType> a owl:Class ;
     rdfs:comment "An enumerated type"
     .
 
@@ -327,7 +327,7 @@
 
 # Classes to test links
 
-<link-class> a rdfs:Class, sh:NodeShape, owl:Class ;
+<link-class> a sh:NodeShape, owl:Class ;
     rdfs:comment "A class to test links" ;
     sh:property [
         sh:class <link-class> ;
@@ -344,7 +344,7 @@
     ]
     .
 
-<link-derived-class> a rdfs:Class, sh:NodeShape, owl:Class ;
+<link-derived-class> a sh:NodeShape, owl:Class ;
     rdfs:subClassOf <link-class> ;
     rdfs:comment "A class derived from link-class"
     .

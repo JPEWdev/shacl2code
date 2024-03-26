@@ -11,10 +11,10 @@ from rdflib import URIRef
 from rdflib.namespace import RDF, RDFS, OWL, SH, XSD, DefinedNamespace, Namespace
 
 PATTERN_DATATYPES = [
-    "http://www.w3.org/2001/XMLSchema#string",
-    "http://www.w3.org/2001/XMLSchema#dateTime",
-    "http://www.w3.org/2001/XMLSchema#dateTimeStamp",
-    "http://www.w3.org/2001/XMLSchema#anyURI",
+    str(XSD.string),
+    str(XSD.dateTime),
+    str(XSD.dateTimeStamp),
+    str(XSD.anyURI),
 ]
 
 

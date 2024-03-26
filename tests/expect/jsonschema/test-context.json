@@ -403,6 +403,9 @@
                         "test-class/named-property": {
                             "$ref": "#/$defs/prop_testclass_named_property"
                         },
+                        "test-class/non-shape": {
+                            "$ref": "#/$defs/prop_testclass_testclassnonshape"
+                        },
                         "test-class/nonnegative-integer-prop": {
                             "$ref": "#/$defs/prop_testclass_testclassnonnegativeintegerprop"
                         },
@@ -537,6 +540,9 @@
         },
         "prop_testclass_named_property": {
                     "type": "string"
+        },
+        "prop_testclass_testclassnonshape": {
+                    "$ref": "#/$defs/anyURI"
         },
         "prop_testclass_testclassnonnegativeintegerprop": {
                     "type": "integer",

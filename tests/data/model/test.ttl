@@ -140,6 +140,11 @@
         sh:path <test-class/regex-datetimestamp> ;
         sh:maxCount 1 ;
         sh:pattern "^\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ$"
+    ],
+    [
+        sh:class <non-shape-class> ;
+        sh:path <test-class/non-shape> ;
+        sh:maxCount 1
     ]
     .
 
@@ -301,6 +306,15 @@
 <test-class/regex-datetimestamp> a rdf:Property ;
     rdfs:comment "A regex dateTimeStamp" ;
     rdfs:range xsd:dateTimeStamp
+    .
+
+<test-class/non-shape> a rdf:Property ;
+    rdfs:comment "A class with no shape" ;
+    rdfs:range <non-shape-class>
+    .
+
+<non-shape-class> a owl:Class ;
+    rdfs:comment "A class that is not a nodeshape"
     .
 
 <enumType> a owl:Class ;

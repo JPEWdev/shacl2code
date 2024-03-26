@@ -1775,6 +1775,13 @@ class test_class(parent_class):
             iri="http://example.org/test-class/named-property",
             compact="test-class/named-property",
         )
+        # A class with no shape
+        self._add_property(
+            "test_class_non_shape",
+            AnyURIProp(),
+            iri="http://example.org/test-class/non-shape",
+            compact="test-class/non-shape",
+        )
         # a non-negative integer
         self._add_property(
             "test_class_nonnegative_integer_prop",

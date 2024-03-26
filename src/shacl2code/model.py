@@ -8,7 +8,7 @@ import typing
 from dataclasses import dataclass
 
 from rdflib import URIRef
-from rdflib.namespace import RDF, RDFS, OWL, SH, DefinedNamespace, Namespace
+from rdflib.namespace import RDF, RDFS, OWL, SH, XSD, DefinedNamespace, Namespace
 
 PATTERN_DATATYPES = [
     "http://www.w3.org/2001/XMLSchema#string",
@@ -103,8 +103,10 @@ class Model(object):
         class_iris = set()
         enum_iris = set()
         classes_by_iri = {}
+        all_class_iris = set()
 
         for cls_iri in self.model.subjects(RDF.type, OWL.Class):
+            all_class_iris.add(cls_iri)
             enum_values = []
 
             for value_iri in self.model.subjects(RDF.type, cls_iri):
@@ -161,6 +163,25 @@ class Model(object):
                 return value
             return default
 
+        def set_prop_range(p, range_id):
+            nonlocal enum_iris
+            nonlocal class_iris
+            nonlocal all_class_iris
+
+            if range_id in enum_iris:
+                p.enum_id = str(range_id)
+                return True
+
+            if range_id in class_iris:
+                p.class_id = str(range_id)
+                return True
+
+            if range_id in all_class_iris:
+                p.datatype = str(XSD.anyURI)
+                return True
+
+            return False
+
         for cls_iri in class_iris:
             c = Class(
                 _id=str(cls_iri),
@@ -203,13 +224,7 @@ class Model(object):
                 )
 
                 if range_id := self.model.value(obj_prop, SH["class"]):
-                    if range_id in enum_iris:
-                        p.enum_id = str(range_id)
-
-                    elif range_id in class_iris:
-                        p.class_id = str(range_id)
-
-                    else:
+                    if not set_prop_range(p, range_id):
                         raise ModelException(
                             f"Prop {prop} has unknown class restriction {range_id}"
                         )
@@ -218,14 +233,9 @@ class Model(object):
                     p.datatype = str(range_id)
 
                 elif range_id := self.model.value(prop, RDFS.range):
-                    if range_id in enum_iris:
-                        p.enum_id = str(range_id)
-
-                    elif range_id in class_iris:
-                        p.class_id = str(range_id)
-
-                    else:
+                    if not set_prop_range(p, range_id):
                         p.datatype = str(range_id)
+
                 else:
                     raise ModelException(f"Prop '{prop}' is missing range")
 

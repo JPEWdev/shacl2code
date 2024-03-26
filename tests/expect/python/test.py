@@ -1727,6 +1727,12 @@ class http_example_org_test_class(http_example_org_parent_class):
             StringProp(),
             iri="http://example.org/test-class/named-property",
         )
+        # A class with no shape
+        self._add_property(
+            "non_shape",
+            AnyURIProp(),
+            iri="http://example.org/test-class/non-shape",
+        )
         # a non-negative integer
         self._add_property(
             "nonnegative_integer_prop",

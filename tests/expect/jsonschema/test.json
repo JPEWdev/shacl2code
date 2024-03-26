@@ -399,6 +399,9 @@
                         "http://example.org/test-class/named-property": {
                             "$ref": "#/$defs/prop_http_exampleorgtestclass_named_property"
                         },
+                        "http://example.org/test-class/non-shape": {
+                            "$ref": "#/$defs/prop_http_exampleorgtestclass_nonshape"
+                        },
                         "http://example.org/test-class/nonnegative-integer-prop": {
                             "$ref": "#/$defs/prop_http_exampleorgtestclass_nonnegativeintegerprop"
                         },
@@ -533,6 +536,9 @@
         },
         "prop_http_exampleorgtestclass_named_property": {
                     "type": "string"
+        },
+        "prop_http_exampleorgtestclass_nonshape": {
+                    "$ref": "#/$defs/anyURI"
         },
         "prop_http_exampleorgtestclass_nonnegativeintegerprop": {
                     "type": "integer",

@@ -448,6 +448,29 @@ class NodeKind(Enum):
     BlankNodeOrIRI = 3
 
 
+def register(type_iri, compact_type=None):
+    def add_deserializer(key, c):
+        assert (
+            key not in SHACLObject.DESERIALIZERS
+        ), f"{key} already registered to {SHACLObject.DESERIALIZERS[key].__name__}"
+        SHACLObject.DESERIALIZERS[key] = c
+
+    def decorator(c):
+        assert issubclass(
+            c, SHACLObject
+        ), f"{c.__name__} is not derived from SHACLObject"
+
+        c.TYPE = type_iri
+        add_deserializer(type_iri, c)
+
+        c.COMPACT_TYPE = compact_type
+        if compact_type:
+            add_deserializer(compact_type, c)
+        return c
+
+    return decorator
+
+
 @functools.total_ordering
 class SHACLObject(object):
     DESERIALIZERS = {}
@@ -1512,6 +1535,7 @@ class {{ varname(enum.clsname) }}(EnumProp):
 #{% if l %} {% endif %}{{ l.rstrip() }}
 {%- endfor %}
 {%- endif %}
+@register("{{ class._id }}"{%- if context.compact(class._id) != class._id %}, "{{ context.compact(class._id) }}"{%- endif %})
 class {{ varname(class.clsname) }}(
 {%- if class.parent_ids %}
     {%- for id in class.parent_ids %}
@@ -1520,10 +1544,6 @@ class {{ varname(class.clsname) }}(
 {%- else -%}
     SHACLObject
 {%- endif -%}):
-    TYPE = "{{ class._id }}"
-{%- if context.compact(class._id) != class._id %}
-    COMPACT_TYPE = "{{ context.compact(class._id) }}"
-{%- endif %}
     NODE_KIND = NodeKind.{{ class.node_kind.split("#")[-1] }}
     {%- if class.id_property %}
     ID_ALIAS = "{{ class.id_property }}"
@@ -1570,12 +1590,6 @@ class {{ varname(class.clsname) }}(
         )
         {%- endfor %}
         self._set_init_props(**kwargs)
-
-
-SHACLObject.DESERIALIZERS["{{ class._id }}"] = {{ varname(class.clsname) }}
-{%- if context.compact(class._id) != class._id %}
-SHACLObject.DESERIALIZERS["{{ context.compact(class._id) }}"] = {{ varname(class.clsname) }}
-{%- endif %}
 
 {% endfor %}
 {{ '"' }}{{ '"' }}{{ '"' }}Format Guard"""

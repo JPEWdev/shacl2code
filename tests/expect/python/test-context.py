@@ -448,6 +448,29 @@ class NodeKind(Enum):
     BlankNodeOrIRI = 3
 
 
+def register(type_iri, compact_type=None):
+    def add_deserializer(key, c):
+        assert (
+            key not in SHACLObject.DESERIALIZERS
+        ), f"{key} already registered to {SHACLObject.DESERIALIZERS[key].__name__}"
+        SHACLObject.DESERIALIZERS[key] = c
+
+    def decorator(c):
+        assert issubclass(
+            c, SHACLObject
+        ), f"{c.__name__} is not derived from SHACLObject"
+
+        c.TYPE = type_iri
+        add_deserializer(type_iri, c)
+
+        c.COMPACT_TYPE = compact_type
+        if compact_type:
+            add_deserializer(compact_type, c)
+        return c
+
+    return decorator
+
+
 @functools.total_ordering
 class SHACLObject(object):
     DESERIALIZERS = {}
@@ -1486,25 +1509,19 @@ class enumType(EnumProp):
 
 # CLASSES
 # A class with an ID alias
+@register("http://example.org/id-prop-class", "id-prop-class")
 class id_prop_class(SHACLObject):
-    TYPE = "http://example.org/id-prop-class"
-    COMPACT_TYPE = "id-prop-class"
     NODE_KIND = NodeKind.BlankNodeOrIRI
     ID_ALIAS = "testid"
 
     def __init__(self, **kwargs):
         super().__init__()
         self._set_init_props(**kwargs)
-
-
-SHACLObject.DESERIALIZERS["http://example.org/id-prop-class"] = id_prop_class
-SHACLObject.DESERIALIZERS["id-prop-class"] = id_prop_class
 
 
 # A class that inherits its idPropertyName from the parent
+@register("http://example.org/inherited-id-prop-class", "inherited-id-prop-class")
 class inherited_id_prop_class(id_prop_class):
-    TYPE = "http://example.org/inherited-id-prop-class"
-    COMPACT_TYPE = "inherited-id-prop-class"
     NODE_KIND = NodeKind.BlankNodeOrIRI
     ID_ALIAS = "testid"
 
@@ -1513,14 +1530,9 @@ class inherited_id_prop_class(id_prop_class):
         self._set_init_props(**kwargs)
 
 
-SHACLObject.DESERIALIZERS["http://example.org/inherited-id-prop-class"] = inherited_id_prop_class
-SHACLObject.DESERIALIZERS["inherited-id-prop-class"] = inherited_id_prop_class
-
-
 # A class to test links
+@register("http://example.org/link-class", "link-class")
 class link_class(SHACLObject):
-    TYPE = "http://example.org/link-class"
-    COMPACT_TYPE = "link-class"
     NODE_KIND = NodeKind.BlankNodeOrIRI
 
     def __init__(self, **kwargs):
@@ -1549,14 +1561,9 @@ class link_class(SHACLObject):
         self._set_init_props(**kwargs)
 
 
-SHACLObject.DESERIALIZERS["http://example.org/link-class"] = link_class
-SHACLObject.DESERIALIZERS["link-class"] = link_class
-
-
 # A class derived from link-class
+@register("http://example.org/link-derived-class", "link-derived-class")
 class link_derived_class(link_class):
-    TYPE = "http://example.org/link-derived-class"
-    COMPACT_TYPE = "link-derived-class"
     NODE_KIND = NodeKind.BlankNodeOrIRI
 
     def __init__(self, **kwargs):
@@ -1564,14 +1571,9 @@ class link_derived_class(link_class):
         self._set_init_props(**kwargs)
 
 
-SHACLObject.DESERIALIZERS["http://example.org/link-derived-class"] = link_derived_class
-SHACLObject.DESERIALIZERS["link-derived-class"] = link_derived_class
-
-
 # A class that must be a blank node
+@register("http://example.org/node-kind-blank", "node-kind-blank")
 class node_kind_blank(link_class):
-    TYPE = "http://example.org/node-kind-blank"
-    COMPACT_TYPE = "node-kind-blank"
     NODE_KIND = NodeKind.BlankNode
 
     def __init__(self, **kwargs):
@@ -1579,14 +1581,9 @@ class node_kind_blank(link_class):
         self._set_init_props(**kwargs)
 
 
-SHACLObject.DESERIALIZERS["http://example.org/node-kind-blank"] = node_kind_blank
-SHACLObject.DESERIALIZERS["node-kind-blank"] = node_kind_blank
-
-
 # A class that must be an IRI
+@register("http://example.org/node-kind-iri", "node-kind-iri")
 class node_kind_iri(link_class):
-    TYPE = "http://example.org/node-kind-iri"
-    COMPACT_TYPE = "node-kind-iri"
     NODE_KIND = NodeKind.IRI
 
     def __init__(self, **kwargs):
@@ -1594,59 +1591,39 @@ class node_kind_iri(link_class):
         self._set_init_props(**kwargs)
 
 
-SHACLObject.DESERIALIZERS["http://example.org/node-kind-iri"] = node_kind_iri
-SHACLObject.DESERIALIZERS["node-kind-iri"] = node_kind_iri
-
-
 # A class that can be either a blank node or an IRI
+@register("http://example.org/node-kind-iri-or-blank", "node-kind-iri-or-blank")
 class node_kind_iri_or_blank(link_class):
-    TYPE = "http://example.org/node-kind-iri-or-blank"
-    COMPACT_TYPE = "node-kind-iri-or-blank"
     NODE_KIND = NodeKind.BlankNodeOrIRI
 
     def __init__(self, **kwargs):
         super().__init__()
         self._set_init_props(**kwargs)
-
-
-SHACLObject.DESERIALIZERS["http://example.org/node-kind-iri-or-blank"] = node_kind_iri_or_blank
-SHACLObject.DESERIALIZERS["node-kind-iri-or-blank"] = node_kind_iri_or_blank
 
 
 # A class that is not a nodeshape
+@register("http://example.org/non-shape-class", "non-shape-class")
 class non_shape_class(SHACLObject):
-    TYPE = "http://example.org/non-shape-class"
-    COMPACT_TYPE = "non-shape-class"
     NODE_KIND = NodeKind.BlankNodeOrIRI
 
     def __init__(self, **kwargs):
         super().__init__()
         self._set_init_props(**kwargs)
-
-
-SHACLObject.DESERIALIZERS["http://example.org/non-shape-class"] = non_shape_class
-SHACLObject.DESERIALIZERS["non-shape-class"] = non_shape_class
 
 
 # The parent class
+@register("http://example.org/parent-class", "parent-class")
 class parent_class(SHACLObject):
-    TYPE = "http://example.org/parent-class"
-    COMPACT_TYPE = "parent-class"
     NODE_KIND = NodeKind.BlankNodeOrIRI
 
     def __init__(self, **kwargs):
         super().__init__()
         self._set_init_props(**kwargs)
-
-
-SHACLObject.DESERIALIZERS["http://example.org/parent-class"] = parent_class
-SHACLObject.DESERIALIZERS["parent-class"] = parent_class
 
 
 # Another class
+@register("http://example.org/test-another-class", "test-another-class")
 class test_another_class(SHACLObject):
-    TYPE = "http://example.org/test-another-class"
-    COMPACT_TYPE = "test-another-class"
     NODE_KIND = NodeKind.BlankNodeOrIRI
 
     def __init__(self, **kwargs):
@@ -1654,14 +1631,9 @@ class test_another_class(SHACLObject):
         self._set_init_props(**kwargs)
 
 
-SHACLObject.DESERIALIZERS["http://example.org/test-another-class"] = test_another_class
-SHACLObject.DESERIALIZERS["test-another-class"] = test_another_class
-
-
 # The test class
+@register("http://example.org/test-class", "test-class")
 class test_class(parent_class):
-    TYPE = "http://example.org/test-class"
-    COMPACT_TYPE = "test-class"
     NODE_KIND = NodeKind.BlankNodeOrIRI
 
     def __init__(self, **kwargs):
@@ -1863,13 +1835,8 @@ class test_class(parent_class):
         self._set_init_props(**kwargs)
 
 
-SHACLObject.DESERIALIZERS["http://example.org/test-class"] = test_class
-SHACLObject.DESERIALIZERS["test-class"] = test_class
-
-
+@register("http://example.org/test-class-required", "test-class-required")
 class test_class_required(test_class):
-    TYPE = "http://example.org/test-class-required"
-    COMPACT_TYPE = "test-class-required"
     NODE_KIND = NodeKind.BlankNodeOrIRI
 
     def __init__(self, **kwargs):
@@ -1894,14 +1861,9 @@ class test_class_required(test_class):
         self._set_init_props(**kwargs)
 
 
-SHACLObject.DESERIALIZERS["http://example.org/test-class-required"] = test_class_required
-SHACLObject.DESERIALIZERS["test-class-required"] = test_class_required
-
-
 # A class derived from test-class
+@register("http://example.org/test-derived-class", "test-derived-class")
 class test_derived_class(test_class):
-    TYPE = "http://example.org/test-derived-class"
-    COMPACT_TYPE = "test-derived-class"
     NODE_KIND = NodeKind.BlankNodeOrIRI
 
     def __init__(self, **kwargs):
@@ -1916,14 +1878,9 @@ class test_derived_class(test_class):
         self._set_init_props(**kwargs)
 
 
-SHACLObject.DESERIALIZERS["http://example.org/test-derived-class"] = test_derived_class
-SHACLObject.DESERIALIZERS["test-derived-class"] = test_derived_class
-
-
 # Derived class that sorts before the parent to test ordering
+@register("http://example.org/aaa-derived-class", "aaa-derived-class")
 class aaa_derived_class(parent_class):
-    TYPE = "http://example.org/aaa-derived-class"
-    COMPACT_TYPE = "aaa-derived-class"
     NODE_KIND = NodeKind.BlankNodeOrIRI
 
     def __init__(self, **kwargs):
@@ -1931,23 +1888,14 @@ class aaa_derived_class(parent_class):
         self._set_init_props(**kwargs)
 
 
-SHACLObject.DESERIALIZERS["http://example.org/aaa-derived-class"] = aaa_derived_class
-SHACLObject.DESERIALIZERS["aaa-derived-class"] = aaa_derived_class
-
-
 # A class that derives its nodeKind from parent
+@register("http://example.org/derived-node-kind-iri", "derived-node-kind-iri")
 class derived_node_kind_iri(node_kind_iri):
-    TYPE = "http://example.org/derived-node-kind-iri"
-    COMPACT_TYPE = "derived-node-kind-iri"
     NODE_KIND = NodeKind.IRI
 
     def __init__(self, **kwargs):
         super().__init__()
         self._set_init_props(**kwargs)
-
-
-SHACLObject.DESERIALIZERS["http://example.org/derived-node-kind-iri"] = derived_node_kind_iri
-SHACLObject.DESERIALIZERS["derived-node-kind-iri"] = derived_node_kind_iri
 
 
 """Format Guard"""

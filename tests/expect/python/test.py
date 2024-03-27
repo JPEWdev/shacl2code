@@ -1595,6 +1595,19 @@ class http_example_org_node_kind_iri_or_blank(http_example_org_link_class):
 SHACLObject.DESERIALIZERS["http://example.org/node-kind-iri-or-blank"] = http_example_org_node_kind_iri_or_blank
 
 
+# A class that is not a nodeshape
+class http_example_org_non_shape_class(SHACLObject):
+    TYPE = "http://example.org/non-shape-class"
+    NODE_KIND = NodeKind.BlankNodeOrIRI
+
+    def __init__(self, **kwargs):
+        super().__init__()
+        self._set_init_props(**kwargs)
+
+
+SHACLObject.DESERIALIZERS["http://example.org/non-shape-class"] = http_example_org_non_shape_class
+
+
 # The parent class
 class http_example_org_parent_class(SHACLObject):
     TYPE = "http://example.org/parent-class"
@@ -1730,7 +1743,7 @@ class http_example_org_test_class(http_example_org_parent_class):
         # A class with no shape
         self._add_property(
             "non_shape",
-            AnyURIProp(),
+            ObjectProp(http_example_org_non_shape_class, False),
             iri="http://example.org/test-class/non-shape",
         )
         # a non-negative integer

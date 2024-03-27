@@ -247,6 +247,33 @@
                 }
             ]
         },
+        "http_exampleorgnonshapeclass": {
+            "allOf": [
+                {
+                    "properties": {
+                        "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
+                        "@type": { "const": "http://example.org/non-shape-class" }
+                    }
+                },
+                { "$ref": "#/$defs/http_exampleorgnonshapeclass_props" }
+            ]
+        },
+        "http_exampleorgnonshapeclass_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/http_exampleorgnonshapeclass" },
+                { "$ref": "#/$defs/BlankNodeOrIRI" }
+            ],
+            "unevaluatedProperties": false
+        },
+        "http_exampleorgnonshapeclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/SHACLClass" },
+                {
+                    "properties": {
+                    }
+                }
+            ]
+        },
         "http_exampleorgparentclass": {
             "allOf": [
                 {
@@ -538,7 +565,7 @@
                     "type": "string"
         },
         "prop_http_exampleorgtestclass_nonshape": {
-                    "$ref": "#/$defs/anyURI"
+                "$ref": "#/$defs/http_exampleorgnonshapeclass_derived"
         },
         "prop_http_exampleorgtestclass_nonnegativeintegerprop": {
                     "type": "integer",
@@ -762,6 +789,7 @@
                         "http://example.org/node-kind-blank",
                         "http://example.org/node-kind-iri",
                         "http://example.org/node-kind-iri-or-blank",
+                        "http://example.org/non-shape-class",
                         "http://example.org/parent-class",
                         "http://example.org/test-another-class",
                         "http://example.org/test-class",
@@ -783,6 +811,7 @@
                 { "$ref": "#/$defs/http_exampleorgnodekindblank" },
                 { "$ref": "#/$defs/http_exampleorgnodekindiri" },
                 { "$ref": "#/$defs/http_exampleorgnodekindiriorblank" },
+                { "$ref": "#/$defs/http_exampleorgnonshapeclass" },
                 { "$ref": "#/$defs/http_exampleorgparentclass" },
                 { "$ref": "#/$defs/http_exampleorgtestanotherclass" },
                 { "$ref": "#/$defs/http_exampleorgtestclass" },

@@ -103,10 +103,8 @@ class Model(object):
         class_iris = set()
         enum_iris = set()
         classes_by_iri = {}
-        all_class_iris = set()
 
         for cls_iri in self.model.subjects(RDF.type, OWL.Class):
-            all_class_iris.add(cls_iri)
             enum_values = []
 
             for value_iri in self.model.subjects(RDF.type, cls_iri):
@@ -131,8 +129,7 @@ class Model(object):
                 )
                 self.enums.append(e)
                 enum_iris.add(cls_iri)
-
-            if (cls_iri, RDF.type, SH.NodeShape) in self.model:
+            else:
                 class_iris.add(cls_iri)
 
         def int_val(v):
@@ -166,7 +163,6 @@ class Model(object):
         def set_prop_range(p, range_id):
             nonlocal enum_iris
             nonlocal class_iris
-            nonlocal all_class_iris
 
             if range_id in enum_iris:
                 p.enum_id = str(range_id)
@@ -174,10 +170,6 @@ class Model(object):
 
             if range_id in class_iris:
                 p.class_id = str(range_id)
-                return True
-
-            if range_id in all_class_iris:
-                p.datatype = str(XSD.anyURI)
                 return True
 
             return False

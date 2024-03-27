@@ -251,6 +251,33 @@
                 }
             ]
         },
+        "nonshapeclass": {
+            "allOf": [
+                {
+                    "properties": {
+                        "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
+                        "@type": { "const": "non-shape-class" }
+                    }
+                },
+                { "$ref": "#/$defs/nonshapeclass_props" }
+            ]
+        },
+        "nonshapeclass_derived": {
+            "oneOf": [
+                { "$ref": "#/$defs/nonshapeclass" },
+                { "$ref": "#/$defs/BlankNodeOrIRI" }
+            ],
+            "unevaluatedProperties": false
+        },
+        "nonshapeclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/SHACLClass" },
+                {
+                    "properties": {
+                    }
+                }
+            ]
+        },
         "parentclass": {
             "allOf": [
                 {
@@ -542,7 +569,7 @@
                     "type": "string"
         },
         "prop_testclass_testclassnonshape": {
-                    "$ref": "#/$defs/anyURI"
+                "$ref": "#/$defs/nonshapeclass_derived"
         },
         "prop_testclass_testclassnonnegativeintegerprop": {
                     "type": "integer",
@@ -766,6 +793,7 @@
                         "node-kind-blank",
                         "node-kind-iri",
                         "node-kind-iri-or-blank",
+                        "non-shape-class",
                         "parent-class",
                         "test-another-class",
                         "test-class",
@@ -787,6 +815,7 @@
                 { "$ref": "#/$defs/nodekindblank" },
                 { "$ref": "#/$defs/nodekindiri" },
                 { "$ref": "#/$defs/nodekindiriorblank" },
+                { "$ref": "#/$defs/nonshapeclass" },
                 { "$ref": "#/$defs/parentclass" },
                 { "$ref": "#/$defs/testanotherclass" },
                 { "$ref": "#/$defs/testclass" },

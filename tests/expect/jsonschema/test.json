@@ -689,9 +689,15 @@
                 { "$ref": "#/$defs/http_exampleorgtestclass_props" },
                 {
                     "properties": {
+                        "http://example.org/test-derived-class/string-prop": {
+                            "$ref": "#/$defs/prop_http_exampleorgtestderivedclass_stringprop"
+                        }
                     }
                 }
             ]
+        },
+        "prop_http_exampleorgtestderivedclass_stringprop": {
+                    "type": "string"
         },
         "http_exampleorgaaaderivedclass": {
             "allOf": [

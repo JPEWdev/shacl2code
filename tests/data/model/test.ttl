@@ -166,7 +166,12 @@
 
 <test-derived-class> a sh:NodeShape, owl:Class ;
     rdfs:subClassOf <test-class> ;
-    rdfs:comment "A class derived from test-class"
+    rdfs:comment "A class derived from test-class" ;
+    sh:property [
+        sh:datatype xsd:string ;
+        sh:path <test-derived-class/string-prop> ;
+        sh:maxCount 1
+    ]
     .
 
 <test-another-class> a sh:NodeShape, owl:Class ;
@@ -311,6 +316,11 @@
 <test-class/non-shape> a rdf:Property ;
     rdfs:comment "A class with no shape" ;
     rdfs:range <non-shape-class>
+    .
+
+<test-derived-class/string-prop> a rdf:Property ;
+    rdfs:comment "A string property in a derived class" ;
+    rdfs:range xsd:string
     .
 
 <non-shape-class> a owl:Class ;

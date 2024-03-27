@@ -693,9 +693,15 @@
                 { "$ref": "#/$defs/testclass_props" },
                 {
                     "properties": {
+                        "test-derived-class/string-prop": {
+                            "$ref": "#/$defs/prop_testderivedclass_testderivedclassstringprop"
+                        }
                     }
                 }
             ]
+        },
+        "prop_testderivedclass_testderivedclassstringprop": {
+                    "type": "string"
         },
         "aaaderivedclass": {
             "allOf": [

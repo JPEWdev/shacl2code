@@ -819,13 +819,39 @@ def test_scalar_prop_validation(import_test_context, prop, value, expect):
     if expect is SAME_AS_VALUE:
         expect = value
 
-    if isinstance(expect, type) and issubclass(expect, Exception):
-        with pytest.raises(expect):
+    kwargs = {prop: value}
+
+    for cls in model.test_class, model.test_derived_class:
+        c = cls()
+
+        if isinstance(expect, type) and issubclass(expect, Exception):
+            with pytest.raises(expect):
+                setattr(c, prop, value)
+
+            with pytest.raises(expect):
+                c = cls(**kwargs)
+        else:
             setattr(c, prop, value)
-    else:
-        setattr(c, prop, value)
-        assert getattr(c, prop) == expect
-        assert type(getattr(c, prop)) is type(expect)
+            assert getattr(c, prop) == expect
+            assert type(getattr(c, prop)) is type(expect)
+
+            c = cls(**kwargs)
+            assert getattr(c, prop) == expect
+            assert type(getattr(c, prop)) is type(expect)
+
+
+def test_derived_property(import_test_context):
+    # The test above covers most of the test cases with setting properties, but
+    # it doesn't cover if the property is defined in the derived class, so test
+    # those here
+
+    import model
+
+    c = model.test_derived_class(test_derived_class_string_prop="abc")
+    assert c.test_derived_class_string_prop == "abc"
+
+    c.test_derived_class_string_prop = "def"
+    assert c.test_derived_class_string_prop == "def"
 
 
 def list_type_tests(name, *typ):
@@ -1003,47 +1029,52 @@ def test_list_prop_validation(import_test_context, prop, value, expect):
     if expect is SAME_AS_VALUE:
         expect = value
 
-    if isinstance(expect, type) and issubclass(expect, Exception):
-        with pytest.raises(expect):
-            if value is list:
-                for v in value:
-                    getattr(c, prop).append(v)
-            else:
-                setattr(c, prop, value)
+    kwargs = {prop: value}
+    for cls in model.test_class, model.test_derived_class:
+        c = cls()
 
-    else:
-        for v in value:
-            getattr(c, prop).append(v)
+        if isinstance(expect, type) and issubclass(expect, Exception):
+            with pytest.raises(expect):
+                if value is list:
+                    for v in value:
+                        getattr(c, prop).append(v)
+                else:
+                    setattr(c, prop, value)
 
-        import pprint
+            with pytest.raises(expect):
+                cls(**kwargs)
 
-        pprint.pprint(getattr(c, prop))
-        pprint.pprint(expect)
+        else:
+            for v in value:
+                getattr(c, prop).append(v)
 
-        assert getattr(c, prop) == expect
-        for idx, v in enumerate(expect):
-            assert getattr(c, prop)[idx] == v
-            assert type(getattr(c, prop)[idx]) is type(v)
+            assert getattr(c, prop) == expect
+            for idx, v in enumerate(expect):
+                assert getattr(c, prop)[idx] == v
+                assert type(getattr(c, prop)[idx]) is type(v)
 
-        setattr(c, prop, value[:])
-        assert getattr(c, prop) == expect
+            setattr(c, prop, value[:])
+            assert getattr(c, prop) == expect
 
-        assert list(getattr(c, prop)) == expect
+            assert list(getattr(c, prop)) == expect
 
-        getattr(c, prop).sort()
-        assert getattr(c, prop) == list(sorted(expect))
+            getattr(c, prop).sort()
+            assert getattr(c, prop) == list(sorted(expect))
 
-        setattr(c, prop, [])
-        getattr(c, prop).extend(value)
-        assert getattr(c, prop) == expect
+            setattr(c, prop, [])
+            getattr(c, prop).extend(value)
+            assert getattr(c, prop) == expect
 
-        setattr(c, prop, [])
-        for v in value:
-            getattr(c, prop).insert(0, v)
-        assert getattr(c, prop) == list(reversed(expect))
+            setattr(c, prop, [])
+            for v in value:
+                getattr(c, prop).insert(0, v)
+            assert getattr(c, prop) == list(reversed(expect))
 
-        for v in expect:
-            assert v in getattr(c, prop)
+            for v in expect:
+                assert v in getattr(c, prop)
+
+            c = cls(**kwargs)
+            assert getattr(c, prop) == expect
 
 
 @pytest.mark.parametrize(

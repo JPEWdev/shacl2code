@@ -1906,6 +1906,13 @@ class test_derived_class(test_class):
 
     def __init__(self, **kwargs):
         super().__init__()
+        # A string property in a derived class
+        self._add_property(
+            "test_derived_class_string_prop",
+            StringProp(),
+            iri="http://example.org/test-derived-class/string-prop",
+            compact="test-derived-class/string-prop",
+        )
         self._set_init_props(**kwargs)
 
 

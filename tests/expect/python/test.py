@@ -1840,6 +1840,12 @@ class http_example_org_test_derived_class(http_example_org_test_class):
 
     def __init__(self, **kwargs):
         super().__init__()
+        # A string property in a derived class
+        self._add_property(
+            "string_prop",
+            StringProp(),
+            iri="http://example.org/test-derived-class/string-prop",
+        )
         self._set_init_props(**kwargs)
 
 

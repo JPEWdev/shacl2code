@@ -11,6 +11,7 @@ import hashlib
 import json
 import re
 import time
+import threading
 from contextlib import contextmanager
 from datetime import datetime, timezone, timedelta
 from enum import Enum
@@ -466,9 +467,16 @@ def register(type_iri, compact_type=None):
         c.COMPACT_TYPE = compact_type
         if compact_type:
             add_deserializer(compact_type, c)
+
+        # Registration is deferred until the first instance of class is created
+        # so that it has access to any other defined class
+        c._NEEDS_REG = True
         return c
 
     return decorator
+
+
+register_lock = threading.Lock()
 
 
 @functools.total_ordering
@@ -478,20 +486,31 @@ class SHACLObject(object):
     ID_ALIAS = None
     COMPACT_TYPE = None
 
-    def __init__(self):
+    def __init__(self, **kwargs):
+        with register_lock:
+            cls = self.__class__
+            if cls._NEEDS_REG:
+                cls._OBJ_PROPERTIES = {}
+                cls._OBJ_IRIS = {}
+                cls._register_props()
+                cls._NEEDS_REG = False
+
         self._obj_data = {}
-        self._obj_properties = {}
-        self._obj_iris = {}
         self._obj_metadata = {}
 
-        self._add_property("_id", StringProp(), iri="@id")
+        for iri, prop, _, _, _, _ in self.__iter_props():
+            self._obj_data[iri] = prop.init()
 
-    def _set_init_props(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
 
+    @classmethod
+    def _register_props(cls):
+        cls._add_property("_id", StringProp(), iri="@id")
+
+    @classmethod
     def _add_property(
-        self,
+        cls,
         pyname,
         prop,
         iri,
@@ -499,21 +518,16 @@ class SHACLObject(object):
         max_count=None,
         compact=None,
     ):
-        if pyname in self._obj_iris:
-            raise KeyError(
-                f"'{pyname}' is already defined for '{self.__class__.__name__}'"
-            )
-        if iri in self._obj_properties:
-            raise KeyError(
-                f"'{iri}' is already defined for '{self.__class__.__name__}'"
-            )
+        if pyname in cls._OBJ_IRIS:
+            raise KeyError(f"'{pyname}' is already defined for '{cls.__name__}'")
+        if iri in cls._OBJ_PROPERTIES:
+            raise KeyError(f"'{iri}' is already defined for '{cls.__name__}'")
 
-        while hasattr(self, pyname):
+        while hasattr(cls, pyname):
             pyname = pyname + "_"
 
-        self._obj_iris[pyname] = iri
-        self._obj_properties[iri] = (prop, min_count, max_count, pyname, compact)
-        self._obj_data[iri] = prop.init()
+        cls._OBJ_IRIS[pyname] = iri
+        cls._OBJ_PROPERTIES[iri] = (prop, min_count, max_count, pyname, compact)
 
     def __setattr__(self, name, value):
         if name.startswith("_obj_"):
@@ -523,7 +537,7 @@ class SHACLObject(object):
             name = "_id"
 
         try:
-            iri = self._obj_iris[name]
+            iri = self._OBJ_IRIS[name]
             self[iri] = value
         except KeyError:
             raise AttributeError(
@@ -538,13 +552,13 @@ class SHACLObject(object):
             return self._obj_metadata
 
         if name == "_IRI":
-            return self._obj_iris
+            return self._OBJ_IRIS
 
         if name == self.ID_ALIAS:
             name = "_id"
 
         try:
-            iri = self._obj_iris[name]
+            iri = self._OBJ_IRIS[name]
             return self[iri]
         except KeyError:
             raise AttributeError(
@@ -556,7 +570,7 @@ class SHACLObject(object):
             name = "_id"
 
         try:
-            iri = self._obj_iris[name]
+            iri = self._OBJ_IRIS[name]
             del self[iri]
         except KeyError:
             raise AttributeError(
@@ -564,15 +578,15 @@ class SHACLObject(object):
             )
 
     def __get_prop(self, iri):
-        if iri not in self._obj_properties:
+        if iri not in self._OBJ_PROPERTIES:
             raise KeyError(
                 f"'{iri}' is not a valid property of {self.__class__.__name__}"
             )
 
-        return self._obj_properties[iri]
+        return self._OBJ_PROPERTIES[iri]
 
     def __iter_props(self):
-        for iri, v in self._obj_properties.items():
+        for iri, v in self._OBJ_PROPERTIES.items():
             yield iri, *v
 
     def __getitem__(self, iri):
@@ -600,7 +614,7 @@ class SHACLObject(object):
         self._obj_data[iri] = prop.init()
 
     def __iter__(self):
-        return self._obj_properties.keys()
+        return self._OBJ_PROPERTIES.keys()
 
     def walk(self, callback, path=None):
         """
@@ -641,7 +655,7 @@ class SHACLObject(object):
             yield obj
 
     def encode(self, encoder, state):
-        idname = self.ID_ALIAS or self._obj_iris["_id"]
+        idname = self.ID_ALIAS or self._OBJ_IRIS["_id"]
         if not self._id and self.NODE_KIND == NodeKind.IRI:
             raise ValueError(
                 f"{self.__class__.__name__} ({id(self)}) must have a IRI for property '{idname}'"
@@ -679,7 +693,7 @@ class SHACLObject(object):
                             f"Property '{pyname}' in {self.__class__.__name__} ({id(self)}) requires a maximum of {max_count} elements"
                         )
 
-                if iri == self._obj_iris["_id"]:
+                if iri == self._OBJ_IRIS["_id"]:
                     continue
 
                 with obj_s.write_property(iri, compact) as prop_s:
@@ -704,7 +718,7 @@ class SHACLObject(object):
             obj._id = _id
 
         for iri, prop, _, _, _, compact in obj.__iter_props():
-            if iri == obj._obj_iris["_id"]:
+            if iri == obj._OBJ_IRIS["_id"]:
                 continue
 
             with obj_d.read_property(iri, compact) as prop_d:
@@ -1513,9 +1527,9 @@ class http_example_org_id_prop_class(SHACLObject):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     ID_ALIAS = "testid"
 
-    def __init__(self, **kwargs):
-        super().__init__()
-        self._set_init_props(**kwargs)
+    @classmethod
+    def _register_props(cls):
+        super()._register_props()
 
 
 # A class that inherits its idPropertyName from the parent
@@ -1524,9 +1538,9 @@ class http_example_org_inherited_id_prop_class(http_example_org_id_prop_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     ID_ALIAS = "testid"
 
-    def __init__(self, **kwargs):
-        super().__init__()
-        self._set_init_props(**kwargs)
+    @classmethod
+    def _register_props(cls):
+        super()._register_props()
 
 
 # A class to test links
@@ -1534,27 +1548,27 @@ class http_example_org_inherited_id_prop_class(http_example_org_id_prop_class):
 class http_example_org_link_class(SHACLObject):
     NODE_KIND = NodeKind.BlankNodeOrIRI
 
-    def __init__(self, **kwargs):
-        super().__init__()
+    @classmethod
+    def _register_props(cls):
+        super()._register_props()
         # A link-class list property
-        self._add_property(
+        cls._add_property(
             "link_list_prop",
             ListProp(ObjectProp(http_example_org_link_class, False)),
             iri="http://example.org/link-class-link-list-prop",
         )
         # A link-class property
-        self._add_property(
+        cls._add_property(
             "link_prop",
             ObjectProp(http_example_org_link_class, False),
             iri="http://example.org/link-class-link-prop",
         )
         # A link-class property with no sh:class
-        self._add_property(
+        cls._add_property(
             "link_prop_no_class",
             ObjectProp(http_example_org_link_class, False),
             iri="http://example.org/link-class-link-prop-no-class",
         )
-        self._set_init_props(**kwargs)
 
 
 # A class derived from link-class
@@ -1562,9 +1576,9 @@ class http_example_org_link_class(SHACLObject):
 class http_example_org_link_derived_class(http_example_org_link_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
 
-    def __init__(self, **kwargs):
-        super().__init__()
-        self._set_init_props(**kwargs)
+    @classmethod
+    def _register_props(cls):
+        super()._register_props()
 
 
 # A class that must be a blank node
@@ -1572,9 +1586,9 @@ class http_example_org_link_derived_class(http_example_org_link_class):
 class http_example_org_node_kind_blank(http_example_org_link_class):
     NODE_KIND = NodeKind.BlankNode
 
-    def __init__(self, **kwargs):
-        super().__init__()
-        self._set_init_props(**kwargs)
+    @classmethod
+    def _register_props(cls):
+        super()._register_props()
 
 
 # A class that must be an IRI
@@ -1582,9 +1596,9 @@ class http_example_org_node_kind_blank(http_example_org_link_class):
 class http_example_org_node_kind_iri(http_example_org_link_class):
     NODE_KIND = NodeKind.IRI
 
-    def __init__(self, **kwargs):
-        super().__init__()
-        self._set_init_props(**kwargs)
+    @classmethod
+    def _register_props(cls):
+        super()._register_props()
 
 
 # A class that can be either a blank node or an IRI
@@ -1592,9 +1606,9 @@ class http_example_org_node_kind_iri(http_example_org_link_class):
 class http_example_org_node_kind_iri_or_blank(http_example_org_link_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
 
-    def __init__(self, **kwargs):
-        super().__init__()
-        self._set_init_props(**kwargs)
+    @classmethod
+    def _register_props(cls):
+        super()._register_props()
 
 
 # A class that is not a nodeshape
@@ -1602,9 +1616,9 @@ class http_example_org_node_kind_iri_or_blank(http_example_org_link_class):
 class http_example_org_non_shape_class(SHACLObject):
     NODE_KIND = NodeKind.BlankNodeOrIRI
 
-    def __init__(self, **kwargs):
-        super().__init__()
-        self._set_init_props(**kwargs)
+    @classmethod
+    def _register_props(cls):
+        super()._register_props()
 
 
 # The parent class
@@ -1612,9 +1626,9 @@ class http_example_org_non_shape_class(SHACLObject):
 class http_example_org_parent_class(SHACLObject):
     NODE_KIND = NodeKind.BlankNodeOrIRI
 
-    def __init__(self, **kwargs):
-        super().__init__()
-        self._set_init_props(**kwargs)
+    @classmethod
+    def _register_props(cls):
+        super()._register_props()
 
 
 # Another class
@@ -1622,9 +1636,9 @@ class http_example_org_parent_class(SHACLObject):
 class http_example_org_test_another_class(SHACLObject):
     NODE_KIND = NodeKind.BlankNodeOrIRI
 
-    def __init__(self, **kwargs):
-        super().__init__()
-        self._set_init_props(**kwargs)
+    @classmethod
+    def _register_props(cls):
+        super()._register_props()
 
 
 # The test class
@@ -1632,178 +1646,179 @@ class http_example_org_test_another_class(SHACLObject):
 class http_example_org_test_class(http_example_org_parent_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
 
-    def __init__(self, **kwargs):
-        super().__init__()
+    @classmethod
+    def _register_props(cls):
+        super()._register_props()
         # A property that conflicts with an existing SHACLObject property
-        self._add_property(
+        cls._add_property(
             "encode",
             StringProp(),
             iri="http://example.org/encode",
         )
         # A property that is a keyword
-        self._add_property(
+        cls._add_property(
             "import_",
             StringProp(),
             iri="http://example.org/import",
         )
         # a URI
-        self._add_property(
+        cls._add_property(
             "anyuri_prop",
             AnyURIProp(),
             iri="http://example.org/test-class/anyuri-prop",
         )
         # a boolean property
-        self._add_property(
+        cls._add_property(
             "boolean_prop",
             BooleanProp(),
             iri="http://example.org/test-class/boolean-prop",
         )
         # A test-class list property
-        self._add_property(
+        cls._add_property(
             "class_list_prop",
             ListProp(ObjectProp(http_example_org_test_class, False)),
             iri="http://example.org/test-class/class-list-prop",
         )
         # A test-class property
-        self._add_property(
+        cls._add_property(
             "class_prop",
             ObjectProp(http_example_org_test_class, False),
             iri="http://example.org/test-class/class-prop",
         )
         # A test-class property with no sh:class
-        self._add_property(
+        cls._add_property(
             "class_prop_no_class",
             ObjectProp(http_example_org_test_class, False),
             iri="http://example.org/test-class/class-prop-no-class",
         )
         # A datetime list property
-        self._add_property(
+        cls._add_property(
             "datetime_list_prop",
             ListProp(DateTimeProp()),
             iri="http://example.org/test-class/datetime-list-prop",
         )
         # A scalar datetime property
-        self._add_property(
+        cls._add_property(
             "datetime_scalar_prop",
             DateTimeProp(),
             iri="http://example.org/test-class/datetime-scalar-prop",
         )
         # A scalar dateTimeStamp property
-        self._add_property(
+        cls._add_property(
             "datetimestamp_scalar_prop",
             DateTimeStampProp(),
             iri="http://example.org/test-class/datetimestamp-scalar-prop",
         )
         # A enum list property
-        self._add_property(
+        cls._add_property(
             "enum_list_prop",
             ListProp(http_example_org_enumType(context=[
             ])),
             iri="http://example.org/test-class/enum-list-prop",
         )
         # A enum property
-        self._add_property(
+        cls._add_property(
             "enum_prop",
             http_example_org_enumType(context=[
             ]),
             iri="http://example.org/test-class/enum-prop",
         )
         # A enum property with no sh:class
-        self._add_property(
+        cls._add_property(
             "enum_prop_no_class",
             http_example_org_enumType(context=[
             ]),
             iri="http://example.org/test-class/enum-prop-no-class",
         )
         # a float property
-        self._add_property(
+        cls._add_property(
             "float_prop",
             FloatProp(),
             iri="http://example.org/test-class/float-prop",
         )
         # a non-negative integer
-        self._add_property(
+        cls._add_property(
             "integer_prop",
             IntegerProp(),
             iri="http://example.org/test-class/integer-prop",
         )
         # A named property
-        self._add_property(
+        cls._add_property(
             "named_property",
             StringProp(),
             iri="http://example.org/test-class/named-property",
         )
         # A class with no shape
-        self._add_property(
+        cls._add_property(
             "non_shape",
             ObjectProp(http_example_org_non_shape_class, False),
             iri="http://example.org/test-class/non-shape",
         )
         # a non-negative integer
-        self._add_property(
+        cls._add_property(
             "nonnegative_integer_prop",
             NonNegativeIntegerProp(),
             iri="http://example.org/test-class/nonnegative-integer-prop",
         )
         # A positive integer
-        self._add_property(
+        cls._add_property(
             "positive_integer_prop",
             PositiveIntegerProp(),
             iri="http://example.org/test-class/positive-integer-prop",
         )
         # A regex validated string
-        self._add_property(
+        cls._add_property(
             "regex",
             StringProp(pattern=r"^foo\d",),
             iri="http://example.org/test-class/regex",
         )
         # A regex dateTime
-        self._add_property(
+        cls._add_property(
             "regex_datetime",
             DateTimeProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d\+01:00$",),
             iri="http://example.org/test-class/regex-datetime",
         )
         # A regex dateTimeStamp
-        self._add_property(
+        cls._add_property(
             "regex_datetimestamp",
             DateTimeStampProp(pattern=r"^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ$",),
             iri="http://example.org/test-class/regex-datetimestamp",
         )
         # A regex validated string list
-        self._add_property(
+        cls._add_property(
             "regex_list",
             ListProp(StringProp(pattern=r"^foo\d",)),
             iri="http://example.org/test-class/regex-list",
         )
         # A string list property with no sh:datatype
-        self._add_property(
+        cls._add_property(
             "string_list_no_datatype",
             ListProp(StringProp()),
             iri="http://example.org/test-class/string-list-no-datatype",
         )
         # A string list property
-        self._add_property(
+        cls._add_property(
             "string_list_prop",
             ListProp(StringProp()),
             iri="http://example.org/test-class/string-list-prop",
         )
         # A scalar string propery
-        self._add_property(
+        cls._add_property(
             "string_scalar_prop",
             StringProp(),
             iri="http://example.org/test-class/string-scalar-prop",
         )
-        self._set_init_props(**kwargs)
 
 
 @register("http://example.org/test-class-required")
 class http_example_org_test_class_required(http_example_org_test_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
 
-    def __init__(self, **kwargs):
-        super().__init__()
+    @classmethod
+    def _register_props(cls):
+        super()._register_props()
         # A required string list property
-        self._add_property(
+        cls._add_property(
             "required_string_list_prop",
             ListProp(StringProp()),
             iri="http://example.org/test-class/required-string-list-prop",
@@ -1811,13 +1826,12 @@ class http_example_org_test_class_required(http_example_org_test_class):
             min_count=1,
         )
         # A required scalar string property
-        self._add_property(
+        cls._add_property(
             "required_string_scalar_prop",
             StringProp(),
             iri="http://example.org/test-class/required-string-scalar-prop",
             min_count=1,
         )
-        self._set_init_props(**kwargs)
 
 
 # A class derived from test-class
@@ -1825,15 +1839,15 @@ class http_example_org_test_class_required(http_example_org_test_class):
 class http_example_org_test_derived_class(http_example_org_test_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
 
-    def __init__(self, **kwargs):
-        super().__init__()
+    @classmethod
+    def _register_props(cls):
+        super()._register_props()
         # A string property in a derived class
-        self._add_property(
+        cls._add_property(
             "string_prop",
             StringProp(),
             iri="http://example.org/test-derived-class/string-prop",
         )
-        self._set_init_props(**kwargs)
 
 
 # Derived class that sorts before the parent to test ordering
@@ -1841,9 +1855,9 @@ class http_example_org_test_derived_class(http_example_org_test_class):
 class http_example_org_aaa_derived_class(http_example_org_parent_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
 
-    def __init__(self, **kwargs):
-        super().__init__()
-        self._set_init_props(**kwargs)
+    @classmethod
+    def _register_props(cls):
+        super()._register_props()
 
 
 # A class that derives its nodeKind from parent
@@ -1851,9 +1865,9 @@ class http_example_org_aaa_derived_class(http_example_org_parent_class):
 class http_example_org_derived_node_kind_iri(http_example_org_node_kind_iri):
     NODE_KIND = NodeKind.IRI
 
-    def __init__(self, **kwargs):
-        super().__init__()
-        self._set_init_props(**kwargs)
+    @classmethod
+    def _register_props(cls):
+        super()._register_props()
 
 
 """Format Guard"""

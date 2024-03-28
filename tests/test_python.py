@@ -12,6 +12,7 @@ import rdflib
 import re
 import subprocess
 import sys
+import importlib
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 
@@ -84,14 +85,17 @@ def test_script(test_context):
     yield script
 
 
-@pytest.fixture(scope="module")
-def import_test_context(test_context):
+@pytest.fixture(scope="function")
+def model(test_context):
     tmp_directory, _ = test_context
 
     old_path = sys.path[:]
     sys.path.append(str(tmp_directory))
     try:
-        yield
+        import model
+
+        importlib.reload(model)
+        yield model
     finally:
         sys.path = old_path
 
@@ -204,9 +208,7 @@ class TestOutput:
             assert "\t" not in line, f"Line {num + 1} has tabs"
 
 
-def test_roundtrip(import_test_context, tmp_path, roundtrip):
-    import model
-
+def test_roundtrip(model, tmp_path, roundtrip):
     def check_file(p, expect, digest):
         sha1 = hashlib.sha1()
         with p.open("rb") as f:
@@ -289,9 +291,7 @@ def test_jsonschema_validation(roundtrip, test_jsonschema):
         ),
     ],
 )
-def test_links(import_test_context, name, expect):
-    import model
-
+def test_links(model, name, expect):
     with (DATA_DIR / "python" / "links.json").open("r") as f:
         deserializer = model.JSONLDDeserializer()
         d = ObjectSet(*deserializer.read(f))
@@ -325,9 +325,7 @@ def test_links(import_test_context, name, expect):
         ),
     ],
 )
-def test_blank_links(import_test_context, name, cls):
-    import model
-
+def test_blank_links(model, name, cls):
     with (DATA_DIR / "python" / "links.json").open("r") as f:
         deserializer = model.JSONLDDeserializer()
         d = ObjectSet(*deserializer.read(f))
@@ -340,9 +338,7 @@ def test_blank_links(import_test_context, name, cls):
     assert c.link_class_link_list_prop == [expect, expect]
 
 
-def test_node_kind_blank(import_test_context, test_context_url):
-    import model
-
+def test_node_kind_blank(model, test_context_url):
     s = model.JSONLDSerializer()
     c1 = model.link_class()
     c2 = model.link_class()
@@ -423,9 +419,7 @@ def test_node_kind_blank(import_test_context, test_context_url):
     "cls",
     ["node_kind_iri", "derived_node_kind_iri"],
 )
-def test_node_kind_iri(import_test_context, test_context_url, cls):
-    import model
-
+def test_node_kind_iri(model, test_context_url, cls):
     TEST_ID = "http://serialize.example.com/name"
     TYP = cls.replace("_", "-")
 
@@ -514,9 +508,7 @@ def test_node_kind_iri(import_test_context, test_context_url, cls):
     "cls",
     ["id_prop_class", "inherited_id_prop_class"],
 )
-def test_id_name(import_test_context, test_context_url, cls):
-    import model
-
+def test_id_name(model, test_context_url, cls):
     s = model.JSONLDSerializer()
     c = getattr(model, cls)()
 
@@ -808,9 +800,7 @@ def type_tests(name, *typ):
         ("encode", "foo", AttributeError),
     ],
 )
-def test_scalar_prop_validation(import_test_context, prop, value, expect):
-    import model
-
+def test_scalar_prop_validation(model, prop, value, expect):
     c = model.test_class()
 
     if callable(value):
@@ -840,13 +830,10 @@ def test_scalar_prop_validation(import_test_context, prop, value, expect):
             assert type(getattr(c, prop)) is type(expect)
 
 
-def test_derived_property(import_test_context):
+def test_derived_property(model):
     # The test above covers most of the test cases with setting properties, but
     # it doesn't cover if the property is defined in the derived class, so test
     # those here
-
-    import model
-
     c = model.test_derived_class(test_derived_class_string_prop="abc")
     assert c.test_derived_class_string_prop == "abc"
 
@@ -1018,9 +1005,7 @@ def list_type_tests(name, *typ):
         # TODO Add more list tests
     ],
 )
-def test_list_prop_validation(import_test_context, prop, value, expect):
-    import model
-
+def test_list_prop_validation(model, prop, value, expect):
     c = model.test_class()
 
     if callable(value):
@@ -1118,9 +1103,7 @@ def test_list_prop_validation(import_test_context, prop, value, expect):
         ),
     ],
 )
-def test_datetime_from_string(import_test_context, value, expect):
-    import model
-
+def test_datetime_from_string(model, value, expect):
     p = model.DateTimeProp()
 
     if isinstance(expect, type) and issubclass(expect, Exception):
@@ -1173,9 +1156,7 @@ def test_datetime_from_string(import_test_context, value, expect):
         ),
     ],
 )
-def test_datetimestamp_from_string(import_test_context, value, expect):
-    import model
-
+def test_datetimestamp_from_string(model, value, expect):
     p = model.DateTimeStampProp()
 
     if isinstance(expect, type) and issubclass(expect, Exception):
@@ -1243,9 +1224,7 @@ def test_datetimestamp_from_string(import_test_context, value, expect):
         ),
     ],
 )
-def test_datetime_to_string(import_test_context, value, expect):
-    import model
-
+def test_datetime_to_string(model, value, expect):
     p = model.DateTimeProp()
 
     if isinstance(expect, type) and issubclass(expect, Exception):
@@ -1259,9 +1238,7 @@ def test_datetime_to_string(import_test_context, value, expect):
         ), f"Value '{v}' does not match regex"
 
 
-def test_enum_var_names(import_test_context):
-    import model
-
+def test_enum_var_names(model):
     assert type(model.enumType.foo) is str
     assert model.enumType.foo == "http://example.org/enumType/foo"
 
@@ -1272,13 +1249,11 @@ def test_enum_var_names(import_test_context):
         assert getattr(model.enumType, name) == value
 
 
-def test_mandatory_properties(import_test_context, tmp_path):
+def test_mandatory_properties(model, tmp_path):
     """
     Tests that property ordinality (e.g. min count & max count) is checked when
     writing out a file
     """
-    import model
-
     s = model.JSONLDSerializer()
     outfile = tmp_path / "test.json"
 
@@ -1322,9 +1297,7 @@ def test_mandatory_properties(import_test_context, tmp_path):
             s.write([c], f)
 
 
-def test_iri(import_test_context, roundtrip):
-    import model
-
+def test_iri(model, roundtrip):
     with roundtrip.open("r") as f:
         deserializer = model.JSONLDDeserializer()
         d = ObjectSet(*deserializer.read(f))
@@ -1356,3 +1329,26 @@ def test_shacl(roundtrip):
         ont_graph=model,
     )
     assert conforms, result_text
+
+
+def test_single_register(model):
+    # Ensures that class property registration is only called once
+    assert model.test_class._NEEDS_REG
+    c1 = model.test_class()
+    assert not model.test_class._NEEDS_REG
+
+    c2 = model.test_class()
+    assert not model.test_class._NEEDS_REG
+
+    c1.test_class_string_scalar_prop = "abc"
+    c2.test_class_string_scalar_prop = "def"
+
+    assert c1.test_class_string_scalar_prop == "abc"
+    assert c2.test_class_string_scalar_prop == "def"
+
+    assert model.test_derived_class._NEEDS_REG
+    _ = model.test_derived_class()
+    assert not model.test_derived_class._NEEDS_REG
+
+    _ = model.test_derived_class()
+    assert not model.test_derived_class._NEEDS_REG

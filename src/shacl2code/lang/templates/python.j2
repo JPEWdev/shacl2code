@@ -1443,9 +1443,12 @@ class JSONLDInlineEncoder(Encoder):
 
 
 class JSONLDInlineSerializer(object):
-    def write(self, objects, f):
+    def write(self, objects, f, force_graph=False):
         """
         Write a list of objects to a JSON LD file
+
+        Note: force_graph is included for compatibility, but ignored. This
+        serializer always writes out a graph
         """
         sha1 = hashlib.sha1()
         h = JSONLDInlineEncoder(f, sha1)

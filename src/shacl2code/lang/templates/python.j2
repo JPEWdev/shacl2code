@@ -1317,6 +1317,9 @@ class JSONLDEncoder(Encoder):
 
 
 class JSONLDSerializer(object):
+    def __init__(self, **args):
+        self.args = args
+
     def serialize_data(self, objects, force_graph=False):
         h = JSONLDEncoder()
         encode_objects(h, objects, force_graph)
@@ -1342,8 +1345,10 @@ class JSONLDSerializer(object):
         """
         data = self.serialize_data(objects, force_graph)
 
+        args = {**self.args, **kwargs}
+
         sha1 = hashlib.sha1()
-        for chunk in json.JSONEncoder(**kwargs).iterencode(data):
+        for chunk in json.JSONEncoder(**args).iterencode(data):
             chunk = chunk.encode("utf-8")
             f.write(chunk)
             sha1.update(chunk)

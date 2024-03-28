@@ -420,3 +420,20 @@
     rdfs:subClassOf <node-kind-iri> ;
     rdfs:comment "A class that derives its nodeKind from parent" ;
     .
+
+<extensible-class> a rdf:Class, sh:NodeShape, owl:Class ;
+    rdfs:subClassOf <link-class> ;
+    sh-to-code:isExtensible true ;
+    rdfs:comment "An extensible class" ;
+    sh:property [
+        sh:datatype xsd:string ;
+        sh:path <extensible-class/required> ;
+        sh:maxCount 1 ;
+        sh:minCount 1
+    ]
+    .
+
+<extensible-class/required> a rdf:Property ;
+    rdfs:comment "A required string" ;
+    rdfs:range xsd:string
+    .

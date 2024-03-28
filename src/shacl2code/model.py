@@ -20,6 +20,7 @@ PATTERN_DATATYPES = [
 
 class SHACL2CODE(DefinedNamespace):
     idPropertyName: URIRef
+    isExtensible: URIRef
 
     _NS = Namespace("https://jpewdev.github.io/shacl2code/schema#")
 
@@ -90,6 +91,7 @@ class Class:
     comment: str = ""
     id_property: str = ""
     node_kind: str = None
+    extensible: bool = False
 
 
 class Model(object):
@@ -190,6 +192,7 @@ class Model(object):
                     get_inherited_value(cls_iri, SHACL2CODE.idPropertyName)
                 ),
                 node_kind=get_inherited_value(cls_iri, SH.nodeKind, SH.BlankNodeOrIRI),
+                extensible=bool(self.model.value(cls_iri, SHACL2CODE.isExtensible)),
             )
 
             if c.node_kind not in (SH.IRI, SH.BlankNode, SH.BlankNodeOrIRI):

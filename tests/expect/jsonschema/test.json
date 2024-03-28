@@ -30,19 +30,23 @@
                 {
                     "properties": {
                         "testid": { "$ref": "#/$defs/BlankNodeOrIRI" },
-                        "@type": { "const": "http://example.org/id-prop-class" }
+                        "@type": {
+                            "oneOf": [
+                                { "const": "http://example.org/id-prop-class" }
+                            ]
+                        }
                     }
                 },
                 { "$ref": "#/$defs/http_exampleorgidpropclass_props" }
             ]
         },
         "http_exampleorgidpropclass_derived": {
-            "oneOf": [
+            "unevaluatedProperties": false,
+            "anyOf": [
                 { "$ref": "#/$defs/http_exampleorginheritedidpropclass" },
                 { "$ref": "#/$defs/http_exampleorgidpropclass" },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
-            ],
-            "unevaluatedProperties": false
+            ]
         },
         "http_exampleorgidpropclass_props": {
             "allOf": [
@@ -58,18 +62,22 @@
                 {
                     "properties": {
                         "testid": { "$ref": "#/$defs/BlankNodeOrIRI" },
-                        "@type": { "const": "http://example.org/inherited-id-prop-class" }
+                        "@type": {
+                            "oneOf": [
+                                { "const": "http://example.org/inherited-id-prop-class" }
+                            ]
+                        }
                     }
                 },
                 { "$ref": "#/$defs/http_exampleorginheritedidpropclass_props" }
             ]
         },
         "http_exampleorginheritedidpropclass_derived": {
-            "oneOf": [
+            "unevaluatedProperties": false,
+            "anyOf": [
                 { "$ref": "#/$defs/http_exampleorginheritedidpropclass" },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
-            ],
-            "unevaluatedProperties": false
+            ]
         },
         "http_exampleorginheritedidpropclass_props": {
             "allOf": [
@@ -85,23 +93,28 @@
                 {
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
-                        "@type": { "const": "http://example.org/link-class" }
+                        "@type": {
+                            "oneOf": [
+                                { "const": "http://example.org/link-class" }
+                            ]
+                        }
                     }
                 },
                 { "$ref": "#/$defs/http_exampleorglinkclass_props" }
             ]
         },
         "http_exampleorglinkclass_derived": {
-            "oneOf": [
+            "unevaluatedProperties": false,
+            "anyOf": [
                 { "$ref": "#/$defs/http_exampleorgderivednodekindiri" },
+                { "$ref": "#/$defs/http_exampleorgextensibleclass" },
                 { "$ref": "#/$defs/http_exampleorglinkderivedclass" },
                 { "$ref": "#/$defs/http_exampleorgnodekindblank" },
                 { "$ref": "#/$defs/http_exampleorgnodekindiri" },
                 { "$ref": "#/$defs/http_exampleorgnodekindiriorblank" },
                 { "$ref": "#/$defs/http_exampleorglinkclass" },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
-            ],
-            "unevaluatedProperties": false
+            ]
         },
         "http_exampleorglinkclass_props": {
             "allOf": [
@@ -142,18 +155,22 @@
                 {
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
-                        "@type": { "const": "http://example.org/link-derived-class" }
+                        "@type": {
+                            "oneOf": [
+                                { "const": "http://example.org/link-derived-class" }
+                            ]
+                        }
                     }
                 },
                 { "$ref": "#/$defs/http_exampleorglinkderivedclass_props" }
             ]
         },
         "http_exampleorglinkderivedclass_derived": {
-            "oneOf": [
+            "unevaluatedProperties": false,
+            "anyOf": [
                 { "$ref": "#/$defs/http_exampleorglinkderivedclass" },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
-            ],
-            "unevaluatedProperties": false
+            ]
         },
         "http_exampleorglinkderivedclass_props": {
             "allOf": [
@@ -169,18 +186,22 @@
                 {
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNode" },
-                        "@type": { "const": "http://example.org/node-kind-blank" }
+                        "@type": {
+                            "oneOf": [
+                                { "const": "http://example.org/node-kind-blank" }
+                            ]
+                        }
                     }
                 },
                 { "$ref": "#/$defs/http_exampleorgnodekindblank_props" }
             ]
         },
         "http_exampleorgnodekindblank_derived": {
-            "oneOf": [
+            "unevaluatedProperties": false,
+            "anyOf": [
                 { "$ref": "#/$defs/http_exampleorgnodekindblank" },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
-            ],
-            "unevaluatedProperties": false
+            ]
         },
         "http_exampleorgnodekindblank_props": {
             "allOf": [
@@ -196,7 +217,11 @@
                 {
                     "properties": {
                         "@id": { "$ref": "#/$defs/IRI" },
-                        "@type": { "const": "http://example.org/node-kind-iri" }
+                        "@type": {
+                            "oneOf": [
+                                { "const": "http://example.org/node-kind-iri" }
+                            ]
+                        }
                     },
                     "required": ["@id"]
                 },
@@ -204,12 +229,12 @@
             ]
         },
         "http_exampleorgnodekindiri_derived": {
-            "oneOf": [
+            "unevaluatedProperties": false,
+            "anyOf": [
                 { "$ref": "#/$defs/http_exampleorgderivednodekindiri" },
                 { "$ref": "#/$defs/http_exampleorgnodekindiri" },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
-            ],
-            "unevaluatedProperties": false
+            ]
         },
         "http_exampleorgnodekindiri_props": {
             "allOf": [
@@ -225,18 +250,22 @@
                 {
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
-                        "@type": { "const": "http://example.org/node-kind-iri-or-blank" }
+                        "@type": {
+                            "oneOf": [
+                                { "const": "http://example.org/node-kind-iri-or-blank" }
+                            ]
+                        }
                     }
                 },
                 { "$ref": "#/$defs/http_exampleorgnodekindiriorblank_props" }
             ]
         },
         "http_exampleorgnodekindiriorblank_derived": {
-            "oneOf": [
+            "unevaluatedProperties": false,
+            "anyOf": [
                 { "$ref": "#/$defs/http_exampleorgnodekindiriorblank" },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
-            ],
-            "unevaluatedProperties": false
+            ]
         },
         "http_exampleorgnodekindiriorblank_props": {
             "allOf": [
@@ -252,18 +281,22 @@
                 {
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
-                        "@type": { "const": "http://example.org/non-shape-class" }
+                        "@type": {
+                            "oneOf": [
+                                { "const": "http://example.org/non-shape-class" }
+                            ]
+                        }
                     }
                 },
                 { "$ref": "#/$defs/http_exampleorgnonshapeclass_props" }
             ]
         },
         "http_exampleorgnonshapeclass_derived": {
-            "oneOf": [
+            "unevaluatedProperties": false,
+            "anyOf": [
                 { "$ref": "#/$defs/http_exampleorgnonshapeclass" },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
-            ],
-            "unevaluatedProperties": false
+            ]
         },
         "http_exampleorgnonshapeclass_props": {
             "allOf": [
@@ -279,22 +312,26 @@
                 {
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
-                        "@type": { "const": "http://example.org/parent-class" }
+                        "@type": {
+                            "oneOf": [
+                                { "const": "http://example.org/parent-class" }
+                            ]
+                        }
                     }
                 },
                 { "$ref": "#/$defs/http_exampleorgparentclass_props" }
             ]
         },
         "http_exampleorgparentclass_derived": {
-            "oneOf": [
+            "unevaluatedProperties": false,
+            "anyOf": [
                 { "$ref": "#/$defs/http_exampleorgaaaderivedclass" },
                 { "$ref": "#/$defs/http_exampleorgtestclass" },
                 { "$ref": "#/$defs/http_exampleorgtestclassrequired" },
                 { "$ref": "#/$defs/http_exampleorgtestderivedclass" },
                 { "$ref": "#/$defs/http_exampleorgparentclass" },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
-            ],
-            "unevaluatedProperties": false
+            ]
         },
         "http_exampleorgparentclass_props": {
             "allOf": [
@@ -310,18 +347,22 @@
                 {
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
-                        "@type": { "const": "http://example.org/test-another-class" }
+                        "@type": {
+                            "oneOf": [
+                                { "const": "http://example.org/test-another-class" }
+                            ]
+                        }
                     }
                 },
                 { "$ref": "#/$defs/http_exampleorgtestanotherclass_props" }
             ]
         },
         "http_exampleorgtestanotherclass_derived": {
-            "oneOf": [
+            "unevaluatedProperties": false,
+            "anyOf": [
                 { "$ref": "#/$defs/http_exampleorgtestanotherclass" },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
-            ],
-            "unevaluatedProperties": false
+            ]
         },
         "http_exampleorgtestanotherclass_props": {
             "allOf": [
@@ -337,20 +378,24 @@
                 {
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
-                        "@type": { "const": "http://example.org/test-class" }
+                        "@type": {
+                            "oneOf": [
+                                { "const": "http://example.org/test-class" }
+                            ]
+                        }
                     }
                 },
                 { "$ref": "#/$defs/http_exampleorgtestclass_props" }
             ]
         },
         "http_exampleorgtestclass_derived": {
-            "oneOf": [
+            "unevaluatedProperties": false,
+            "anyOf": [
                 { "$ref": "#/$defs/http_exampleorgtestclassrequired" },
                 { "$ref": "#/$defs/http_exampleorgtestderivedclass" },
                 { "$ref": "#/$defs/http_exampleorgtestclass" },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
-            ],
-            "unevaluatedProperties": false
+            ]
         },
         "http_exampleorgtestclass_props": {
             "allOf": [
@@ -619,18 +664,22 @@
                 {
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
-                        "@type": { "const": "http://example.org/test-class-required" }
+                        "@type": {
+                            "oneOf": [
+                                { "const": "http://example.org/test-class-required" }
+                            ]
+                        }
                     }
                 },
                 { "$ref": "#/$defs/http_exampleorgtestclassrequired_props" }
             ]
         },
         "http_exampleorgtestclassrequired_derived": {
-            "oneOf": [
+            "unevaluatedProperties": false,
+            "anyOf": [
                 { "$ref": "#/$defs/http_exampleorgtestclassrequired" },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
-            ],
-            "unevaluatedProperties": false
+            ]
         },
         "http_exampleorgtestclassrequired_props": {
             "allOf": [
@@ -671,18 +720,22 @@
                 {
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
-                        "@type": { "const": "http://example.org/test-derived-class" }
+                        "@type": {
+                            "oneOf": [
+                                { "const": "http://example.org/test-derived-class" }
+                            ]
+                        }
                     }
                 },
                 { "$ref": "#/$defs/http_exampleorgtestderivedclass_props" }
             ]
         },
         "http_exampleorgtestderivedclass_derived": {
-            "oneOf": [
+            "unevaluatedProperties": false,
+            "anyOf": [
                 { "$ref": "#/$defs/http_exampleorgtestderivedclass" },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
-            ],
-            "unevaluatedProperties": false
+            ]
         },
         "http_exampleorgtestderivedclass_props": {
             "allOf": [
@@ -704,18 +757,22 @@
                 {
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
-                        "@type": { "const": "http://example.org/aaa-derived-class" }
+                        "@type": {
+                            "oneOf": [
+                                { "const": "http://example.org/aaa-derived-class" }
+                            ]
+                        }
                     }
                 },
                 { "$ref": "#/$defs/http_exampleorgaaaderivedclass_props" }
             ]
         },
         "http_exampleorgaaaderivedclass_derived": {
-            "oneOf": [
+            "unevaluatedProperties": false,
+            "anyOf": [
                 { "$ref": "#/$defs/http_exampleorgaaaderivedclass" },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
-            ],
-            "unevaluatedProperties": false
+            ]
         },
         "http_exampleorgaaaderivedclass_props": {
             "allOf": [
@@ -731,7 +788,11 @@
                 {
                     "properties": {
                         "@id": { "$ref": "#/$defs/IRI" },
-                        "@type": { "const": "http://example.org/derived-node-kind-iri" }
+                        "@type": {
+                            "oneOf": [
+                                { "const": "http://example.org/derived-node-kind-iri" }
+                            ]
+                        }
                     },
                     "required": ["@id"]
                 },
@@ -739,11 +800,11 @@
             ]
         },
         "http_exampleorgderivednodekindiri_derived": {
-            "oneOf": [
+            "unevaluatedProperties": false,
+            "anyOf": [
                 { "$ref": "#/$defs/http_exampleorgderivednodekindiri" },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
-            ],
-            "unevaluatedProperties": false
+            ]
         },
         "http_exampleorgderivednodekindiri_props": {
             "allOf": [
@@ -754,13 +815,54 @@
                 }
             ]
         },
+        "http_exampleorgextensibleclass": {
+            "allOf": [
+                {
+                    "unevaluatedProperties": true,
+                    "properties": {
+                        "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
+                        "@type": {
+                            "oneOf": [
+                                { "$ref": "#/$defs/IRI" },
+                                { "const": "http://example.org/extensible-class" }
+                            ]
+                        }
+                    }
+                },
+                { "$ref": "#/$defs/http_exampleorgextensibleclass_props" }
+            ]
+        },
+        "http_exampleorgextensibleclass_derived": {
+            "anyOf": [
+                { "$ref": "#/$defs/http_exampleorgextensibleclass" },
+                { "$ref": "#/$defs/BlankNodeOrIRI" }
+            ]
+        },
+        "http_exampleorgextensibleclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/http_exampleorglinkclass_props" },
+                {
+                    "properties": {
+                        "http://example.org/extensible-class/required": {
+                            "$ref": "#/$defs/prop_http_exampleorgextensibleclass_required"
+                        }
+                    },
+                    "required": [
+                        "http://example.org/extensible-class/required"
+                    ]
+                }
+            ]
+        },
+        "prop_http_exampleorgextensibleclass_required": {
+                    "type": "string"
+        },
         "IRI": {
             "type": "string",
-            "pattern": "^(?!_:).*"
+            "pattern": "^(?!_:).+:.+"
         },
         "BlankNode": {
             "type": "string",
-            "pattern": "^_:.*"
+            "pattern": "^_:.+"
         },
         "BlankNodeOrIRI": {
             "oneOf": [
@@ -787,29 +889,35 @@
             "type": "object",
             "properties": {
                 "@type": {
-                    "enum": [
-                        "http://example.org/id-prop-class",
-                        "http://example.org/inherited-id-prop-class",
-                        "http://example.org/link-class",
-                        "http://example.org/link-derived-class",
-                        "http://example.org/node-kind-blank",
-                        "http://example.org/node-kind-iri",
-                        "http://example.org/node-kind-iri-or-blank",
-                        "http://example.org/non-shape-class",
-                        "http://example.org/parent-class",
-                        "http://example.org/test-another-class",
-                        "http://example.org/test-class",
-                        "http://example.org/test-class-required",
-                        "http://example.org/test-derived-class",
-                        "http://example.org/aaa-derived-class",
-                        "http://example.org/derived-node-kind-iri"
+                    "oneOf": [
+                        { "$ref": "#/$defs/IRI" },
+                        {
+                            "enum": [
+                                "http://example.org/id-prop-class",
+                                "http://example.org/inherited-id-prop-class",
+                                "http://example.org/link-class",
+                                "http://example.org/link-derived-class",
+                                "http://example.org/node-kind-blank",
+                                "http://example.org/node-kind-iri",
+                                "http://example.org/node-kind-iri-or-blank",
+                                "http://example.org/non-shape-class",
+                                "http://example.org/parent-class",
+                                "http://example.org/test-another-class",
+                                "http://example.org/test-class",
+                                "http://example.org/test-class-required",
+                                "http://example.org/test-derived-class",
+                                "http://example.org/aaa-derived-class",
+                                "http://example.org/derived-node-kind-iri",
+                                "http://example.org/extensible-class"
+                            ]
+                        }
                     ]
                 }
             },
             "required": ["@type"]
         },
         "AnyClass": {
-            "oneOf": [
+            "anyOf": [
                 { "$ref": "#/$defs/http_exampleorgidpropclass" },
                 { "$ref": "#/$defs/http_exampleorginheritedidpropclass" },
                 { "$ref": "#/$defs/http_exampleorglinkclass" },
@@ -824,7 +932,8 @@
                 { "$ref": "#/$defs/http_exampleorgtestclassrequired" },
                 { "$ref": "#/$defs/http_exampleorgtestderivedclass" },
                 { "$ref": "#/$defs/http_exampleorgaaaderivedclass" },
-                { "$ref": "#/$defs/http_exampleorgderivednodekindiri" }
+                { "$ref": "#/$defs/http_exampleorgderivednodekindiri" },
+                { "$ref": "#/$defs/http_exampleorgextensibleclass" }
             ]
         }
     }

@@ -32,3 +32,5 @@ http://example.org/test-derived-class: test-derived-class
 http://example.org/aaa-derived-class: aaa-derived-class
 
 http://example.org/derived-node-kind-iri: derived-node-kind-iri
+
+http://example.org/extensible-class: extensible-class

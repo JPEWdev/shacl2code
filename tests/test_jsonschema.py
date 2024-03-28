@@ -256,6 +256,14 @@ def node_kind_tests(name, blank, iri):
                 ],
             },
         ),
+        # Missing type
+        (
+            False,
+            {
+                "@context": CONTEXT,
+                "@graph": [{}],
+            },
+        ),
         # Unknown object field
         (
             False,
@@ -506,6 +514,13 @@ def node_kind_tests(name, blank, iri):
                 "@type": "test-class",
             },
         ),
+        # Root object with missing type
+        (
+            False,
+            {
+                "@context": CONTEXT,
+            },
+        ),
         # Root object with bad context
         (
             False,
@@ -561,6 +576,97 @@ def node_kind_tests(name, blank, iri):
                 "@context": CONTEXT,
                 "@type": "inherited-id-prop-class",
                 "@id": "_:blank",
+            },
+        ),
+        # Extensible class
+        (
+            True,
+            {
+                "@context": CONTEXT,
+                "@type": "extensible-class",
+                "extensible-class/required": "foo",
+                "link-class-link-prop": {
+                    "@type": "link-class",
+                },
+            },
+        ),
+        # Extensible class with custom type
+        (
+            True,
+            {
+                "@context": CONTEXT,
+                "@type": "http://example.com/extended",
+                "extensible-class/required": "foo",
+                "link-class-link-prop": {
+                    "@type": "link-class",
+                },
+            },
+        ),
+        # Extended class with unknown property
+        (
+            True,
+            {
+                "@context": CONTEXT,
+                "@type": "http://example.com/extended",
+                "extensible-class/required": "foo",
+                "unknown-prop": "foo",
+            },
+        ),
+        # Extended class with missing required property
+        (
+            False,
+            {
+                "@context": CONTEXT,
+                "@type": "http://example.com/extended",
+                "unknown-prop": "foo",
+            },
+        ),
+        # Nested extensible class
+        (
+            True,
+            {
+                "@context": CONTEXT,
+                "@type": "link-class",
+                "link-class-link-prop": {
+                    "@type": "extensible-class",
+                    "extensible-class/required": "foo",
+                },
+            },
+        ),
+        # Nested extensible class with custom type
+        (
+            True,
+            {
+                "@context": CONTEXT,
+                "@type": "link-class",
+                "link-class-link-prop": {
+                    "@type": "http://example.com/extended",
+                    "extensible-class/required": "foo",
+                },
+            },
+        ),
+        # Nested extensible class with custom unknown property
+        (
+            True,
+            {
+                "@context": CONTEXT,
+                "@type": "link-class",
+                "link-class-link-prop": {
+                    "@type": "http://example.com/extended",
+                    "extensible-class/required": "foo",
+                    "unknown-prop": "foo",
+                },
+            },
+        ),
+        # Nested extended class with missing required property
+        (
+            False,
+            {
+                "@context": CONTEXT,
+                "@type": "link-class",
+                "link-class-link-prop": {
+                    "@type": "http://example.com/extended",
+                },
             },
         ),
         # Base object for type tests

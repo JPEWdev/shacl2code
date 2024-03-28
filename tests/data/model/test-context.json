@@ -114,6 +114,10 @@
     "link-class-link-list-prop": {
       "@id": "test:link-class-list-prop",
       "@type": "@id"
+    },
+    "extensible-class/required": {
+      "@id": "test:extensible-class/required",
+      "@type": "xsd:string"
     }
   }
 }

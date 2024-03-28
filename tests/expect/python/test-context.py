@@ -1912,6 +1912,24 @@ class derived_node_kind_iri(node_kind_iri):
         super()._register_props()
 
 
+# An extensible class
+@register("http://example.org/extensible-class", "extensible-class")
+class extensible_class(link_class):
+    NODE_KIND = NodeKind.BlankNodeOrIRI
+
+    @classmethod
+    def _register_props(cls):
+        super()._register_props()
+        # A required string
+        cls._add_property(
+            "extensible_class_required",
+            StringProp(),
+            iri="http://example.org/extensible-class/required",
+            min_count=1,
+            compact="extensible-class/required",
+        )
+
+
 """Format Guard"""
 # fmt: on
 

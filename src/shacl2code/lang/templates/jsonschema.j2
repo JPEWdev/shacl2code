@@ -60,9 +60,19 @@
         "{{ varname(class.clsname) }}": {
             "allOf": [
                 {
+                    {%- if class.extensible %}
+                    "unevaluatedProperties": true,
+                    {%- endif %}
                     "properties": {
                         "{{ class.id_property or "@id" }}": { "$ref": "#/$defs/{{ class.node_kind.split("#")[-1] }}" },
-                        "{{ context.compact("@type") }}": { "const": "{{ context.compact_vocab(class._id) }}" }
+                        "{{ context.compact("@type") }}": {
+                            "oneOf": [
+                                {%- if class.extensible %}
+                                { "$ref": "#/$defs/IRI" },
+                                {%- endif %}
+                                { "const": "{{ context.compact_vocab(class._id) }}" }
+                            ]
+                        }
                     }{%- if class.node_kind == SH.IRI %},
                     "required": ["{{ class.id_property or "@id" }}"]
                     {%- endif %}
@@ -71,6 +81,9 @@
             ]
         },
         "{{ varname(class.clsname) }}_derived": {
+            {%- if not class.extensible %}
+            "unevaluatedProperties": false,
+            {%- endif %}
             {%- set ns = namespace(external_ref=False, local_ref=False, any_ref=False, json_refs=[]) %}
             {%- for d in get_all_derived(class) + [class._id] %}
                 {%- set ns.json_refs = ns.json_refs + ["#/$defs/" + varname(classes.get(d).clsname)] %}
@@ -80,13 +93,12 @@
             {%- if ns.json_refs | length == 1 %}
             "$ref": "{{ ns.json_refs[0] }}",
             {%- elif ns.json_refs %}
-            "oneOf": [
+            "anyOf": [
                 {%- for r in ns.json_refs %}
                 { "$ref": "{{ r }}" }{% if not loop.last %},{% endif %}
                 {%- endfor %}
-            ],
+            ]
             {%- endif %}
-            "unevaluatedProperties": false
         },
         "{{ varname(class.clsname) }}_props": {
             "allOf": [
@@ -213,11 +225,11 @@
     {%- endfor %}
         "IRI": {
             "type": "string",
-            "pattern": "^(?!_:).*"
+            "pattern": "^(?!_:).+:.+"
         },
         "BlankNode": {
             "type": "string",
-            "pattern": "^_:.*"
+            "pattern": "^_:.+"
         },
         "BlankNodeOrIRI": {
             "oneOf": [
@@ -244,17 +256,22 @@
             "type": "object",
             "properties": {
                 "{{ context.compact("@type") }}": {
-                    "enum": [
-                    {%- for class in classes %}
-                        "{{ context.compact_vocab(class._id) }}"{% if not loop.last %},{% endif %}
-                    {%- endfor %}
+                    "oneOf": [
+                        { "$ref": "#/$defs/IRI" },
+                        {
+                            "enum": [
+                            {%- for class in classes %}
+                                "{{ context.compact_vocab(class._id) }}"{% if not loop.last %},{% endif %}
+                            {%- endfor %}
+                            ]
+                        }
                     ]
                 }
             },
             "required": ["{{ context.compact("@type") }}"]
         },
         "AnyClass": {
-            "oneOf": [
+            "anyOf": [
                 {%- for class in classes %}
                 { "$ref": "#/$defs/{{ varname(class.clsname) }}" }{% if not loop.last %},{% endif %}
                 {%- endfor %}

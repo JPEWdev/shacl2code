@@ -1870,6 +1870,23 @@ class http_example_org_derived_node_kind_iri(http_example_org_node_kind_iri):
         super()._register_props()
 
 
+# An extensible class
+@register("http://example.org/extensible-class")
+class http_example_org_extensible_class(http_example_org_link_class):
+    NODE_KIND = NodeKind.BlankNodeOrIRI
+
+    @classmethod
+    def _register_props(cls):
+        super()._register_props()
+        # A required string
+        cls._add_property(
+            "required",
+            StringProp(),
+            iri="http://example.org/extensible-class/required",
+            min_count=1,
+        )
+
+
 """Format Guard"""
 # fmt: on
 

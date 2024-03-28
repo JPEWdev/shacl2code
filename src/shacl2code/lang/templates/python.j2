@@ -1373,7 +1373,7 @@ class JSONLDInlineEncoder(Encoder):
             self.comma = False
 
     def write_string(self, v):
-        self.write(f'"{v}"')
+        self.write(json.dumps(v))
 
     def write_datetime(self, v):
         self.write_string(v)
@@ -1394,12 +1394,13 @@ class JSONLDInlineEncoder(Encoder):
             self.write("false")
 
     def write_float(self, v):
-        self.write(f'"{v}"')
+        self.write(json.dumps(str(v)))
 
     @contextmanager
     def write_property(self, iri, compact=None):
         self._write_comma()
-        self.write(f'"{compact or iri}":')
+        self.write_string(compact or iri)
+        self.write(":")
         yield self
         self.comma = True
 
@@ -1408,16 +1409,16 @@ class JSONLDInlineEncoder(Encoder):
         self._write_comma()
 
         self.write("{")
-        typname = "{{ context.compact('@type') }}"
-        typval = o.COMPACT_TYPE or o.TYPE
-        self.write(f'"{typname}":"{typval}"')
+        self.write_string("{{ context.compact('@type') }}")
+        self.write(":")
+        self.write_string(o.COMPACT_TYPE or o.TYPE)
         self.comma = True
 
         if needs_id:
             self._write_comma()
-            idname = o.ID_ALIAS or "@id"
-            idval = _id
-            self.write(f'"{idname}":"{idval}"')
+            self.write_string(o.ID_ALIAS or "@id")
+            self.write(":")
+            self.write_string(_id)
             self.comma = True
 
         self.comma = True

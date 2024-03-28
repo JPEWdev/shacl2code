@@ -71,6 +71,11 @@
         {
             "@id": "http://serialize.example.com/test-derived",
             "@type": "test-derived-class"
+        },
+        {
+            "@type": "test-class",
+            "@id": "http://serialize.example.com/test-special-chars",
+            "test-class/string-scalar-prop": "special chars \"\n\r:{}[]"
         }
     ]
 }

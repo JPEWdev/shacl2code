@@ -1320,17 +1320,17 @@ class JSONLDSerializer(object):
     def serialize_data(self, objects, force_graph=False):
         h = JSONLDEncoder()
         encode_objects(h, objects, force_graph)
-        if isinstance(h.data, list):
-            data = {
-                "@graph": h.data,
-            }
-        else:
-            data = h.data
-
+        data = {}
         if len(CONTEXT_URLS) == 1:
             data["@context"] = CONTEXT_URLS[0]
         elif CONTEXT_URLS:
             data["@context"] = CONTEXT_URLS
+
+        if isinstance(h.data, list):
+            data["@graph"] = h.data
+        else:
+            for k, v in h.data.items():
+                data[k] = v
 
         return data
 
@@ -1366,9 +1366,6 @@ class JSONLDInlineEncoder(Encoder):
         if self.comma:
             self.write(",")
             self.comma = False
-
-    def _need_comma(self):
-        self.comma = True
 
     def write_string(self, v):
         self.write(f'"{v}"')
@@ -1406,14 +1403,17 @@ class JSONLDInlineEncoder(Encoder):
         self._write_comma()
 
         self.write("{")
-        if needs_id:
-            idname = o.ID_ALIAS or "@id"
-            idval = _id
-            self.write(f'"{idname}": "{idval}",')
-
         typname = "{{ context.compact('@type') }}"
         typval = o.COMPACT_TYPE or o.TYPE
         self.write(f'"{typname}":"{typval}"')
+        self.comma = True
+
+        if needs_id:
+            self._write_comma()
+            idname = o.ID_ALIAS or "@id"
+            idval = _id
+            self.write(f'"{idname}":"{idval}"')
+            self.comma = True
 
         self.comma = True
         yield self

@@ -63,7 +63,10 @@ class Property(ABC):
     def walk(self, value, callback, path):
         callback(value, path)
 
-    def link_prop(self, value, link_cache, missing, visited):
+    def iter_objects(self, value, recursive, visited):
+        return []
+
+    def link_prop(self, value, doc, missing, visited):
         return value
 
     def to_string(self, value):
@@ -74,7 +77,7 @@ class Property(ABC):
         pass
 
     @abstractmethod
-    def decode(self, decoder, *, object_ids=None):
+    def decode(self, decoder, *, doc=None):
         pass
 
 
@@ -91,7 +94,7 @@ class StringProp(Property):
     def encode(self, encoder, value, state):
         encoder.write_string(value)
 
-    def decode(self, decoder, *, object_ids=None):
+    def decode(self, decoder, *, doc=None):
         return decoder.read_string()
 
 
@@ -99,7 +102,7 @@ class AnyURIProp(StringProp):
     def encode(self, encoder, value, state):
         encoder.write_iri(value)
 
-    def decode(self, decoder, *, object_ids=None):
+    def decode(self, decoder, *, doc=None):
         return decoder.read_iri()
 
 
@@ -118,7 +121,7 @@ class DateTimeProp(Property):
     def encode(self, encoder, value, state):
         encoder.write_datetime(self.to_string(value))
 
-    def decode(self, decoder, *, object_ids=None):
+    def decode(self, decoder, *, doc=None):
         s = decoder.read_datetime()
         if s is None:
             return None
@@ -172,7 +175,7 @@ class IntegerProp(Property):
     def encode(self, encoder, value, state):
         encoder.write_integer(value)
 
-    def decode(self, decoder, *, object_ids=None):
+    def decode(self, decoder, *, doc=None):
         return decoder.read_integer()
 
 
@@ -199,7 +202,7 @@ class BooleanProp(Property):
     def encode(self, encoder, value, state):
         encoder.write_bool(value)
 
-    def decode(self, decoder, *, object_ids=None):
+    def decode(self, decoder, *, doc=None):
         return decoder.read_bool()
 
 
@@ -212,7 +215,7 @@ class FloatProp(Property):
     def encode(self, encoder, value, state):
         encoder.write_float(value)
 
-    def decode(self, decoder, *, object_ids=None):
+    def decode(self, decoder, *, doc=None):
         return decoder.read_float()
 
 
@@ -243,6 +246,18 @@ class ObjectProp(Property):
         else:
             callback(value, path)
 
+    def iter_objects(self, value, recursive, visited):
+        if value is None or isinstance(value, str):
+            return
+
+        if value not in visited:
+            visited.add(value)
+            yield value
+
+            if recursive:
+                for c in value.iter_objects(recursive=True, visited=visited):
+                    yield c
+
     def encode(self, encoder, value, state):
         if value is None:
             raise ValueError("Object cannot be None")
@@ -253,22 +268,23 @@ class ObjectProp(Property):
 
         return value.encode(encoder, state)
 
-    def decode(self, decoder, *, object_ids=None):
+    def decode(self, decoder, *, doc=None):
         iri = decoder.read_iri()
         if iri is not None:
-            if object_ids and iri in object_ids:
-                return object_ids[iri]
+            if doc is not None:
+                return doc.find_by_id(iri, iri)
             return iri
 
-        return SHACLObject.decode(decoder, object_ids=object_ids)
+        return SHACLObject.decode(decoder, doc=doc)
 
-    def link_prop(self, value, link_cache, missing, visited):
+    def link_prop(self, value, doc, missing, visited):
         if value is None:
             return value
 
         if isinstance(value, str):
-            if value in link_cache:
-                return link_cache[value]
+            o = doc.find_by_id(value)
+            if o is not None:
+                return o
 
             if missing is not None:
                 missing.add(value)
@@ -276,10 +292,10 @@ class ObjectProp(Property):
             return value
 
         # De-duplicate IDs
-        if value._id and value._id is not link_cache[value._id]:
-            value = link_cache[value._id]
+        if value._id:
+            value = doc.find_by_id(value._id, value)
 
-        value.link_helper(link_cache, missing, visited)
+        value.link_helper(doc, missing, visited)
         return value
 
 
@@ -386,11 +402,16 @@ class ListProp(Property):
         for idx, v in enumerate(value):
             self.prop.walk(v, callback, path + [f"[{idx}]"])
 
-    def link_prop(self, value, link_cache, missing, visited):
+    def iter_objects(self, value, recursive, visited):
+        for v in value:
+            for c in self.prop.iter_objects(v, recursive, visited):
+                yield c
+
+    def link_prop(self, value, doc, missing, visited):
         if isinstance(value, ListProxy):
-            data = [self.prop.link_prop(v, link_cache, missing, visited) for v in value]
+            data = [self.prop.link_prop(v, doc, missing, visited) for v in value]
         else:
-            data = [self.prop.link_prop(v, link_cache, missing, visited) for v in value]
+            data = [self.prop.link_prop(v, doc, missing, visited) for v in value]
 
         return ListProxy(self.prop, data=data)
 
@@ -402,10 +423,10 @@ class ListProp(Property):
                 with list_s.write_list_item() as item_s:
                     self.prop.encode(item_s, v, state)
 
-    def decode(self, decoder, *, object_ids=None):
+    def decode(self, decoder, *, doc=None):
         data = []
         for val_d in decoder.read_list():
-            v = self.prop.decode(val_d, object_ids=object_ids)
+            v = self.prop.decode(val_d, doc=doc)
             self.prop.validate(v)
             data.append(v)
 
@@ -435,7 +456,7 @@ class EnumProp(Property):
 
         encoder.write_enum(value, self)
 
-    def decode(self, decoder, *, object_ids=None):
+    def decode(self, decoder, *, doc=None):
         v = decoder.read_enum(self)
         for iri, compact in self.context:
             if v == compact:
@@ -631,28 +652,18 @@ class SHACLObject(object):
             for iri, prop, _, _, _, _ in self.__iter_props():
                 prop.walk(self._obj_data[iri], callback, path + [f".{iri}"])
 
-    def child_objects(self):
+    def iter_objects(self, *, recursive=False, visited=None):
         """
-        Iterate over each object that is a child of this one
+        Iterate of all objects that are a child of this one
         """
-        seen = set()
+        if visited is None:
+            visited = set()
 
-        def _walk_callback(value, path):
-            nonlocal seen
-
-            if not isinstance(value, SHACLObject):
-                return False
-
-            if value in seen:
-                return False
-
-            seen.add(value)
-            return True
-
-        self.walk(_walk_callback)
-
-        for obj in seen:
-            yield obj
+        for iri, prop, _, _, _, _ in self.__iter_props():
+            for c in prop.iter_objects(
+                self._obj_data[iri], recursive=recursive, visited=visited
+            ):
+                yield c
 
     def encode(self, encoder, state):
         idname = self.ID_ALIAS or self._OBJ_IRIS["_id"]
@@ -700,7 +711,7 @@ class SHACLObject(object):
                     prop.encode(prop_s, value, state)
 
     @classmethod
-    def decode(cls, decoder, *, object_ids=None):
+    def decode(cls, decoder, *, doc=None):
         typ, obj_d = decoder.read_object()
         if typ is None:
             raise TypeError("Unable to determine type for object")
@@ -711,11 +722,14 @@ class SHACLObject(object):
         obj = cls.DESERIALIZERS[typ]()
         _id = obj_d.read_object_id(obj.ID_ALIAS)
         if _id is not None:
-            if object_ids is not None:
-                if _id in object_ids:
-                    return object_ids[_id]
-                object_ids[_id] = obj
             obj._id = _id
+            if doc is not None:
+                v = doc.find_by_id(_id)
+                if v is not None:
+                    return v
+
+        if doc is not None:
+            doc.add_index(obj)
 
         for iri, prop, _, _, _, compact in obj.__iter_props():
             if iri == obj._OBJ_IRIS["_id"]:
@@ -725,13 +739,13 @@ class SHACLObject(object):
                 if prop_d is None:
                     continue
 
-                v = prop.decode(prop_d, object_ids=object_ids)
+                v = prop.decode(prop_d, doc=doc)
                 prop.validate(v)
                 obj._obj_data[iri] = v
 
         return obj
 
-    def link_helper(self, link_cache, missing, visited):
+    def link_helper(self, doc, missing, visited):
         if self in visited:
             return
 
@@ -740,21 +754,10 @@ class SHACLObject(object):
         for iri, prop, _, _, _, _ in self.__iter_props():
             self._obj_data[iri] = prop.link_prop(
                 self._obj_data[iri],
-                link_cache,
+                doc,
                 missing,
                 visited,
             )
-
-    def link(self, link_cache=None):
-        if not link_cache:
-            link_cache = {obj._id: obj for obj in self.child_objects() if obj._id}
-
-        missing = set()
-        visited = set()
-
-        self.link_helper(link_cache, missing, visited)
-
-        return missing
 
     def __str__(self):
         parts = [
@@ -785,6 +788,178 @@ class SHACLObject(object):
         return sort_key(self) < sort_key(other)
 
 
+class SHACLDocument(object):
+    def __init__(self, objects=[], *, link=False):
+        self.objects = set()
+        for o in objects:
+            self.objects.add(o)
+        self.create_index()
+        if link:
+            self._link()
+
+    def create_index(self):
+        self.obj_by_id = {}
+        self.obj_by_type = {}
+        for o in self.foreach():
+            self.add_index(o)
+
+    def add_index(self, obj):
+        for typ in SHACLObject.DESERIALIZERS.values():
+            if isinstance(obj, typ):
+                self.obj_by_type.setdefault(typ, set()).add(obj)
+
+        if not obj._id:
+            return
+
+        if obj._id in self.obj_by_id:
+            return
+
+        self.obj_by_id[obj._id] = obj
+
+    def link(self):
+        self.create_index()
+        return self._link()
+
+    def _link(self):
+        missing = set()
+        visited = set()
+
+        new_objects = set()
+
+        for o in self.objects:
+            if o._id:
+                o = self.find_by_id(o._id, o)
+            o.link_helper(self, missing, visited)
+            new_objects.add(o)
+
+        self.objects = new_objects
+
+        # Remove blank nodes
+        obj_by_id = {}
+        for _id, obj in self.obj_by_id.items():
+            if _id.startswith("_:"):
+                del obj._id
+            else:
+                obj_by_id[obj._id] = obj
+        self.obj_by_id = obj_by_id
+
+        return missing
+
+    def find_by_id(self, _id, default=None):
+        if _id not in self.obj_by_id:
+            return default
+        return self.obj_by_id[_id]
+
+    def foreach(self):
+        visited = set()
+        for o in self.objects:
+            if o not in visited:
+                yield o
+                visited.add(o)
+
+            for child in o.iter_objects(recursive=True, visited=visited):
+                yield child
+
+    def foreach_type(self, typ, *, subclass=False):
+        if isinstance(typ, str):
+            typ = SHACLObject.DESERIALIZERS[typ]
+
+        if typ not in self.obj_by_type:
+            return
+
+        for o in self.obj_by_type[typ]:
+            if subclass or o.__class__ is typ:
+                yield o
+
+    def merge(self, *doc):
+        new_objects = set()
+        new_objects |= self.objects
+        for d in doc:
+            new_objects |= d.objects
+
+        return SHACLDocument(new_objects, link=True)
+
+    def encode(self, encoder, force_list=False):
+        """
+        Serialize a list of objects to a serialization encoder
+
+        If force_list is true, a list will always be written using the encoder.
+        """
+        ref_counts = {}
+        state = EncodeState()
+
+        def walk_callback(value, path):
+            nonlocal state
+            nonlocal ref_counts
+
+            if not isinstance(value, SHACLObject):
+                return True
+
+            # Remove blank node ID for re-assignment
+            if value._id and value._id.startswith("_:"):
+                del value._id
+
+            if value._id:
+                state.add_refed(value)
+
+            # If the object is referenced more than once, add it to the set of
+            # referenced objects
+            ref_counts.setdefault(value, 0)
+            ref_counts[value] += 1
+            if ref_counts[value] > 1:
+                state.add_refed(value)
+                return False
+
+            return True
+
+        for o in self.objects:
+            if o._id:
+                state.add_refed(o)
+            o.walk(walk_callback)
+
+        use_list = force_list or len(self.objects) > 1
+
+        if use_list:
+            # If we are making a list add all the objects referred to by reference
+            # to the list
+            objects = list(self.objects | state.ref_objects)
+        else:
+            objects = list(self.objects)
+
+        objects.sort()
+
+        if use_list:
+            # Ensure top level objects are only written in the top level graph
+            # node, and referenced by ID everywhere else. This is done by setting
+            # the flag that indicates this object has been written for all the top
+            # level objects, then clearing it right before serializing the object.
+            #
+            # In this way, if an object is referenced before it is supposed to be
+            # serialized into the @graph, it will serialize as a string instead of
+            # the actual object
+            for o in objects:
+                state.written_objects.add(o)
+
+            with encoder.write_list() as list_s:
+                for o in objects:
+                    # Allow this specific object to be written now
+                    state.written_objects.remove(o)
+                    with list_s.write_list_item() as item_s:
+                        o.encode(item_s, state)
+
+        else:
+            objects[0].encode(encoder, state)
+
+    def decode(self, decoder):
+        self.create_index()
+
+        for obj_d in decoder.read_list():
+            o = SHACLObject.decode(obj_d, doc=self)
+            self.objects.add(o)
+
+        self._link()
+
+
 class EncodeState(object):
     def __init__(self):
         self.ref_objects = set()
@@ -812,100 +987,6 @@ class EncodeState(object):
 
     def add_written(self, o):
         self.written_objects.add(o)
-
-
-def encode_objects(encoder, objects, force_list=False):
-    """
-    Serialize a list of objects to a serialization encoder
-
-    If force_list is true, a list will always be written using the encoder.
-    """
-    ref_counts = {}
-    state = EncodeState()
-
-    def walk_callback(value, path):
-        nonlocal state
-        nonlocal ref_counts
-
-        if not isinstance(value, SHACLObject):
-            return True
-
-        # Remove blank node ID for re-assignment
-        if value._id and value._id.startswith("_:"):
-            del value._id
-
-        if value._id:
-            state.add_refed(value)
-
-        # If the object is referenced more than once, add it to the set of
-        # referenced objects
-        ref_counts.setdefault(value, 0)
-        ref_counts[value] += 1
-        if ref_counts[value] > 1:
-            state.add_refed(value)
-            return False
-
-        return True
-
-    for o in objects:
-        if o._id:
-            state.add_refed(o)
-        o.walk(walk_callback)
-
-    use_list = force_list or len(objects) > 1
-
-    objects = set(objects)
-
-    if use_list:
-        # If we are making a list add all the objects referred to by reference
-        # to the list
-        objects |= state.ref_objects
-
-    objects = list(objects)
-    objects.sort()
-
-    if use_list:
-        # Ensure top level objects are only written in the top level graph
-        # node, and referenced by ID everywhere else. This is done by setting
-        # the flag that indicates this object has been written for all the top
-        # level objects, then clearing it right before serializing the object.
-        #
-        # In this way, if an object is referenced before it is supposed to be
-        # serialized into the @graph, it will serialize as a string instead of
-        # the actual object
-        for o in objects:
-            state.written_objects.add(o)
-
-        with encoder.write_list() as list_s:
-            for o in objects:
-                # Allow this specific object to be written now
-                state.written_objects.remove(o)
-                with list_s.write_list_item() as item_s:
-                    o.encode(item_s, state)
-
-    else:
-        objects[0].encode(encoder, state)
-
-
-def decode_objects(decoder):
-    object_ids = {}
-    objects = [
-        SHACLObject.decode(obj_d, object_ids=object_ids)
-        for obj_d in decoder.read_list()
-    ]
-
-    for o in objects:
-        o.link(object_ids)
-
-    # Remove blank node IDs
-    for o in objects:
-        for c in o.child_objects():
-            if c._id and c._id.startswith("_:"):
-                del c._id
-
-    object_ids = {k: v for k, v in object_ids.items() if not k.startswith("_:")}
-
-    return objects, object_ids
 
 
 class Decoder(ABC):
@@ -1117,14 +1198,14 @@ class JSONLDDecoder(Decoder):
 
 
 class JSONLDDeserializer(object):
-    def read(self, f):
+    def read(self, f, doc):
         data = json.load(f)
         if "@graph" in data:
             h = JSONLDDecoder(data["@graph"])
         else:
             h = JSONLDDecoder(data)
 
-        return decode_objects(h)
+        doc.decode(h)
 
 
 class Encoder(ABC):
@@ -1320,9 +1401,9 @@ class JSONLDSerializer(object):
     def __init__(self, **args):
         self.args = args
 
-    def serialize_data(self, objects, force_graph=False):
+    def serialize_data(self, doc, force_graph=False):
         h = JSONLDEncoder()
-        encode_objects(h, objects, force_graph)
+        doc.encode(h, force_graph)
         data = {}
         if len(CONTEXT_URLS) == 1:
             data["@context"] = CONTEXT_URLS[0]
@@ -1337,13 +1418,13 @@ class JSONLDSerializer(object):
 
         return data
 
-    def write(self, objects, f, force_graph=False, **kwargs):
+    def write(self, doc, f, force_graph=False, **kwargs):
         """
-        Write a list of objects to a JSON LD file
+        Write a SHACLDocument to a JSON LD file
 
         If force_graph is True, a @graph node will always be written
         """
-        data = self.serialize_data(objects, force_graph)
+        data = self.serialize_data(doc, force_graph)
 
         args = {**self.args, **kwargs}
 
@@ -1443,9 +1524,9 @@ class JSONLDInlineEncoder(Encoder):
 
 
 class JSONLDInlineSerializer(object):
-    def write(self, objects, f, force_graph=False):
+    def write(self, doc, f, force_graph=False):
         """
-        Write a list of objects to a JSON LD file
+        Write a SHACLDocument to a JSON LD file
 
         Note: force_graph is included for compatibility, but ignored. This
         serializer always writes out a graph
@@ -1463,7 +1544,7 @@ class JSONLDInlineSerializer(object):
 
         h.write('"@graph":')
 
-        encode_objects(h, objects, True)
+        doc.encode(h, True)
         h.write("}")
         return sha1.hexdigest()
 
@@ -1954,17 +2035,18 @@ def main():
 
     args = parser.parse_args()
 
+    doc = SHACLDocument()
     with args.infile.open("r") as f:
         d = JSONLDDeserializer()
-        objects, _ = d.read(f)
+        d.read(f, doc)
 
     if args.print:
-        print_tree(objects)
+        print_tree(doc.objects)
 
     if args.outfile:
         with args.outfile.open("wb") as f:
             s = JSONLDSerializer()
-            s.write(objects, f)
+            s.write(doc, f)
 
     return 0
 

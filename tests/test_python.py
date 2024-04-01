@@ -29,20 +29,6 @@ TEST_CONTEXT = THIS_DIR / "data" / "model" / "test-context.json"
 SPDX3_CONTEXT_URL = "https://spdx.github.io/spdx-3-model/context.json"
 
 
-class ObjectSet(object):
-    def __init__(self, objects, object_ids):
-        self.objects = objects
-        self.object_ids = object_ids
-
-    def get_obj(self, _id, typ):
-        o = self.object_ids.get(_id, None)
-        assert o is not None, f"Unable to find {_id}"
-        assert isinstance(
-            o, typ
-        ), f"Object {_id} has wrong type {type(o)}. Expected {typ}"
-        return o
-
-
 @pytest.fixture(scope="session")
 def roundtrip(tmp_path_factory, model_server):
     outfile = tmp_path_factory.mktemp("python-roundtrip") / "roundtrip.json"
@@ -225,9 +211,10 @@ def test_roundtrip(model, tmp_path, roundtrip):
 
         assert data == expect
 
+    doc = model.SHACLDocument()
     with roundtrip.open("r") as f:
         d = model.JSONLDDeserializer()
-        objects, _ = d.read(f)
+        d.read(f, doc)
 
     with roundtrip.open("r") as f:
         expect_data = json.load(f)
@@ -235,13 +222,13 @@ def test_roundtrip(model, tmp_path, roundtrip):
     outfile = tmp_path / "out.json"
     with outfile.open("wb") as f:
         s = model.JSONLDSerializer()
-        digest = s.write(objects, f, indent=4)
+        digest = s.write(doc, f, indent=4)
 
     check_file(outfile, expect_data, digest)
 
     with outfile.open("wb") as f:
         s = model.JSONLDInlineSerializer()
-        digest = s.write(objects, f)
+        digest = s.write(doc, f)
 
     check_file(outfile, expect_data, digest)
 
@@ -292,12 +279,16 @@ def test_jsonschema_validation(roundtrip, test_jsonschema):
     ],
 )
 def test_links(model, name, expect):
+    doc = model.SHACLDocument()
     with (DATA_DIR / "python" / "links.json").open("r") as f:
         deserializer = model.JSONLDDeserializer()
-        d = ObjectSet(*deserializer.read(f))
+        deserializer.read(f, doc)
 
-    c = d.get_obj(name, model.link_class)
-    link = d.get_obj(expect, model.link_class)
+    c = doc.find_by_id(name)
+    assert isinstance(c, model.link_class)
+
+    link = doc.find_by_id(expect)
+    assert isinstance(c, model.link_class)
 
     assert c.link_class_link_prop is link
     assert c.link_class_link_prop_no_class is link
@@ -326,11 +317,13 @@ def test_links(model, name, expect):
     ],
 )
 def test_blank_links(model, name, cls):
+    doc = model.SHACLDocument()
     with (DATA_DIR / "python" / "links.json").open("r") as f:
         deserializer = model.JSONLDDeserializer()
-        d = ObjectSet(*deserializer.read(f))
+        deserializer.read(f, doc)
 
-    c = d.get_obj(name, model.link_class)
+    c = doc.find_by_id(name)
+    assert isinstance(c, model.link_class)
 
     expect = c.link_class_link_prop
     assert type(expect) is getattr(model, cls)
@@ -356,7 +349,7 @@ def test_node_kind_blank(model, test_context_url):
 
     # No blank ID is written out for one reference (inline)
     c1.link_class_link_prop = ref
-    result = s.serialize_data([c1, c2])
+    result = s.serialize_data(model.SHACLDocument([c1, c2]))
     assert result == {
         "@context": test_context_url,
         "@graph": [
@@ -376,7 +369,7 @@ def test_node_kind_blank(model, test_context_url):
 
     # Blank node is written out for multiple references
     c2.link_class_link_prop = ref
-    result = s.serialize_data([c1, c2])
+    result = s.serialize_data(model.SHACLDocument([c1, c2]))
     assert result == {
         "@context": test_context_url,
         "@graph": [
@@ -398,7 +391,7 @@ def test_node_kind_blank(model, test_context_url):
     }
 
     # Listing in the root graph requires a blank node be written
-    result = s.serialize_data([c1, ref])
+    result = s.serialize_data(model.SHACLDocument([c1, ref]))
     assert result == {
         "@context": test_context_url,
         "@graph": [
@@ -437,13 +430,13 @@ def test_node_kind_iri(model, test_context_url, cls):
 
     # serializing without an ID is not allowed
     with pytest.raises(ValueError):
-        s.serialize_data([ref])
+        s.serialize_data(model.SHACLDocument([ref]))
 
     # Inlining not allowed
     ref._id = TEST_ID
 
     c1.link_class_link_prop = ref
-    result = s.serialize_data([c1, c2])
+    result = s.serialize_data(model.SHACLDocument([c1, c2]))
     assert result == {
         "@context": test_context_url,
         "@graph": [
@@ -465,7 +458,7 @@ def test_node_kind_iri(model, test_context_url, cls):
 
     # Multiple references
     c2.link_class_link_prop = ref
-    result = s.serialize_data([c1, c2])
+    result = s.serialize_data(model.SHACLDocument([c1, c2]))
     assert result == {
         "@context": test_context_url,
         "@graph": [
@@ -487,7 +480,7 @@ def test_node_kind_iri(model, test_context_url, cls):
     }
 
     # Listing in the root graph forces reference
-    result = s.serialize_data([c1, ref])
+    result = s.serialize_data(model.SHACLDocument([c1, ref]))
     assert result == {
         "@context": test_context_url,
         "@graph": [
@@ -528,7 +521,7 @@ def test_id_name(model, test_context_url, cls):
 
     # Serialization should the alias name
     c._id = TEST_ID
-    result = s.serialize_data([c])
+    result = s.serialize_data(model.SHACLDocument([c]))
     assert result == {
         "@context": test_context_url,
         "@type": cls.replace("_", "-"),
@@ -1266,43 +1259,45 @@ def test_mandatory_properties(model, tmp_path):
     # First validate that the base object is actually valid
     c = base_obj()
     with outfile.open("wb") as f:
-        s.write([c], f)
+        s.write(model.SHACLDocument([c]), f)
 
     # Required scalar property
     c = base_obj()
     del c.test_class_required_string_scalar_prop
     with outfile.open("wb") as f:
         with pytest.raises(ValueError):
-            s.write([c], f)
+            s.write(model.SHACLDocument([c]), f)
 
     # Array that is deleted
     c = base_obj()
     del c.test_class_required_string_list_prop
     with outfile.open("wb") as f:
         with pytest.raises(ValueError):
-            s.write([c], f)
+            s.write(model.SHACLDocument([c]), f)
 
     # Array initialized to empty list
     c = base_obj()
     c.test_class_required_string_list_prop = []
     with outfile.open("wb") as f:
         with pytest.raises(ValueError):
-            s.write([c], f)
+            s.write(model.SHACLDocument([c]), f)
 
     # Array with too many items
     c = base_obj()
     c.test_class_required_string_list_prop.append("too many")
     with outfile.open("wb") as f:
         with pytest.raises(ValueError):
-            s.write([c], f)
+            s.write(model.SHACLDocument([c]), f)
 
 
 def test_iri(model, roundtrip):
+    doc = model.SHACLDocument()
     with roundtrip.open("r") as f:
         deserializer = model.JSONLDDeserializer()
-        d = ObjectSet(*deserializer.read(f))
+        deserializer.read(f, doc)
 
-    c = d.get_obj("http://serialize.example.com/test", model.test_class)
+    c = doc.find_by_id("http://serialize.example.com/test")
+    assert isinstance(c, model.test_class)
 
     assert c._IRI["_id"] == "@id"
     assert c._IRI["named_property"] == "http://example.org/test-class/named-property"
@@ -1352,3 +1347,35 @@ def test_single_register(model):
 
     _ = model.test_derived_class()
     assert not model.test_derived_class._NEEDS_REG
+
+
+def test_doc_foreach_type(model, roundtrip):
+    doc = model.SHACLDocument()
+    with roundtrip.open("r") as f:
+        model.JSONLDDeserializer().read(f, doc)
+
+    expect = set()
+
+    expect.add(doc.find_by_id("http://serialize.example.com/test"))
+    expect.add(doc.find_by_id("http://serialize.example.com/nested-parent"))
+    expect.add(
+        doc.find_by_id(
+            "http://serialize.example.com/nested-parent"
+        ).test_class_class_prop
+    )
+    expect.add(doc.find_by_id("http://serialize.example.com/test-special-chars"))
+    assert expect != {None}
+
+    assert set(doc.foreach_type(model.test_class)) == expect
+    assert set(doc.foreach_type("test-class")) == expect
+    assert set(doc.foreach_type("http://example.org/test-class")) == expect
+
+    expect.add(doc.find_by_id("http://serialize.example.com/required"))
+    expect.add(doc.find_by_id("http://serialize.example.com/test-derived"))
+    assert expect != {None}
+
+    assert set(doc.foreach_type(model.test_class, subclass=True)) == expect
+    assert set(doc.foreach_type("test-class", subclass=True)) == expect
+    assert (
+        set(doc.foreach_type("http://example.org/test-class", subclass=True)) == expect
+    )

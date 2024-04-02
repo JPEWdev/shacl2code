@@ -66,7 +66,7 @@ class Property(ABC):
     def iter_objects(self, value, recursive, visited):
         return []
 
-    def link_prop(self, value, doc, missing, visited):
+    def link_prop(self, value, objectset, missing, visited):
         return value
 
     def to_string(self, value):
@@ -77,7 +77,7 @@ class Property(ABC):
         pass
 
     @abstractmethod
-    def decode(self, decoder, *, doc=None):
+    def decode(self, decoder, *, objectset=None):
         pass
 
 
@@ -94,7 +94,7 @@ class StringProp(Property):
     def encode(self, encoder, value, state):
         encoder.write_string(value)
 
-    def decode(self, decoder, *, doc=None):
+    def decode(self, decoder, *, objectset=None):
         return decoder.read_string()
 
 
@@ -102,7 +102,7 @@ class AnyURIProp(StringProp):
     def encode(self, encoder, value, state):
         encoder.write_iri(value)
 
-    def decode(self, decoder, *, doc=None):
+    def decode(self, decoder, *, objectset=None):
         return decoder.read_iri()
 
 
@@ -121,7 +121,7 @@ class DateTimeProp(Property):
     def encode(self, encoder, value, state):
         encoder.write_datetime(self.to_string(value))
 
-    def decode(self, decoder, *, doc=None):
+    def decode(self, decoder, *, objectset=None):
         s = decoder.read_datetime()
         if s is None:
             return None
@@ -175,7 +175,7 @@ class IntegerProp(Property):
     def encode(self, encoder, value, state):
         encoder.write_integer(value)
 
-    def decode(self, decoder, *, doc=None):
+    def decode(self, decoder, *, objectset=None):
         return decoder.read_integer()
 
 
@@ -202,7 +202,7 @@ class BooleanProp(Property):
     def encode(self, encoder, value, state):
         encoder.write_bool(value)
 
-    def decode(self, decoder, *, doc=None):
+    def decode(self, decoder, *, objectset=None):
         return decoder.read_bool()
 
 
@@ -215,7 +215,7 @@ class FloatProp(Property):
     def encode(self, encoder, value, state):
         encoder.write_float(value)
 
-    def decode(self, decoder, *, doc=None):
+    def decode(self, decoder, *, objectset=None):
         return decoder.read_float()
 
 
@@ -268,21 +268,21 @@ class ObjectProp(Property):
 
         return value.encode(encoder, state)
 
-    def decode(self, decoder, *, doc=None):
+    def decode(self, decoder, *, objectset=None):
         iri = decoder.read_iri()
         if iri is not None:
-            if doc is not None:
-                return doc.find_by_id(iri, iri)
+            if objectset is not None:
+                return objectset.find_by_id(iri, iri)
             return iri
 
-        return SHACLObject.decode(decoder, doc=doc)
+        return SHACLObject.decode(decoder, objectset=objectset)
 
-    def link_prop(self, value, doc, missing, visited):
+    def link_prop(self, value, objectset, missing, visited):
         if value is None:
             return value
 
         if isinstance(value, str):
-            o = doc.find_by_id(value)
+            o = objectset.find_by_id(value)
             if o is not None:
                 return o
 
@@ -293,9 +293,9 @@ class ObjectProp(Property):
 
         # De-duplicate IDs
         if value._id:
-            value = doc.find_by_id(value._id, value)
+            value = objectset.find_by_id(value._id, value)
 
-        value.link_helper(doc, missing, visited)
+        value.link_helper(objectset, missing, visited)
         return value
 
 
@@ -407,11 +407,11 @@ class ListProp(Property):
             for c in self.prop.iter_objects(v, recursive, visited):
                 yield c
 
-    def link_prop(self, value, doc, missing, visited):
+    def link_prop(self, value, objectset, missing, visited):
         if isinstance(value, ListProxy):
-            data = [self.prop.link_prop(v, doc, missing, visited) for v in value]
+            data = [self.prop.link_prop(v, objectset, missing, visited) for v in value]
         else:
-            data = [self.prop.link_prop(v, doc, missing, visited) for v in value]
+            data = [self.prop.link_prop(v, objectset, missing, visited) for v in value]
 
         return ListProxy(self.prop, data=data)
 
@@ -423,10 +423,10 @@ class ListProp(Property):
                 with list_s.write_list_item() as item_s:
                     self.prop.encode(item_s, v, state)
 
-    def decode(self, decoder, *, doc=None):
+    def decode(self, decoder, *, objectset=None):
         data = []
         for val_d in decoder.read_list():
-            v = self.prop.decode(val_d, doc=doc)
+            v = self.prop.decode(val_d, objectset=objectset)
             self.prop.validate(v)
             data.append(v)
 
@@ -456,7 +456,7 @@ class EnumProp(Property):
 
         encoder.write_enum(value, self)
 
-    def decode(self, decoder, *, doc=None):
+    def decode(self, decoder, *, objectset=None):
         v = decoder.read_enum(self)
         for iri, compact in self.context:
             if v == compact:
@@ -717,7 +717,7 @@ class SHACLObject(object):
                     prop.encode(prop_s, value, state)
 
     @classmethod
-    def decode(cls, decoder, *, doc=None):
+    def decode(cls, decoder, *, objectset=None):
         typ, obj_d = decoder.read_object()
         if typ is None:
             raise TypeError("Unable to determine type for object")
@@ -729,13 +729,13 @@ class SHACLObject(object):
         _id = obj_d.read_object_id(obj.ID_ALIAS)
         if _id is not None:
             obj._id = _id
-            if doc is not None:
-                v = doc.find_by_id(_id)
+            if objectset is not None:
+                v = objectset.find_by_id(_id)
                 if v is not None:
                     return v
 
-        if doc is not None:
-            doc.add_index(obj)
+        if objectset is not None:
+            objectset.add_index(obj)
 
         for iri, prop, _, _, _, compact in obj.__iter_props():
             if iri == obj._OBJ_IRIS["_id"]:
@@ -745,13 +745,13 @@ class SHACLObject(object):
                 if prop_d is None:
                     continue
 
-                v = prop.decode(prop_d, doc=doc)
+                v = prop.decode(prop_d, objectset=objectset)
                 prop.validate(v)
                 obj._obj_data[iri] = v
 
         return obj
 
-    def link_helper(self, doc, missing, visited):
+    def link_helper(self, objectset, missing, visited):
         if self in visited:
             return
 
@@ -760,7 +760,7 @@ class SHACLObject(object):
         for iri, prop, _, _, _, _ in self.__iter_props():
             self._obj_data[iri] = prop.link_prop(
                 self._obj_data[iri],
-                doc,
+                objectset,
                 missing,
                 visited,
             )
@@ -794,7 +794,7 @@ class SHACLObject(object):
         return sort_key(self) < sort_key(other)
 
 
-class SHACLDocument(object):
+class SHACLObjectSet(object):
     def __init__(self, objects=[], *, link=False):
         self.objects = set()
         for o in objects:
@@ -877,13 +877,13 @@ class SHACLDocument(object):
             if subclass or o.__class__ is typ:
                 yield o
 
-    def merge(self, *doc):
+    def merge(self, *objectsets):
         new_objects = set()
         new_objects |= self.objects
-        for d in doc:
+        for d in objectsets:
             new_objects |= d.objects
 
-        return SHACLDocument(new_objects, link=True)
+        return SHACLObjectSet(new_objects, link=True)
 
     def encode(self, encoder, force_list=False):
         """
@@ -960,7 +960,7 @@ class SHACLDocument(object):
         self.create_index()
 
         for obj_d in decoder.read_list():
-            o = SHACLObject.decode(obj_d, doc=self)
+            o = SHACLObject.decode(obj_d, objectset=self)
             self.objects.add(o)
 
         self._link()
@@ -1204,14 +1204,14 @@ class JSONLDDecoder(Decoder):
 
 
 class JSONLDDeserializer(object):
-    def read(self, f, doc):
+    def read(self, f, objectset: SHACLObjectSet):
         data = json.load(f)
         if "@graph" in data:
             h = JSONLDDecoder(data["@graph"])
         else:
             h = JSONLDDecoder(data)
 
-        doc.decode(h)
+        objectset.decode(h)
 
 
 class Encoder(ABC):
@@ -1407,9 +1407,13 @@ class JSONLDSerializer(object):
     def __init__(self, **args):
         self.args = args
 
-    def serialize_data(self, doc, force_graph=False):
+    def serialize_data(
+        self,
+        objectset: SHACLObjectSet,
+        force_graph=False,
+    ):
         h = JSONLDEncoder()
-        doc.encode(h, force_graph)
+        objectset.encode(h, force_graph)
         data = {}
         if len(CONTEXT_URLS) == 1:
             data["@context"] = CONTEXT_URLS[0]
@@ -1424,13 +1428,19 @@ class JSONLDSerializer(object):
 
         return data
 
-    def write(self, doc, f, force_graph=False, **kwargs):
+    def write(
+        self,
+        objectset: SHACLObjectSet,
+        f,
+        force_graph=False,
+        **kwargs,
+    ):
         """
-        Write a SHACLDocument to a JSON LD file
+        Write a SHACLObjectSet to a JSON LD file
 
         If force_graph is True, a @graph node will always be written
         """
-        data = self.serialize_data(doc, force_graph)
+        data = self.serialize_data(objectset, force_graph)
 
         args = {**self.args, **kwargs}
 
@@ -1530,9 +1540,14 @@ class JSONLDInlineEncoder(Encoder):
 
 
 class JSONLDInlineSerializer(object):
-    def write(self, doc, f, force_graph=False):
+    def write(
+        self,
+        objectset: SHACLObjectSet,
+        f,
+        force_graph=False,
+    ):
         """
-        Write a SHACLDocument to a JSON LD file
+        Write a SHACLObjectSet to a JSON LD file
 
         Note: force_graph is included for compatibility, but ignored. This
         serializer always writes out a graph
@@ -1550,7 +1565,7 @@ class JSONLDInlineSerializer(object):
 
         h.write('"@graph":')
 
-        doc.encode(h, True)
+        objectset.encode(h, True)
         h.write("}")
         return sha1.hexdigest()
 
@@ -1717,18 +1732,18 @@ def main():
 
     args = parser.parse_args()
 
-    doc = SHACLDocument()
+    objectset = SHACLObjectSet()
     with args.infile.open("r") as f:
         d = JSONLDDeserializer()
-        d.read(f, doc)
+        d.read(f, objectset)
 
     if args.print:
-        print_tree(doc.objects)
+        print_tree(objectset.objects)
 
     if args.outfile:
         with args.outfile.open("wb") as f:
             s = JSONLDSerializer()
-            s.write(doc, f)
+            s.write(objectset, f)
 
     return 0
 

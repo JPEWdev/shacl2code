@@ -211,7 +211,7 @@ def test_roundtrip(model, tmp_path, roundtrip):
 
         assert data == expect
 
-    doc = model.SHACLDocument()
+    doc = model.SHACLObjectSet()
     with roundtrip.open("r") as f:
         d = model.JSONLDDeserializer()
         d.read(f, doc)
@@ -279,7 +279,7 @@ def test_jsonschema_validation(roundtrip, test_jsonschema):
     ],
 )
 def test_links(model, name, expect):
-    doc = model.SHACLDocument()
+    doc = model.SHACLObjectSet()
     with (DATA_DIR / "python" / "links.json").open("r") as f:
         deserializer = model.JSONLDDeserializer()
         deserializer.read(f, doc)
@@ -317,7 +317,7 @@ def test_links(model, name, expect):
     ],
 )
 def test_blank_links(model, name, cls):
-    doc = model.SHACLDocument()
+    doc = model.SHACLObjectSet()
     with (DATA_DIR / "python" / "links.json").open("r") as f:
         deserializer = model.JSONLDDeserializer()
         deserializer.read(f, doc)
@@ -349,7 +349,7 @@ def test_node_kind_blank(model, test_context_url):
 
     # No blank ID is written out for one reference (inline)
     c1.link_class_link_prop = ref
-    result = s.serialize_data(model.SHACLDocument([c1, c2]))
+    result = s.serialize_data(model.SHACLObjectSet([c1, c2]))
     assert result == {
         "@context": test_context_url,
         "@graph": [
@@ -369,7 +369,7 @@ def test_node_kind_blank(model, test_context_url):
 
     # Blank node is written out for multiple references
     c2.link_class_link_prop = ref
-    result = s.serialize_data(model.SHACLDocument([c1, c2]))
+    result = s.serialize_data(model.SHACLObjectSet([c1, c2]))
     assert result == {
         "@context": test_context_url,
         "@graph": [
@@ -391,7 +391,7 @@ def test_node_kind_blank(model, test_context_url):
     }
 
     # Listing in the root graph requires a blank node be written
-    result = s.serialize_data(model.SHACLDocument([c1, ref]))
+    result = s.serialize_data(model.SHACLObjectSet([c1, ref]))
     assert result == {
         "@context": test_context_url,
         "@graph": [
@@ -430,13 +430,13 @@ def test_node_kind_iri(model, test_context_url, cls):
 
     # serializing without an ID is not allowed
     with pytest.raises(ValueError):
-        s.serialize_data(model.SHACLDocument([ref]))
+        s.serialize_data(model.SHACLObjectSet([ref]))
 
     # Inlining not allowed
     ref._id = TEST_ID
 
     c1.link_class_link_prop = ref
-    result = s.serialize_data(model.SHACLDocument([c1, c2]))
+    result = s.serialize_data(model.SHACLObjectSet([c1, c2]))
     assert result == {
         "@context": test_context_url,
         "@graph": [
@@ -458,7 +458,7 @@ def test_node_kind_iri(model, test_context_url, cls):
 
     # Multiple references
     c2.link_class_link_prop = ref
-    result = s.serialize_data(model.SHACLDocument([c1, c2]))
+    result = s.serialize_data(model.SHACLObjectSet([c1, c2]))
     assert result == {
         "@context": test_context_url,
         "@graph": [
@@ -480,7 +480,7 @@ def test_node_kind_iri(model, test_context_url, cls):
     }
 
     # Listing in the root graph forces reference
-    result = s.serialize_data(model.SHACLDocument([c1, ref]))
+    result = s.serialize_data(model.SHACLObjectSet([c1, ref]))
     assert result == {
         "@context": test_context_url,
         "@graph": [
@@ -521,7 +521,7 @@ def test_id_name(model, test_context_url, cls):
 
     # Serialization should the alias name
     c._id = TEST_ID
-    result = s.serialize_data(model.SHACLDocument([c]))
+    result = s.serialize_data(model.SHACLObjectSet([c]))
     assert result == {
         "@context": test_context_url,
         "@type": cls.replace("_", "-"),
@@ -1259,39 +1259,39 @@ def test_mandatory_properties(model, tmp_path):
     # First validate that the base object is actually valid
     c = base_obj()
     with outfile.open("wb") as f:
-        s.write(model.SHACLDocument([c]), f)
+        s.write(model.SHACLObjectSet([c]), f)
 
     # Required scalar property
     c = base_obj()
     del c.test_class_required_string_scalar_prop
     with outfile.open("wb") as f:
         with pytest.raises(ValueError):
-            s.write(model.SHACLDocument([c]), f)
+            s.write(model.SHACLObjectSet([c]), f)
 
     # Array that is deleted
     c = base_obj()
     del c.test_class_required_string_list_prop
     with outfile.open("wb") as f:
         with pytest.raises(ValueError):
-            s.write(model.SHACLDocument([c]), f)
+            s.write(model.SHACLObjectSet([c]), f)
 
     # Array initialized to empty list
     c = base_obj()
     c.test_class_required_string_list_prop = []
     with outfile.open("wb") as f:
         with pytest.raises(ValueError):
-            s.write(model.SHACLDocument([c]), f)
+            s.write(model.SHACLObjectSet([c]), f)
 
     # Array with too many items
     c = base_obj()
     c.test_class_required_string_list_prop.append("too many")
     with outfile.open("wb") as f:
         with pytest.raises(ValueError):
-            s.write(model.SHACLDocument([c]), f)
+            s.write(model.SHACLObjectSet([c]), f)
 
 
 def test_iri(model, roundtrip):
-    doc = model.SHACLDocument()
+    doc = model.SHACLObjectSet()
     with roundtrip.open("r") as f:
         deserializer = model.JSONLDDeserializer()
         deserializer.read(f, doc)
@@ -1350,7 +1350,7 @@ def test_single_register(model):
 
 
 def test_doc_foreach_type(model, roundtrip):
-    doc = model.SHACLDocument()
+    doc = model.SHACLObjectSet()
     with roundtrip.open("r") as f:
         model.JSONLDDeserializer().read(f, doc)
 

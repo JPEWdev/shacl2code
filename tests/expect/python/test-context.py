@@ -652,6 +652,12 @@ class SHACLObject(object):
             for iri, prop, _, _, _, _ in self.__iter_props():
                 prop.walk(self._obj_data[iri], callback, path + [f".{iri}"])
 
+    def property_keys(self):
+        for iri, _, _, _, pyname, compact in self.__iter_props():
+            if iri == "@id":
+                compact = self.ID_ALIAS
+            yield pyname, iri, compact
+
     def iter_objects(self, *, recursive=False, visited=None):
         """
         Iterate of all objects that are a child of this one

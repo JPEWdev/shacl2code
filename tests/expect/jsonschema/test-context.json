@@ -12,11 +12,13 @@
 
     "oneOf": [
         {
+            "type": "object",
             "properties": {
                 "@graph": {
                     "description": "Top level container for JSON-LD objects",
                     "type": "array",
                     "items": {
+                        "type": "object",
                         "$ref": "#/$defs/AnyClass",
                         "unevaluatedProperties": false
                     }
@@ -32,6 +34,7 @@
         "idpropclass": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "testid": { "$ref": "#/$defs/BlankNodeOrIRI" },
                         "@type": {
@@ -45,10 +48,15 @@
             ]
         },
         "idpropclass_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/inheritedidpropclass" },
-                { "$ref": "#/$defs/idpropclass" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/inheritedidpropclass" },
+                        { "$ref": "#/$defs/idpropclass" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -56,6 +64,7 @@
             "allOf": [
                 { "$ref": "#/$defs/SHACLClass" },
                 {
+                    "type": "object",
                     "properties": {
                     }
                 }
@@ -64,6 +73,7 @@
         "inheritedidpropclass": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "testid": { "$ref": "#/$defs/BlankNodeOrIRI" },
                         "@type": {
@@ -77,9 +87,14 @@
             ]
         },
         "inheritedidpropclass_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/inheritedidpropclass" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/inheritedidpropclass" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -87,6 +102,7 @@
             "allOf": [
                 { "$ref": "#/$defs/idpropclass_props" },
                 {
+                    "type": "object",
                     "properties": {
                     }
                 }
@@ -95,6 +111,7 @@
         "linkclass": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
                         "@type": {
@@ -108,15 +125,20 @@
             ]
         },
         "linkclass_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/derivednodekindiri" },
-                { "$ref": "#/$defs/extensibleclass" },
-                { "$ref": "#/$defs/linkderivedclass" },
-                { "$ref": "#/$defs/nodekindblank" },
-                { "$ref": "#/$defs/nodekindiri" },
-                { "$ref": "#/$defs/nodekindiriorblank" },
-                { "$ref": "#/$defs/linkclass" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/derivednodekindiri" },
+                        { "$ref": "#/$defs/extensibleclass" },
+                        { "$ref": "#/$defs/linkderivedclass" },
+                        { "$ref": "#/$defs/nodekindblank" },
+                        { "$ref": "#/$defs/nodekindiri" },
+                        { "$ref": "#/$defs/nodekindiriorblank" },
+                        { "$ref": "#/$defs/linkclass" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -124,6 +146,7 @@
             "allOf": [
                 { "$ref": "#/$defs/SHACLClass" },
                 {
+                    "type": "object",
                     "properties": {
                         "link-class-link-list-prop": {
                             "oneOf": [
@@ -157,6 +180,7 @@
         "linkderivedclass": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
                         "@type": {
@@ -170,9 +194,14 @@
             ]
         },
         "linkderivedclass_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/linkderivedclass" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/linkderivedclass" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -180,6 +209,7 @@
             "allOf": [
                 { "$ref": "#/$defs/linkclass_props" },
                 {
+                    "type": "object",
                     "properties": {
                     }
                 }
@@ -188,6 +218,7 @@
         "nodekindblank": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNode" },
                         "@type": {
@@ -201,9 +232,14 @@
             ]
         },
         "nodekindblank_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/nodekindblank" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/nodekindblank" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -211,6 +247,7 @@
             "allOf": [
                 { "$ref": "#/$defs/linkclass_props" },
                 {
+                    "type": "object",
                     "properties": {
                     }
                 }
@@ -219,6 +256,7 @@
         "nodekindiri": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "@id": { "$ref": "#/$defs/IRI" },
                         "@type": {
@@ -233,10 +271,15 @@
             ]
         },
         "nodekindiri_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/derivednodekindiri" },
-                { "$ref": "#/$defs/nodekindiri" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/derivednodekindiri" },
+                        { "$ref": "#/$defs/nodekindiri" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -244,6 +287,7 @@
             "allOf": [
                 { "$ref": "#/$defs/linkclass_props" },
                 {
+                    "type": "object",
                     "properties": {
                     }
                 }
@@ -252,6 +296,7 @@
         "nodekindiriorblank": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
                         "@type": {
@@ -265,9 +310,14 @@
             ]
         },
         "nodekindiriorblank_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/nodekindiriorblank" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/nodekindiriorblank" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -275,6 +325,7 @@
             "allOf": [
                 { "$ref": "#/$defs/linkclass_props" },
                 {
+                    "type": "object",
                     "properties": {
                     }
                 }
@@ -283,6 +334,7 @@
         "nonshapeclass": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
                         "@type": {
@@ -296,9 +348,14 @@
             ]
         },
         "nonshapeclass_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/nonshapeclass" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/nonshapeclass" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -306,6 +363,7 @@
             "allOf": [
                 { "$ref": "#/$defs/SHACLClass" },
                 {
+                    "type": "object",
                     "properties": {
                     }
                 }
@@ -314,6 +372,7 @@
         "parentclass": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
                         "@type": {
@@ -327,13 +386,18 @@
             ]
         },
         "parentclass_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/aaaderivedclass" },
-                { "$ref": "#/$defs/testclass" },
-                { "$ref": "#/$defs/testclassrequired" },
-                { "$ref": "#/$defs/testderivedclass" },
-                { "$ref": "#/$defs/parentclass" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/aaaderivedclass" },
+                        { "$ref": "#/$defs/testclass" },
+                        { "$ref": "#/$defs/testclassrequired" },
+                        { "$ref": "#/$defs/testderivedclass" },
+                        { "$ref": "#/$defs/parentclass" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -341,6 +405,7 @@
             "allOf": [
                 { "$ref": "#/$defs/SHACLClass" },
                 {
+                    "type": "object",
                     "properties": {
                     }
                 }
@@ -349,6 +414,7 @@
         "testanotherclass": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
                         "@type": {
@@ -362,9 +428,14 @@
             ]
         },
         "testanotherclass_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/testanotherclass" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/testanotherclass" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -372,6 +443,7 @@
             "allOf": [
                 { "$ref": "#/$defs/SHACLClass" },
                 {
+                    "type": "object",
                     "properties": {
                     }
                 }
@@ -380,6 +452,7 @@
         "testclass": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
                         "@type": {
@@ -393,11 +466,16 @@
             ]
         },
         "testclass_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/testclassrequired" },
-                { "$ref": "#/$defs/testderivedclass" },
-                { "$ref": "#/$defs/testclass" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/testclassrequired" },
+                        { "$ref": "#/$defs/testderivedclass" },
+                        { "$ref": "#/$defs/testclass" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -405,6 +483,7 @@
             "allOf": [
                 { "$ref": "#/$defs/parentclass_props" },
                 {
+                    "type": "object",
                     "properties": {
                         "encode": {
                             "$ref": "#/$defs/prop_testclass_encode"
@@ -666,6 +745,7 @@
         "testclassrequired": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
                         "@type": {
@@ -679,9 +759,14 @@
             ]
         },
         "testclassrequired_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/testclassrequired" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/testclassrequired" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -689,6 +774,7 @@
             "allOf": [
                 { "$ref": "#/$defs/testclass_props" },
                 {
+                    "type": "object",
                     "properties": {
                         "test-class/required-string-list-prop": {
                             "oneOf": [
@@ -722,6 +808,7 @@
         "testderivedclass": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
                         "@type": {
@@ -735,9 +822,14 @@
             ]
         },
         "testderivedclass_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/testderivedclass" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/testderivedclass" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -745,6 +837,7 @@
             "allOf": [
                 { "$ref": "#/$defs/testclass_props" },
                 {
+                    "type": "object",
                     "properties": {
                         "test-derived-class/string-prop": {
                             "$ref": "#/$defs/prop_testderivedclass_testderivedclassstringprop"
@@ -759,6 +852,7 @@
         "aaaderivedclass": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
                         "@type": {
@@ -772,9 +866,14 @@
             ]
         },
         "aaaderivedclass_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/aaaderivedclass" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/aaaderivedclass" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -782,6 +881,7 @@
             "allOf": [
                 { "$ref": "#/$defs/parentclass_props" },
                 {
+                    "type": "object",
                     "properties": {
                     }
                 }
@@ -790,6 +890,7 @@
         "derivednodekindiri": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "@id": { "$ref": "#/$defs/IRI" },
                         "@type": {
@@ -804,9 +905,14 @@
             ]
         },
         "derivednodekindiri_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/derivednodekindiri" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/derivednodekindiri" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -814,6 +920,7 @@
             "allOf": [
                 { "$ref": "#/$defs/nodekindiri_props" },
                 {
+                    "type": "object",
                     "properties": {
                     }
                 }
@@ -822,6 +929,7 @@
         "extensibleclass": {
             "allOf": [
                 {
+                    "type": "object",
                     "unevaluatedProperties": true,
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
@@ -838,7 +946,12 @@
         },
         "extensibleclass_derived": {
             "anyOf": [
-                { "$ref": "#/$defs/extensibleclass" },
+                {
+                    "type": "object",
+                    "anyOf": [
+                        { "$ref": "#/$defs/extensibleclass" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -846,6 +959,7 @@
             "allOf": [
                 { "$ref": "#/$defs/linkclass_props" },
                 {
+                    "type": "object",
                     "properties": {
                         "extensible-class/required": {
                             "$ref": "#/$defs/prop_extensibleclass_extensibleclassrequired"

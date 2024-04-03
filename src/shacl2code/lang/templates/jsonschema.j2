@@ -36,11 +36,13 @@
 
     "oneOf": [
         {
+            "type": "object",
             "properties": {
                 "@graph": {
                     "description": "Top level container for JSON-LD objects",
                     "type": "array",
                     "items": {
+                        "type": "object",
                         "$ref": "#/$defs/AnyClass",
                         "unevaluatedProperties": false
                     }
@@ -60,6 +62,7 @@
         "{{ varname(class.clsname) }}": {
             "allOf": [
                 {
+                    "type": "object",
                     {%- if class.extensible %}
                     "unevaluatedProperties": true,
                     {%- endif %}
@@ -81,24 +84,26 @@
             ]
         },
         "{{ varname(class.clsname) }}_derived": {
-            {%- if not class.extensible %}
-            "unevaluatedProperties": false,
-            {%- endif %}
             {%- set ns = namespace(external_ref=False, local_ref=False, any_ref=False, json_refs=[]) %}
             {%- for d in get_all_derived(class) + [class._id] %}
                 {%- set ns.json_refs = ns.json_refs + ["#/$defs/" + varname(classes.get(d).clsname)] %}
             {%- endfor %}
-            {%- set ns.json_refs = ns.json_refs + ["#/$defs/BlankNodeOrIRI"] %}
-
-            {%- if ns.json_refs | length == 1 %}
-            "$ref": "{{ ns.json_refs[0] }}",
-            {%- elif ns.json_refs %}
             "anyOf": [
-                {%- for r in ns.json_refs %}
-                { "$ref": "{{ r }}" }{% if not loop.last %},{% endif %}
-                {%- endfor %}
+                {%- if ns.json_refs %}
+                {
+                    "type": "object",
+                    {%- if not class.extensible %}
+                    "unevaluatedProperties": false,
+                    {%- endif %}
+                    "anyOf": [
+                        {%- for r in ns.json_refs %}
+                        { "$ref": "{{ r }}" }{% if not loop.last %},{% endif %}
+                        {%- endfor %}
+                    ]
+                },
+                {%- endif %}
+                { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
-            {%- endif %}
         },
         "{{ varname(class.clsname) }}_props": {
             "allOf": [
@@ -111,6 +116,7 @@
                 {%- endif %}
                 {%- set required = [] %}
                 {
+                    "type": "object",
                     "properties": {
                         {%- for prop in class.properties %}
                         {%- if not prop.min_count is none and prop.min_count > 0 %}

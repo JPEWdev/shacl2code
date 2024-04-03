@@ -8,11 +8,13 @@
 
     "oneOf": [
         {
+            "type": "object",
             "properties": {
                 "@graph": {
                     "description": "Top level container for JSON-LD objects",
                     "type": "array",
                     "items": {
+                        "type": "object",
                         "$ref": "#/$defs/AnyClass",
                         "unevaluatedProperties": false
                     }
@@ -28,6 +30,7 @@
         "http_exampleorgidpropclass": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "testid": { "$ref": "#/$defs/BlankNodeOrIRI" },
                         "@type": {
@@ -41,10 +44,15 @@
             ]
         },
         "http_exampleorgidpropclass_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/http_exampleorginheritedidpropclass" },
-                { "$ref": "#/$defs/http_exampleorgidpropclass" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/http_exampleorginheritedidpropclass" },
+                        { "$ref": "#/$defs/http_exampleorgidpropclass" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -52,6 +60,7 @@
             "allOf": [
                 { "$ref": "#/$defs/SHACLClass" },
                 {
+                    "type": "object",
                     "properties": {
                     }
                 }
@@ -60,6 +69,7 @@
         "http_exampleorginheritedidpropclass": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "testid": { "$ref": "#/$defs/BlankNodeOrIRI" },
                         "@type": {
@@ -73,9 +83,14 @@
             ]
         },
         "http_exampleorginheritedidpropclass_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/http_exampleorginheritedidpropclass" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/http_exampleorginheritedidpropclass" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -83,6 +98,7 @@
             "allOf": [
                 { "$ref": "#/$defs/http_exampleorgidpropclass_props" },
                 {
+                    "type": "object",
                     "properties": {
                     }
                 }
@@ -91,6 +107,7 @@
         "http_exampleorglinkclass": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
                         "@type": {
@@ -104,15 +121,20 @@
             ]
         },
         "http_exampleorglinkclass_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/http_exampleorgderivednodekindiri" },
-                { "$ref": "#/$defs/http_exampleorgextensibleclass" },
-                { "$ref": "#/$defs/http_exampleorglinkderivedclass" },
-                { "$ref": "#/$defs/http_exampleorgnodekindblank" },
-                { "$ref": "#/$defs/http_exampleorgnodekindiri" },
-                { "$ref": "#/$defs/http_exampleorgnodekindiriorblank" },
-                { "$ref": "#/$defs/http_exampleorglinkclass" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/http_exampleorgderivednodekindiri" },
+                        { "$ref": "#/$defs/http_exampleorgextensibleclass" },
+                        { "$ref": "#/$defs/http_exampleorglinkderivedclass" },
+                        { "$ref": "#/$defs/http_exampleorgnodekindblank" },
+                        { "$ref": "#/$defs/http_exampleorgnodekindiri" },
+                        { "$ref": "#/$defs/http_exampleorgnodekindiriorblank" },
+                        { "$ref": "#/$defs/http_exampleorglinkclass" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -120,6 +142,7 @@
             "allOf": [
                 { "$ref": "#/$defs/SHACLClass" },
                 {
+                    "type": "object",
                     "properties": {
                         "http://example.org/link-class-link-list-prop": {
                             "oneOf": [
@@ -153,6 +176,7 @@
         "http_exampleorglinkderivedclass": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
                         "@type": {
@@ -166,9 +190,14 @@
             ]
         },
         "http_exampleorglinkderivedclass_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/http_exampleorglinkderivedclass" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/http_exampleorglinkderivedclass" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -176,6 +205,7 @@
             "allOf": [
                 { "$ref": "#/$defs/http_exampleorglinkclass_props" },
                 {
+                    "type": "object",
                     "properties": {
                     }
                 }
@@ -184,6 +214,7 @@
         "http_exampleorgnodekindblank": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNode" },
                         "@type": {
@@ -197,9 +228,14 @@
             ]
         },
         "http_exampleorgnodekindblank_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/http_exampleorgnodekindblank" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/http_exampleorgnodekindblank" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -207,6 +243,7 @@
             "allOf": [
                 { "$ref": "#/$defs/http_exampleorglinkclass_props" },
                 {
+                    "type": "object",
                     "properties": {
                     }
                 }
@@ -215,6 +252,7 @@
         "http_exampleorgnodekindiri": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "@id": { "$ref": "#/$defs/IRI" },
                         "@type": {
@@ -229,10 +267,15 @@
             ]
         },
         "http_exampleorgnodekindiri_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/http_exampleorgderivednodekindiri" },
-                { "$ref": "#/$defs/http_exampleorgnodekindiri" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/http_exampleorgderivednodekindiri" },
+                        { "$ref": "#/$defs/http_exampleorgnodekindiri" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -240,6 +283,7 @@
             "allOf": [
                 { "$ref": "#/$defs/http_exampleorglinkclass_props" },
                 {
+                    "type": "object",
                     "properties": {
                     }
                 }
@@ -248,6 +292,7 @@
         "http_exampleorgnodekindiriorblank": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
                         "@type": {
@@ -261,9 +306,14 @@
             ]
         },
         "http_exampleorgnodekindiriorblank_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/http_exampleorgnodekindiriorblank" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/http_exampleorgnodekindiriorblank" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -271,6 +321,7 @@
             "allOf": [
                 { "$ref": "#/$defs/http_exampleorglinkclass_props" },
                 {
+                    "type": "object",
                     "properties": {
                     }
                 }
@@ -279,6 +330,7 @@
         "http_exampleorgnonshapeclass": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
                         "@type": {
@@ -292,9 +344,14 @@
             ]
         },
         "http_exampleorgnonshapeclass_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/http_exampleorgnonshapeclass" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/http_exampleorgnonshapeclass" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -302,6 +359,7 @@
             "allOf": [
                 { "$ref": "#/$defs/SHACLClass" },
                 {
+                    "type": "object",
                     "properties": {
                     }
                 }
@@ -310,6 +368,7 @@
         "http_exampleorgparentclass": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
                         "@type": {
@@ -323,13 +382,18 @@
             ]
         },
         "http_exampleorgparentclass_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/http_exampleorgaaaderivedclass" },
-                { "$ref": "#/$defs/http_exampleorgtestclass" },
-                { "$ref": "#/$defs/http_exampleorgtestclassrequired" },
-                { "$ref": "#/$defs/http_exampleorgtestderivedclass" },
-                { "$ref": "#/$defs/http_exampleorgparentclass" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/http_exampleorgaaaderivedclass" },
+                        { "$ref": "#/$defs/http_exampleorgtestclass" },
+                        { "$ref": "#/$defs/http_exampleorgtestclassrequired" },
+                        { "$ref": "#/$defs/http_exampleorgtestderivedclass" },
+                        { "$ref": "#/$defs/http_exampleorgparentclass" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -337,6 +401,7 @@
             "allOf": [
                 { "$ref": "#/$defs/SHACLClass" },
                 {
+                    "type": "object",
                     "properties": {
                     }
                 }
@@ -345,6 +410,7 @@
         "http_exampleorgtestanotherclass": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
                         "@type": {
@@ -358,9 +424,14 @@
             ]
         },
         "http_exampleorgtestanotherclass_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/http_exampleorgtestanotherclass" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/http_exampleorgtestanotherclass" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -368,6 +439,7 @@
             "allOf": [
                 { "$ref": "#/$defs/SHACLClass" },
                 {
+                    "type": "object",
                     "properties": {
                     }
                 }
@@ -376,6 +448,7 @@
         "http_exampleorgtestclass": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
                         "@type": {
@@ -389,11 +462,16 @@
             ]
         },
         "http_exampleorgtestclass_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/http_exampleorgtestclassrequired" },
-                { "$ref": "#/$defs/http_exampleorgtestderivedclass" },
-                { "$ref": "#/$defs/http_exampleorgtestclass" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/http_exampleorgtestclassrequired" },
+                        { "$ref": "#/$defs/http_exampleorgtestderivedclass" },
+                        { "$ref": "#/$defs/http_exampleorgtestclass" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -401,6 +479,7 @@
             "allOf": [
                 { "$ref": "#/$defs/http_exampleorgparentclass_props" },
                 {
+                    "type": "object",
                     "properties": {
                         "http://example.org/encode": {
                             "$ref": "#/$defs/prop_http_exampleorgtestclass_encode"
@@ -662,6 +741,7 @@
         "http_exampleorgtestclassrequired": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
                         "@type": {
@@ -675,9 +755,14 @@
             ]
         },
         "http_exampleorgtestclassrequired_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/http_exampleorgtestclassrequired" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/http_exampleorgtestclassrequired" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -685,6 +770,7 @@
             "allOf": [
                 { "$ref": "#/$defs/http_exampleorgtestclass_props" },
                 {
+                    "type": "object",
                     "properties": {
                         "http://example.org/test-class/required-string-list-prop": {
                             "oneOf": [
@@ -718,6 +804,7 @@
         "http_exampleorgtestderivedclass": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
                         "@type": {
@@ -731,9 +818,14 @@
             ]
         },
         "http_exampleorgtestderivedclass_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/http_exampleorgtestderivedclass" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/http_exampleorgtestderivedclass" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -741,6 +833,7 @@
             "allOf": [
                 { "$ref": "#/$defs/http_exampleorgtestclass_props" },
                 {
+                    "type": "object",
                     "properties": {
                         "http://example.org/test-derived-class/string-prop": {
                             "$ref": "#/$defs/prop_http_exampleorgtestderivedclass_stringprop"
@@ -755,6 +848,7 @@
         "http_exampleorgaaaderivedclass": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
                         "@type": {
@@ -768,9 +862,14 @@
             ]
         },
         "http_exampleorgaaaderivedclass_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/http_exampleorgaaaderivedclass" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/http_exampleorgaaaderivedclass" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -778,6 +877,7 @@
             "allOf": [
                 { "$ref": "#/$defs/http_exampleorgparentclass_props" },
                 {
+                    "type": "object",
                     "properties": {
                     }
                 }
@@ -786,6 +886,7 @@
         "http_exampleorgderivednodekindiri": {
             "allOf": [
                 {
+                    "type": "object",
                     "properties": {
                         "@id": { "$ref": "#/$defs/IRI" },
                         "@type": {
@@ -800,9 +901,14 @@
             ]
         },
         "http_exampleorgderivednodekindiri_derived": {
-            "unevaluatedProperties": false,
             "anyOf": [
-                { "$ref": "#/$defs/http_exampleorgderivednodekindiri" },
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/http_exampleorgderivednodekindiri" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -810,6 +916,7 @@
             "allOf": [
                 { "$ref": "#/$defs/http_exampleorgnodekindiri_props" },
                 {
+                    "type": "object",
                     "properties": {
                     }
                 }
@@ -818,6 +925,7 @@
         "http_exampleorgextensibleclass": {
             "allOf": [
                 {
+                    "type": "object",
                     "unevaluatedProperties": true,
                     "properties": {
                         "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
@@ -834,7 +942,12 @@
         },
         "http_exampleorgextensibleclass_derived": {
             "anyOf": [
-                { "$ref": "#/$defs/http_exampleorgextensibleclass" },
+                {
+                    "type": "object",
+                    "anyOf": [
+                        { "$ref": "#/$defs/http_exampleorgextensibleclass" }
+                    ]
+                },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -842,6 +955,7 @@
             "allOf": [
                 { "$ref": "#/$defs/http_exampleorglinkclass_props" },
                 {
+                    "type": "object",
                     "properties": {
                         "http://example.org/extensible-class/required": {
                             "$ref": "#/$defs/prop_http_exampleorgextensibleclass_required"

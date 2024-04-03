@@ -822,6 +822,23 @@ class SHACLObjectSet(object):
 
         self.obj_by_id[obj._id] = obj
 
+    def add(self, obj):
+        if not isinstance(obj, SHACLObject):
+            raise TypeError("Object is not of type SHACLObject")
+
+        if obj not in self.objects:
+            self.objects.add(obj)
+            self.add_index(obj)
+        return obj
+
+    def update(self, *others):
+        for o in others:
+            for obj in o:
+                self.add(obj)
+
+    def __contains__(self, item):
+        return item in self.objects
+
     def link(self):
         self.create_index()
         return self._link()

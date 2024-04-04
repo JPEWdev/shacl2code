@@ -296,6 +296,25 @@ def test_links(model, name, expect):
 
 
 @pytest.mark.parametrize(
+    "filename,expect",
+    [
+        ("bad-object-type-inline.json", TypeError),
+        ("bad-object-type-ref-before.json", TypeError),
+        ("bad-object-type-ref-after.json", TypeError),
+    ],
+)
+def test_deserialize(model, filename, expect):
+    objset = model.SHACLObjectSet()
+    deserializer = model.JSONLDDeserializer()
+    with (DATA_DIR / "python" / filename).open("r") as f:
+        if issubclass(expect, Exception):
+            with pytest.raises(expect):
+                deserializer.read(f, objset)
+        else:
+            deserializer.read(f, objset)
+
+
+@pytest.mark.parametrize(
     "name,cls",
     [
         (

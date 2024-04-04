@@ -270,12 +270,18 @@ class ObjectProp(Property):
 
     def decode(self, decoder, *, objectset=None):
         iri = decoder.read_iri()
-        if iri is not None:
-            if objectset is not None:
-                return objectset.find_by_id(iri, iri)
+        if iri is None:
+            return self.cls.decode(decoder, objectset=objectset)
+
+        if objectset is None:
             return iri
 
-        return SHACLObject.decode(decoder, objectset=objectset)
+        obj = objectset.find_by_id(iri)
+        if obj is None:
+            return iri
+
+        self.validate(obj)
+        return obj
 
     def link_prop(self, value, objectset, missing, visited):
         if value is None:
@@ -284,6 +290,7 @@ class ObjectProp(Property):
         if isinstance(value, str):
             o = objectset.find_by_id(value)
             if o is not None:
+                self.validate(o)
                 return o
 
             if missing is not None:
@@ -294,6 +301,7 @@ class ObjectProp(Property):
         # De-duplicate IDs
         if value._id:
             value = objectset.find_by_id(value._id, value)
+            self.validate(value)
 
         value.link_helper(objectset, missing, visited)
         return value

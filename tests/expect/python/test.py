@@ -830,6 +830,9 @@ class SHACLObjectSet(object):
 
         Adds the object to all appropriate indices
         """
+        if not isinstance(obj, SHACLObject):
+            raise TypeError("Object is not of type SHACLObject")
+
         for typ in SHACLObject.DESERIALIZERS.values():
             if isinstance(obj, typ):
                 self.obj_by_type.setdefault(typ, set()).add(obj)

@@ -31,6 +31,44 @@
     "unevaluatedProperties": false,
 
     "$defs": {
+        "enumType": {
+            "allOf": [
+                {
+                    "type": "object",
+                    "properties": {
+                        "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
+                        "@type": {
+                            "oneOf": [
+                                { "const": "enumType" }
+                            ]
+                        }
+                    }
+                },
+                { "$ref": "#/$defs/enumType_props" }
+            ]
+        },
+        "enumType_derived": {
+            "anyOf": [
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/enumType" }
+                    ]
+                },
+                { "$ref": "#/$defs/BlankNodeOrIRI" }
+            ]
+        },
+        "enumType_props": {
+            "allOf": [
+                { "$ref": "#/$defs/SHACLClass" },
+                {
+                    "type": "object",
+                    "properties": {
+                    }
+                }
+            ]
+        },
         "idpropclass": {
             "allOf": [
                 {
@@ -656,23 +694,26 @@
         },
         "prop_testclass_testclassenumlistprop": {
                 "enum": [
-                    "enumType/bar",
                     "enumType/foo",
-                    "enumType/nolabel"
+                    "enumType/bar",
+                    "enumType/nolabel",
+                    "enumType/non-named-individual"
                 ]
         },
         "prop_testclass_testclassenumprop": {
                 "enum": [
-                    "enumType/bar",
                     "enumType/foo",
-                    "enumType/nolabel"
+                    "enumType/bar",
+                    "enumType/nolabel",
+                    "enumType/non-named-individual"
                 ]
         },
         "prop_testclass_testclassenumpropnoclass": {
                 "enum": [
-                    "enumType/bar",
                     "enumType/foo",
-                    "enumType/nolabel"
+                    "enumType/bar",
+                    "enumType/nolabel",
+                    "enumType/non-named-individual"
                 ]
         },
         "prop_testclass_testclassfloatprop": {
@@ -1011,6 +1052,7 @@
                         { "$ref": "#/$defs/IRI" },
                         {
                             "enum": [
+                                "enumType",
                                 "id-prop-class",
                                 "inherited-id-prop-class",
                                 "link-class",
@@ -1036,6 +1078,7 @@
         },
         "AnyClass": {
             "anyOf": [
+                { "$ref": "#/$defs/enumType" },
                 { "$ref": "#/$defs/idpropclass" },
                 { "$ref": "#/$defs/inheritedidpropclass" },
                 { "$ref": "#/$defs/linkclass" },

@@ -436,20 +436,21 @@ class ListProp(Property):
 class EnumProp(Property):
     VALID_TYPES = str
 
-    def __init__(self, *, pattern=None, context=[]):
+    def __init__(self, values, *, pattern=None):
         super().__init__(pattern=pattern)
-        self.context = context
+        self.values = values
 
     def validate(self, value):
         super().validate(value)
 
-        if value not in (v for _, v in self.valid_values):
+        valid_values = (iri for iri, _ in self.values)
+        if value not in valid_values:
             raise ValueError(
-                f"'{value}' is not a valid value for '{self.__class__.__name__}'"
+                f"'{value}' is not a valid value. Choose one of {' '.join(valid_values)}"
             )
 
     def encode(self, encoder, value, state):
-        for iri, compact in self.context:
+        for iri, compact in self.values:
             if iri == value:
                 encoder.write_enum(value, self, compact)
                 return
@@ -458,7 +459,7 @@ class EnumProp(Property):
 
     def decode(self, decoder, *, objectset=None):
         v = decoder.read_enum(self)
-        for iri, compact in self.context:
+        for iri, compact in self.values:
             if v == compact:
                 return iri
         return v
@@ -1631,33 +1632,31 @@ CONTEXT_URLS = [
 ]
 
 
-# ENUMERATIONS
+# CLASSES
 # An enumerated type
-class http_example_org_enumType(EnumProp):
-    TYPE = "http://example.org/enumType"
-    valid_values = [
-        ("bar", "http://example.org/enumType/bar"),
-        ("foo", "http://example.org/enumType/foo"),
-        ("nolabel", "http://example.org/enumType/nolabel"),
-    ]
-    # The bar value of enumType
-    bar = "http://example.org/enumType/bar"
+@register("http://example.org/enumType")
+class http_example_org_enumType(SHACLObject):
+    NODE_KIND = NodeKind.BlankNodeOrIRI
+    NAMED_INDIVIDUALS = {
+        "foo": "http://example.org/enumType/foo",
+        "bar": "http://example.org/enumType/bar",
+        "nolabel": "http://example.org/enumType/nolabel",
+    }
     # The foo value of enumType
     foo = "http://example.org/enumType/foo"
+    # The bar value of enumType
+    bar = "http://example.org/enumType/bar"
     # This value has no label
     nolabel = "http://example.org/enumType/nolabel"
 
 
-# CLASSES
 # A class with an ID alias
 @register("http://example.org/id-prop-class")
 class http_example_org_id_prop_class(SHACLObject):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     ID_ALIAS = "testid"
-
-    @classmethod
-    def _register_props(cls):
-        super()._register_props()
+    NAMED_INDIVIDUALS = {
+    }
 
 
 # A class that inherits its idPropertyName from the parent
@@ -1665,16 +1664,16 @@ class http_example_org_id_prop_class(SHACLObject):
 class http_example_org_inherited_id_prop_class(http_example_org_id_prop_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     ID_ALIAS = "testid"
-
-    @classmethod
-    def _register_props(cls):
-        super()._register_props()
+    NAMED_INDIVIDUALS = {
+    }
 
 
 # A class to test links
 @register("http://example.org/link-class")
 class http_example_org_link_class(SHACLObject):
     NODE_KIND = NodeKind.BlankNodeOrIRI
+    NAMED_INDIVIDUALS = {
+    }
 
     @classmethod
     def _register_props(cls):
@@ -1703,76 +1702,64 @@ class http_example_org_link_class(SHACLObject):
 @register("http://example.org/link-derived-class")
 class http_example_org_link_derived_class(http_example_org_link_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
-
-    @classmethod
-    def _register_props(cls):
-        super()._register_props()
+    NAMED_INDIVIDUALS = {
+    }
 
 
 # A class that must be a blank node
 @register("http://example.org/node-kind-blank")
 class http_example_org_node_kind_blank(http_example_org_link_class):
     NODE_KIND = NodeKind.BlankNode
-
-    @classmethod
-    def _register_props(cls):
-        super()._register_props()
+    NAMED_INDIVIDUALS = {
+    }
 
 
 # A class that must be an IRI
 @register("http://example.org/node-kind-iri")
 class http_example_org_node_kind_iri(http_example_org_link_class):
     NODE_KIND = NodeKind.IRI
-
-    @classmethod
-    def _register_props(cls):
-        super()._register_props()
+    NAMED_INDIVIDUALS = {
+    }
 
 
 # A class that can be either a blank node or an IRI
 @register("http://example.org/node-kind-iri-or-blank")
 class http_example_org_node_kind_iri_or_blank(http_example_org_link_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
-
-    @classmethod
-    def _register_props(cls):
-        super()._register_props()
+    NAMED_INDIVIDUALS = {
+    }
 
 
 # A class that is not a nodeshape
 @register("http://example.org/non-shape-class")
 class http_example_org_non_shape_class(SHACLObject):
     NODE_KIND = NodeKind.BlankNodeOrIRI
-
-    @classmethod
-    def _register_props(cls):
-        super()._register_props()
+    NAMED_INDIVIDUALS = {
+    }
 
 
 # The parent class
 @register("http://example.org/parent-class")
 class http_example_org_parent_class(SHACLObject):
     NODE_KIND = NodeKind.BlankNodeOrIRI
-
-    @classmethod
-    def _register_props(cls):
-        super()._register_props()
+    NAMED_INDIVIDUALS = {
+    }
 
 
 # Another class
 @register("http://example.org/test-another-class")
 class http_example_org_test_another_class(SHACLObject):
     NODE_KIND = NodeKind.BlankNodeOrIRI
-
-    @classmethod
-    def _register_props(cls):
-        super()._register_props()
+    NAMED_INDIVIDUALS = {
+    }
 
 
 # The test class
 @register("http://example.org/test-class")
 class http_example_org_test_class(http_example_org_parent_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
+    NAMED_INDIVIDUALS = {
+    }
 
     @classmethod
     def _register_props(cls):
@@ -1840,22 +1827,34 @@ class http_example_org_test_class(http_example_org_parent_class):
         # A enum list property
         cls._add_property(
             "enum_list_prop",
-            ListProp(http_example_org_enumType(context=[
-            ])),
+            ListProp(EnumProp([
+                    ("http://example.org/enumType/foo", "http://example.org/enumType/foo"),
+                    ("http://example.org/enumType/bar", "http://example.org/enumType/bar"),
+                    ("http://example.org/enumType/nolabel", "http://example.org/enumType/nolabel"),
+                    ("http://example.org/enumType/non-named-individual", "http://example.org/enumType/non-named-individual"),
+                ])),
             iri="http://example.org/test-class/enum-list-prop",
         )
         # A enum property
         cls._add_property(
             "enum_prop",
-            http_example_org_enumType(context=[
-            ]),
+            EnumProp([
+                    ("http://example.org/enumType/foo", "http://example.org/enumType/foo"),
+                    ("http://example.org/enumType/bar", "http://example.org/enumType/bar"),
+                    ("http://example.org/enumType/nolabel", "http://example.org/enumType/nolabel"),
+                    ("http://example.org/enumType/non-named-individual", "http://example.org/enumType/non-named-individual"),
+                ]),
             iri="http://example.org/test-class/enum-prop",
         )
         # A enum property with no sh:class
         cls._add_property(
             "enum_prop_no_class",
-            http_example_org_enumType(context=[
-            ]),
+            EnumProp([
+                    ("http://example.org/enumType/foo", "http://example.org/enumType/foo"),
+                    ("http://example.org/enumType/bar", "http://example.org/enumType/bar"),
+                    ("http://example.org/enumType/nolabel", "http://example.org/enumType/nolabel"),
+                    ("http://example.org/enumType/non-named-individual", "http://example.org/enumType/non-named-individual"),
+                ]),
             iri="http://example.org/test-class/enum-prop-no-class",
         )
         # a float property
@@ -1941,6 +1940,8 @@ class http_example_org_test_class(http_example_org_parent_class):
 @register("http://example.org/test-class-required")
 class http_example_org_test_class_required(http_example_org_test_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
+    NAMED_INDIVIDUALS = {
+    }
 
     @classmethod
     def _register_props(cls):
@@ -1966,6 +1967,8 @@ class http_example_org_test_class_required(http_example_org_test_class):
 @register("http://example.org/test-derived-class")
 class http_example_org_test_derived_class(http_example_org_test_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
+    NAMED_INDIVIDUALS = {
+    }
 
     @classmethod
     def _register_props(cls):
@@ -1982,26 +1985,24 @@ class http_example_org_test_derived_class(http_example_org_test_class):
 @register("http://example.org/aaa-derived-class")
 class http_example_org_aaa_derived_class(http_example_org_parent_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
-
-    @classmethod
-    def _register_props(cls):
-        super()._register_props()
+    NAMED_INDIVIDUALS = {
+    }
 
 
 # A class that derives its nodeKind from parent
 @register("http://example.org/derived-node-kind-iri")
 class http_example_org_derived_node_kind_iri(http_example_org_node_kind_iri):
     NODE_KIND = NodeKind.IRI
-
-    @classmethod
-    def _register_props(cls):
-        super()._register_props()
+    NAMED_INDIVIDUALS = {
+    }
 
 
 # An extensible class
 @register("http://example.org/extensible-class")
 class http_example_org_extensible_class(http_example_org_link_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
+    NAMED_INDIVIDUALS = {
+    }
 
     @classmethod
     def _register_props(cls):

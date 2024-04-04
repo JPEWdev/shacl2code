@@ -97,15 +97,33 @@
     [
         sh:class <enumType> ;
         sh:path <test-class/enum-prop> ;
-        sh:maxCount 1
+        sh:maxCount 1 ;
+        sh:in (
+            <enumType/foo>
+            <enumType/bar>
+            <enumType/nolabel>
+            <enumType/non-named-individual>
+        )
     ],
     [
         sh:class <enumType> ;
         sh:path <test-class/enum-list-prop> ;
+        sh:in (
+            <enumType/foo>
+            <enumType/bar>
+            <enumType/nolabel>
+            <enumType/non-named-individual>
+        )
     ],
     [
         sh:path <test-class/enum-prop-no-class> ;
-        sh:maxCount 1
+        sh:maxCount 1 ;
+        sh:in (
+            <enumType/foo>
+            <enumType/bar>
+            <enumType/nolabel>
+            <enumType/non-named-individual>
+        )
     ],
     [
         sh:datatype xsd:string ;

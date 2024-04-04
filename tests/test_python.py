@@ -1231,13 +1231,19 @@ def test_datetime_to_string(model, value, expect):
         ), f"Value '{v}' does not match regex"
 
 
-def test_enum_var_names(model):
+def test_named_individuals(model):
     assert type(model.enumType.foo) is str
     assert model.enumType.foo == "http://example.org/enumType/foo"
 
     c = model.test_class()
 
-    for name, value in model.enumType.valid_values:
+    assert model.enumType.NAMED_INDIVIDUALS == {
+        "foo": "http://example.org/enumType/foo",
+        "bar": "http://example.org/enumType/bar",
+        "nolabel": "http://example.org/enumType/nolabel",
+    }
+
+    for name, value in model.enumType.NAMED_INDIVIDUALS.items():
         c.test_class_enum_prop = value
         assert getattr(model.enumType, name) == value
 

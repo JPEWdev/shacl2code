@@ -54,17 +54,9 @@ def remove_common_prefix(val, *cmp):
 
 
 @dataclass
-class EnumValue:
+class Individual:
     _id: str
     varname: str
-    comment: str = ""
-
-
-@dataclass
-class Enum:
-    _id: str
-    clsname: str
-    values: typing.List[EnumValue]
     comment: str = ""
 
 
@@ -75,7 +67,7 @@ class Property:
     comment: str = ""
     max_count: int = None
     min_count: int = None
-    enum_id: str = ""
+    enum_values: list = None
     class_id: str = ""
     datatype: str = ""
     pattern: str = ""
@@ -92,6 +84,7 @@ class Class:
     id_property: str = ""
     node_kind: str = None
     extensible: bool = False
+    named_individuals: list = None
 
 
 class Model(object):
@@ -103,36 +96,7 @@ class Model(object):
         self.enums = []
         self.classes = []
         class_iris = set()
-        enum_iris = set()
         classes_by_iri = {}
-
-        for cls_iri in self.model.subjects(RDF.type, OWL.Class):
-            enum_values = []
-
-            for value_iri in self.model.subjects(RDF.type, cls_iri):
-                if (value_iri, RDF.type, OWL.NamedIndividual) not in self.model:
-                    continue
-
-                v = EnumValue(
-                    _id=str(value_iri),
-                    varname=remove_common_prefix(value_iri, cls_iri).lstrip("/"),
-                    comment=str(self.model.value(value_iri, RDFS.comment, default="")),
-                )
-                enum_values.append(v)
-
-            if enum_values:
-                enum_values.sort(key=lambda v: v._id)
-
-                e = Enum(
-                    _id=str(cls_iri),
-                    clsname=self.get_class_name(cls_iri),
-                    comment=str(self.model.value(cls_iri, RDFS.comment, default="")),
-                    values=enum_values,
-                )
-                self.enums.append(e)
-                enum_iris.add(cls_iri)
-            else:
-                class_iris.add(cls_iri)
 
         def int_val(v):
             if not v:
@@ -163,12 +127,7 @@ class Model(object):
             return default
 
         def set_prop_range(p, range_id):
-            nonlocal enum_iris
             nonlocal class_iris
-
-            if range_id in enum_iris:
-                p.enum_id = str(range_id)
-                return True
 
             if range_id in class_iris:
                 p.class_id = str(range_id)
@@ -176,6 +135,24 @@ class Model(object):
 
             return False
 
+        def get_named_individuals(cls_iri):
+            members = []
+            for member_iri in self.model.subjects(RDF.type, cls_iri):
+                if (member_iri, RDF.type, OWL.NamedIndividual) not in self.model:
+                    continue
+
+                members.append(
+                    Individual(
+                        _id=str(member_iri),
+                        varname=remove_common_prefix(member_iri, cls_iri).lstrip("/"),
+                        comment=str(
+                            self.model.value(member_iri, RDFS.comment, default="")
+                        ),
+                    )
+                )
+            return members
+
+        class_iris = set(self.model.subjects(RDF.type, OWL.Class))
         for cls_iri in class_iris:
             c = Class(
                 _id=str(cls_iri),
@@ -193,6 +170,7 @@ class Model(object):
                 ),
                 node_kind=get_inherited_value(cls_iri, SH.nodeKind, SH.BlankNodeOrIRI),
                 extensible=bool(self.model.value(cls_iri, SHACL2CODE.isExtensible)),
+                named_individuals=get_named_individuals(cls_iri),
             )
 
             if c.node_kind not in (SH.IRI, SH.BlankNode, SH.BlankNodeOrIRI):
@@ -217,6 +195,9 @@ class Model(object):
                     max_count=int_val(self.model.value(obj_prop, SH.maxCount)),
                     min_count=int_val(self.model.value(obj_prop, SH.minCount)),
                 )
+
+                if in_list := self.model.value(obj_prop, SH["in"]):
+                    p.enum_values = tuple(self.model.items(in_list))
 
                 if range_id := self.model.value(obj_prop, SH["class"]):
                     if not set_prop_range(p, range_id):

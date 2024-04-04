@@ -161,14 +161,14 @@
         },
         {%- for prop in class.properties %}
         "prop_{{ varname(class.clsname) }}_{{ varname(prop.varname) }}": {
-            {%- if prop.class_id %}
-                "$ref": "#/$defs/{{ varname(classes.get(prop.class_id).clsname) }}_derived"
-            {%- elif prop.enum_id %}
+            {%- if prop.enum_values %}
                 "enum": [
-                {%- for e in enums.get(prop.enum_id).values %}
-                    "{{ context.compact_vocab(e._id, prop.path) }}"{% if not loop.last %},{% endif %}
+                {%- for e in prop.enum_values %}
+                    "{{ context.compact_vocab(e, prop.path) }}"{% if not loop.last %},{% endif %}
                 {%- endfor %}
                 ]
+            {%- elif prop.class_id %}
+                "$ref": "#/$defs/{{ varname(classes.get(prop.class_id).clsname) }}_derived"
             {%- else %}
                 {%- if prop.datatype == "http://www.w3.org/2001/XMLSchema#string" %}
                     {%- if prop.pattern %}

@@ -436,20 +436,21 @@ class ListProp(Property):
 class EnumProp(Property):
     VALID_TYPES = str
 
-    def __init__(self, *, pattern=None, context=[]):
+    def __init__(self, values, *, pattern=None):
         super().__init__(pattern=pattern)
-        self.context = context
+        self.values = values
 
     def validate(self, value):
         super().validate(value)
 
-        if value not in (v for _, v in self.valid_values):
+        valid_values = (iri for iri, _ in self.values)
+        if value not in valid_values:
             raise ValueError(
-                f"'{value}' is not a valid value for '{self.__class__.__name__}'"
+                f"'{value}' is not a valid value. Choose one of {' '.join(valid_values)}"
             )
 
     def encode(self, encoder, value, state):
-        for iri, compact in self.context:
+        for iri, compact in self.values:
             if iri == value:
                 encoder.write_enum(value, self, compact)
                 return
@@ -458,7 +459,7 @@ class EnumProp(Property):
 
     def decode(self, decoder, *, objectset=None):
         v = decoder.read_enum(self)
-        for iri, compact in self.context:
+        for iri, compact in self.values:
             if v == compact:
                 return iri
         return v
@@ -1646,35 +1647,11 @@ CONTEXT_URLS = [
 ]
 
 
-# ENUMERATIONS
-{%- for enum in enums %}
-{%- if enum.comment %}
-{%- for l in enum.comment.split("\n") %}
-#{% if l %} {% endif %}{{ l.rstrip() }}
-{%- endfor %}
-{%- endif %}
-class {{ varname(enum.clsname) }}(EnumProp):
-    TYPE = "{{ enum._id }}"
-    valid_values = [
-        {%- for value in enum.values %}
-        ("{{ varname(value.varname) }}", "{{ value._id }}"),
-        {%- endfor %}
-    ]
-    {%- for value in enum.values %}
-    {%- if value.comment %}
-    {%- for l in value.comment.split("\n") %}
-    #{% if l %} {% endif %}{{ l.rstrip() }}
-    {%- endfor %}
-    {%- endif %}
-    {{ varname(value.varname) }} = "{{ value._id }}"
-    {%- endfor %}
-
-{% endfor %}
 # CLASSES
 {%- for class in classes %}
 {%- if class.comment %}
 {%- for l in class.comment.split("\n") %}
-#{% if l %} {% endif %}{{ l.rstrip() }}
+#{{ (" " + l).rstrip() }}
 {%- endfor %}
 {%- endif %}
 @register("{{ class._id }}"{%- if context.compact(class._id) != class._id %}, "{{ context.compact(class._id) }}"{%- endif %})
@@ -1690,6 +1667,20 @@ class {{ varname(class.clsname) }}(
     {%- if class.id_property %}
     ID_ALIAS = "{{ class.id_property }}"
     {%- endif %}
+    NAMED_INDIVIDUALS = {
+        {%- for member in class.named_individuals %}
+        "{{ varname(member.varname) }}": "{{ member._id }}",
+        {%- endfor %}
+    }
+    {%- for member in class.named_individuals %}
+    {%- if member.comment %}
+    {%- for l in member.comment.split("\n") %}
+    #{{ (" " + l).rstrip() }}
+    {%- endfor %}
+    {%- endif %}
+    {{ varname(member.varname) }} = "{{ member._id }}"
+    {%- endfor %}
+    {%- if class.properties %}
 
     @classmethod
     def _register_props(cls):
@@ -1698,22 +1689,20 @@ class {{ varname(class.clsname) }}(
         {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
         {%- if prop.comment %}
         {%- for l in prop.comment.split("\n") %}
-        #{% if l %} {% endif %}{{ l.rstrip() }}
+        #{{ (" " + l).rstrip() }}
         {%- endfor %}
         {%- endif %}
         cls._add_property(
             "{{ varname(prop.varname) }}",
             {% if is_list -%}ListProp({% endif %}
-            {%- if prop.class_id -%}
+            {%- if prop.enum_values -%}
+                EnumProp([
+                {%- for value in prop.enum_values %}
+                    ("{{ value }}", "{{ context.compact_vocab(value, prop.path) }}"),
+                {%- endfor %}
+                ])
+            {%- elif prop.class_id -%}
                 ObjectProp({{ varname(classes.get(prop.class_id).clsname) }}, {% if prop.min_count and not is_list %}True{% else %}False{% endif %})
-            {%- elif prop.enum_id -%}
-                {{ varname(enums.get(prop.enum_id).clsname) }}(context=[
-            {%- for value in enums.get(prop.enum_id).values %}
-            {%- if context.compact_vocab(value._id, prop.path) != value._id %}
-                ("{{ value._id }}", "{{ context.compact_vocab(value._id, prop.path) }}"),
-            {%- endif %}
-            {%- endfor %}
-            ])
             {%- else -%}
                 {% if not prop.datatype in DATATYPE_CLASSES -%}
                     {{ abort("Unknown data type " + prop.datatype) -}}
@@ -1732,6 +1721,7 @@ class {{ varname(class.clsname) }}(
             {%- endif %}
         )
         {%- endfor %}
+    {%- endif %}
 
 {% endfor %}
 {{ '"' }}{{ '"' }}{{ '"' }}Format Guard"""

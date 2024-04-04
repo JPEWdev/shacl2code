@@ -27,6 +27,44 @@
     "unevaluatedProperties": false,
 
     "$defs": {
+        "http_exampleorgenumType": {
+            "allOf": [
+                {
+                    "type": "object",
+                    "properties": {
+                        "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
+                        "@type": {
+                            "oneOf": [
+                                { "const": "http://example.org/enumType" }
+                            ]
+                        }
+                    }
+                },
+                { "$ref": "#/$defs/http_exampleorgenumType_props" }
+            ]
+        },
+        "http_exampleorgenumType_derived": {
+            "anyOf": [
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/http_exampleorgenumType" }
+                    ]
+                },
+                { "$ref": "#/$defs/BlankNodeOrIRI" }
+            ]
+        },
+        "http_exampleorgenumType_props": {
+            "allOf": [
+                { "$ref": "#/$defs/SHACLClass" },
+                {
+                    "type": "object",
+                    "properties": {
+                    }
+                }
+            ]
+        },
         "http_exampleorgidpropclass": {
             "allOf": [
                 {
@@ -652,23 +690,26 @@
         },
         "prop_http_exampleorgtestclass_enumlistprop": {
                 "enum": [
-                    "http://example.org/enumType/bar",
                     "http://example.org/enumType/foo",
-                    "http://example.org/enumType/nolabel"
+                    "http://example.org/enumType/bar",
+                    "http://example.org/enumType/nolabel",
+                    "http://example.org/enumType/non-named-individual"
                 ]
         },
         "prop_http_exampleorgtestclass_enumprop": {
                 "enum": [
-                    "http://example.org/enumType/bar",
                     "http://example.org/enumType/foo",
-                    "http://example.org/enumType/nolabel"
+                    "http://example.org/enumType/bar",
+                    "http://example.org/enumType/nolabel",
+                    "http://example.org/enumType/non-named-individual"
                 ]
         },
         "prop_http_exampleorgtestclass_enumpropnoclass": {
                 "enum": [
-                    "http://example.org/enumType/bar",
                     "http://example.org/enumType/foo",
-                    "http://example.org/enumType/nolabel"
+                    "http://example.org/enumType/bar",
+                    "http://example.org/enumType/nolabel",
+                    "http://example.org/enumType/non-named-individual"
                 ]
         },
         "prop_http_exampleorgtestclass_floatprop": {
@@ -1007,6 +1048,7 @@
                         { "$ref": "#/$defs/IRI" },
                         {
                             "enum": [
+                                "http://example.org/enumType",
                                 "http://example.org/id-prop-class",
                                 "http://example.org/inherited-id-prop-class",
                                 "http://example.org/link-class",
@@ -1032,6 +1074,7 @@
         },
         "AnyClass": {
             "anyOf": [
+                { "$ref": "#/$defs/http_exampleorgenumType" },
                 { "$ref": "#/$defs/http_exampleorgidpropclass" },
                 { "$ref": "#/$defs/http_exampleorginheritedidpropclass" },
                 { "$ref": "#/$defs/http_exampleorglinkclass" },

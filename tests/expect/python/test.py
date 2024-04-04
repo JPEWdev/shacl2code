@@ -884,7 +884,7 @@ class SHACLObjectSet(object):
             for child in o.iter_objects(recursive=True, visited=visited):
                 yield child
 
-    def foreach_type(self, typ, *, subclass=False):
+    def foreach_type(self, typ, *, match_subclass=True):
         if isinstance(typ, str):
             typ = SHACLObject.DESERIALIZERS[typ]
 
@@ -892,7 +892,7 @@ class SHACLObjectSet(object):
             return
 
         for o in self.obj_by_type[typ]:
-            if subclass or o.__class__ is typ:
+            if match_subclass or o.__class__ is typ:
                 yield o
 
     def merge(self, *objectsets):

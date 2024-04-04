@@ -1372,16 +1372,20 @@ def test_doc_foreach_type(model, roundtrip):
     expect.add(doc.find_by_id("http://serialize.example.com/test-special-chars"))
     assert expect != {None}
 
-    assert set(doc.foreach_type(model.test_class)) == expect
-    assert set(doc.foreach_type("test-class")) == expect
-    assert set(doc.foreach_type("http://example.org/test-class")) == expect
+    assert set(doc.foreach_type(model.test_class, match_subclass=False)) == expect
+    assert set(doc.foreach_type("test-class", match_subclass=False)) == expect
+    assert (
+        set(doc.foreach_type("http://example.org/test-class", match_subclass=False))
+        == expect
+    )
 
     expect.add(doc.find_by_id("http://serialize.example.com/required"))
     expect.add(doc.find_by_id("http://serialize.example.com/test-derived"))
     assert expect != {None}
 
-    assert set(doc.foreach_type(model.test_class, subclass=True)) == expect
-    assert set(doc.foreach_type("test-class", subclass=True)) == expect
+    assert set(doc.foreach_type(model.test_class, match_subclass=True)) == expect
+    assert set(doc.foreach_type("test-class", match_subclass=True)) == expect
     assert (
-        set(doc.foreach_type("http://example.org/test-class", subclass=True)) == expect
+        set(doc.foreach_type("http://example.org/test-class", match_subclass=True))
+        == expect
     )

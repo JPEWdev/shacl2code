@@ -1428,10 +1428,10 @@ class JSONLDSerializer(object):
     def serialize_data(
         self,
         objectset: SHACLObjectSet,
-        force_graph=False,
+        force_at_graph=False,
     ):
         h = JSONLDEncoder()
-        objectset.encode(h, force_graph)
+        objectset.encode(h, force_at_graph)
         data = {}
         if len(CONTEXT_URLS) == 1:
             data["@context"] = CONTEXT_URLS[0]
@@ -1450,15 +1450,15 @@ class JSONLDSerializer(object):
         self,
         objectset: SHACLObjectSet,
         f,
-        force_graph=False,
+        force_at_graph=False,
         **kwargs,
     ):
         """
         Write a SHACLObjectSet to a JSON LD file
 
-        If force_graph is True, a @graph node will always be written
+        If force_at_graph is True, a @graph node will always be written
         """
-        data = self.serialize_data(objectset, force_graph)
+        data = self.serialize_data(objectset, force_at_graph)
 
         args = {**self.args, **kwargs}
 
@@ -1562,12 +1562,12 @@ class JSONLDInlineSerializer(object):
         self,
         objectset: SHACLObjectSet,
         f,
-        force_graph=False,
+        force_at_graph=False,
     ):
         """
         Write a SHACLObjectSet to a JSON LD file
 
-        Note: force_graph is included for compatibility, but ignored. This
+        Note: force_at_graph is included for compatibility, but ignored. This
         serializer always writes out a graph
         """
         sha1 = hashlib.sha1()

@@ -805,12 +805,23 @@ class SHACLObjectSet(object):
             self._link()
 
     def create_index(self):
+        """
+        (re)Create object index
+
+        Creates or recreates the indices for the object set to enable fast
+        lookup. All objects and their children are walked and indexed
+        """
         self.obj_by_id = {}
         self.obj_by_type = {}
         for o in self.foreach():
             self.add_index(o)
 
     def add_index(self, obj):
+        """
+        Add object to index
+
+        Adds the object to all appropriate indices
+        """
         for typ in SHACLObject.DESERIALIZERS.values():
             if isinstance(obj, typ):
                 self.obj_by_type.setdefault(typ, set()).add(obj)
@@ -824,6 +835,13 @@ class SHACLObjectSet(object):
         self.obj_by_id[obj._id] = obj
 
     def add(self, obj):
+        """
+        Add object to object set
+
+        Adds a SHACLObject to the object set and index it.
+
+        NOTE: Child objects of the attached object are not indexes
+        """
         if not isinstance(obj, SHACLObject):
             raise TypeError("Object is not of type SHACLObject")
 
@@ -833,14 +851,32 @@ class SHACLObjectSet(object):
         return obj
 
     def update(self, *others):
+        """
+        Update object set adding all objects in each other iterable
+        """
         for o in others:
             for obj in o:
                 self.add(obj)
 
     def __contains__(self, item):
+        """
+        Returns True if the item is in the object set
+        """
         return item in self.objects
 
     def link(self):
+        """
+        Link object set
+
+        Links the object in the object set by replacing string object
+        references with references to the objects themselves. e.g.
+        a property that references object "https://foo/bar" by a string
+        reference will be replaced with an actual reference to the object in
+        the object set with the same ID if it exists in the object set
+
+        If multiple objects with the same ID are found, the duplicates are
+        eliminated
+        """
         self.create_index()
         return self._link()
 
@@ -870,11 +906,20 @@ class SHACLObjectSet(object):
         return missing
 
     def find_by_id(self, _id, default=None):
+        """
+        Find object by ID
+
+        Returns objects that match the specified ID, or default if there is no
+        object with the specified ID
+        """
         if _id not in self.obj_by_id:
             return default
         return self.obj_by_id[_id]
 
     def foreach(self):
+        """
+        Iterate over every object in the object set, and all child objects
+        """
         visited = set()
         for o in self.objects:
             if o not in visited:
@@ -885,6 +930,13 @@ class SHACLObjectSet(object):
                 yield child
 
     def foreach_type(self, typ, *, match_subclass=True):
+        """
+        Iterate over each object of a specified type (or subclass there of)
+
+        If match_subclass is True, and class derived from typ will also match
+        (similar to isinstance()). If False, only exact matches will be
+        returned
+        """
         if isinstance(typ, str):
             typ = SHACLObject.DESERIALIZERS[typ]
 
@@ -896,6 +948,12 @@ class SHACLObjectSet(object):
                 yield o
 
     def merge(self, *objectsets):
+        """
+        Merge object sets
+
+        Returns a new object set that is the combination of this object set and
+        all provided arguments
+        """
         new_objects = set()
         new_objects |= self.objects
         for d in objectsets:

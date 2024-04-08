@@ -63,14 +63,14 @@
             "allOf": [
                 {
                     "type": "object",
-                    {%- if class.extensible %}
+                    {%- if class.is_extensible %}
                     "unevaluatedProperties": true,
                     {%- endif %}
                     "properties": {
                         "{{ class.id_property or "@id" }}": { "$ref": "#/$defs/{{ class.node_kind.split("#")[-1] }}" },
                         "{{ context.compact("@type") }}": {
                             "oneOf": [
-                                {%- if class.extensible %}
+                                {%- if class.is_extensible %}
                                 { "$ref": "#/$defs/IRI" },
                                 {%- endif %}
                                 { "const": "{{ context.compact_vocab(class._id) }}" }
@@ -92,7 +92,7 @@
                 {%- if ns.json_refs %}
                 {
                     "type": "object",
-                    {%- if not class.extensible %}
+                    {%- if not class.is_extensible %}
                     "unevaluatedProperties": false,
                     {%- endif %}
                     "anyOf": [

@@ -383,6 +383,11 @@
     [
         sh:class <link-class> ;
         sh:path <link-class-link-list-prop> ;
+    ],
+    [
+        sh:class <extensible-class> ;
+        sh:path <link-class-extensible> ;
+        sh:maxCount 1
     ]
     .
 
@@ -404,6 +409,11 @@
 <link-class-link-list-prop> a rdf:Property ;
     rdfs:comment "A link-class list property" ;
     rdfs:range <link-class>
+    .
+
+<link-class-extensible> a rdf:Property ;
+    rdfs:comment "A link to an extensible-class" ;
+    rdfs:range <extensible-class>
     .
 
 <id-prop-class> a rdf:Class, sh:NodeShape, owl:Class ;
@@ -445,13 +455,24 @@
     rdfs:comment "An extensible class" ;
     sh:property [
         sh:datatype xsd:string ;
+        sh:path <extensible-class/property> ;
+        sh:maxCount 1 ;
+        sh:minCount 0
+    ],
+    [
+        sh:datatype xsd:string ;
         sh:path <extensible-class/required> ;
         sh:maxCount 1 ;
         sh:minCount 1
     ]
     .
 
+<extensible-class/property> a rdf:Property ;
+    rdfs:comment "An extensible property" ;
+    rdfs:range xsd:string
+    .
+
 <extensible-class/required> a rdf:Property ;
-    rdfs:comment "A required string" ;
+    rdfs:comment "A required extensible property" ;
     rdfs:range xsd:string
     .

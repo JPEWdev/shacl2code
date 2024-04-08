@@ -1250,6 +1250,231 @@ def test_datetime_to_string(model, value, expect):
         ), f"Value '{v}' does not match regex"
 
 
+@pytest.mark.parametrize(
+    "prop,serkey,value,expect",
+    [
+        (
+            "extensible_class_property",
+            "extensible-class/property",
+            "foo",
+            "foo",
+        ),
+        (
+            "http://example.org/extensible-test-prop",
+            "http://example.org/extensible-test-prop",
+            "foo",
+            AttributeError,
+        ),
+    ],
+)
+def test_extensible_prop(model, test_context_url, prop, serkey, value, expect):
+    e = model.extensible_class(extensible_class_required="required")
+
+    if isinstance(expect, type) and issubclass(expect, Exception):
+        with pytest.raises(expect):
+            setattr(e, prop, value)
+    else:
+        setattr(e, prop, value)
+        assert getattr(e, prop, value) == expect
+
+        s = model.JSONLDSerializer()
+        objset = model.SHACLObjectSet()
+        objset.add(e)
+
+        data = s.serialize_data(objset)
+
+        assert data == {
+            "@context": test_context_url,
+            "@type": "extensible-class",
+            "extensible-class/required": "required",
+            serkey: expect,
+        }
+
+
+@pytest.mark.parametrize(
+    "iri,value,expect,ser_expect",
+    [
+        (
+            "extensible_class_property",
+            "foo",
+            KeyError,
+            None,
+        ),
+        (
+            "http://example.org/extensible-test-prop",
+            "foo",
+            SAME_AS_VALUE,
+            SAME_AS_VALUE,
+        ),
+        (
+            "http://example.org/extensible-test-prop",
+            1,
+            SAME_AS_VALUE,
+            SAME_AS_VALUE,
+        ),
+        (
+            "http://example.org/extensible-test-prop",
+            1.123,
+            SAME_AS_VALUE,
+            "1.123",
+        ),
+        (
+            "http://example.org/extensible-test-prop",
+            object(),
+            SAME_AS_VALUE,
+            TypeError,
+        ),
+        (
+            "http://example.org/extensible-test-prop",
+            [1, "foo", 1.123],
+            SAME_AS_VALUE,
+            TypeError,
+        ),
+        (
+            "http://example.org/extensible-test-prop",
+            [object()],
+            SAME_AS_VALUE,
+            TypeError,
+        ),
+    ],
+)
+def test_extensible_iri(model, test_context_url, iri, value, expect, ser_expect):
+    e = model.extensible_class(extensible_class_required="required")
+
+    if expect is SAME_AS_VALUE:
+        expect = value
+
+    if ser_expect is SAME_AS_VALUE:
+        ser_expect = value
+
+    if isinstance(expect, type) and issubclass(expect, Exception):
+        with pytest.raises(expect):
+            e[iri] = value
+    else:
+        e[iri] = value
+        assert e[iri] == expect
+        assert (None, iri, None) in e.property_keys()
+
+        s = model.JSONLDSerializer()
+        objset = model.SHACLObjectSet()
+        objset.add(e)
+
+        if isinstance(ser_expect, type) and issubclass(ser_expect, Exception):
+            with pytest.raises(ser_expect):
+                data = s.serialize_data(objset)
+        else:
+            data = s.serialize_data(objset)
+            assert data == {
+                "@context": test_context_url,
+                "@type": "extensible-class",
+                "extensible-class/required": "required",
+                iri: ser_expect,
+            }
+
+            objset = model.SHACLObjectSet()
+            d = model.JSONLDDeserializer()
+            d.deserialize_data(data, objset)
+
+            e = objset.objects.pop()
+            assert e[iri] == expect
+
+        del e[iri]
+        with pytest.raises(KeyError):
+            e[iri]
+
+
+def test_extensible_deserialize(model, test_context_url):
+    def deserialize_extension(ext_data):
+        d = model.JSONLDDeserializer()
+        objset = model.SHACLObjectSet()
+        d.deserialize_data(
+            {
+                "@context": test_context_url,
+                "@type": "link-class",
+                "link-class-extensible": ext_data,
+            },
+            objset,
+        )
+        return objset
+
+    @model.register("http://example.org/closed-class")
+    class ClosedExtension(model.extensible_class):
+        CLOSED = True
+
+    @model.register("http://example.org/open-class")
+    class OpenExtension(model.extensible_class):
+        pass
+
+    TEST_TYPE = "http://example.org/test-extensible"
+    TEST_IRI = "http://example.org/test-key"
+    TEST_ID = "http://example.org/test-id"
+
+    objset = deserialize_extension(
+        {
+            "@type": TEST_TYPE,
+            "@id": TEST_ID,
+            TEST_IRI: "foo",
+        }
+    )
+    obj = objset.find_by_id(TEST_ID)
+    assert obj is not None
+    assert isinstance(obj, model.extensible_class)
+
+    assert (None, TEST_IRI, None) in obj.property_keys()
+    assert obj[TEST_IRI] == "foo"
+    assert obj.TYPE == TEST_TYPE
+    assert obj.COMPACT_TYPE is None
+
+    with pytest.raises(KeyError):
+        deserialize_extension(
+            {
+                "@type": TEST_TYPE,
+                "@id": TEST_ID,
+                "not-an-iri": "foo",
+            }
+        )
+
+    with pytest.raises(KeyError):
+        deserialize_extension(
+            {
+                "@type": TEST_TYPE,
+                "@id": TEST_ID,
+                "_:blank": "foo",
+            }
+        )
+
+    objset = deserialize_extension(
+        {
+            "@type": "http://example.org/closed-class",
+            "@id": TEST_ID,
+        }
+    )
+    obj = objset.find_by_id(TEST_ID)
+    assert obj is not None
+    assert isinstance(obj, ClosedExtension)
+    assert obj.TYPE == "http://example.org/closed-class"
+    assert obj.COMPACT_TYPE is None
+
+    # Derived object is closed and cannot have arbitrary IRI assignment
+    with pytest.raises(KeyError):
+        obj[TEST_IRI] = "foo"
+
+    objset = deserialize_extension(
+        {
+            "@type": "http://example.org/open-class",
+            "@id": TEST_ID,
+        }
+    )
+    obj = objset.find_by_id(TEST_ID)
+    assert obj is not None
+    assert isinstance(obj, OpenExtension)
+    assert obj.TYPE == "http://example.org/open-class"
+    assert obj.COMPACT_TYPE is None
+
+    # Derived object is open and can have arbitrary assignments
+    obj[TEST_IRI] = "foo"
+
+
 def test_named_individuals(model):
     assert type(model.enumType.foo) is str
     assert model.enumType.foo == "http://example.org/enumType/foo"

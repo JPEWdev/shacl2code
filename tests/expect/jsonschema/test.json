@@ -182,6 +182,9 @@
                 {
                     "type": "object",
                     "properties": {
+                        "http://example.org/link-class-extensible": {
+                            "$ref": "#/$defs/prop_http_exampleorglinkclass_extensible"
+                        },
                         "http://example.org/link-class-link-list-prop": {
                             "oneOf": [
                                 {
@@ -201,6 +204,9 @@
                     }
                 }
             ]
+        },
+        "prop_http_exampleorglinkclass_extensible": {
+                "$ref": "#/$defs/http_exampleorgextensibleclass_derived"
         },
         "prop_http_exampleorglinkclass_linklistprop": {
                 "$ref": "#/$defs/http_exampleorglinkclass_derived"
@@ -998,6 +1004,9 @@
                 {
                     "type": "object",
                     "properties": {
+                        "http://example.org/extensible-class/property": {
+                            "$ref": "#/$defs/prop_http_exampleorgextensibleclass_property"
+                        },
                         "http://example.org/extensible-class/required": {
                             "$ref": "#/$defs/prop_http_exampleorgextensibleclass_required"
                         }
@@ -1007,6 +1016,9 @@
                     ]
                 }
             ]
+        },
+        "prop_http_exampleorgextensibleclass_property": {
+                    "type": "string"
         },
         "prop_http_exampleorgextensibleclass_required": {
                     "type": "string"

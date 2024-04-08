@@ -186,6 +186,9 @@
                 {
                     "type": "object",
                     "properties": {
+                        "link-class-extensible": {
+                            "$ref": "#/$defs/prop_linkclass_linkclassextensible"
+                        },
                         "link-class-link-list-prop": {
                             "oneOf": [
                                 {
@@ -205,6 +208,9 @@
                     }
                 }
             ]
+        },
+        "prop_linkclass_linkclassextensible": {
+                "$ref": "#/$defs/extensibleclass_derived"
         },
         "prop_linkclass_linkclasslinklistprop": {
                 "$ref": "#/$defs/linkclass_derived"
@@ -1002,6 +1008,9 @@
                 {
                     "type": "object",
                     "properties": {
+                        "extensible-class/property": {
+                            "$ref": "#/$defs/prop_extensibleclass_extensibleclassproperty"
+                        },
                         "extensible-class/required": {
                             "$ref": "#/$defs/prop_extensibleclass_extensibleclassrequired"
                         }
@@ -1011,6 +1020,9 @@
                     ]
                 }
             ]
+        },
+        "prop_extensibleclass_extensibleclassproperty": {
+                    "type": "string"
         },
         "prop_extensibleclass_extensibleclassrequired": {
                     "type": "string"

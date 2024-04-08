@@ -83,7 +83,7 @@ class Class:
     comment: str = ""
     id_property: str = ""
     node_kind: str = None
-    extensible: bool = False
+    is_extensible: bool = False
     named_individuals: list = None
 
 
@@ -169,7 +169,7 @@ class Model(object):
                     get_inherited_value(cls_iri, SHACL2CODE.idPropertyName)
                 ),
                 node_kind=get_inherited_value(cls_iri, SH.nodeKind, SH.BlankNodeOrIRI),
-                extensible=bool(self.model.value(cls_iri, SHACL2CODE.isExtensible)),
+                is_extensible=bool(self.model.value(cls_iri, SHACL2CODE.isExtensible)),
                 named_individuals=get_named_individuals(cls_iri),
             )
 

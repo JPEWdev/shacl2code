@@ -479,6 +479,24 @@ class NodeKind(Enum):
     BlankNodeOrIRI = 3
 
 
+def is_IRI(s):
+    if not isinstance(s, str):
+        return False
+    if s.startswith("_:"):
+        return False
+    if ":" not in s:
+        return False
+    return True
+
+
+def is_blank_node(s):
+    if not isinstance(s, str):
+        return False
+    if not s.startswith("_:"):
+        return False
+    return True
+
+
 def register(type_iri, compact_type=None):
     def add_deserializer(key, c):
         assert (
@@ -491,10 +509,10 @@ def register(type_iri, compact_type=None):
             c, SHACLObject
         ), f"{c.__name__} is not derived from SHACLObject"
 
-        c.TYPE = type_iri
+        c._OBJ_TYPE = type_iri
         add_deserializer(type_iri, c)
 
-        c.COMPACT_TYPE = compact_type
+        c._OBJ_COMPACT_TYPE = compact_type
         if compact_type:
             add_deserializer(compact_type, c)
 
@@ -514,7 +532,6 @@ class SHACLObject(object):
     DESERIALIZERS = {}
     NODE_KIND = NodeKind.BlankNodeOrIRI
     ID_ALIAS = None
-    COMPACT_TYPE = None
 
     def __init__(self, **kwargs):
         with register_lock:
@@ -587,6 +604,12 @@ class SHACLObject(object):
         if name == self.ID_ALIAS:
             name = "_id"
 
+        if name == "TYPE":
+            return self.__class__._OBJ_TYPE
+
+        if name == "COMPACT_TYPE":
+            return self.__class__._OBJ_COMPACT_TYPE
+
         try:
             iri = self._OBJ_IRIS[name]
             return self[iri]
@@ -625,14 +648,19 @@ class SHACLObject(object):
     def __setitem__(self, iri, value):
         if iri == "@id":
             if self.NODE_KIND == NodeKind.BlankNode:
-                if not value.startswith("_:"):
+                if not is_blank_node(value):
                     raise ValueError(
                         f"{self.__class__.__name__} ({id(self)}) can only have local reference. Property '{iri}' cannot be set to '{value}' and must start with '_:'"
                     )
             elif self.NODE_KIND == NodeKind.IRI:
-                if value.startswith("_:"):
+                if not is_IRI(value):
                     raise ValueError(
                         f"{self.__class__.__name__} ({id(self)}) can only have an IRI value. Property '{iri}' cannot be set to '{value}'"
+                    )
+            else:
+                if not is_blank_node(value) and not is_IRI(value):
+                    raise ValueError(
+                        f"{self.__class__.__name__} ({id(self)}) Has invalid Property '{iri}' '{value}'. Must be a blank node or IRI"
                     )
 
         prop, _, _, _, _ = self.__get_prop(iri)
@@ -698,32 +726,42 @@ class SHACLObject(object):
             state.get_object_id(self),
             bool(self._id) or state.is_refed(self),
         ) as obj_s:
-            for iri, prop, min_count, max_count, pyname, compact in self.__iter_props():
-                value = self._obj_data[iri]
-                if prop.elide(value):
-                    if min_count:
-                        raise ValueError(
-                            f"Property '{pyname}' in {self.__class__.__name__} ({id(self)}) is required (currently {value!r})"
-                        )
-                    continue
+            self._encode_properties(obj_s, state)
 
-                if min_count is not None:
-                    if not prop.check_min_count(value, min_count):
-                        raise ValueError(
-                            f"Property '{pyname}' in {self.__class__.__name__} ({id(self)}) requires a minimum of {min_count} elements"
-                        )
+    def _encode_properties(self, encoder, state):
+        for iri, prop, min_count, max_count, pyname, compact in self.__iter_props():
+            value = self._obj_data[iri]
+            if prop.elide(value):
+                if min_count:
+                    raise ValueError(
+                        f"Property '{pyname}' in {self.__class__.__name__} ({id(self)}) is required (currently {value!r})"
+                    )
+                continue
 
-                if max_count is not None:
-                    if not prop.check_max_count(value, max_count):
-                        raise ValueError(
-                            f"Property '{pyname}' in {self.__class__.__name__} ({id(self)}) requires a maximum of {max_count} elements"
-                        )
+            if min_count is not None:
+                if not prop.check_min_count(value, min_count):
+                    raise ValueError(
+                        f"Property '{pyname}' in {self.__class__.__name__} ({id(self)}) requires a minimum of {min_count} elements"
+                    )
 
-                if iri == self._OBJ_IRIS["_id"]:
-                    continue
+            if max_count is not None:
+                if not prop.check_max_count(value, max_count):
+                    raise ValueError(
+                        f"Property '{pyname}' in {self.__class__.__name__} ({id(self)}) requires a maximum of {max_count} elements"
+                    )
 
-                with obj_s.write_property(iri, compact) as prop_s:
-                    prop.encode(prop_s, value, state)
+            if iri == self._OBJ_IRIS["_id"]:
+                continue
+
+            with encoder.write_property(iri, compact) as prop_s:
+                prop.encode(prop_s, value, state)
+
+    @classmethod
+    def _make_object(cls, typ):
+        if typ not in cls.DESERIALIZERS:
+            raise TypeError(f"Unknown type {typ}")
+
+        return cls.DESERIALIZERS[typ]()
 
     @classmethod
     def decode(cls, decoder, *, objectset=None):
@@ -731,34 +769,56 @@ class SHACLObject(object):
         if typ is None:
             raise TypeError("Unable to determine type for object")
 
-        if typ not in cls.DESERIALIZERS:
-            raise TypeError(f"Unknown type {typ}")
-
-        obj = cls.DESERIALIZERS[typ]()
-        _id = obj_d.read_object_id(obj.ID_ALIAS)
-        if _id is not None:
-            obj._id = _id
-            if objectset is not None:
-                v = objectset.find_by_id(_id)
-                if v is not None:
-                    return v
-
-        if objectset is not None:
-            objectset.add_index(obj)
-
-        for iri, prop, _, _, _, compact in obj.__iter_props():
-            if iri == obj._OBJ_IRIS["_id"]:
-                continue
-
-            with obj_d.read_property(iri, compact) as prop_d:
+        obj = cls._make_object(typ)
+        for key in (obj.ID_ALIAS, obj._OBJ_IRIS["_id"]):
+            with obj_d.read_property(key) as prop_d:
                 if prop_d is None:
                     continue
 
+                _id = prop_d.read_iri()
+                if _id is None:
+                    raise TypeError(f"Object key '{key}' is the wrong type")
+
+                obj._id = _id
+                break
+
+        if obj.NODE_KIND == NodeKind.IRI and not obj._id:
+            raise ValueError("Object is missing required IRI")
+
+        if objectset is not None:
+            if obj._id:
+                v = objectset.find_by_id(_id)
+                if v is not None:
+                    return v
+            objectset.add_index(obj)
+
+        obj._decode_properties(obj_d, objectset=objectset)
+        return obj
+
+    def _decode_properties(self, decoder, objectset=None):
+        for key in decoder.object_keys():
+            if not self._decode_prop(decoder, key, objectset=objectset):
+                raise KeyError(f"Unknown property '{key}'")
+
+    def _decode_prop(self, decoder, key, objectset=None):
+        if key in (self._OBJ_IRIS["_id"], self.ID_ALIAS):
+            return True
+
+        for iri, prop, _, _, _, compact in self.__iter_props():
+            if compact == key:
+                read_key = compact
+            elif iri == key:
+                read_key = iri
+            else:
+                continue
+
+            with decoder.read_property(read_key) as prop_d:
                 v = prop.decode(prop_d, objectset=objectset)
                 prop.validate(v)
-                obj._obj_data[iri] = v
+                self._obj_data[iri] = v
+            return True
 
-        return obj
+        return False
 
     def link_helper(self, objectset, missing, visited):
         if self in visited:
@@ -801,6 +861,111 @@ class SHACLObject(object):
             )
 
         return sort_key(self) < sort_key(other)
+
+
+class SHACLExtensibleObject(object):
+    CLOSED = False
+
+    def __init__(self, typ=None, **kwargs):
+        super().__init__(**kwargs)
+        if typ:
+            self._obj_TYPE = (typ, None)
+        else:
+            self._obj_TYPE = (self._OBJ_TYPE, self._OBJ_COMPACT_TYPE)
+
+    @classmethod
+    def _make_object(cls, typ):
+        # Check for a known typ, and if so, deserialize as that instead
+        if typ in cls.DESERIALIZERS:
+            return cls.DESERIALIZERS[typ]()
+
+        obj = cls(typ)
+        return obj
+
+    def _decode_properties(self, decoder, objectset=None):
+        if self.CLOSED:
+            super()._decode_properties(decoder, objectset=objectset)
+            return
+
+        for key in decoder.object_keys():
+            if self._decode_prop(decoder, key, objectset=objectset):
+                continue
+
+            if not is_IRI(key):
+                raise KeyError(
+                    f"Extensible object properties must be IRIs. Got '{key}'"
+                )
+
+            with decoder.read_property(key) as prop_d:
+                self._obj_data[key] = prop_d.read_value()
+
+    def _encode_properties(self, encoder, state):
+        def encode_value(encoder, v):
+            if isinstance(v, bool):
+                encoder.write_bool(v)
+            elif isinstance(v, str):
+                encoder.write_string(v)
+            elif isinstance(v, int):
+                encoder.write_integer(v)
+            elif isinstance(v, float):
+                encoder.write_float(v)
+            else:
+                raise TypeError(
+                    f"Unsupported serialized type {type(v)} with value '{v}'"
+                )
+
+        super()._encode_properties(encoder, state)
+        if self.CLOSED:
+            return
+
+        for iri, value in self._obj_data.items():
+            if iri in self._OBJ_PROPERTIES:
+                continue
+
+            with encoder.write_property(iri) as prop_s:
+                encode_value(prop_s, value)
+
+    def __setitem__(self, iri, value):
+        try:
+            super().__setitem__(iri, value)
+        except KeyError:
+            if self.CLOSED:
+                raise
+
+            if not is_IRI(iri):
+                raise KeyError(f"Key '{iri}' must be an IRI")
+            self._obj_data[iri] = value
+
+    def __delitem__(self, iri):
+        try:
+            super().__delitem__(iri)
+        except KeyError:
+            if self.CLOSED:
+                raise
+
+            if not is_IRI(iri):
+                raise KeyError(f"Key '{iri}' must be an IRI")
+            del self._obj_data[iri]
+
+    def __getattr__(self, name):
+        if name == "TYPE":
+            return self._obj_TYPE[0]
+        if name == "COMPACT_TYPE":
+            return self._obj_TYPE[1]
+        return super().__getattr__(name)
+
+    def property_keys(self):
+        iris = set()
+        for pyname, iri, compact in super().property_keys():
+            iris.add(iri)
+            yield pyname, iri, compact
+
+        if self.CLOSED:
+            return
+
+        for iri in self._obj_data.keys():
+            if iri not in iris:
+                yield None, iri, None
 
 
 class SHACLObjectSet(object):
@@ -1084,6 +1249,15 @@ class EncodeState(object):
 
 class Decoder(ABC):
     @abstractmethod
+    def read_value(self):
+        """
+        Consume next item
+
+        Consumes the next item of any type
+        """
+        pass
+
+    @abstractmethod
     def read_string(self):
         """
         Consume the next item as a string.
@@ -1191,17 +1365,22 @@ class Decoder(ABC):
 
     @abstractmethod
     @contextmanager
-    def read_property(self, iri, compact=None):
+    def read_property(self, key):
         """
         Read property from object
 
         A context manager that yields a `Decoder` that can be used to read the
-        value of the property with the given IRI in the current object, or
-        `None` if the property does not exist in the current object.
+        value of the property with the given key in current object, or `None`
+        if the property does not exist in the current object.
+        """
+        pass
 
-        Note that the provided IRI will be fully qualified. If `compact` is
-        provided and the serialization supports compacted IRIs, it should be
-        preferred to the full IRI.
+    @abstractmethod
+    def object_keys(self):
+        """
+        Read property keys from an object
+
+        Iterates over all the serialized keys for the current object
         """
         pass
 
@@ -1222,8 +1401,17 @@ class Decoder(ABC):
 
 
 class JSONLDDecoder(Decoder):
-    def __init__(self, data):
+    def __init__(self, data, root=False):
         self.data = data
+        self.root = root
+
+    def read_value(self):
+        if isinstance(self.data, str):
+            try:
+                return float(self.data)
+            except ValueError:
+                pass
+        return self.data
 
     def read_string(self):
         if isinstance(self.data, str):
@@ -1272,12 +1460,20 @@ class JSONLDDecoder(Decoder):
         return None
 
     @contextmanager
-    def read_property(self, iri, compact=None):
-        v = self.__get_value(compact, iri)
+    def read_property(self, key):
+        v = self.__get_value(key)
         if v is not None:
             yield self.__class__(v)
         else:
             yield None
+
+    def object_keys(self):
+        for key in self.data.keys():
+            if key in ("@type", "@type"):
+                continue
+            if self.root and key == "@context":
+                continue
+            yield key
 
     def read_object(self):
         typ = self.__get_value("@type", "@type")
@@ -1291,14 +1487,17 @@ class JSONLDDecoder(Decoder):
 
 
 class JSONLDDeserializer(object):
-    def read(self, f, objectset: SHACLObjectSet):
-        data = json.load(f)
+    def deserialize_data(self, data, objectset: SHACLObjectSet):
         if "@graph" in data:
-            h = JSONLDDecoder(data["@graph"])
+            h = JSONLDDecoder(data["@graph"], True)
         else:
-            h = JSONLDDecoder(data)
+            h = JSONLDDecoder(data, True)
 
         objectset.decode(h)
+
+    def read(self, f, objectset: SHACLObjectSet):
+        data = json.load(f)
+        self.deserialize_data(data, objectset)
 
 
 class Encoder(ABC):
@@ -1748,6 +1947,13 @@ class link_class(SHACLObject):
     @classmethod
     def _register_props(cls):
         super()._register_props()
+        # A link to an extensible-class
+        cls._add_property(
+            "link_class_extensible",
+            ObjectProp(extensible_class, False),
+            iri="http://example.org/link-class-extensible",
+            compact="link-class-extensible",
+        )
         # A link-class list property
         cls._add_property(
             "link_class_link_list_prop",
@@ -2101,7 +2307,7 @@ class derived_node_kind_iri(node_kind_iri):
 
 # An extensible class
 @register("http://example.org/extensible-class", "extensible-class")
-class extensible_class(link_class):
+class extensible_class(SHACLExtensibleObject, link_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     NAMED_INDIVIDUALS = {
     }
@@ -2109,7 +2315,14 @@ class extensible_class(link_class):
     @classmethod
     def _register_props(cls):
         super()._register_props()
-        # A required string
+        # An extensible property
+        cls._add_property(
+            "extensible_class_property",
+            StringProp(),
+            iri="http://example.org/extensible-class/property",
+            compact="extensible-class/property",
+        )
+        # A required extensible property
         cls._add_property(
             "extensible_class_required",
             StringProp(),

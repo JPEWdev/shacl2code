@@ -115,6 +115,18 @@
       "@id": "test:link-class-list-prop",
       "@type": "@id"
     },
+    "link-class-extensible": {
+        "@id": "test:link-class-extensible",
+        "@type": "@id"
+    },
+    "extensible-class/property": {
+      "@id": "test:extensible-class/property",
+      "@type": "xsd:string"
+    },
+    "extensible-class/required-link": {
+      "@id": "test:extensible-class/required-link",
+      "@type": "xsd:string"
+    },
     "extensible-class/required": {
       "@id": "test:extensible-class/required",
       "@type": "xsd:string"

@@ -498,11 +498,11 @@ def is_blank_node(s):
 
 
 def register(type_iri, compact_type=None):
-    def add_deserializer(key, c):
+    def add_class(key, c):
         assert (
-            key not in SHACLObject.DESERIALIZERS
-        ), f"{key} already registered to {SHACLObject.DESERIALIZERS[key].__name__}"
-        SHACLObject.DESERIALIZERS[key] = c
+            key not in SHACLObject.CLASSES
+        ), f"{key} already registered to {SHACLObject.CLASSES[key].__name__}"
+        SHACLObject.CLASSES[key] = c
 
     def decorator(c):
         assert issubclass(
@@ -510,11 +510,11 @@ def register(type_iri, compact_type=None):
         ), f"{c.__name__} is not derived from SHACLObject"
 
         c._OBJ_TYPE = type_iri
-        add_deserializer(type_iri, c)
+        add_class(type_iri, c)
 
         c._OBJ_COMPACT_TYPE = compact_type
         if compact_type:
-            add_deserializer(compact_type, c)
+            add_class(compact_type, c)
 
         # Registration is deferred until the first instance of class is created
         # so that it has access to any other defined class
@@ -529,7 +529,7 @@ register_lock = threading.Lock()
 
 @functools.total_ordering
 class SHACLObject(object):
-    DESERIALIZERS = {}
+    CLASSES = {}
     NODE_KIND = NodeKind.BlankNodeOrIRI
     ID_ALIAS = None
 
@@ -758,10 +758,10 @@ class SHACLObject(object):
 
     @classmethod
     def _make_object(cls, typ):
-        if typ not in cls.DESERIALIZERS:
+        if typ not in cls.CLASSES:
             raise TypeError(f"Unknown type {typ}")
 
-        return cls.DESERIALIZERS[typ]()
+        return cls.CLASSES[typ]()
 
     @classmethod
     def decode(cls, decoder, *, objectset=None):
@@ -875,9 +875,9 @@ class SHACLExtensibleObject(object):
 
     @classmethod
     def _make_object(cls, typ):
-        # Check for a known typ, and if so, deserialize as that instead
-        if typ in cls.DESERIALIZERS:
-            return cls.DESERIALIZERS[typ]()
+        # Check for a known type, and if so, deserialize as that instead
+        if typ in cls.CLASSES:
+            return cls.CLASSES[typ]()
 
         obj = cls(typ)
         return obj
@@ -1004,7 +1004,7 @@ class SHACLObjectSet(object):
         if not isinstance(obj, SHACLObject):
             raise TypeError("Object is not of type SHACLObject")
 
-        for typ in SHACLObject.DESERIALIZERS.values():
+        for typ in SHACLObject.CLASSES.values():
             if isinstance(obj, typ):
                 reg_type(
                     typ._OBJ_TYPE, typ._OBJ_COMPACT_TYPE, obj, obj.__class__ is typ

@@ -1599,37 +1599,86 @@ def test_single_register(model):
     assert not model.test_derived_class._NEEDS_REG
 
 
-def test_doc_foreach_type(model, roundtrip):
-    doc = model.SHACLObjectSet()
+def test_objset_foreach_type(model, roundtrip):
+    objset = model.SHACLObjectSet()
+
+    EXTENSION_ID = "http://example.org/custom-extension"
+
+    @model.register("http://example.org/custom-extension-class")
+    class Extension(model.extensible_class):
+        pass
+
     with roundtrip.open("r") as f:
-        model.JSONLDDeserializer().read(f, doc)
+        model.JSONLDDeserializer().read(f, objset)
+
+    objset.add(Extension(_id=EXTENSION_ID))
 
     expect = set()
 
-    expect.add(doc.find_by_id("http://serialize.example.com/test"))
-    expect.add(doc.find_by_id("http://serialize.example.com/nested-parent"))
+    expect.add(objset.find_by_id("http://serialize.example.com/test"))
+    expect.add(objset.find_by_id("http://serialize.example.com/nested-parent"))
     expect.add(
-        doc.find_by_id(
+        objset.find_by_id(
             "http://serialize.example.com/nested-parent"
         ).test_class_class_prop
     )
-    expect.add(doc.find_by_id("http://serialize.example.com/test-special-chars"))
+    expect.add(objset.find_by_id("http://serialize.example.com/test-special-chars"))
     assert expect != {None}
 
-    assert set(doc.foreach_type(model.test_class, match_subclass=False)) == expect
-    assert set(doc.foreach_type("test-class", match_subclass=False)) == expect
+    assert set(objset.foreach_type(model.test_class, match_subclass=False)) == expect
+    assert set(objset.foreach_type("test-class", match_subclass=False)) == expect
     assert (
-        set(doc.foreach_type("http://example.org/test-class", match_subclass=False))
+        set(objset.foreach_type("http://example.org/test-class", match_subclass=False))
         == expect
     )
 
-    expect.add(doc.find_by_id("http://serialize.example.com/required"))
-    expect.add(doc.find_by_id("http://serialize.example.com/test-derived"))
+    expect.add(objset.find_by_id("http://serialize.example.com/required"))
+    expect.add(objset.find_by_id("http://serialize.example.com/test-derived"))
     assert expect != {None}
 
-    assert set(doc.foreach_type(model.test_class, match_subclass=True)) == expect
-    assert set(doc.foreach_type("test-class", match_subclass=True)) == expect
+    assert set(objset.foreach_type(model.test_class, match_subclass=True)) == expect
+    assert set(objset.foreach_type("test-class", match_subclass=True)) == expect
     assert (
-        set(doc.foreach_type("http://example.org/test-class", match_subclass=True))
+        set(objset.foreach_type("http://example.org/test-class", match_subclass=True))
+        == expect
+    )
+
+    expect = set()
+    assert (
+        set(objset.foreach_type(model.extensible_class, match_subclass=False)) == expect
+    )
+    assert set(objset.foreach_type("extensible-class", match_subclass=False)) == expect
+    assert (
+        set(
+            objset.foreach_type(
+                "http://example.org/extensible-class", match_subclass=False
+            )
+        )
+        == expect
+    )
+
+    expect.add(objset.find_by_id(EXTENSION_ID))
+    assert expect != {None}
+
+    assert (
+        set(objset.foreach_type(model.extensible_class, match_subclass=True)) == expect
+    )
+    assert set(objset.foreach_type("extensible-class", match_subclass=True)) == expect
+    assert (
+        set(
+            objset.foreach_type(
+                "http://example.org/extensible-class", match_subclass=True
+            )
+        )
+        == expect
+    )
+
+    assert set(objset.foreach_type(Extension, match_subclass=False)) == expect
+    assert (
+        set(
+            objset.foreach_type(
+                "http://example.org/custom-extension-class", match_subclass=False
+            )
+        )
         == expect
     )

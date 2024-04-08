@@ -995,12 +995,23 @@ class SHACLObjectSet(object):
 
         Adds the object to all appropriate indices
         """
+
+        def reg_type(typ, compact, o, exact):
+            self.obj_by_type.setdefault(typ, set()).add((exact, o))
+            if compact:
+                self.obj_by_type.setdefault(compact, set()).add((exact, o))
+
         if not isinstance(obj, SHACLObject):
             raise TypeError("Object is not of type SHACLObject")
 
         for typ in SHACLObject.DESERIALIZERS.values():
             if isinstance(obj, typ):
-                self.obj_by_type.setdefault(typ, set()).add(obj)
+                reg_type(
+                    typ._OBJ_TYPE, typ._OBJ_COMPACT_TYPE, obj, obj.__class__ is typ
+                )
+
+        # This covers custom extensions
+        reg_type(obj.TYPE, obj.COMPACT_TYPE, obj, True)
 
         if not obj._id:
             return
@@ -1113,14 +1124,16 @@ class SHACLObjectSet(object):
         (similar to isinstance()). If False, only exact matches will be
         returned
         """
-        if isinstance(typ, str):
-            typ = SHACLObject.DESERIALIZERS[typ]
+        if not isinstance(typ, str):
+            if not issubclass(typ, SHACLObject):
+                raise TypeError(f"Type must be derived from SHACLObject, got {typ}")
+            typ = typ._OBJ_TYPE
 
         if typ not in self.obj_by_type:
             return
 
-        for o in self.obj_by_type[typ]:
-            if match_subclass or o.__class__ is typ:
+        for exact, o in self.obj_by_type[typ]:
+            if match_subclass or exact:
                 yield o
 
     def merge(self, *objectsets):

@@ -31,15 +31,15 @@ class BasicJinjaRender(object):
     """
     Common Jinja Template Renderer
 
-    Renderers that only use a single Jinja file can derive from this class. The
-    class should set the class member variable `TEMPLATE` to indicate which
-    template file to use. For example:
+    Renderers that only use a single Jinja file can derive from this class. For
+    example:
 
         @language("my-lang")
         class MyRendered(BasicJinjaRenderer):
             HELP = "Generates my-lang bindings"
-            TEMPLATE = "my-lang.j2"
 
+            def __init__(self, args):
+                super().__init__(args, PATH / TO / TEMPLATE)
     """
 
     def __init__(self, args, template):

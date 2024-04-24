@@ -62,7 +62,7 @@ class BasicJinjaRender(object):
     def get_extra_env(self):
         return {}
 
-    def output(self, model):
+    def render(self, model, template, output, *, extra_env={}, render_args={}):
         def abort_helper(msg):
             raise TemplateRuntimeError(msg)
 
@@ -92,16 +92,14 @@ class BasicJinjaRender(object):
                         return o
                 raise KeyError(f"Object with ID {_id} not found")
 
-        env = Environment(
-            loader=FileSystemLoader([self.__template.parent, THIS_DIR.parent])
-        )
-        for k, v in self.get_extra_env().items():
+        env = Environment(loader=FileSystemLoader([template.parent, THIS_DIR.parent]))
+        for k, v in extra_env.items():
             env.globals[k] = v
         env.globals["abort"] = abort_helper
         env.globals["get_all_derived"] = get_all_derived
         env.globals["SHACL2CODE"] = SHACL2CODE
         env.globals["SH"] = SH
-        template = env.get_template(self.__template.name)
+        template = env.get_template(template.name)
 
         classes = ObjectList(model.classes)
         enums = ObjectList(model.enums)
@@ -111,10 +109,22 @@ class BasicJinjaRender(object):
             enums=enums,
             classes=classes,
             context=model.context,
-            **self.get_additional_render_args(),
+            **render_args,
         )
 
+        output.write(render)
+        if not render[-1] == "\n":
+            output.write("\n")
+
+    def output(self, model):
+        """
+        Render the provided model
+        """
         with self.__output.open() as f:
-            f.write(render)
-            if not render[-1] == "\n":
-                f.write("\n")
+            self.render(
+                model,
+                self.__template,
+                f,
+                extra_env=self.get_extra_env(),
+                render_args=self.get_additional_render_args(),
+            )

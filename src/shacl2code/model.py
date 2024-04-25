@@ -197,7 +197,7 @@ class Model(object):
                 )
 
                 if in_list := self.model.value(obj_prop, SH["in"]):
-                    p.enum_values = tuple(self.model.items(in_list))
+                    p.enum_values = sorted(tuple(self.model.items(in_list)))
 
                 if range_id := self.model.value(obj_prop, SH["class"]):
                     if not set_prop_range(p, range_id):

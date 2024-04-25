@@ -696,24 +696,24 @@
         },
         "prop_http_exampleorgtestclass_enumlistprop": {
                 "enum": [
-                    "http://example.org/enumType/foo",
                     "http://example.org/enumType/bar",
+                    "http://example.org/enumType/foo",
                     "http://example.org/enumType/nolabel",
                     "http://example.org/enumType/non-named-individual"
                 ]
         },
         "prop_http_exampleorgtestclass_enumprop": {
                 "enum": [
-                    "http://example.org/enumType/foo",
                     "http://example.org/enumType/bar",
+                    "http://example.org/enumType/foo",
                     "http://example.org/enumType/nolabel",
                     "http://example.org/enumType/non-named-individual"
                 ]
         },
         "prop_http_exampleorgtestclass_enumpropnoclass": {
                 "enum": [
-                    "http://example.org/enumType/foo",
                     "http://example.org/enumType/bar",
+                    "http://example.org/enumType/foo",
                     "http://example.org/enumType/nolabel",
                     "http://example.org/enumType/non-named-individual"
                 ]

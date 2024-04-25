@@ -2115,8 +2115,8 @@ class http_example_org_test_class(http_example_org_parent_class):
         cls._add_property(
             "enum_list_prop",
             ListProp(EnumProp([
-                    ("http://example.org/enumType/foo", "http://example.org/enumType/foo"),
                     ("http://example.org/enumType/bar", "http://example.org/enumType/bar"),
+                    ("http://example.org/enumType/foo", "http://example.org/enumType/foo"),
                     ("http://example.org/enumType/nolabel", "http://example.org/enumType/nolabel"),
                     ("http://example.org/enumType/non-named-individual", "http://example.org/enumType/non-named-individual"),
                 ])),
@@ -2126,8 +2126,8 @@ class http_example_org_test_class(http_example_org_parent_class):
         cls._add_property(
             "enum_prop",
             EnumProp([
-                    ("http://example.org/enumType/foo", "http://example.org/enumType/foo"),
                     ("http://example.org/enumType/bar", "http://example.org/enumType/bar"),
+                    ("http://example.org/enumType/foo", "http://example.org/enumType/foo"),
                     ("http://example.org/enumType/nolabel", "http://example.org/enumType/nolabel"),
                     ("http://example.org/enumType/non-named-individual", "http://example.org/enumType/non-named-individual"),
                 ]),
@@ -2137,8 +2137,8 @@ class http_example_org_test_class(http_example_org_parent_class):
         cls._add_property(
             "enum_prop_no_class",
             EnumProp([
-                    ("http://example.org/enumType/foo", "http://example.org/enumType/foo"),
                     ("http://example.org/enumType/bar", "http://example.org/enumType/bar"),
+                    ("http://example.org/enumType/foo", "http://example.org/enumType/foo"),
                     ("http://example.org/enumType/nolabel", "http://example.org/enumType/nolabel"),
                     ("http://example.org/enumType/non-named-individual", "http://example.org/enumType/non-named-individual"),
                 ]),

@@ -2130,8 +2130,8 @@ class test_class(parent_class):
         cls._add_property(
             "test_class_enum_list_prop",
             ListProp(EnumProp([
-                    ("http://example.org/enumType/foo", "enumType/foo"),
                     ("http://example.org/enumType/bar", "enumType/bar"),
+                    ("http://example.org/enumType/foo", "enumType/foo"),
                     ("http://example.org/enumType/nolabel", "enumType/nolabel"),
                     ("http://example.org/enumType/non-named-individual", "enumType/non-named-individual"),
                 ])),
@@ -2142,8 +2142,8 @@ class test_class(parent_class):
         cls._add_property(
             "test_class_enum_prop",
             EnumProp([
-                    ("http://example.org/enumType/foo", "enumType/foo"),
                     ("http://example.org/enumType/bar", "enumType/bar"),
+                    ("http://example.org/enumType/foo", "enumType/foo"),
                     ("http://example.org/enumType/nolabel", "enumType/nolabel"),
                     ("http://example.org/enumType/non-named-individual", "enumType/non-named-individual"),
                 ]),
@@ -2154,8 +2154,8 @@ class test_class(parent_class):
         cls._add_property(
             "test_class_enum_prop_no_class",
             EnumProp([
-                    ("http://example.org/enumType/foo", "enumType/foo"),
                     ("http://example.org/enumType/bar", "enumType/bar"),
+                    ("http://example.org/enumType/foo", "enumType/foo"),
                     ("http://example.org/enumType/nolabel", "enumType/nolabel"),
                     ("http://example.org/enumType/non-named-individual", "enumType/non-named-individual"),
                 ]),

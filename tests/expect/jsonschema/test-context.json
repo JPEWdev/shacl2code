@@ -700,24 +700,24 @@
         },
         "prop_testclass_testclassenumlistprop": {
                 "enum": [
-                    "enumType/foo",
                     "enumType/bar",
+                    "enumType/foo",
                     "enumType/nolabel",
                     "enumType/non-named-individual"
                 ]
         },
         "prop_testclass_testclassenumprop": {
                 "enum": [
-                    "enumType/foo",
                     "enumType/bar",
+                    "enumType/foo",
                     "enumType/nolabel",
                     "enumType/non-named-individual"
                 ]
         },
         "prop_testclass_testclassenumpropnoclass": {
                 "enum": [
-                    "enumType/foo",
                     "enumType/bar",
+                    "enumType/foo",
                     "enumType/nolabel",
                     "enumType/non-named-individual"
                 ]

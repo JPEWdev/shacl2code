@@ -971,6 +971,7 @@ class SHACLExtensibleObject(object):
 class SHACLObjectSet(object):
     def __init__(self, objects=[], *, link=False):
         self.objects = set()
+        self.missing_ids = set()
         for o in objects:
             self.objects.add(o)
         self.create_index()
@@ -1015,6 +1016,8 @@ class SHACLObjectSet(object):
 
         if not obj._id:
             return
+
+        self.missing_ids.discard(obj._id)
 
         if obj._id in self.obj_by_id:
             return
@@ -1068,7 +1071,7 @@ class SHACLObjectSet(object):
         return self._link()
 
     def _link(self):
-        missing = set()
+        self.missing_ids = set()
         visited = set()
 
         new_objects = set()
@@ -1076,7 +1079,7 @@ class SHACLObjectSet(object):
         for o in self.objects:
             if o._id:
                 o = self.find_by_id(o._id, o)
-            o.link_helper(self, missing, visited)
+            o.link_helper(self, self.missing_ids, visited)
             new_objects.add(o)
 
         self.objects = new_objects
@@ -1090,7 +1093,7 @@ class SHACLObjectSet(object):
                 obj_by_id[obj._id] = obj
         self.obj_by_id = obj_by_id
 
-        return missing
+        return self.missing_ids
 
     def find_by_id(self, _id, default=None):
         """

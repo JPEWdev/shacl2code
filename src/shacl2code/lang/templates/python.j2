@@ -790,9 +790,11 @@ class SHACLObject(object):
                 v = objectset.find_by_id(_id)
                 if v is not None:
                     return v
-            objectset.add_index(obj)
 
         obj._decode_properties(obj_d, objectset=objectset)
+
+        if objectset is not None:
+            objectset.add_index(obj)
         return obj
 
     def _decode_properties(self, decoder, objectset=None):

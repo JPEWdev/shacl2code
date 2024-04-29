@@ -1090,7 +1090,7 @@ class SHACLObjectSet(object):
             if _id.startswith("_:"):
                 del obj._id
             else:
-                obj_by_id[obj._id] = obj
+                obj_by_id[_id] = obj
         self.obj_by_id = obj_by_id
 
         return self.missing_ids

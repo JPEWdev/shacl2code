@@ -20,7 +20,7 @@ shacl2code generate -i model.jsonld python -o out.py
 ```
 Or from a URL:
 ```shell
-shacl2code generate -i https://spdx.github.io/spdx-3-model/model.jsonld python -o out.py
+shacl2code generate -i https://example.com/rdf/model.jsonld python -o out.py
 ```
 Or from stdin:
 ```shell

@@ -28,6 +28,8 @@ TEST_CONTEXT = THIS_DIR / "data" / "model" / "test-context.json"
 
 SPDX3_CONTEXT_URL = "https://spdx.github.io/spdx-3-model/context.json"
 
+TEST_TZ = timezone(timedelta(hours=-2), name="TST")
+
 
 @pytest.fixture(scope="session")
 def roundtrip(tmp_path_factory, model_server):
@@ -619,8 +621,8 @@ def type_tests(name, *typ):
         (
             # Local time
             "test_class_datetime_scalar_prop",
-            datetime(2024, 3, 11, 0, 0, 0),
-            datetime(2024, 3, 11, 0, 0, 0).astimezone(),
+            lambda _: datetime(2024, 3, 11, 0, 0, 0),
+            datetime(2024, 3, 11, 0, 0, 0, tzinfo=TEST_TZ),
         ),
         (
             # Explict timezone
@@ -643,8 +645,8 @@ def type_tests(name, *typ):
         (
             "test_class_datetime_scalar_prop",
             # Microseconds are ignored
-            datetime(2024, 3, 11, 0, 0, 0, 999),
-            datetime(2024, 3, 11, 0, 0, 0).astimezone(),
+            lambda _: datetime(2024, 3, 11, 0, 0, 0, 999),
+            datetime(2024, 3, 11, 0, 0, 0, tzinfo=TEST_TZ),
         ),
         (
             "test_class_datetime_scalar_prop",
@@ -675,8 +677,8 @@ def type_tests(name, *typ):
         (
             # Local time
             "test_class_datetimestamp_scalar_prop",
-            datetime(2024, 3, 11, 0, 0, 0),
-            datetime(2024, 3, 11, 0, 0, 0).astimezone(),
+            lambda _: datetime(2024, 3, 11, 0, 0, 0),
+            datetime(2024, 3, 11, 0, 0, 0, tzinfo=TEST_TZ),
         ),
         (
             # Explict timezone
@@ -812,7 +814,7 @@ def type_tests(name, *typ):
         ("encode", "foo", AttributeError),
     ],
 )
-def test_scalar_prop_validation(model, prop, value, expect):
+def test_scalar_prop_validation(model, test_timezone, prop, value, expect):
     c = model.test_class()
 
     if callable(value):

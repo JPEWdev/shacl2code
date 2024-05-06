@@ -3,10 +3,12 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
+import os
 import pytest
 import shutil
 import subprocess
-import json
+import time
 
 from pytest_server_fixtures.http import SimpleHTTPTestServer
 from pathlib import Path
@@ -61,3 +63,23 @@ def test_jsonschema(model_server, test_context_url):
     )
 
     yield json.loads(p.stdout)
+
+
+@pytest.fixture(scope="function")
+def test_timezone():
+    try:
+        current_tz = os.environ["TZ"]
+    except KeyError:
+        current_tz = None
+
+    os.environ["TZ"] = "TST+02"
+    time.tzset()
+
+    try:
+        yield
+    finally:
+        if current_tz is None:
+            del os.environ["TZ"]
+        else:
+            os.environ["TZ"] = current_tz
+        time.tzset()

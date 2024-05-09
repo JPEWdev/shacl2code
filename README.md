@@ -61,6 +61,93 @@ In addition to the test results, a test coverage report will also be generated
 using [pytest-cov][pytest-cov]
 
 
+## Custom Annotations
+
+`shacl2code` supports a number of custom annotations that can be specified in a
+SHACL model to give hints about the generated code. All of these annotations
+live in the `https://jpewdev.github.io/shacl2code/schema#` namespace, and
+commonly are given the `sh-to-code` prefix to make it easier to reference them.
+For example, in Turtle one would add the prefix mapping:
+
+```ttl
+@prefix sh-to-code: <https://jpewdev.github.io/shacl2code/schema#> .
+```
+
+### ID Property Name
+
+The `idPropertyName` annotation allows a class to specify what the name of the
+"property" that specifies the RDF subject of an object is for serializations
+that support it. For example, in JSON-LD, the `@id` property indicates the
+subject in RDF. If you wanted to alias the `@id` property to another name, the
+`idPropertyName` annotation will let you do this. For example, the following
+turtle will use `MyId` instead of `@id` when writing JSON-LD bindings:
+
+```ttl
+<MyClass> a owl:Class, sh:NodeShape ;
+    sh-to-code:idPropertyName "MyId"
+    .
+```
+
+When doing this, the class would then look like this in JSON-LD:
+```json
+{
+    "@type": "MyClass",
+    "MyId": "http://example.com/id"
+}
+```
+
+The `idProperyName` annotation is inherited by derived classes, so for example
+any class that derived from `MyClass` would also use `MyId` as the subject
+property.
+
+**Note:** This only specifies what the name of the field should be in generated
+bindings and has no bearing on how an RDF parser would interpret the property.
+In order to still be parsed by RDF, you would also need context file that maps
+`MyId` to `@id`, for example:
+
+```json
+{
+    "@context": {
+        "MyId": "@id"
+    }
+}
+```
+
+`shacl2code` doesn't do this for you, nor does it validate that you have done
+it.
+
+### Extensible Classes
+
+Most bindings generated from `shacl2code` are "closed" in that they do not
+allow extra properties to be added to object outside of what is specified in
+model. This ensures that field name typos and other unintended properties are
+not added to an object. However, in some cases a class may be specifically
+intended to be extended such that arbitrary fields can be added to it, which
+can be done using the `isExtensible` property. This is a boolean property that
+indicates if a class can be extended, and defaults to `false`. For example, the
+following turtle will declare a class as extensible:
+
+```ttl
+
+<MyClass> a owl:Class, sh:NodeShape ;
+    sh-to-code:isExtensible true
+    .
+```
+
+The `isExtensible` property is _not_ inherited by derived classes, meaning it
+is possible to have a classe derived from `MyClass` which is itself not
+extensible.
+
+The mechanism for dealing with extensible classes will vary between the
+different bindings, but in general it means that they will not be very picky
+about object types and properties in any location where an extensible class is
+allowed.
+
+**Note**: You may want to be careful about where and how many extensible
+classes are allowed in your model. If there are too many and they are allowed
+anywhere, it may mean that typos in object types (e.g. `@type` in JSON-LD) are
+not caught by validation as they will have to be assumed to be a derived class
+from an extensible type.
 
 [pytest]: https://www.pytest.org
 [pytest-cov]: https://pytest-cov.readthedocs.io/en/latest/

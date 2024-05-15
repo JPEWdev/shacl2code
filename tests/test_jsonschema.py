@@ -669,6 +669,38 @@ def node_kind_tests(name, blank, iri):
                 },
             },
         ),
+        # Abstract class
+        (
+            False,
+            {
+                "@context": CONTEXT,
+                "@type": "abstract-class",
+            },
+        ),
+        # Concrete class derived from abstract class
+        (
+            True,
+            {
+                "@context": CONTEXT,
+                "@type": "concrete-class",
+            },
+        ),
+        # Abstract SPDX style class
+        (
+            False,
+            {
+                "@context": CONTEXT,
+                "@type": "abstract-spdx-class",
+            },
+        ),
+        # Concrete SPDX style class
+        (
+            True,
+            {
+                "@context": CONTEXT,
+                "@type": "concrete-spdx-class",
+            },
+        ),
         # Base object for type tests
         (True, BASE_OBJ),
     ],

@@ -1921,19 +1921,27 @@ CONTEXT_URLS = [
 
 # CLASSES
 # An Abstract class
-@register("http://example.org/abstract-class", "abstract-class")
 class abstract_class(SHACLObject):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     NAMED_INDIVIDUALS = {
     }
 
+    def __init__(self, *args, **kwargs):
+        if self.__class__ is abstract_class:
+            raise NotImplementedError(f"{self.__class__.__name__} is abstract and cannot be implemented")
+        super().__init__(*args, **kwargs)
+
 
 # An Abstract class using the SPDX type
-@register("http://example.org/abstract-spdx-class", "abstract-spdx-class")
 class abstract_spdx_class(SHACLObject):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     NAMED_INDIVIDUALS = {
     }
+
+    def __init__(self, *args, **kwargs):
+        if self.__class__ is abstract_spdx_class:
+            raise NotImplementedError(f"{self.__class__.__name__} is abstract and cannot be implemented")
+        super().__init__(*args, **kwargs)
 
 
 # A concrete class

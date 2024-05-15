@@ -31,22 +31,6 @@
     "unevaluatedProperties": false,
 
     "$defs": {
-        "abstractclass": {
-            "allOf": [
-                {
-                    "type": "object",
-                    "properties": {
-                        "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
-                        "@type": {
-                            "oneOf": [
-                                { "const": "abstract-class" }
-                            ]
-                        }
-                    }
-                },
-                { "$ref": "#/$defs/abstractclass_props" }
-            ]
-        },
         "abstractclass_derived": {
             "anyOf": [
                 {
@@ -68,22 +52,6 @@
                     "properties": {
                     }
                 }
-            ]
-        },
-        "abstractspdxclass": {
-            "allOf": [
-                {
-                    "type": "object",
-                    "properties": {
-                        "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
-                        "@type": {
-                            "oneOf": [
-                                { "const": "abstract-spdx-class" }
-                            ]
-                        }
-                    }
-                },
-                { "$ref": "#/$defs/abstractspdxclass_props" }
             ]
         },
         "abstractspdxclass_derived": {
@@ -1218,8 +1186,6 @@
                         { "$ref": "#/$defs/IRI" },
                         {
                             "enum": [
-                                "abstract-class",
-                                "abstract-spdx-class",
                                 "concrete-class",
                                 "concrete-spdx-class",
                                 "enumType",
@@ -1248,8 +1214,6 @@
         },
         "AnyClass": {
             "anyOf": [
-                { "$ref": "#/$defs/abstractclass" },
-                { "$ref": "#/$defs/abstractspdxclass" },
                 { "$ref": "#/$defs/concreteclass" },
                 { "$ref": "#/$defs/concretespdxclass" },
                 { "$ref": "#/$defs/enumType" },

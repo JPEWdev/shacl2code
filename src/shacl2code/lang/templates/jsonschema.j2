@@ -59,6 +59,7 @@
         {#- Classes are divided into 2 parts. The properties are separated into a separate object #}
         {#- so that a object can references the properties of its parent without needing the const #}
         {#- @type tag #}
+        {%- if not class.is_abstract %}
         "{{ varname(class.clsname) }}": {
             "allOf": [
                 {
@@ -83,6 +84,7 @@
                 { "$ref": "#/$defs/{{ varname(class.clsname) }}_props" }
             ]
         },
+        {%- endif %}
         "{{ varname(class.clsname) }}_derived": {
             {%- set ns = namespace(external_ref=False, local_ref=False, any_ref=False, json_refs=[]) %}
             {%- for d in get_all_derived(class) + [class._id] %}
@@ -266,7 +268,7 @@
                         { "$ref": "#/$defs/IRI" },
                         {
                             "enum": [
-                            {%- for class in classes %}
+                            {%- for class in concrete_classes %}
                                 "{{ context.compact_vocab(class._id) }}"{% if not loop.last %},{% endif %}
                             {%- endfor %}
                             ]
@@ -278,7 +280,7 @@
         },
         "AnyClass": {
             "anyOf": [
-                {%- for class in classes %}
+                {%- for class in concrete_classes %}
                 { "$ref": "#/$defs/{{ varname(class.clsname) }}" }{% if not loop.last %},{% endif %}
                 {%- endfor %}
             ]

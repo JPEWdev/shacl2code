@@ -27,22 +27,6 @@
     "unevaluatedProperties": false,
 
     "$defs": {
-        "http_exampleorgabstractclass": {
-            "allOf": [
-                {
-                    "type": "object",
-                    "properties": {
-                        "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
-                        "@type": {
-                            "oneOf": [
-                                { "const": "http://example.org/abstract-class" }
-                            ]
-                        }
-                    }
-                },
-                { "$ref": "#/$defs/http_exampleorgabstractclass_props" }
-            ]
-        },
         "http_exampleorgabstractclass_derived": {
             "anyOf": [
                 {
@@ -64,22 +48,6 @@
                     "properties": {
                     }
                 }
-            ]
-        },
-        "http_exampleorgabstractspdxclass": {
-            "allOf": [
-                {
-                    "type": "object",
-                    "properties": {
-                        "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
-                        "@type": {
-                            "oneOf": [
-                                { "const": "http://example.org/abstract-spdx-class" }
-                            ]
-                        }
-                    }
-                },
-                { "$ref": "#/$defs/http_exampleorgabstractspdxclass_props" }
             ]
         },
         "http_exampleorgabstractspdxclass_derived": {
@@ -1214,8 +1182,6 @@
                         { "$ref": "#/$defs/IRI" },
                         {
                             "enum": [
-                                "http://example.org/abstract-class",
-                                "http://example.org/abstract-spdx-class",
                                 "http://example.org/concrete-class",
                                 "http://example.org/concrete-spdx-class",
                                 "http://example.org/enumType",
@@ -1244,8 +1210,6 @@
         },
         "AnyClass": {
             "anyOf": [
-                { "$ref": "#/$defs/http_exampleorgabstractclass" },
-                { "$ref": "#/$defs/http_exampleorgabstractspdxclass" },
                 { "$ref": "#/$defs/http_exampleorgconcreteclass" },
                 { "$ref": "#/$defs/http_exampleorgconcretespdxclass" },
                 { "$ref": "#/$defs/http_exampleorgenumType" },

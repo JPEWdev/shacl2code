@@ -1919,6 +1919,38 @@ CONTEXT_URLS = [
 
 
 # CLASSES
+# An Abstract class
+@register("http://example.org/abstract-class")
+class http_example_org_abstract_class(SHACLObject):
+    NODE_KIND = NodeKind.BlankNodeOrIRI
+    NAMED_INDIVIDUALS = {
+    }
+
+
+# An Abstract class using the SPDX type
+@register("http://example.org/abstract-spdx-class")
+class http_example_org_abstract_spdx_class(SHACLObject):
+    NODE_KIND = NodeKind.BlankNodeOrIRI
+    NAMED_INDIVIDUALS = {
+    }
+
+
+# A concrete class
+@register("http://example.org/concrete-class")
+class http_example_org_concrete_class(http_example_org_abstract_class):
+    NODE_KIND = NodeKind.BlankNodeOrIRI
+    NAMED_INDIVIDUALS = {
+    }
+
+
+# A concrete class
+@register("http://example.org/concrete-spdx-class")
+class http_example_org_concrete_spdx_class(http_example_org_abstract_spdx_class):
+    NODE_KIND = NodeKind.BlankNodeOrIRI
+    NAMED_INDIVIDUALS = {
+    }
+
+
 # An enumerated type
 @register("http://example.org/enumType")
 class http_example_org_enumType(SHACLObject):

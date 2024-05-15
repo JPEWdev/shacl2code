@@ -31,6 +31,160 @@
     "unevaluatedProperties": false,
 
     "$defs": {
+        "abstractclass": {
+            "allOf": [
+                {
+                    "type": "object",
+                    "properties": {
+                        "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
+                        "@type": {
+                            "oneOf": [
+                                { "const": "abstract-class" }
+                            ]
+                        }
+                    }
+                },
+                { "$ref": "#/$defs/abstractclass_props" }
+            ]
+        },
+        "abstractclass_derived": {
+            "anyOf": [
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/concreteclass" },
+                        { "$ref": "#/$defs/abstractclass" }
+                    ]
+                },
+                { "$ref": "#/$defs/BlankNodeOrIRI" }
+            ]
+        },
+        "abstractclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/SHACLClass" },
+                {
+                    "type": "object",
+                    "properties": {
+                    }
+                }
+            ]
+        },
+        "abstractspdxclass": {
+            "allOf": [
+                {
+                    "type": "object",
+                    "properties": {
+                        "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
+                        "@type": {
+                            "oneOf": [
+                                { "const": "abstract-spdx-class" }
+                            ]
+                        }
+                    }
+                },
+                { "$ref": "#/$defs/abstractspdxclass_props" }
+            ]
+        },
+        "abstractspdxclass_derived": {
+            "anyOf": [
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/concretespdxclass" },
+                        { "$ref": "#/$defs/abstractspdxclass" }
+                    ]
+                },
+                { "$ref": "#/$defs/BlankNodeOrIRI" }
+            ]
+        },
+        "abstractspdxclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/SHACLClass" },
+                {
+                    "type": "object",
+                    "properties": {
+                    }
+                }
+            ]
+        },
+        "concreteclass": {
+            "allOf": [
+                {
+                    "type": "object",
+                    "properties": {
+                        "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
+                        "@type": {
+                            "oneOf": [
+                                { "const": "concrete-class" }
+                            ]
+                        }
+                    }
+                },
+                { "$ref": "#/$defs/concreteclass_props" }
+            ]
+        },
+        "concreteclass_derived": {
+            "anyOf": [
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/concreteclass" }
+                    ]
+                },
+                { "$ref": "#/$defs/BlankNodeOrIRI" }
+            ]
+        },
+        "concreteclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/abstractclass_props" },
+                {
+                    "type": "object",
+                    "properties": {
+                    }
+                }
+            ]
+        },
+        "concretespdxclass": {
+            "allOf": [
+                {
+                    "type": "object",
+                    "properties": {
+                        "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
+                        "@type": {
+                            "oneOf": [
+                                { "const": "concrete-spdx-class" }
+                            ]
+                        }
+                    }
+                },
+                { "$ref": "#/$defs/concretespdxclass_props" }
+            ]
+        },
+        "concretespdxclass_derived": {
+            "anyOf": [
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/concretespdxclass" }
+                    ]
+                },
+                { "$ref": "#/$defs/BlankNodeOrIRI" }
+            ]
+        },
+        "concretespdxclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/abstractspdxclass_props" },
+                {
+                    "type": "object",
+                    "properties": {
+                    }
+                }
+            ]
+        },
         "enumType": {
             "allOf": [
                 {
@@ -1064,6 +1218,10 @@
                         { "$ref": "#/$defs/IRI" },
                         {
                             "enum": [
+                                "abstract-class",
+                                "abstract-spdx-class",
+                                "concrete-class",
+                                "concrete-spdx-class",
                                 "enumType",
                                 "id-prop-class",
                                 "inherited-id-prop-class",
@@ -1090,6 +1248,10 @@
         },
         "AnyClass": {
             "anyOf": [
+                { "$ref": "#/$defs/abstractclass" },
+                { "$ref": "#/$defs/abstractspdxclass" },
+                { "$ref": "#/$defs/concreteclass" },
+                { "$ref": "#/$defs/concretespdxclass" },
                 { "$ref": "#/$defs/enumType" },
                 { "$ref": "#/$defs/idpropclass" },
                 { "$ref": "#/$defs/inheritedidpropclass" },

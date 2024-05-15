@@ -115,10 +115,16 @@ class BasicJinjaRender(object):
             return d
 
         classes = ObjectList(model.classes)
+        concrete_classes = ObjectList(
+            list(c for c in model.classes if not c.is_abstract)
+        )
+        abstract_classes = ObjectList(list(c for c in model.classes if c.is_abstract))
         enums = ObjectList(model.enums)
 
         render_args = {
             "classes": classes,
+            "concrete_classes": concrete_classes,
+            "abstract_classes": abstract_classes,
             "enums": enums,
             "context": model.context,
             **self.get_additional_render_args(),

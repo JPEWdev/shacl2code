@@ -21,6 +21,7 @@ PATTERN_DATATYPES = [
 class SHACL2CODE(DefinedNamespace):
     idPropertyName: URIRef
     isExtensible: URIRef
+    isAbstract: URIRef
 
     _NS = Namespace("https://jpewdev.github.io/shacl2code/schema#")
 
@@ -84,6 +85,7 @@ class Class:
     id_property: str = ""
     node_kind: str = None
     is_extensible: bool = False
+    is_abstract: bool = False
     named_individuals: list = None
 
 
@@ -152,6 +154,16 @@ class Model(object):
                 )
             return members
 
+        def is_abstract(s):
+            if (
+                s,
+                RDF.type,
+                URIRef("http://spdx.invalid./AbstractClass"),
+            ) in self.model:
+                return True
+
+            return bool(self.model.value(s, SHACL2CODE.isAbstract, default=False))
+
         class_iris = set(self.model.subjects(RDF.type, OWL.Class))
         for cls_iri in class_iris:
             c = Class(
@@ -170,6 +182,7 @@ class Model(object):
                 ),
                 node_kind=get_inherited_value(cls_iri, SH.nodeKind, SH.BlankNodeOrIRI),
                 is_extensible=bool(self.model.value(cls_iri, SHACL2CODE.isExtensible)),
+                is_abstract=is_abstract(cls_iri),
                 named_individuals=get_named_individuals(cls_iri),
             )
 

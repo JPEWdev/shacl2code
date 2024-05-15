@@ -134,7 +134,7 @@ following turtle will declare a class as extensible:
 ```
 
 The `isExtensible` property is _not_ inherited by derived classes, meaning it
-is possible to have a classe derived from `MyClass` which is itself not
+is possible to have a class derived from `MyClass` which is itself not
 extensible.
 
 The mechanism for dealing with extensible classes will vary between the

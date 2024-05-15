@@ -476,3 +476,22 @@
     rdfs:comment "A required extensible property" ;
     rdfs:range xsd:string
     .
+
+<abstract-class> a rdf:Class, sh:NodeShape, owl:Class ;
+    rdfs:comment "An Abstract class" ;
+    sh-to-code:isAbstract true
+    .
+
+<abstract-spdx-class> a rdf:Class, sh:NodeShape, owl:Class, <http://spdx.invalid./AbstractClass> ;
+    rdfs:comment "An Abstract class using the SPDX type"
+    .
+
+<concrete-class> a rdf:Class, sh:NodeShape, owl:Class ;
+    rdfs:subClassOf <abstract-class> ;
+    rdfs:comment "A concrete class"
+    .
+
+<concrete-spdx-class> a rdf:Class, sh:NodeShape, owl:Class ;
+    rdfs:subClassOf <abstract-spdx-class> ;
+    rdfs:comment "A concrete class"
+    .

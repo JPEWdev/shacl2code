@@ -27,6 +27,160 @@
     "unevaluatedProperties": false,
 
     "$defs": {
+        "http_exampleorgabstractclass": {
+            "allOf": [
+                {
+                    "type": "object",
+                    "properties": {
+                        "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
+                        "@type": {
+                            "oneOf": [
+                                { "const": "http://example.org/abstract-class" }
+                            ]
+                        }
+                    }
+                },
+                { "$ref": "#/$defs/http_exampleorgabstractclass_props" }
+            ]
+        },
+        "http_exampleorgabstractclass_derived": {
+            "anyOf": [
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/http_exampleorgconcreteclass" },
+                        { "$ref": "#/$defs/http_exampleorgabstractclass" }
+                    ]
+                },
+                { "$ref": "#/$defs/BlankNodeOrIRI" }
+            ]
+        },
+        "http_exampleorgabstractclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/SHACLClass" },
+                {
+                    "type": "object",
+                    "properties": {
+                    }
+                }
+            ]
+        },
+        "http_exampleorgabstractspdxclass": {
+            "allOf": [
+                {
+                    "type": "object",
+                    "properties": {
+                        "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
+                        "@type": {
+                            "oneOf": [
+                                { "const": "http://example.org/abstract-spdx-class" }
+                            ]
+                        }
+                    }
+                },
+                { "$ref": "#/$defs/http_exampleorgabstractspdxclass_props" }
+            ]
+        },
+        "http_exampleorgabstractspdxclass_derived": {
+            "anyOf": [
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/http_exampleorgconcretespdxclass" },
+                        { "$ref": "#/$defs/http_exampleorgabstractspdxclass" }
+                    ]
+                },
+                { "$ref": "#/$defs/BlankNodeOrIRI" }
+            ]
+        },
+        "http_exampleorgabstractspdxclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/SHACLClass" },
+                {
+                    "type": "object",
+                    "properties": {
+                    }
+                }
+            ]
+        },
+        "http_exampleorgconcreteclass": {
+            "allOf": [
+                {
+                    "type": "object",
+                    "properties": {
+                        "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
+                        "@type": {
+                            "oneOf": [
+                                { "const": "http://example.org/concrete-class" }
+                            ]
+                        }
+                    }
+                },
+                { "$ref": "#/$defs/http_exampleorgconcreteclass_props" }
+            ]
+        },
+        "http_exampleorgconcreteclass_derived": {
+            "anyOf": [
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/http_exampleorgconcreteclass" }
+                    ]
+                },
+                { "$ref": "#/$defs/BlankNodeOrIRI" }
+            ]
+        },
+        "http_exampleorgconcreteclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/http_exampleorgabstractclass_props" },
+                {
+                    "type": "object",
+                    "properties": {
+                    }
+                }
+            ]
+        },
+        "http_exampleorgconcretespdxclass": {
+            "allOf": [
+                {
+                    "type": "object",
+                    "properties": {
+                        "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
+                        "@type": {
+                            "oneOf": [
+                                { "const": "http://example.org/concrete-spdx-class" }
+                            ]
+                        }
+                    }
+                },
+                { "$ref": "#/$defs/http_exampleorgconcretespdxclass_props" }
+            ]
+        },
+        "http_exampleorgconcretespdxclass_derived": {
+            "anyOf": [
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/http_exampleorgconcretespdxclass" }
+                    ]
+                },
+                { "$ref": "#/$defs/BlankNodeOrIRI" }
+            ]
+        },
+        "http_exampleorgconcretespdxclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/http_exampleorgabstractspdxclass_props" },
+                {
+                    "type": "object",
+                    "properties": {
+                    }
+                }
+            ]
+        },
         "http_exampleorgenumType": {
             "allOf": [
                 {
@@ -1060,6 +1214,10 @@
                         { "$ref": "#/$defs/IRI" },
                         {
                             "enum": [
+                                "http://example.org/abstract-class",
+                                "http://example.org/abstract-spdx-class",
+                                "http://example.org/concrete-class",
+                                "http://example.org/concrete-spdx-class",
                                 "http://example.org/enumType",
                                 "http://example.org/id-prop-class",
                                 "http://example.org/inherited-id-prop-class",
@@ -1086,6 +1244,10 @@
         },
         "AnyClass": {
             "anyOf": [
+                { "$ref": "#/$defs/http_exampleorgabstractclass" },
+                { "$ref": "#/$defs/http_exampleorgabstractspdxclass" },
+                { "$ref": "#/$defs/http_exampleorgconcreteclass" },
+                { "$ref": "#/$defs/http_exampleorgconcretespdxclass" },
                 { "$ref": "#/$defs/http_exampleorgenumType" },
                 { "$ref": "#/$defs/http_exampleorgidpropclass" },
                 { "$ref": "#/$defs/http_exampleorginheritedidpropclass" },

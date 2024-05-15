@@ -53,6 +53,8 @@ def test_jsonschema(model_server, test_context_url):
             MODEL_DIR / "test.ttl",
             "--context",
             test_context_url,
+            "--compat-context",
+            "https://example.com/old-context.json",
             "jsonschema",
             "--output",
             "-",

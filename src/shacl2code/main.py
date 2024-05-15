@@ -48,7 +48,7 @@ def main(args=None):
                     data = json.load(f)
             contexts.append(ContextData(data, url))
 
-        m = Model(graph, UrlContext(contexts))
+        m = Model(graph, UrlContext(contexts), args.compat_context)
 
         render = args.lang(args)
         render.output(m)
@@ -97,6 +97,7 @@ def main(args=None):
     generate_parser.add_argument(
         "--context",
         "-x",
+        metavar="URL",
         help="Require context for output (URL)",
         action="append",
         default=[],
@@ -107,6 +108,14 @@ def main(args=None):
         help="Require context from LOCATION (path or URL), but report as URL in generated code",
         nargs=2,
         metavar=("LOCATION", "URL"),
+        action="append",
+        default=[],
+    )
+    generate_parser.add_argument(
+        "--compat-context",
+        "-X",
+        metavar="URL",
+        help="Context URLs which are allowed in generated bindings, but not included in output (e.g. if bindings are compatible with older versions of the context)",
         action="append",
         default=[],
     )

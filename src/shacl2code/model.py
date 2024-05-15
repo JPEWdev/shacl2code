@@ -88,9 +88,10 @@ class Class:
 
 
 class Model(object):
-    def __init__(self, graph, context=None):
+    def __init__(self, graph, context=None, compat_contexts=[]):
         self.model = graph
         self.context = context
+        self.compat_contexts = compat_contexts
         self.compact_ids = {}
         self.objects = {}
         self.enums = []

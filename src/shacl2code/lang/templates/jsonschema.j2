@@ -10,24 +10,48 @@
     "type": "object",
 
     "properties": {
-        {%- if context.urls %}
-        {%- if context.urls | length == 1 %}
+        {%- if context.urls + compat_contexts %}
         "@context": {
-            "const": "{{ context.urls[0] }}"
-        }
-        {%- else %}
-        "@context": {
-            "type": "array",
-            "prefixItems": {
-                {%- for url in context.urls %}
-                { "const": "{{ url }}" }{% if not loop.last %},{% endif %}
+            "oneOf": [
+            {%- if context.urls %}
+                {
+                {%- if context.urls | length == 1 %}
+                    "const": "{{ context.urls[0] }}"
+                {%- else %}
+                    "type": "array",
+                    "prefixItems": {
+                        {%- for url in context.urls %}
+                        { "const": "{{ url }}" }{% if not loop.last %},{% endif %}
+                        {%- endfor %}
+                    },
+                    "minContains": "{{ context.urls | length }}",
+                    "maxContains": "{{ context.urls | length }}",
+                    "items": false
+                {%- endif %}
+                }{% if compat_contexts %},{% endif %}
+            {%- endif %}
+            {%- if compat_contexts %}
+                {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "oneOf": [
+                        {%- for url in compat_contexts %}
+                            {
+                                "const": "{{ url }}"
+                            }{% if not loop.last %},{% endif %}
+                        {%- endfor %}
+                        ]
+                    }
+                },
+                {%- for url in compat_contexts %}
+                {
+                    "const": "{{ url }}"
+                }{% if not loop.last %},{% endif %}
                 {%- endfor %}
-            },
-            "minContains": "{{ context.urls | length }}",
-            "maxContains": "{{ context.urls | length }}",
-            "items": false
+            {%- endif %}
+            ]
         }
-        {%- endif %}
         {%- endif %}
     },
     {%- if context.urls %}

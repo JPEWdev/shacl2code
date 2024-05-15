@@ -235,6 +235,41 @@ def node_kind_tests(name, blank, iri):
                 "@graph": [],
             },
         ),
+        # Empty context array
+        (
+            False,
+            {
+                "@context": [],
+                "@graph": [],
+            },
+        ),
+        # Old context
+        (
+            True,
+            {
+                "@context": "https://example.com/old-context.json",
+                "@graph": [],
+            },
+        ),
+        # Old context array
+        (
+            True,
+            {
+                "@context": ["https://example.com/old-context.json"],
+                "@graph": [],
+            },
+        ),
+        # Old context mixed with new context
+        (
+            False,
+            {
+                "@context": [
+                    CONTEXT,
+                    "https://example.com/old-context.json",
+                ],
+                "@graph": [],
+            },
+        ),
         # Unknown root field
         (
             False,

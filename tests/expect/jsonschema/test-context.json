@@ -5,7 +5,11 @@
 
     "properties": {
         "@context": {
-            "const": "https://spdx.github.io/spdx-3-model/context.json"
+            "oneOf": [
+                {
+                    "const": "https://spdx.github.io/spdx-3-model/context.json"
+                }
+            ]
         }
     },
     "required": ["@context"],

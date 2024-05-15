@@ -109,6 +109,7 @@ class BasicJinjaRender(object):
             enums=enums,
             classes=classes,
             context=model.context,
+            compat_contexts=model.compat_contexts,
             **render_args,
         )
 

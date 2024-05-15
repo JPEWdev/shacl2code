@@ -1684,3 +1684,22 @@ def test_objset_foreach_type(model, roundtrip):
         )
         == expect
     )
+
+
+@pytest.mark.parametrize(
+    "abstract,concrete",
+    [
+        ("abstract_class", "concrete_class"),
+        ("abstract_spdx_class", "concrete_spdx_class"),
+    ],
+)
+def test_abstract_classes(model, abstract, concrete):
+    # Test that abstract classes cannot be implemented
+    with pytest.raises(NotImplementedError):
+        cls = getattr(model, abstract)
+        cls()
+
+    # Test that concrete classes derived from abstract classes can be
+    # implemented
+    cls = getattr(model, concrete)
+    cls()

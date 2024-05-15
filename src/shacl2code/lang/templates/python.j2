@@ -1940,7 +1940,9 @@ CONTEXT_URLS = [
 #{{ (" " + l).rstrip() }}
 {%- endfor %}
 {%- endif %}
+{%- if not class.is_abstract %}
 @register("{{ class._id }}"{%- if context.compact(class._id) != class._id %}, "{{ context.compact(class._id) }}"{%- endif %})
+{%- endif %}
 class {{ varname(class.clsname) }}(
 {%- if class.is_extensible -%}
     SHACLExtensibleObject{{", "}}
@@ -1969,6 +1971,13 @@ class {{ varname(class.clsname) }}(
     {%- endif %}
     {{ varname(member.varname) }} = "{{ member._id }}"
     {%- endfor %}
+    {%- if class.is_abstract %}
+
+    def __init__(self, *args, **kwargs):
+        if self.__class__ is {{ varname(class.clsname) }}:
+            raise NotImplementedError(f"{self.__class__.__name__} is abstract and cannot be implemented")
+        super().__init__(*args, **kwargs)
+    {%- endif %}
     {%- if class.properties %}
 
     @classmethod

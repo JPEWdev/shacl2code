@@ -12,6 +12,57 @@
 {%- endif %}
 {%- endmacro %}
 
+{%- macro struct_props(class) %}
+    {%- for parent in class.parent_ids %}
+    {{ struct_props(classes.get(parent)) }}
+    {%- endfor %}
+
+        // ---------- {{ type_name(class.clsname) }} --------
+    {%- for prop in class.properties %}
+        {%- if include_prop(classes,class,prop) %}
+        {{ struct_prop(prop) }}
+        {%- endif %}
+    {%- endfor %}
+{%- endmacro %}
+
+{%- macro struct_funcs(base,class) %}
+{%- for parent in class.parent_ids %}
+{{ struct_funcs(base,classes.get(parent)) }}
+{%- endfor %}
+
+// ---------- {{ type_name(class.clsname) }} --------
+{%- for prop in class.properties %}
+{%- if include_prop(classes,class,prop) %}
+
+{{ struct_getter(base,prop) }}
+
+{{ struct_setter(base,prop) }}
+{%- endif %}
+{%- endfor %}
+{%- endmacro %}
+
+{%- macro interface_props(class) -%}
+    {%- for parent in class.parent_ids %}
+        {{ interface_name(classes.get(parent)) }}
+    {%- endfor %}
+
+    {%- for prop in class.properties %}
+        {%- if include_prop(classes,class,prop) %}
+
+{{ comment("        // ", struct_prop(prop), prop.comment) }}
+        {{ interface_getter(prop) }}
+
+        {{ interface_setter(prop) }}
+        {%- endif %}
+    {%- endfor %}
+{%- endmacro %}
+
+{%- macro interface_constructor(class) %}
+func New{{ interface_name(class) }}() {{ interface_name(class) }} {
+    return &{{ struct_name(class) }}{}
+}
+{%- endmacro %}
+
 {%- macro datatype(prop) %}
 {%- if prop.class_id -%}
 {{ export(classes.get(prop.class_id).clsname) }}
@@ -20,7 +71,7 @@
 {%- endif %}
 {%- endmacro %}
 
-{% macro interface(class) -%}
+{%- macro interface(class) -%}
 type {{ export(class.clsname) }} interface {
 {%- for prop in class.properties %}
 	{{ export(prop.varname) }}() {{ array(prop) }}{{ datatype(prop) }}
@@ -28,15 +79,14 @@ type {{ export(class.clsname) }} interface {
 }
 {% endmacro %}
 
-{% macro struct(class) -%}
+{%- macro struct(class) -%}
 type {{ export(class.clsname) }} struct {
 {%- for prop in class.properties %}
 }
+{%- endfor %}
 {%- endmacro %}
 
 package spdx_v3_0
-
-import "github.com/orsinium-labs/enum"
 
 // XSD types that don't have a Go equivalent
 type PInt uint
@@ -56,11 +106,12 @@ type DateTimeStamp string
 
 {%- for class in classes %}
 {%- if class.named_individuals %}
-type {{ export(class.clsname) }}Ref enum.Member[string]
+
+type {{ type_name(class.clsname) }} string
 var (
-{% for ind in class.named_individuals %}
-	{{ export(class.clsname) }}{{ export(ind.varname) }} = {{ export(class.clsname) }}Ref{"{{ ind._id }}"}
-{% endfor %}
+{%- for ind in class.named_individuals %}
+    {{ type_name(class.clsname) }}{{ type_name(ind.varname) }} {{ type_name(class.clsname) }} = "{{ ind._id }}"
+{%- endfor %}
 )
 {%- endif %}
 {%- endfor %}
@@ -79,24 +130,33 @@ DATATYPES = {
 }
 %}
 
-var CONTEXT_URLS  [{{ context.urls|length }}]string = [{{ context.urls|length }}]string{
-	{%- for url in context.urls %}"{{ url }}"{{ ',' if not loop.last }}{%- endfor %}}
-
-// CLASSES AND INTERFACES
+{#var CONTEXT_URLS  [{{ context.urls|length }}]string = [{{ context.urls|length }}]string{#}
+{#	{%- for url in context.urls %}"{{ url }}"{{ ',' if not loop.last }}{%- endfor %}}#}
+{##}
+{#// CLASSES AND INTERFACES#}
 
 {%- for class in classes %}
-// {{ export(class.clsname) }} provides the {{ export(class.clsname) }} class in the Model
-type {{ export(class.clsname) }} struct {
-	{%- if class.parent_ids %}
-	{%- for parent in class.parent_ids %}
-	{{ export(classes.get(parent).clsname) }}
-	{%- endfor %}
-	{%- endif %}
-	{%- for prop in class.properties %}
-	{{ export(prop.varname) }} {% if prop.max_count is None or prop.max_count >= 1 %}[]{% endif %}{% if prop.class_id %}{{ export(classes.get(prop.class_id).clsname) }}{% else %}{{ DATATYPES[prop.datatype] }}{% endif %}
-	{%- endfor %}
-	{%- if class.named_individuals %}
-	ObjectRef {{ export(class.clsname) }}Ref
-	{%- endif %}
+{%- if not class.named_individuals %}
+type {{ interface_name(class) }} interface {
+    {{ interface_props(class) }}
 }
+{%- if not class.is_abstract %}
+
+type {{ struct_name(class) }} struct {
+{#-	{%- if class.parent_ids %}#}
+{#-	{%- for parent in class.parent_ids %}#}
+{#-	{{ export(classes.get(parent).clsname) }}#}
+{#-	{%- endfor %}#}
+{#-	{%- endif %}#}
+	{{ struct_props(class) }}
+{#-	{%- if class.named_individuals %}#}
+{#-	ObjectRef {{ export(class.clsname) }}Ref#}
+{#-	{%- endif %}#}
+}
+
+{{ interface_constructor(class) }}
+
+{{ struct_funcs(class,class) }}
+{%- endif %}
+{%- endif %}
 {%- endfor %}

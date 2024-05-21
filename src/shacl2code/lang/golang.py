@@ -20,42 +20,37 @@ DATATYPES = {
     "http://www.w3.org/2001/XMLSchema#dateTimeStamp": "DateTimeStamp",
 }
 
-RESERVED_WORDS = {
-    "package"
-}
 
-def export(name):
-    # export converts the shacl name into an exportable go type name
-    name_list = name.split('_')
-    for i in range(0,len(name_list)):
-        name_list[i] = name_list[i][0].upper() + name_list[i][1:]
-    return ''.join(name_list)
+def upper_first(string):
+    # upper_first will capitalize the string
+    return string[0].upper() + string[1:]
 
 
-def type_name(name):
-    parts = re.split(r'[^a-zA-Z0-9]', name)
-    part = parts[len(parts)-1]
-    return upper_first(part)
+def lower_first(string):
+    # lower_first sets the first character of a string to lower case
+    return string[0].lower() + string[1:]
 
 
-def struct_prop_name(prop):
-    # prop:
-    #  class_id, comment, datatype, enum_values, max_count, min_count, path, pattern, varname
-    return lower_first(type_name(prop.varname))
+def type_name(clsname):
+    # type_name converts the class name into an exportable go type name
+    return upper_first(''.join(clsname).replace('_',''))
 
 
-def prop_type(prop):
-    # prop:
-    #  class_id, comment, datatype, enum_values, max_count, min_count, path, pattern, varname
-    if prop.datatype in DATATYPES:
-        typ = DATATYPES[prop.datatype]
-    else:
-        typ = type_name(prop.class_id)
+def interface_method(propname):
+    # returns an interface method name
+    # The interface method names are capitalized so they can be exported
+    parts = propname.split('_')
+    parts[0] = upper_first(parts[0])
+    return ''.join(parts)
 
-    if prop.max_count is None or prop.max_count > 1:
-        typ = '[]' + typ
+def struct_name(clsname):
+    # Go structs are only used when a class is a concrete class
+    return lower_first(type_name(clsname)) + "Impl"
 
-    return typ
+
+def struct_prop_name(propname):
+    # All properties in a Go struct are non-exportable
+    return propname.replace('_','')
 
 
 def setter_prop_type(prop):
@@ -68,21 +63,21 @@ def struct_prop(prop):
 
 
 def interface_getter(prop):
-    return upper_first(type_name(prop.varname)) + '() ' + prop_type(prop)
+    return type_name(prop.varname) + '() ' + prop_type(prop)
 
 
 def interface_setter(prop):
-    return "Set" + upper_first(type_name(prop.varname)) + '(' + setter_prop_type(prop) + ') error'
+    return "Set" + type_name(prop.varname) + '(' + setter_prop_type(prop) + ') error'
 
 
 def struct_getter(cls, prop):
-    return 'func (o *' + struct_name(cls) + ') ' + upper_first(type_name(prop.varname)) + '() ' + prop_type(prop) + '{\n' \
+    return 'func (o *' + struct_name(cls) + ') ' + type_name(prop.varname) + '() ' + prop_type(prop) + '{\n' \
         + '    return o.' + struct_prop_name(prop) + '\n' \
         + '}'
 
 
 def struct_setter(cls, prop):
-    return 'func (o *' + struct_name(cls) + ') Set' + upper_first(type_name(prop.varname)) + '(v ' + setter_prop_type(prop) + ') error{\n' \
+    return 'func (o *' + struct_name(cls) + ') Set' + type_name(prop.varname) + '(v ' + setter_prop_type(prop) + ') error{\n' \
         + '    o.' + struct_prop_name(prop) + '  = v\n' \
         + '    return nil\n' \
         + '}'
@@ -110,23 +105,12 @@ def include_prop(classes, cls, prop):
     return not parent_has_prop(classes, cls, prop)
 
 
-def lower_first(str):
-    return str[0].lower() + str[1:]
 
 
 def interface_name(cls):
-    return upper_first(type_name(cls.clsname))
+    return type_name(cls.clsname)
 
 
-def struct_name(cls):
-    name = lower_first(type_name(cls.clsname))
-    if name in RESERVED_WORDS:
-        return name + "Impl"
-    return name
-
-
-def upper_first(str):
-    return str[0].upper() + str[1:]
 
 
 def indent(indent_with, str):
@@ -151,9 +135,9 @@ class GolangRender(BasicJinjaRender):
 
     def get_extra_env(self):
         return {
-            "export": export,
             "type_name": type_name,
-            "struct_prop": struct_prop,
+            "interface_method": interface_method,
+            "struct_prop_name": struct_prop_name,
             "struct_name": struct_name,
             "struct_getter": struct_getter,
             "struct_setter": struct_setter,
@@ -163,6 +147,7 @@ class GolangRender(BasicJinjaRender):
             "include_prop": include_prop,
             "indent": indent,
             "comment": comment,
+            "DATATYPES": DATATYPES,
         }
 
     def get_additional_render_args(self):

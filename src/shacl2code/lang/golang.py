@@ -140,6 +140,14 @@ class GolangRender(BasicJinjaRender):
 
     def __init__(self, args):
         super().__init__(args, TEMPLATE_DIR / "golang.j2")
+        self.__render_args = {
+                "module": args.module,
+        }
+
+    @classmethod
+    def get_arguments(cls, parser):
+        super().get_arguments(parser)
+        parser.add_argument("--module", help="Go module name")
 
     def get_extra_env(self):
         return {
@@ -156,3 +164,6 @@ class GolangRender(BasicJinjaRender):
             "indent": indent,
             "comment": comment,
         }
+
+    def get_additional_render_args(self):
+        return self.__render_args

@@ -86,7 +86,8 @@ type {{ export(class.clsname) }} struct {
 {%- endfor %}
 {%- endmacro %}
 
-package spdx_v3_0
+{# go file content #}
+package spdx_v{{ module }}
 
 // XSD types that don't have a Go equivalent
 type PInt uint

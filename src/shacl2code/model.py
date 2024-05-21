@@ -290,4 +290,4 @@ class Model(object):
         """
         Returns the name for a class that should be used in Code
         """
-        return self.get_compact_id(c).replace(":", "_")
+        return self.get_compact_id(c).split(":")

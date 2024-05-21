@@ -10,8 +10,8 @@ import re
 import keyword
 
 
-def varname(name):
-    name = str(name).replace("@", "_")
+def varname(*name):
+    name = str("_".join(name)).replace("@", "_")
     name = re.sub(r"[^a-zA-Z0-9_]", "", name)
     while keyword.iskeyword(name):
         name = name + "_"

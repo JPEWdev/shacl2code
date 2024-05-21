@@ -10,7 +10,8 @@ import re
 import keyword
 
 
-def varname(name):
+def varname(*name):
+    name = "_".join(name)
     # Any invalid characters at the beginning of the name are removed (except
     # "@")
     name = re.sub(r"^[^a-zA-Z0-9_@]*", "", name)

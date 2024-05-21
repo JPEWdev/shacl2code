@@ -60,7 +60,7 @@
         {#- so that a object can references the properties of its parent without needing the const #}
         {#- @type tag #}
         {%- if not class.is_abstract %}
-        "{{ varname(class.clsname) }}": {
+        "{{ varname(*class.clsname) }}": {
             "allOf": [
                 {
                     "type": "object",
@@ -81,14 +81,14 @@
                     "required": ["{{ class.id_property or "@id" }}"]
                     {%- endif %}
                 },
-                { "$ref": "#/$defs/{{ varname(class.clsname) }}_props" }
+                { "$ref": "#/$defs/{{ varname(*class.clsname) }}_props" }
             ]
         },
         {%- endif %}
-        "{{ varname(class.clsname) }}_derived": {
+        "{{ varname(*class.clsname) }}_derived": {
             {%- set ns = namespace(external_ref=False, local_ref=False, any_ref=False, json_refs=[]) %}
             {%- for d in get_all_derived(class) + [class._id] %}
-                {%- set ns.json_refs = ns.json_refs + ["#/$defs/" + varname(classes.get(d).clsname)] %}
+                {%- set ns.json_refs = ns.json_refs + ["#/$defs/" + varname(*classes.get(d).clsname)] %}
             {%- endfor %}
             "anyOf": [
                 {%- if ns.json_refs %}
@@ -107,11 +107,11 @@
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
-        "{{ varname(class.clsname) }}_props": {
+        "{{ varname(*class.clsname) }}_props": {
             "allOf": [
                 {%- if class.parent_ids %}
                 {%- for parent in class.parent_ids %}
-                { "$ref": "#/$defs/{{ varname(classes.get(parent).clsname) }}_props" },
+                { "$ref": "#/$defs/{{ varname(*classes.get(parent).clsname) }}_props" },
                 {%- endfor %}
                 {%- else %}
                 { "$ref": "#/$defs/SHACLClass" },
@@ -126,7 +126,7 @@
                         {%- endif %}
                         {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
                         "{{ context.compact_vocab(prop.path) }}": {
-                        {%- set prop_ref = "#/$defs/prop_" + varname(class.clsname) + "_" + varname(prop.varname) %}
+                        {%- set prop_ref = "#/$defs/prop_" + varname(*class.clsname) + "_" + varname(prop.varname) %}
                         {%- if is_list %}
                             "oneOf": [
                                 {
@@ -162,7 +162,7 @@
             ]
         },
         {%- for prop in class.properties %}
-        "prop_{{ varname(class.clsname) }}_{{ varname(prop.varname) }}": {
+        "prop_{{ varname(*class.clsname) }}_{{ varname(prop.varname) }}": {
             {%- if prop.enum_values %}
                 "enum": [
                 {%- for e in prop.enum_values %}
@@ -170,7 +170,7 @@
                 {%- endfor %}
                 ]
             {%- elif prop.class_id %}
-                "$ref": "#/$defs/{{ varname(classes.get(prop.class_id).clsname) }}_derived"
+                "$ref": "#/$defs/{{ varname(*classes.get(prop.class_id).clsname) }}_derived"
             {%- else %}
                 {%- if prop.datatype == "http://www.w3.org/2001/XMLSchema#string" %}
                     {%- if prop.pattern %}
@@ -281,7 +281,7 @@
         "AnyClass": {
             "anyOf": [
                 {%- for class in concrete_classes %}
-                { "$ref": "#/$defs/{{ varname(class.clsname) }}" }{% if not loop.last %},{% endif %}
+                { "$ref": "#/$defs/{{ varname(*class.clsname) }}" }{% if not loop.last %},{% endif %}
                 {%- endfor %}
             ]
         }

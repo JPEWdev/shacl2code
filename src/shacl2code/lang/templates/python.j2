@@ -1943,13 +1943,13 @@ CONTEXT_URLS = [
 {%- if not class.is_abstract %}
 @register("{{ class._id }}"{%- if context.compact(class._id) != class._id %}, "{{ context.compact(class._id) }}"{%- endif %})
 {%- endif %}
-class {{ varname(class.clsname) }}(
+class {{ varname(*class.clsname) }}(
 {%- if class.is_extensible -%}
     SHACLExtensibleObject{{", "}}
 {%- endif %}
 {%- if class.parent_ids %}
     {%- for id in class.parent_ids %}
-        {{- varname(classes.get(id).clsname) }}{% if not loop.last %}, {% endif %}
+        {{- varname(*classes.get(id).clsname) }}{% if not loop.last %}, {% endif %}
     {%- endfor %}
 {%- else -%}
     SHACLObject
@@ -1974,7 +1974,7 @@ class {{ varname(class.clsname) }}(
     {%- if class.is_abstract %}
 
     def __init__(self, *args, **kwargs):
-        if self.__class__ is {{ varname(class.clsname) }}:
+        if self.__class__ is {{ varname(*class.clsname) }}:
             raise NotImplementedError(f"{self.__class__.__name__} is abstract and cannot be implemented")
         super().__init__(*args, **kwargs)
     {%- endif %}
@@ -2000,7 +2000,7 @@ class {{ varname(class.clsname) }}(
                 {%- endfor %}
                 ])
             {%- elif prop.class_id -%}
-                ObjectProp({{ varname(classes.get(prop.class_id).clsname) }}, {% if prop.min_count and not is_list %}True{% else %}False{% endif %})
+                ObjectProp({{ varname(*classes.get(prop.class_id).clsname) }}, {% if prop.min_count and not is_list %}True{% else %}False{% endif %})
             {%- else -%}
                 {% if not prop.datatype in DATATYPE_CLASSES -%}
                     {{ abort("Unknown data type " + prop.datatype) -}}

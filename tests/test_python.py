@@ -1685,6 +1685,16 @@ def test_objset_foreach_type(model, roundtrip):
         == expect
     )
 
+    # Test that concrete classes derived from abstract classes can be iterated
+    expect = set()
+    assert (
+        set(objset.foreach_type(model.abstract_class, match_subclass=False)) == expect
+    )
+
+    expect.add(objset.find_by_id("http://serialize.example.com/concrete-class"))
+    assert expect != {None}
+    assert set(objset.foreach_type(model.abstract_class, match_subclass=True)) == expect
+
 
 @pytest.mark.parametrize(
     "abstract,concrete",

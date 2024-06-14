@@ -511,11 +511,10 @@ def register(type_iri, *, compact_type=None, abstract=False):
 
         c._OBJ_TYPE = type_iri
         c.IS_ABSTRACT = abstract
-        if not abstract:
-            add_class(type_iri, c)
+        add_class(type_iri, c)
 
         c._OBJ_COMPACT_TYPE = compact_type
-        if compact_type and not abstract:
+        if compact_type:
             add_class(compact_type, c)
 
         # Registration is deferred until the first instance of class is created

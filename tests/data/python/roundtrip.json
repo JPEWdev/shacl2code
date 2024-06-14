@@ -11,6 +11,10 @@
             ]
         },
         {
+            "@type": "concrete-class",
+            "@id": "http://serialize.example.com/concrete-class"
+        },
+        {
             "@id": "http://serialize.example.com/link-derived-target",
             "@type": "link-derived-class"
         },

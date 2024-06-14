@@ -10,8 +10,9 @@ import functools
 import hashlib
 import json
 import re
-import time
+import sys
 import threading
+import time
 from contextlib import contextmanager
 from datetime import datetime, timezone, timedelta
 from enum import Enum
@@ -549,11 +550,11 @@ class SHACLObject(object):
                 cls._register_props()
                 cls._NEEDS_REG = False
 
-        self._obj_data = {}
-        self._obj_metadata = {}
+        self.__dict__["_obj_data"] = {}
+        self.__dict__["_obj_metadata"] = {}
 
         for iri, prop, _, _, _, _ in self.__iter_props():
-            self._obj_data[iri] = prop.init()
+            self.__dict__["_obj_data"][iri] = prop.init()
 
         for k, v in kwargs.items():
             setattr(self, k, v)
@@ -580,15 +581,16 @@ class SHACLObject(object):
         while hasattr(cls, pyname):
             pyname = pyname + "_"
 
+        pyname = sys.intern(pyname)
+        iri = sys.intern(iri)
+
         cls._OBJ_IRIS[pyname] = iri
         cls._OBJ_PROPERTIES[iri] = (prop, min_count, max_count, pyname, compact)
 
     def __setattr__(self, name, value):
-        if name.startswith("_obj_"):
-            return super().__setattr__(name, value)
-
         if name == self.ID_ALIAS:
-            name = "_id"
+            self["@id"] = value
+            return
 
         try:
             iri = self._OBJ_IRIS[name]
@@ -599,17 +601,17 @@ class SHACLObject(object):
             )
 
     def __getattr__(self, name):
-        if name.startswith("_obj_"):
-            return self.__dict__[name]
+        if name in self._OBJ_IRIS:
+            return self.__dict__["_obj_data"][self._OBJ_IRIS[name]]
+
+        if name == self.ID_ALIAS:
+            return self.__dict__["_obj_data"]["@id"]
 
         if name == "_metadata":
-            return self._obj_metadata
+            return self.__dict__["_obj_metadata"]
 
         if name == "_IRI":
             return self._OBJ_IRIS
-
-        if name == self.ID_ALIAS:
-            name = "_id"
 
         if name == "TYPE":
             return self.__class__._OBJ_TYPE
@@ -617,17 +619,14 @@ class SHACLObject(object):
         if name == "COMPACT_TYPE":
             return self.__class__._OBJ_COMPACT_TYPE
 
-        try:
-            iri = self._OBJ_IRIS[name]
-            return self[iri]
-        except KeyError:
-            raise AttributeError(
-                f"'{name}' is not a valid property of {self.__class__.__name__}"
-            )
+        raise AttributeError(
+            f"'{name}' is not a valid property of {self.__class__.__name__}"
+        )
 
     def __delattr__(self, name):
         if name == self.ID_ALIAS:
-            name = "_id"
+            del self["@id"]
+            return
 
         try:
             iri = self._OBJ_IRIS[name]
@@ -650,7 +649,7 @@ class SHACLObject(object):
             yield iri, *v
 
     def __getitem__(self, iri):
-        return self._obj_data[iri]
+        return self.__dict__["_obj_data"][iri]
 
     def __setitem__(self, iri, value):
         if iri == "@id":
@@ -672,11 +671,11 @@ class SHACLObject(object):
 
         prop, _, _, _, _ = self.__get_prop(iri)
         prop.validate(value)
-        self._obj_data[iri] = prop.set(value)
+        self.__dict__["_obj_data"][iri] = prop.set(value)
 
     def __delitem__(self, iri):
         prop, _, _, _, _ = self.__get_prop(iri)
-        self._obj_data[iri] = prop.init()
+        self.__dict__["_obj_data"][iri] = prop.init()
 
     def __iter__(self):
         return self._OBJ_PROPERTIES.keys()
@@ -694,7 +693,7 @@ class SHACLObject(object):
 
         if callback(self, path):
             for iri, prop, _, _, _, _ in self.__iter_props():
-                prop.walk(self._obj_data[iri], callback, path + [f".{iri}"])
+                prop.walk(self.__dict__["_obj_data"][iri], callback, path + [f".{iri}"])
 
     def property_keys(self):
         for iri, _, _, _, pyname, compact in self.__iter_props():
@@ -711,7 +710,7 @@ class SHACLObject(object):
 
         for iri, prop, _, _, _, _ in self.__iter_props():
             for c in prop.iter_objects(
-                self._obj_data[iri], recursive=recursive, visited=visited
+                self.__dict__["_obj_data"][iri], recursive=recursive, visited=visited
             ):
                 yield c
 
@@ -737,7 +736,7 @@ class SHACLObject(object):
 
     def _encode_properties(self, encoder, state):
         for iri, prop, min_count, max_count, pyname, compact in self.__iter_props():
-            value = self._obj_data[iri]
+            value = self.__dict__["_obj_data"][iri]
             if prop.elide(value):
                 if min_count:
                     raise ValueError(
@@ -824,7 +823,7 @@ class SHACLObject(object):
             with decoder.read_property(read_key) as prop_d:
                 v = prop.decode(prop_d, objectset=objectset)
                 prop.validate(v)
-                self._obj_data[iri] = v
+                self.__dict__["_obj_data"][iri] = v
             return True
 
         return False
@@ -836,8 +835,8 @@ class SHACLObject(object):
         visited.add(self)
 
         for iri, prop, _, _, _, _ in self.__iter_props():
-            self._obj_data[iri] = prop.link_prop(
-                self._obj_data[iri],
+            self.__dict__["_obj_data"][iri] = prop.link_prop(
+                self.__dict__["_obj_data"][iri],
                 objectset,
                 missing,
                 visited,
@@ -878,9 +877,9 @@ class SHACLExtensibleObject(object):
     def __init__(self, typ=None, **kwargs):
         super().__init__(**kwargs)
         if typ:
-            self._obj_TYPE = (typ, None)
+            self.__dict__["_obj_TYPE"] = (typ, None)
         else:
-            self._obj_TYPE = (self._OBJ_TYPE, self._OBJ_COMPACT_TYPE)
+            self.__dict__["_obj_TYPE"] = (self._OBJ_TYPE, self._OBJ_COMPACT_TYPE)
 
     @classmethod
     def _make_object(cls, typ):
@@ -906,7 +905,7 @@ class SHACLExtensibleObject(object):
                 )
 
             with decoder.read_property(key) as prop_d:
-                self._obj_data[key] = prop_d.read_value()
+                self.__dict__["_obj_data"][key] = prop_d.read_value()
 
     def _encode_properties(self, encoder, state):
         def encode_value(encoder, v):
@@ -927,7 +926,7 @@ class SHACLExtensibleObject(object):
         if self.CLOSED:
             return
 
-        for iri, value in self._obj_data.items():
+        for iri, value in self.__dict__["_obj_data"].items():
             if iri in self._OBJ_PROPERTIES:
                 continue
 
@@ -943,7 +942,7 @@ class SHACLExtensibleObject(object):
 
             if not is_IRI(iri):
                 raise KeyError(f"Key '{iri}' must be an IRI")
-            self._obj_data[iri] = value
+            self.__dict__["_obj_data"][iri] = value
 
     def __delitem__(self, iri):
         try:
@@ -954,13 +953,13 @@ class SHACLExtensibleObject(object):
 
             if not is_IRI(iri):
                 raise KeyError(f"Key '{iri}' must be an IRI")
-            del self._obj_data[iri]
+            del self.__dict__["_obj_data"][iri]
 
     def __getattr__(self, name):
         if name == "TYPE":
-            return self._obj_TYPE[0]
+            return self.__dict__["_obj_TYPE"][0]
         if name == "COMPACT_TYPE":
-            return self._obj_TYPE[1]
+            return self.__dict__["_obj_TYPE"][1]
         return super().__getattr__(name)
 
     def property_keys(self):
@@ -972,7 +971,7 @@ class SHACLExtensibleObject(object):
         if self.CLOSED:
             return
 
-        for iri in self._obj_data.keys():
+        for iri in self.__dict__["_obj_data"].keys():
             if iri not in iris:
                 yield None, iri, None
 
@@ -2441,6 +2440,4 @@ def main():
 
 
 if __name__ == "__main__":
-    import sys
-
     sys.exit(main())

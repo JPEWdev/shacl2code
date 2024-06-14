@@ -495,3 +495,18 @@
     rdfs:subClassOf <abstract-spdx-class> ;
     rdfs:comment "A concrete class"
     .
+
+<required-abstract> a rdf:Class, sh:NodeShape, owl:Class ;
+    rdfs:comment "A class with a mandatory abstract class" ;
+    sh:property [
+        sh:class <abstract-class> ;
+        sh:path <required-abstract/abstract-class-prop> ;
+        sh:minCount 1 ;
+        sh:maxCount 1
+    ]
+    .
+
+<required-abstract/abstract-class-prop> a rdf:Property ;
+    rdfs:comment "A required abstract class property" ;
+    rdfs:range <abstract-class>
+    .

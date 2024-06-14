@@ -29,6 +29,8 @@ http://example.org/non-shape-class: non-shape-class
 
 http://example.org/parent-class: parent-class
 
+http://example.org/required-abstract: required-abstract
+
 http://example.org/test-another-class: test-another-class
 
 http://example.org/test-class: test-class

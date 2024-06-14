@@ -230,7 +230,7 @@ class ObjectProp(Property):
         self.required = required
 
     def init(self):
-        if self.required:
+        if self.required and not self.cls.IS_ABSTRACT:
             return self.cls()
         return None
 
@@ -497,7 +497,7 @@ def is_blank_node(s):
     return True
 
 
-def register(type_iri, compact_type=None):
+def register(type_iri, *, compact_type=None, abstract=False):
     def add_class(key, c):
         assert (
             key not in SHACLObject.CLASSES
@@ -510,10 +510,12 @@ def register(type_iri, compact_type=None):
         ), f"{c.__name__} is not derived from SHACLObject"
 
         c._OBJ_TYPE = type_iri
-        add_class(type_iri, c)
+        c.IS_ABSTRACT = abstract
+        if not abstract:
+            add_class(type_iri, c)
 
         c._OBJ_COMPACT_TYPE = compact_type
-        if compact_type:
+        if compact_type and not abstract:
             add_class(compact_type, c)
 
         # Registration is deferred until the first instance of class is created
@@ -532,8 +534,14 @@ class SHACLObject(object):
     CLASSES = {}
     NODE_KIND = NodeKind.BlankNodeOrIRI
     ID_ALIAS = None
+    IS_ABSTRACT = True
 
     def __init__(self, **kwargs):
+        if self.__class__.IS_ABSTRACT:
+            raise NotImplementedError(
+                f"{self.__class__.__name__} is abstract and cannot be implemented"
+            )
+
         with register_lock:
             cls = self.__class__
             if cls._NEEDS_REG:
@@ -1921,31 +1929,23 @@ CONTEXT_URLS = [
 
 # CLASSES
 # An Abstract class
+@register("http://example.org/abstract-class", compact_type="abstract-class", abstract=True)
 class abstract_class(SHACLObject):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     NAMED_INDIVIDUALS = {
     }
 
-    def __init__(self, *args, **kwargs):
-        if self.__class__ is abstract_class:
-            raise NotImplementedError(f"{self.__class__.__name__} is abstract and cannot be implemented")
-        super().__init__(*args, **kwargs)
-
 
 # An Abstract class using the SPDX type
+@register("http://example.org/abstract-spdx-class", compact_type="abstract-spdx-class", abstract=True)
 class abstract_spdx_class(SHACLObject):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     NAMED_INDIVIDUALS = {
     }
 
-    def __init__(self, *args, **kwargs):
-        if self.__class__ is abstract_spdx_class:
-            raise NotImplementedError(f"{self.__class__.__name__} is abstract and cannot be implemented")
-        super().__init__(*args, **kwargs)
-
 
 # A concrete class
-@register("http://example.org/concrete-class", "concrete-class")
+@register("http://example.org/concrete-class", compact_type="concrete-class", abstract=False)
 class concrete_class(abstract_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     NAMED_INDIVIDUALS = {
@@ -1953,7 +1953,7 @@ class concrete_class(abstract_class):
 
 
 # A concrete class
-@register("http://example.org/concrete-spdx-class", "concrete-spdx-class")
+@register("http://example.org/concrete-spdx-class", compact_type="concrete-spdx-class", abstract=False)
 class concrete_spdx_class(abstract_spdx_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     NAMED_INDIVIDUALS = {
@@ -1961,7 +1961,7 @@ class concrete_spdx_class(abstract_spdx_class):
 
 
 # An enumerated type
-@register("http://example.org/enumType", "enumType")
+@register("http://example.org/enumType", compact_type="enumType", abstract=False)
 class enumType(SHACLObject):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     NAMED_INDIVIDUALS = {
@@ -1978,7 +1978,7 @@ class enumType(SHACLObject):
 
 
 # A class with an ID alias
-@register("http://example.org/id-prop-class", "id-prop-class")
+@register("http://example.org/id-prop-class", compact_type="id-prop-class", abstract=False)
 class id_prop_class(SHACLObject):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     ID_ALIAS = "testid"
@@ -1987,7 +1987,7 @@ class id_prop_class(SHACLObject):
 
 
 # A class that inherits its idPropertyName from the parent
-@register("http://example.org/inherited-id-prop-class", "inherited-id-prop-class")
+@register("http://example.org/inherited-id-prop-class", compact_type="inherited-id-prop-class", abstract=False)
 class inherited_id_prop_class(id_prop_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     ID_ALIAS = "testid"
@@ -1996,7 +1996,7 @@ class inherited_id_prop_class(id_prop_class):
 
 
 # A class to test links
-@register("http://example.org/link-class", "link-class")
+@register("http://example.org/link-class", compact_type="link-class", abstract=False)
 class link_class(SHACLObject):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     NAMED_INDIVIDUALS = {
@@ -2036,7 +2036,7 @@ class link_class(SHACLObject):
 
 
 # A class derived from link-class
-@register("http://example.org/link-derived-class", "link-derived-class")
+@register("http://example.org/link-derived-class", compact_type="link-derived-class", abstract=False)
 class link_derived_class(link_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     NAMED_INDIVIDUALS = {
@@ -2044,7 +2044,7 @@ class link_derived_class(link_class):
 
 
 # A class that must be a blank node
-@register("http://example.org/node-kind-blank", "node-kind-blank")
+@register("http://example.org/node-kind-blank", compact_type="node-kind-blank", abstract=False)
 class node_kind_blank(link_class):
     NODE_KIND = NodeKind.BlankNode
     NAMED_INDIVIDUALS = {
@@ -2052,7 +2052,7 @@ class node_kind_blank(link_class):
 
 
 # A class that must be an IRI
-@register("http://example.org/node-kind-iri", "node-kind-iri")
+@register("http://example.org/node-kind-iri", compact_type="node-kind-iri", abstract=False)
 class node_kind_iri(link_class):
     NODE_KIND = NodeKind.IRI
     NAMED_INDIVIDUALS = {
@@ -2060,7 +2060,7 @@ class node_kind_iri(link_class):
 
 
 # A class that can be either a blank node or an IRI
-@register("http://example.org/node-kind-iri-or-blank", "node-kind-iri-or-blank")
+@register("http://example.org/node-kind-iri-or-blank", compact_type="node-kind-iri-or-blank", abstract=False)
 class node_kind_iri_or_blank(link_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     NAMED_INDIVIDUALS = {
@@ -2068,7 +2068,7 @@ class node_kind_iri_or_blank(link_class):
 
 
 # A class that is not a nodeshape
-@register("http://example.org/non-shape-class", "non-shape-class")
+@register("http://example.org/non-shape-class", compact_type="non-shape-class", abstract=False)
 class non_shape_class(SHACLObject):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     NAMED_INDIVIDUALS = {
@@ -2076,15 +2076,35 @@ class non_shape_class(SHACLObject):
 
 
 # The parent class
-@register("http://example.org/parent-class", "parent-class")
+@register("http://example.org/parent-class", compact_type="parent-class", abstract=False)
 class parent_class(SHACLObject):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     NAMED_INDIVIDUALS = {
     }
 
 
+# A class with a mandatory abstract class
+@register("http://example.org/required-abstract", compact_type="required-abstract", abstract=False)
+class required_abstract(SHACLObject):
+    NODE_KIND = NodeKind.BlankNodeOrIRI
+    NAMED_INDIVIDUALS = {
+    }
+
+    @classmethod
+    def _register_props(cls):
+        super()._register_props()
+        # A required abstract class property
+        cls._add_property(
+            "required_abstract_abstract_class_prop",
+            ObjectProp(abstract_class, True),
+            iri="http://example.org/required-abstract/abstract-class-prop",
+            min_count=1,
+            compact="required-abstract/abstract-class-prop",
+        )
+
+
 # Another class
-@register("http://example.org/test-another-class", "test-another-class")
+@register("http://example.org/test-another-class", compact_type="test-another-class", abstract=False)
 class test_another_class(SHACLObject):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     NAMED_INDIVIDUALS = {
@@ -2092,7 +2112,7 @@ class test_another_class(SHACLObject):
 
 
 # The test class
-@register("http://example.org/test-class", "test-class")
+@register("http://example.org/test-class", compact_type="test-class", abstract=False)
 class test_class(parent_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     NAMED_INDIVIDUALS = {
@@ -2300,7 +2320,7 @@ class test_class(parent_class):
         )
 
 
-@register("http://example.org/test-class-required", "test-class-required")
+@register("http://example.org/test-class-required", compact_type="test-class-required", abstract=False)
 class test_class_required(test_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     NAMED_INDIVIDUALS = {
@@ -2329,7 +2349,7 @@ class test_class_required(test_class):
 
 
 # A class derived from test-class
-@register("http://example.org/test-derived-class", "test-derived-class")
+@register("http://example.org/test-derived-class", compact_type="test-derived-class", abstract=False)
 class test_derived_class(test_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     NAMED_INDIVIDUALS = {
@@ -2348,7 +2368,7 @@ class test_derived_class(test_class):
 
 
 # Derived class that sorts before the parent to test ordering
-@register("http://example.org/aaa-derived-class", "aaa-derived-class")
+@register("http://example.org/aaa-derived-class", compact_type="aaa-derived-class", abstract=False)
 class aaa_derived_class(parent_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     NAMED_INDIVIDUALS = {
@@ -2356,7 +2376,7 @@ class aaa_derived_class(parent_class):
 
 
 # A class that derives its nodeKind from parent
-@register("http://example.org/derived-node-kind-iri", "derived-node-kind-iri")
+@register("http://example.org/derived-node-kind-iri", compact_type="derived-node-kind-iri", abstract=False)
 class derived_node_kind_iri(node_kind_iri):
     NODE_KIND = NodeKind.IRI
     NAMED_INDIVIDUALS = {
@@ -2364,7 +2384,7 @@ class derived_node_kind_iri(node_kind_iri):
 
 
 # An extensible class
-@register("http://example.org/extensible-class", "extensible-class")
+@register("http://example.org/extensible-class", compact_type="extensible-class", abstract=False)
 class extensible_class(SHACLExtensibleObject, link_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     NAMED_INDIVIDUALS = {

@@ -573,6 +573,53 @@
                 }
             ]
         },
+        "http_exampleorgrequiredabstract": {
+            "allOf": [
+                {
+                    "type": "object",
+                    "properties": {
+                        "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
+                        "@type": {
+                            "oneOf": [
+                                { "const": "http://example.org/required-abstract" }
+                            ]
+                        }
+                    }
+                },
+                { "$ref": "#/$defs/http_exampleorgrequiredabstract_props" }
+            ]
+        },
+        "http_exampleorgrequiredabstract_derived": {
+            "anyOf": [
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/http_exampleorgrequiredabstract" }
+                    ]
+                },
+                { "$ref": "#/$defs/BlankNodeOrIRI" }
+            ]
+        },
+        "http_exampleorgrequiredabstract_props": {
+            "allOf": [
+                { "$ref": "#/$defs/SHACLClass" },
+                {
+                    "type": "object",
+                    "properties": {
+                        "http://example.org/required-abstract/abstract-class-prop": {
+                            "$ref": "#/$defs/prop_http_exampleorgrequiredabstract_abstractclassprop"
+                        }
+                    },
+                    "required": [
+                        "http://example.org/required-abstract/abstract-class-prop"
+                    ]
+                }
+            ]
+        },
+        "prop_http_exampleorgrequiredabstract_abstractclassprop": {
+                "$ref": "#/$defs/http_exampleorgabstractclass_derived"
+        },
         "http_exampleorgtestanotherclass": {
             "allOf": [
                 {
@@ -1182,6 +1229,7 @@
                                 "http://example.org/node-kind-iri-or-blank",
                                 "http://example.org/non-shape-class",
                                 "http://example.org/parent-class",
+                                "http://example.org/required-abstract",
                                 "http://example.org/test-another-class",
                                 "http://example.org/test-class",
                                 "http://example.org/test-class-required",
@@ -1210,6 +1258,7 @@
                 { "$ref": "#/$defs/http_exampleorgnodekindiriorblank" },
                 { "$ref": "#/$defs/http_exampleorgnonshapeclass" },
                 { "$ref": "#/$defs/http_exampleorgparentclass" },
+                { "$ref": "#/$defs/http_exampleorgrequiredabstract" },
                 { "$ref": "#/$defs/http_exampleorgtestanotherclass" },
                 { "$ref": "#/$defs/http_exampleorgtestclass" },
                 { "$ref": "#/$defs/http_exampleorgtestclassrequired" },

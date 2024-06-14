@@ -1703,3 +1703,29 @@ def test_abstract_classes(model, abstract, concrete):
     # implemented
     cls = getattr(model, concrete)
     cls()
+
+
+def test_required_abstract_class_property(model, tmp_path):
+    # Test that a class with a required property that references an abstract
+    # class can be instantiated
+    c = model.required_abstract()
+    assert c.required_abstract_abstract_class_prop is None
+
+    outfile = tmp_path / "out.json"
+    objset = model.SHACLObjectSet()
+    objset.add(c)
+    s = model.JSONLDSerializer()
+
+    # Atempting to serialize without assigning the property should fail
+    with outfile.open("wb") as f:
+        with pytest.raises(ValueError):
+            s.write(objset, f, indent=4)
+
+    # Assigning a concrete class should succeed and allow serialization
+    c.required_abstract_abstract_class_prop = model.concrete_class()
+    with outfile.open("wb") as f:
+        s.write(objset, f, indent=4)
+
+    # Deleting an abstract class property should return it to None
+    del c.required_abstract_abstract_class_prop
+    assert c.required_abstract_abstract_class_prop is None

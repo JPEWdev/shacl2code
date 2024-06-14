@@ -577,6 +577,53 @@
                 }
             ]
         },
+        "requiredabstract": {
+            "allOf": [
+                {
+                    "type": "object",
+                    "properties": {
+                        "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
+                        "@type": {
+                            "oneOf": [
+                                { "const": "required-abstract" }
+                            ]
+                        }
+                    }
+                },
+                { "$ref": "#/$defs/requiredabstract_props" }
+            ]
+        },
+        "requiredabstract_derived": {
+            "anyOf": [
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/requiredabstract" }
+                    ]
+                },
+                { "$ref": "#/$defs/BlankNodeOrIRI" }
+            ]
+        },
+        "requiredabstract_props": {
+            "allOf": [
+                { "$ref": "#/$defs/SHACLClass" },
+                {
+                    "type": "object",
+                    "properties": {
+                        "required-abstract/abstract-class-prop": {
+                            "$ref": "#/$defs/prop_requiredabstract_requiredabstractabstractclassprop"
+                        }
+                    },
+                    "required": [
+                        "required-abstract/abstract-class-prop"
+                    ]
+                }
+            ]
+        },
+        "prop_requiredabstract_requiredabstractabstractclassprop": {
+                "$ref": "#/$defs/abstractclass_derived"
+        },
         "testanotherclass": {
             "allOf": [
                 {
@@ -1186,6 +1233,7 @@
                                 "node-kind-iri-or-blank",
                                 "non-shape-class",
                                 "parent-class",
+                                "required-abstract",
                                 "test-another-class",
                                 "test-class",
                                 "test-class-required",
@@ -1214,6 +1262,7 @@
                 { "$ref": "#/$defs/nodekindiriorblank" },
                 { "$ref": "#/$defs/nonshapeclass" },
                 { "$ref": "#/$defs/parentclass" },
+                { "$ref": "#/$defs/requiredabstract" },
                 { "$ref": "#/$defs/testanotherclass" },
                 { "$ref": "#/$defs/testclass" },
                 { "$ref": "#/$defs/testclassrequired" },

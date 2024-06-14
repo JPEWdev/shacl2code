@@ -754,6 +754,7 @@ def type_tests(name, *typ):
         ),
         ("test_class_class_prop", lambda model: model.test_another_class(), TypeError),
         ("test_class_class_prop", lambda model: model.parent_class(), TypeError),
+        ("test_class_class_prop", lambda model: model.test_class.named, SAME_AS_VALUE),
         ("test_class_class_prop", "_:blanknode", "_:blanknode"),
         (
             "test_class_class_prop",
@@ -1621,6 +1622,11 @@ def test_objset_foreach_type(model, roundtrip):
     expect.add(objset.find_by_id("http://serialize.example.com/nested-parent"))
     expect.add(
         objset.find_by_id(
+            "http://serialize.example.com/test-named-individual-reference"
+        )
+    )
+    expect.add(
+        objset.find_by_id(
             "http://serialize.example.com/nested-parent"
         ).test_class_class_prop
     )
@@ -1739,3 +1745,29 @@ def test_required_abstract_class_property(model, tmp_path):
     # Deleting an abstract class property should return it to None
     del c.required_abstract_abstract_class_prop
     assert c.required_abstract_abstract_class_prop is None
+
+
+def test_named_individual(model, roundtrip):
+    objset = model.SHACLObjectSet()
+    with roundtrip.open("r") as f:
+        d = model.JSONLDDeserializer()
+        d.read(f, objset)
+
+    c = objset.find_by_id(
+        "http://serialize.example.com/test-named-individual-reference"
+    )
+    assert c is not None
+    assert c.test_class_class_prop == model.test_class.named
+
+    assert model.test_class.named not in objset.missing_ids
+
+
+def test_missing_ids(model, roundtrip):
+    objset = model.SHACLObjectSet()
+    with roundtrip.open("r") as f:
+        d = model.JSONLDDeserializer()
+        d.read(f, objset)
+
+    assert objset.missing_ids == {
+        "http://serialize.example.com/non-shape",
+    }

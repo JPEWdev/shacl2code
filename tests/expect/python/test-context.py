@@ -264,6 +264,7 @@ class ObjectProp(Property):
             raise ValueError("Object cannot be None")
 
         if isinstance(value, str):
+            value = _NI_ENCODE_CONTEXT.get(value, value)
             encoder.write_iri(value)
             return
 
@@ -273,6 +274,8 @@ class ObjectProp(Property):
         iri = decoder.read_iri()
         if iri is None:
             return self.cls.decode(decoder, objectset=objectset)
+
+        iri = _NI_DECODE_CONTEXT.get(iri, iri)
 
         if objectset is None:
             return iri
@@ -506,6 +509,8 @@ def register(type_iri, *, compact_type=None, abstract=False):
         SHACLObject.CLASSES[key] = c
 
     def decorator(c):
+        global NAMED_INDIVIDUALS
+
         assert issubclass(
             c, SHACLObject
         ), f"{c.__name__} is not derived from SHACLObject"
@@ -518,6 +523,8 @@ def register(type_iri, *, compact_type=None, abstract=False):
         if compact_type:
             add_class(compact_type, c)
 
+        NAMED_INDIVIDUALS |= set(c.NAMED_INDIVIDUALS.values())
+
         # Registration is deferred until the first instance of class is created
         # so that it has access to any other defined class
         c._NEEDS_REG = True
@@ -527,6 +534,7 @@ def register(type_iri, *, compact_type=None, abstract=False):
 
 
 register_lock = threading.Lock()
+NAMED_INDIVIDUALS = set()
 
 
 @functools.total_ordering
@@ -1079,6 +1087,8 @@ class SHACLObjectSet(object):
         return self._link()
 
     def _link(self):
+        global NAMED_INDIVIDUALS
+
         self.missing_ids = set()
         visited = set()
 
@@ -1100,6 +1110,9 @@ class SHACLObjectSet(object):
             else:
                 obj_by_id[_id] = obj
         self.obj_by_id = obj_by_id
+
+        # Named individuals aren't considered missing
+        self.missing_ids -= NAMED_INDIVIDUALS
 
         return self.missing_ids
 
@@ -1923,6 +1936,20 @@ def print_tree(objects, all_fields=False):
 CONTEXT_URLS = [
     "https://spdx.github.io/spdx-3-model/context.json",
 ]
+
+_NI_ENCODE_CONTEXT = {
+    "http://example.org/enumType/foo": "enumType/foo",
+    "http://example.org/enumType/bar": "enumType/bar",
+    "http://example.org/enumType/nolabel": "enumType/nolabel",
+    "http://example.org/test-class/named": "test-class/named",
+}
+
+_NI_DECODE_CONTEXT = {
+    "enumType/foo": "http://example.org/enumType/foo",
+    "enumType/bar": "http://example.org/enumType/bar",
+    "enumType/nolabel": "http://example.org/enumType/nolabel",
+    "test-class/named": "http://example.org/test-class/named",
+}
 
 
 # CLASSES

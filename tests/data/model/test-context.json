@@ -87,6 +87,7 @@
       "@id": "test:test-class/enum-prop-no-class",
       "@type": "@id"
     },
+    "test-class/named": "test:test-class/named",
     "test-class/regex": {
       "@id": "test:test-class/regex",
       "@type": "xsd:string"

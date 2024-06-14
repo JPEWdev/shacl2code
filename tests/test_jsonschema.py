@@ -815,10 +815,14 @@ def type_tests(name, *, good=[], bad=[], typ=[]):
                 {"@type": "test-derived-class"},
                 "_:blanknode",
                 "http://serialize.example.org/test",
+                # Named individual
+                "test-class/named",
             ],
             bad=[
                 {"@type": "test-another-class"},
                 {"@type": "parent-class"},
+                "not/an/iri",
+                "not-an-iri",
             ],
             typ=[object, str],
         ),

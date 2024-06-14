@@ -2108,7 +2108,9 @@ class http_example_org_test_another_class(SHACLObject):
 class http_example_org_test_class(http_example_org_parent_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     NAMED_INDIVIDUALS = {
+        "named": "http://example.org/test-class/named",
     }
+    named = "http://example.org/test-class/named"
 
     @classmethod
     def _register_props(cls):

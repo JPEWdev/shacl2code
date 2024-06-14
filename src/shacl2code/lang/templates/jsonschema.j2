@@ -86,9 +86,14 @@
         },
         {%- endif %}
         "{{ varname(*class.clsname) }}_derived": {
-            {%- set ns = namespace(external_ref=False, local_ref=False, any_ref=False, json_refs=[]) %}
+            {%- set ns = namespace(json_refs=[], named_individuals=[]) %}
             {%- for d in get_all_derived(class) + [class._id] %}
                 {%- set ns.json_refs = ns.json_refs + ["#/$defs/" + varname(*classes.get(d).clsname)] %}
+                {%- for n in classes.get(d).named_individuals %}
+                    {%- if context.compact(n._id) != n._id %}
+                        {%- set ns.named_individuals = ns.named_individuals + [context.compact(n._id)] %}
+                    {%- endif %}
+                {%- endfor %}
             {%- endfor %}
             "anyOf": [
                 {%- if ns.json_refs %}
@@ -104,6 +109,9 @@
                     ]
                 },
                 {%- endif %}
+                {%- for n in ns.named_individuals %}
+                { "const": "{{ n }}" },
+                {%- endfor %}
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },

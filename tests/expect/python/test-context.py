@@ -2114,7 +2114,9 @@ class test_another_class(SHACLObject):
 class test_class(parent_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     NAMED_INDIVIDUALS = {
+        "named": "http://example.org/test-class/named",
     }
+    named = "http://example.org/test-class/named"
 
     @classmethod
     def _register_props(cls):

@@ -166,6 +166,10 @@
     ]
     .
 
+<test-class/named> a owl:NamedIndividual, <test-class> ;
+    rdfs:label "A named individual of the test class"
+    .
+
 <test-class-required> a sh:NodeShape, owl:Class ;
     rdfs:subClassOf <test-class> ;
     sh:property [

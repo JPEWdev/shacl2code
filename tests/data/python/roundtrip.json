@@ -78,6 +78,11 @@
         },
         {
             "@type": "test-class",
+            "@id": "http://serialize.example.com/test-named-individual-reference",
+            "test-class/class-prop": "test-class/named"
+        },
+        {
+            "@type": "test-class",
             "@id": "http://serialize.example.com/test-special-chars",
             "test-class/string-scalar-prop": "special chars \"\n\r:{}[]"
         }

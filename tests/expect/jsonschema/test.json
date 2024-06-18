@@ -187,6 +187,45 @@
                 }
             ]
         },
+        "http_exampleorgextensibleabstractclass": {
+            "allOf": [
+                {
+                    "type": "object",
+                    "unevaluatedProperties": true,
+                    "properties": {
+                        "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
+                        "@type": {
+                            "allOf":  [
+                                { "$ref": "#/$defs/IRI" },
+                                { "not": { "const": "http://example.org/extensible-abstract-class" } }
+                            ]
+                        }
+                    }
+                },
+                { "$ref": "#/$defs/http_exampleorgextensibleabstractclass_props" }
+            ]
+        },
+        "http_exampleorgextensibleabstractclass_derived": {
+            "anyOf": [
+                {
+                    "type": "object",
+                    "anyOf": [
+                        { "$ref": "#/$defs/http_exampleorgextensibleabstractclass" }
+                    ]
+                },
+                { "$ref": "#/$defs/BlankNodeOrIRI" }
+            ]
+        },
+        "http_exampleorgextensibleabstractclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/SHACLClass" },
+                {
+                    "type": "object",
+                    "properties": {
+                    }
+                }
+            ]
+        },
         "http_exampleorgidpropclass": {
             "allOf": [
                 {
@@ -1061,6 +1100,53 @@
         "prop_http_exampleorgtestderivedclass_stringprop": {
                     "type": "string"
         },
+        "http_exampleorgusesextensibleabstractclass": {
+            "allOf": [
+                {
+                    "type": "object",
+                    "properties": {
+                        "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
+                        "@type": {
+                            "oneOf": [
+                                { "const": "http://example.org/uses-extensible-abstract-class" }
+                            ]
+                        }
+                    }
+                },
+                { "$ref": "#/$defs/http_exampleorgusesextensibleabstractclass_props" }
+            ]
+        },
+        "http_exampleorgusesextensibleabstractclass_derived": {
+            "anyOf": [
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/http_exampleorgusesextensibleabstractclass" }
+                    ]
+                },
+                { "$ref": "#/$defs/BlankNodeOrIRI" }
+            ]
+        },
+        "http_exampleorgusesextensibleabstractclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/SHACLClass" },
+                {
+                    "type": "object",
+                    "properties": {
+                        "http://example.org/uses-extensible-abstract-class/prop": {
+                            "$ref": "#/$defs/prop_http_exampleorgusesextensibleabstractclass_prop"
+                        }
+                    },
+                    "required": [
+                        "http://example.org/uses-extensible-abstract-class/prop"
+                    ]
+                }
+            ]
+        },
+        "prop_http_exampleorgusesextensibleabstractclass_prop": {
+                "$ref": "#/$defs/http_exampleorgextensibleabstractclass_derived"
+        },
         "http_exampleorgaaaderivedclass": {
             "allOf": [
                 {
@@ -1234,6 +1320,7 @@
                                 "http://example.org/test-class",
                                 "http://example.org/test-class-required",
                                 "http://example.org/test-derived-class",
+                                "http://example.org/uses-extensible-abstract-class",
                                 "http://example.org/aaa-derived-class",
                                 "http://example.org/derived-node-kind-iri",
                                 "http://example.org/extensible-class"
@@ -1263,6 +1350,7 @@
                 { "$ref": "#/$defs/http_exampleorgtestclass" },
                 { "$ref": "#/$defs/http_exampleorgtestclassrequired" },
                 { "$ref": "#/$defs/http_exampleorgtestderivedclass" },
+                { "$ref": "#/$defs/http_exampleorgusesextensibleabstractclass" },
                 { "$ref": "#/$defs/http_exampleorgaaaderivedclass" },
                 { "$ref": "#/$defs/http_exampleorgderivednodekindiri" },
                 { "$ref": "#/$defs/http_exampleorgextensibleclass" }

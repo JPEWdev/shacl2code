@@ -545,7 +545,7 @@ class SHACLObject(object):
     IS_ABSTRACT = True
 
     def __init__(self, **kwargs):
-        if self.__class__.IS_ABSTRACT:
+        if self._is_abstract():
             raise NotImplementedError(
                 f"{self.__class__.__name__} is abstract and cannot be implemented"
             )
@@ -566,6 +566,9 @@ class SHACLObject(object):
 
         for k, v in kwargs.items():
             setattr(self, k, v)
+
+    def _is_abstract(self):
+        return self.__class__.IS_ABSTRACT
 
     @classmethod
     def _register_props(cls):
@@ -883,11 +886,20 @@ class SHACLExtensibleObject(object):
     CLOSED = False
 
     def __init__(self, typ=None, **kwargs):
-        super().__init__(**kwargs)
         if typ:
             self.__dict__["_obj_TYPE"] = (typ, None)
         else:
             self.__dict__["_obj_TYPE"] = (self._OBJ_TYPE, self._OBJ_COMPACT_TYPE)
+        super().__init__(**kwargs)
+
+    def _is_abstract(self):
+        # Unknown classes are assumed to not be abstract so that they can be
+        # deserialized
+        typ = self.__dict__["_obj_TYPE"][0]
+        if typ in self.__class__.CLASSES:
+            return self.__class__.CLASSES[typ].IS_ABSTRACT
+
+        return False
 
     @classmethod
     def _make_object(cls, typ):

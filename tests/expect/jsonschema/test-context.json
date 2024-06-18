@@ -194,6 +194,45 @@
                 }
             ]
         },
+        "extensibleabstractclass": {
+            "allOf": [
+                {
+                    "type": "object",
+                    "unevaluatedProperties": true,
+                    "properties": {
+                        "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
+                        "@type": {
+                            "allOf":  [
+                                { "$ref": "#/$defs/IRI" },
+                                { "not": { "const": "extensible-abstract-class" } }
+                            ]
+                        }
+                    }
+                },
+                { "$ref": "#/$defs/extensibleabstractclass_props" }
+            ]
+        },
+        "extensibleabstractclass_derived": {
+            "anyOf": [
+                {
+                    "type": "object",
+                    "anyOf": [
+                        { "$ref": "#/$defs/extensibleabstractclass" }
+                    ]
+                },
+                { "$ref": "#/$defs/BlankNodeOrIRI" }
+            ]
+        },
+        "extensibleabstractclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/SHACLClass" },
+                {
+                    "type": "object",
+                    "properties": {
+                    }
+                }
+            ]
+        },
         "idpropclass": {
             "allOf": [
                 {
@@ -1070,6 +1109,53 @@
         "prop_testderivedclass_testderivedclassstringprop": {
                     "type": "string"
         },
+        "usesextensibleabstractclass": {
+            "allOf": [
+                {
+                    "type": "object",
+                    "properties": {
+                        "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
+                        "@type": {
+                            "oneOf": [
+                                { "const": "uses-extensible-abstract-class" }
+                            ]
+                        }
+                    }
+                },
+                { "$ref": "#/$defs/usesextensibleabstractclass_props" }
+            ]
+        },
+        "usesextensibleabstractclass_derived": {
+            "anyOf": [
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/usesextensibleabstractclass" }
+                    ]
+                },
+                { "$ref": "#/$defs/BlankNodeOrIRI" }
+            ]
+        },
+        "usesextensibleabstractclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/SHACLClass" },
+                {
+                    "type": "object",
+                    "properties": {
+                        "uses-extensible-abstract-class/prop": {
+                            "$ref": "#/$defs/prop_usesextensibleabstractclass_usesextensibleabstractclassprop"
+                        }
+                    },
+                    "required": [
+                        "uses-extensible-abstract-class/prop"
+                    ]
+                }
+            ]
+        },
+        "prop_usesextensibleabstractclass_usesextensibleabstractclassprop": {
+                "$ref": "#/$defs/extensibleabstractclass_derived"
+        },
         "aaaderivedclass": {
             "allOf": [
                 {
@@ -1243,6 +1329,7 @@
                                 "test-class",
                                 "test-class-required",
                                 "test-derived-class",
+                                "uses-extensible-abstract-class",
                                 "aaa-derived-class",
                                 "derived-node-kind-iri",
                                 "extensible-class"
@@ -1272,6 +1359,7 @@
                 { "$ref": "#/$defs/testclass" },
                 { "$ref": "#/$defs/testclassrequired" },
                 { "$ref": "#/$defs/testderivedclass" },
+                { "$ref": "#/$defs/usesextensibleabstractclass" },
                 { "$ref": "#/$defs/aaaderivedclass" },
                 { "$ref": "#/$defs/derivednodekindiri" },
                 { "$ref": "#/$defs/extensibleclass" }

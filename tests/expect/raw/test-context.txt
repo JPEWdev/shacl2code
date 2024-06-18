@@ -11,6 +11,8 @@ http://example.org/concrete-spdx-class: concrete-spdx-class
 
 http://example.org/enumType: enumType
 
+http://example.org/extensible-abstract-class: extensible-abstract-class
+
 http://example.org/id-prop-class: id-prop-class
 
 http://example.org/inherited-id-prop-class: inherited-id-prop-class
@@ -38,6 +40,8 @@ http://example.org/test-class: test-class
 http://example.org/test-class-required: test-class-required
 
 http://example.org/test-derived-class: test-derived-class
+
+http://example.org/uses-extensible-abstract-class: uses-extensible-abstract-class
 
 http://example.org/aaa-derived-class: aaa-derived-class
 

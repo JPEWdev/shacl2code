@@ -1747,6 +1747,20 @@ def test_required_abstract_class_property(model, tmp_path):
     assert c.required_abstract_abstract_class_prop is None
 
 
+def test_extensible_abstract_class(model):
+    @model.register("http://example.org/custom-extension-class")
+    class Extension(model.extensible_abstract_class):
+        pass
+
+    # Test that an extensible abstract class cannot be created
+    with pytest.raises(NotImplementedError):
+        model.extensible_abstract_class()
+
+    # Test that a class derived from an abstract extensible class can be
+    # created
+    Extension()
+
+
 def test_named_individual(model, roundtrip):
     objset = model.SHACLObjectSet()
     with roundtrip.open("r") as f:

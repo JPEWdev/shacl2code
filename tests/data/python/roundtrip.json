@@ -85,6 +85,13 @@
             "@type": "test-class",
             "@id": "http://serialize.example.com/test-special-chars",
             "test-class/string-scalar-prop": "special chars \"\n\r:{}[]"
+        },
+        {
+            "@type": "uses-extensible-abstract-class",
+            "@id": "http://serialize.example.com/test-uses-extensible-abstract",
+            "uses-extensible-abstract-class/prop": {
+                "@type": " http://serialize.example.com/custom-extensible"
+            }
         }
     ]
 }

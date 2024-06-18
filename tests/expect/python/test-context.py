@@ -545,7 +545,7 @@ class SHACLObject(object):
     IS_ABSTRACT = True
 
     def __init__(self, **kwargs):
-        if self.__class__.IS_ABSTRACT:
+        if self._is_abstract():
             raise NotImplementedError(
                 f"{self.__class__.__name__} is abstract and cannot be implemented"
             )
@@ -566,6 +566,9 @@ class SHACLObject(object):
 
         for k, v in kwargs.items():
             setattr(self, k, v)
+
+    def _is_abstract(self):
+        return self.__class__.IS_ABSTRACT
 
     @classmethod
     def _register_props(cls):
@@ -883,11 +886,20 @@ class SHACLExtensibleObject(object):
     CLOSED = False
 
     def __init__(self, typ=None, **kwargs):
-        super().__init__(**kwargs)
         if typ:
             self.__dict__["_obj_TYPE"] = (typ, None)
         else:
             self.__dict__["_obj_TYPE"] = (self._OBJ_TYPE, self._OBJ_COMPACT_TYPE)
+        super().__init__(**kwargs)
+
+    def _is_abstract(self):
+        # Unknown classes are assumed to not be abstract so that they can be
+        # deserialized
+        typ = self.__dict__["_obj_TYPE"][0]
+        if typ in self.__class__.CLASSES:
+            return self.__class__.CLASSES[typ].IS_ABSTRACT
+
+        return False
 
     @classmethod
     def _make_object(cls, typ):
@@ -2002,6 +2014,14 @@ class enumType(SHACLObject):
     nolabel = "http://example.org/enumType/nolabel"
 
 
+# An extensible abstract class
+@register("http://example.org/extensible-abstract-class", compact_type="extensible-abstract-class", abstract=True)
+class extensible_abstract_class(SHACLExtensibleObject, SHACLObject):
+    NODE_KIND = NodeKind.BlankNodeOrIRI
+    NAMED_INDIVIDUALS = {
+    }
+
+
 # A class with an ID alias
 @register("http://example.org/id-prop-class", compact_type="id-prop-class", abstract=False)
 class id_prop_class(SHACLObject):
@@ -2391,6 +2411,26 @@ class test_derived_class(test_class):
             StringProp(),
             iri="http://example.org/test-derived-class/string-prop",
             compact="test-derived-class/string-prop",
+        )
+
+
+# A class that uses an abstract extensible class
+@register("http://example.org/uses-extensible-abstract-class", compact_type="uses-extensible-abstract-class", abstract=False)
+class uses_extensible_abstract_class(SHACLObject):
+    NODE_KIND = NodeKind.BlankNodeOrIRI
+    NAMED_INDIVIDUALS = {
+    }
+
+    @classmethod
+    def _register_props(cls):
+        super()._register_props()
+        # A property that references and abstract extensible class
+        cls._add_property(
+            "uses_extensible_abstract_class_prop",
+            ObjectProp(extensible_abstract_class, True),
+            iri="http://example.org/uses-extensible-abstract-class/prop",
+            min_count=1,
+            compact="uses-extensible-abstract-class/prop",
         )
 
 

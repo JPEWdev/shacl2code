@@ -701,6 +701,38 @@ def node_kind_tests(name, blank, iri):
                 "@type": "concrete-spdx-class",
             },
         ),
+        # An extensible abstract class cannot be instantiated
+        (
+            False,
+            {
+                "@context": CONTEXT,
+                "@type": "extensible-abstract-class",
+            },
+        ),
+        # Any can type can be used where a extensible abstract class is
+        # references, except... (SEE NEXT)
+        (
+            True,
+            {
+                "@context": CONTEXT,
+                "@type": "uses-extensible-abstract-class",
+                "uses-extensible-abstract-class/prop": {
+                    "@type": "http://example.com/extended",
+                },
+            },
+        ),
+        # ... the exact type of the extensible abstract class is specifically
+        # not allowed
+        (
+            False,
+            {
+                "@context": CONTEXT,
+                "@type": "uses-extensible-abstract-class",
+                "uses-extensible-abstract-class/prop": {
+                    "@type": "extensible-abstract-class",
+                },
+            },
+        ),
         # Base object for type tests
         (True, BASE_OBJ),
     ],

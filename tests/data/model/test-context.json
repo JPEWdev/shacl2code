@@ -131,6 +131,10 @@
     "extensible-class/required": {
       "@id": "test:extensible-class/required",
       "@type": "xsd:string"
+    },
+    "uses-extensible-abstract-class/prop": {
+      "@id": "test:uses-extensible-abstract-class/prop",
+      "@type": "@id"
     }
   }
 }

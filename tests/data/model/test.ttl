@@ -514,3 +514,24 @@
     rdfs:comment "A required abstract class property" ;
     rdfs:range <abstract-class>
     .
+
+<extensible-abstract-class> a rdf:Class, sh:NodeShape, owl:Class ;
+    sh-to-code:isExtensible true ;
+    sh-to-code:isAbstract true ;
+    rdfs:comment "An extensible abstract class"
+    .
+
+<uses-extensible-abstract-class> a rdf:Class, sh:NodeShape, owl:Class ;
+    rdfs:comment "A class that uses an abstract extensible class" ;
+    sh:property [
+        sh:class <extensible-abstract-class> ;
+        sh:path <uses-extensible-abstract-class/prop> ;
+        sh:minCount 1 ;
+        sh:maxCount 1
+    ]
+    .
+
+<uses-extensible-abstract-class/prop> a rdf:Property ;
+    rdfs:comment "A property that references and abstract extensible class" ;
+    rdfs:range <extensible-abstract-class>
+    .

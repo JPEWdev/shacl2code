@@ -59,7 +59,7 @@
         {#- Classes are divided into 2 parts. The properties are separated into a separate object #}
         {#- so that a object can references the properties of its parent without needing the const #}
         {#- @type tag #}
-        {%- if not class.is_abstract %}
+        {%- if not class.is_abstract or class.is_extensible %}
         "{{ varname(*class.clsname) }}": {
             "allOf": [
                 {
@@ -70,12 +70,20 @@
                     "properties": {
                         "{{ class.id_property or "@id" }}": { "$ref": "#/$defs/{{ class.node_kind.split("#")[-1] }}" },
                         "{{ context.compact("@type") }}": {
+                        {#- Abstract Extensible classes are weird; any type _except_ the specific class type is allowed #}
+                        {%- if class.is_abstract and class.is_extensible %}
+                            "allOf":  [
+                                { "$ref": "#/$defs/IRI" },
+                                { "not": { "const": "{{ context.compact_vocab(class._id) }}" } }
+                            ]
+                        {%- else %}
                             "oneOf": [
                                 {%- if class.is_extensible %}
                                 { "$ref": "#/$defs/IRI" },
                                 {%- endif %}
                                 { "const": "{{ context.compact_vocab(class._id) }}" }
                             ]
+                        {%- endif %}
                         }
                     }{%- if class.node_kind == SH.IRI %},
                     "required": ["{{ class.id_property or "@id" }}"]

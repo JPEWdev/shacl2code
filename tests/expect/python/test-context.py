@@ -1950,17 +1950,17 @@ CONTEXT_URLS = [
 ]
 
 _NI_ENCODE_CONTEXT = {
-    "http://example.org/enumType/foo": "enumType/foo",
-    "http://example.org/enumType/bar": "enumType/bar",
-    "http://example.org/enumType/nolabel": "enumType/nolabel",
-    "http://example.org/test-class/named": "test-class/named",
+    "http://example.org/enumType/foo": "test:enumType/foo",
+    "http://example.org/enumType/bar": "test:enumType/bar",
+    "http://example.org/enumType/nolabel": "test:enumType/nolabel",
+    "http://example.org/test-class/named": "test:test-class/named",
 }
 
 _NI_DECODE_CONTEXT = {
-    "enumType/foo": "http://example.org/enumType/foo",
-    "enumType/bar": "http://example.org/enumType/bar",
-    "enumType/nolabel": "http://example.org/enumType/nolabel",
-    "test-class/named": "http://example.org/test-class/named",
+    "test:enumType/foo": "http://example.org/enumType/foo",
+    "test:enumType/bar": "http://example.org/enumType/bar",
+    "test:enumType/nolabel": "http://example.org/enumType/nolabel",
+    "test:test-class/named": "http://example.org/test-class/named",
 }
 
 
@@ -2242,10 +2242,10 @@ class test_class(parent_class):
         cls._add_property(
             "test_class_enum_list_prop",
             ListProp(EnumProp([
-                    ("http://example.org/enumType/bar", "enumType/bar"),
-                    ("http://example.org/enumType/foo", "enumType/foo"),
-                    ("http://example.org/enumType/nolabel", "enumType/nolabel"),
-                    ("http://example.org/enumType/non-named-individual", "enumType/non-named-individual"),
+                    ("http://example.org/enumType/bar", "bar"),
+                    ("http://example.org/enumType/foo", "foo"),
+                    ("http://example.org/enumType/nolabel", "nolabel"),
+                    ("http://example.org/enumType/non-named-individual", "non-named-individual"),
                 ])),
             iri="http://example.org/test-class/enum-list-prop",
             compact="test-class/enum-list-prop",
@@ -2254,10 +2254,10 @@ class test_class(parent_class):
         cls._add_property(
             "test_class_enum_prop",
             EnumProp([
-                    ("http://example.org/enumType/bar", "enumType/bar"),
-                    ("http://example.org/enumType/foo", "enumType/foo"),
-                    ("http://example.org/enumType/nolabel", "enumType/nolabel"),
-                    ("http://example.org/enumType/non-named-individual", "enumType/non-named-individual"),
+                    ("http://example.org/enumType/bar", "bar"),
+                    ("http://example.org/enumType/foo", "foo"),
+                    ("http://example.org/enumType/nolabel", "nolabel"),
+                    ("http://example.org/enumType/non-named-individual", "non-named-individual"),
                 ]),
             iri="http://example.org/test-class/enum-prop",
             compact="test-class/enum-prop",
@@ -2266,10 +2266,10 @@ class test_class(parent_class):
         cls._add_property(
             "test_class_enum_prop_no_class",
             EnumProp([
-                    ("http://example.org/enumType/bar", "enumType/bar"),
-                    ("http://example.org/enumType/foo", "enumType/foo"),
-                    ("http://example.org/enumType/nolabel", "enumType/nolabel"),
-                    ("http://example.org/enumType/non-named-individual", "enumType/non-named-individual"),
+                    ("http://example.org/enumType/bar", "bar"),
+                    ("http://example.org/enumType/foo", "foo"),
+                    ("http://example.org/enumType/nolabel", "nolabel"),
+                    ("http://example.org/enumType/non-named-individual", "non-named-individual"),
                 ]),
             iri="http://example.org/test-class/enum-prop-no-class",
             compact="test-class/enum-prop-no-class",

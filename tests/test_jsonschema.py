@@ -836,8 +836,8 @@ def type_tests(name, *, good=[], bad=[], typ=[]):
         *type_tests("test-class/named-property", good=["foo", ""], typ=[str]),
         *type_tests(
             "test-class/enum-prop",
-            good=["enumType/foo"],
-            bad=["foo"],
+            good=["foo"],
+            bad=["enumType/foo"],
             typ=[str],
         ),
         *type_tests(
@@ -916,9 +916,9 @@ def type_tests(name, *, good=[], bad=[], typ=[]):
             "test-class/enum-list-prop",
             good=[
                 [
-                    "enumType/foo",
-                    "enumType/bar",
-                    "enumType/nolabel",
+                    "foo",
+                    "bar",
+                    "nolabel",
                 ]
             ],
             bad=[

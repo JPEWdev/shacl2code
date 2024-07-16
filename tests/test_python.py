@@ -1478,7 +1478,7 @@ def test_extensible_deserialize(model, test_context_url):
     obj[TEST_IRI] = "foo"
 
 
-def test_named_individuals(model):
+def test_enum_named_individuals(model):
     assert type(model.enumType.foo) is str
     assert model.enumType.foo == "http://example.org/enumType/foo"
 
@@ -1565,16 +1565,25 @@ def test_iri(model, roundtrip):
 
 
 def test_shacl(roundtrip):
-    model = rdflib.Graph()
-    model.parse(TEST_MODEL)
+    from rdflib import RDF, URIRef
 
     data = rdflib.Graph()
     data.parse(roundtrip)
 
+    # We need to add the referenced non-shape object, otherwise SHACL will
+    # complain it is missing
+    data.add(
+        (
+            URIRef("http://serialize.example.com/non-shape"),
+            RDF.type,
+            URIRef("http://example.org/non-shape-class"),
+        )
+    )
+
     conforms, result_graph, result_text = pyshacl.validate(
         data,
-        shacl_graph=model,
-        ont_graph=model,
+        shacl_graph=str(TEST_MODEL),
+        ont_graph=str(TEST_MODEL),
     )
     assert conforms, result_text
 

@@ -913,26 +913,26 @@
         },
         "prop_testclass_testclassenumlistprop": {
                 "enum": [
-                    "enumType/bar",
-                    "enumType/foo",
-                    "enumType/nolabel",
-                    "enumType/non-named-individual"
+                    "bar",
+                    "foo",
+                    "nolabel",
+                    "non-named-individual"
                 ]
         },
         "prop_testclass_testclassenumprop": {
                 "enum": [
-                    "enumType/bar",
-                    "enumType/foo",
-                    "enumType/nolabel",
-                    "enumType/non-named-individual"
+                    "bar",
+                    "foo",
+                    "nolabel",
+                    "non-named-individual"
                 ]
         },
         "prop_testclass_testclassenumpropnoclass": {
                 "enum": [
-                    "enumType/bar",
-                    "enumType/foo",
-                    "enumType/nolabel",
-                    "enumType/non-named-individual"
+                    "bar",
+                    "foo",
+                    "nolabel",
+                    "non-named-individual"
                 ]
         },
         "prop_testclass_testclassfloatprop": {

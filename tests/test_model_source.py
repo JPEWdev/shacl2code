@@ -7,6 +7,8 @@ import os
 import shutil
 import subprocess
 import pytest
+import rdflib
+import json
 from pathlib import Path
 
 import shacl2code
@@ -391,3 +393,59 @@ def test_model_errors(file):
                 str(CONTEXT_TEMPLATE),
             ]
         )
+
+
+def test_context_contents():
+    from rdflib import RDF, OWL, RDFS
+
+    model = rdflib.Graph()
+    model.parse(TEST_MODEL)
+
+    with TEST_CONTEXT.open("r") as f:
+        context = json.load(f)
+
+    def check_prefix(iri, typ):
+        nonlocal context
+
+        test_prefix = context["@context"]["test"]
+
+        assert iri.startswith(
+            test_prefix
+        ), f"{typ} '{str(iri)}' does not have correct prefix {test_prefix}"
+
+        name = iri[len(test_prefix) :].lstrip("/")
+
+        return name
+
+    def check_subject(iri, typ):
+        nonlocal context
+
+        name = check_prefix(iri, typ)
+
+        assert name in context["@context"], f"{typ} '{name}' missing from context"
+
+        value = context["@context"][name]
+        return name, value
+
+    for c in model.subjects(RDF.type, OWL.Class):
+        name, value = check_subject(c, "Class")
+        assert value == f"test:{name}", f"Class '{name}' has bad value '{value}'"
+
+    for p in model.subjects(RDF.type, RDF.Property):
+        name, value = check_subject(p, "Property")
+
+        assert model.objects(p, RDFS.range), f"Property '{name}' is missing rdfs:range"
+        assert isinstance(value, dict), f"Property '{name}' must be a dictionary"
+
+        assert "@id" in value, f"Property '{name}' missing @id"
+        assert "@type" in value, f"Property '{name}' missing @type"
+        assert (
+            value["@id"] == f"test:{name}"
+        ), f"Context '{name}' has bad @id '{value['@id']}'"
+
+    for i in model.subjects(RDF.type, OWL.NamedIndividual):
+        name = check_prefix(i, "Named Individual")
+
+        assert (
+            name not in context
+        ), f"Named Individual '{name}' should not be in context"

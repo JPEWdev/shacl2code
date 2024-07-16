@@ -1966,8 +1966,8 @@ CONTEXT_URLS = [
 _NI_ENCODE_CONTEXT = {
 {%- for class in classes %}
 {%- for member in class.named_individuals %}
-    {%- if context.compact(member._id) != member._id %}
-    "{{ member._id }}": "{{ context.compact(member._id) }}",
+    {%- if context.compact_vocab(member._id) != member._id %}
+    "{{ member._id }}": "{{ context.compact_vocab(member._id) }}",
     {%- endif %}
 {%- endfor %}
 {%- endfor %}
@@ -1976,8 +1976,8 @@ _NI_ENCODE_CONTEXT = {
 _NI_DECODE_CONTEXT = {
 {%- for class in classes %}
 {%- for member in class.named_individuals %}
-    {%- if context.compact(member._id) != member._id %}
-    "{{ context.compact(member._id) }}": "{{ member._id }}",
+    {%- if context.compact_vocab(member._id) != member._id %}
+    "{{ context.compact_vocab(member._id) }}": "{{ member._id }}",
     {%- endif %}
 {%- endfor %}
 {%- endfor %}

@@ -389,7 +389,6 @@
         sh:path <link-class-link-list-prop> ;
     ],
     [
-        sh:class <extensible-class> ;
         sh:path <link-class-extensible> ;
         sh:maxCount 1
     ]
@@ -524,7 +523,6 @@
 <uses-extensible-abstract-class> a rdf:Class, sh:NodeShape, owl:Class ;
     rdfs:comment "A class that uses an abstract extensible class" ;
     sh:property [
-        sh:class <extensible-abstract-class> ;
         sh:path <uses-extensible-abstract-class/prop> ;
         sh:minCount 1 ;
         sh:maxCount 1

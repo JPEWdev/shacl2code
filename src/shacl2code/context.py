@@ -50,7 +50,7 @@ class Context(object):
             else:
                 v = self.__vocabs[-1]
 
-            return self.__compact_contexts(_id, v, self.__get_vocab_contexts())
+            return self.__compact_contexts(_id, v, True)
 
     def __compact_contexts(self, _id, v="", apply_vocabs=False):
         if v not in self.__compacted or _id not in self.__compacted[v]:
@@ -83,7 +83,8 @@ class Context(object):
                         if apply_vocabs:
                             possible |= remove_prefix(_id, value)
                     elif name == "@base":
-                        possible |= remove_prefix(_id, value)
+                        if not apply_vocabs:
+                            possible |= remove_prefix(_id, value)
                     else:
                         if isinstance(value, dict):
                             value = value["@id"]
@@ -91,7 +92,7 @@ class Context(object):
                         if _id == value:
                             possible.add(name)
                             possible |= collect_possible(name)
-                        elif _id.startswith(value):
+                        elif _id.startswith(value) and value.endswith("/"):
                             tmp_id = name + ":" + _id[len(value) :].lstrip("/")
                             possible.add(tmp_id)
                             possible |= collect_possible(tmp_id)
@@ -130,7 +131,7 @@ class Context(object):
 
             for ctx in contexts:
                 for name, value in ctx.items():
-                    if name == "@base" and self.is_relative(_id):
+                    if name == "@base" and self.is_relative(_id) and not apply_vocabs:
                         _id = value + _id
 
             self.__expanded.setdefault(v, {})[_id] = self.__expand(_id, contexts)

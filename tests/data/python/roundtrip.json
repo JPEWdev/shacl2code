@@ -62,8 +62,8 @@
                 "http://serialize.example.com/test-derived",
                 "http://serialize.example.com/test"
             ],
-            "test-class/enum-prop": "enumType/foo",
-            "test-class/enum-prop-no-class": "enumType/bar",
+            "test-class/enum-prop": "foo",
+            "test-class/enum-prop-no-class": "bar",
             "test-class/regex": "foo1",
             "test-class/regex-datetime": "2024-03-11T00:00:00+01:00",
             "test-class/regex-datetimestamp": "2024-03-11T00:00:00Z",
@@ -79,7 +79,7 @@
         {
             "@type": "test-class",
             "@id": "http://serialize.example.com/test-named-individual-reference",
-            "test-class/class-prop": "test-class/named"
+            "test-class/class-prop": "test:test-class/named"
         },
         {
             "@type": "test-class",

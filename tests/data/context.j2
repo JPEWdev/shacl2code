@@ -2,8 +2,8 @@
 Context: {{ url }}
 {% endfor -%}
 {% for enum in enums %}
-{{ enum._id }}: {{ context.compact(enum._id) }}
+{{ enum._id }}: {{ context.compact_iri(enum._id) }}
 {% endfor %}
 {% for class in classes %}
-{{ class._id }}: {{ context.compact(class._id) }}
+{{ class._id }}: {{ context.compact_iri(class._id) }}
 {% endfor %}

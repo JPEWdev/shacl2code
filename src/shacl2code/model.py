@@ -280,7 +280,7 @@ class Model(object):
         """
         _id = str(_id)
         if _id not in self.compact_ids:
-            self.compact_ids[_id] = self.context.compact(_id)
+            self.compact_ids[_id] = self.context.compact_iri(_id)
 
         if self.compact_ids[_id] == _id and fallback is not None:
             return fallback

@@ -220,13 +220,34 @@ class FloatProp(Property):
         return decoder.read_float()
 
 
-class ObjectProp(Property):
+class IRIProp(Property):
+    def __init__(self, context=[], *, pattern=None):
+        super().__init__(pattern=pattern)
+        self.context = context
+
+    def compact(self, value):
+        for iri, compact in self.context:
+            if value == iri:
+                return compact
+        return None
+
+    def expand(self, value):
+        for iri, compact in self.context:
+            if value == compact:
+                return iri
+        return None
+
+    def iri_values(self):
+        return (iri for iri, _ in self.context)
+
+
+class ObjectProp(IRIProp):
     """
     A scalar SHACL object property of a SHACL object
     """
 
-    def __init__(self, cls, required):
-        super().__init__()
+    def __init__(self, cls, required, context=[]):
+        super().__init__(context)
         self.cls = cls
         self.required = required
 
@@ -264,8 +285,7 @@ class ObjectProp(Property):
             raise ValueError("Object cannot be None")
 
         if isinstance(value, str):
-            value = _NI_ENCODE_CONTEXT.get(value, value)
-            encoder.write_iri(value)
+            encoder.write_iri(value, self.compact(value))
             return
 
         return value.encode(encoder, state)
@@ -275,7 +295,7 @@ class ObjectProp(Property):
         if iri is None:
             return self.cls.decode(decoder, objectset=objectset)
 
-        iri = _NI_DECODE_CONTEXT.get(iri, iri)
+        iri = self.expand(iri) or iri
 
         if objectset is None:
             return iri
@@ -445,36 +465,27 @@ class ListProp(Property):
         return ListProxy(self.prop, data=data)
 
 
-class EnumProp(Property):
+class EnumProp(IRIProp):
     VALID_TYPES = str
 
     def __init__(self, values, *, pattern=None):
-        super().__init__(pattern=pattern)
-        self.values = values
+        super().__init__(values, pattern=pattern)
 
     def validate(self, value):
         super().validate(value)
 
-        valid_values = (iri for iri, _ in self.values)
+        valid_values = self.iri_values()
         if value not in valid_values:
             raise ValueError(
                 f"'{value}' is not a valid value. Choose one of {' '.join(valid_values)}"
             )
 
     def encode(self, encoder, value, state):
-        for iri, compact in self.values:
-            if iri == value:
-                encoder.write_enum(value, self, compact)
-                return
-
-        encoder.write_enum(value, self)
+        encoder.write_enum(value, self, self.compact(value))
 
     def decode(self, decoder, *, objectset=None):
         v = decoder.read_enum(self)
-        for iri, compact in self.values:
-            if v == compact:
-                return iri
-        return v
+        return self.expand(v) or v
 
 
 class NodeKind(Enum):
@@ -1949,20 +1960,6 @@ CONTEXT_URLS = [
     "https://spdx.github.io/spdx-3-model/context.json",
 ]
 
-_NI_ENCODE_CONTEXT = {
-    "http://example.org/enumType/foo": "test:enumType/foo",
-    "http://example.org/enumType/bar": "test:enumType/bar",
-    "http://example.org/enumType/nolabel": "test:enumType/nolabel",
-    "http://example.org/test-class/named": "test:test-class/named",
-}
-
-_NI_DECODE_CONTEXT = {
-    "test:enumType/foo": "http://example.org/enumType/foo",
-    "test:enumType/bar": "http://example.org/enumType/bar",
-    "test:enumType/nolabel": "http://example.org/enumType/nolabel",
-    "test:test-class/named": "http://example.org/test-class/named",
-}
-
 
 # CLASSES
 # An Abstract class
@@ -2199,21 +2196,27 @@ class test_class(parent_class):
         # A test-class list property
         cls._add_property(
             "test_class_class_list_prop",
-            ListProp(ObjectProp(test_class, False)),
+            ListProp(ObjectProp(test_class, False, context=[
+                    ("http://example.org/test-class/named", "named"),
+                ],)),
             iri="http://example.org/test-class/class-list-prop",
             compact="test-class/class-list-prop",
         )
         # A test-class property
         cls._add_property(
             "test_class_class_prop",
-            ObjectProp(test_class, False),
+            ObjectProp(test_class, False, context=[
+                    ("http://example.org/test-class/named", "named"),
+                ],),
             iri="http://example.org/test-class/class-prop",
             compact="test-class/class-prop",
         )
         # A test-class property with no sh:class
         cls._add_property(
             "test_class_class_prop_no_class",
-            ObjectProp(test_class, False),
+            ObjectProp(test_class, False, context=[
+                    ("http://example.org/test-class/named", "named"),
+                ],),
             iri="http://example.org/test-class/class-prop-no-class",
             compact="test-class/class-prop-no-class",
         )

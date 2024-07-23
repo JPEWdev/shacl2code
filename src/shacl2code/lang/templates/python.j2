@@ -220,13 +220,34 @@ class FloatProp(Property):
         return decoder.read_float()
 
 
-class ObjectProp(Property):
+class IRIProp(Property):
+    def __init__(self, context=[], *, pattern=None):
+        super().__init__(pattern=pattern)
+        self.context = context
+
+    def compact(self, value):
+        for iri, compact in self.context:
+            if value == iri:
+                return compact
+        return None
+
+    def expand(self, value):
+        for iri, compact in self.context:
+            if value == compact:
+                return iri
+        return None
+
+    def iri_values(self):
+        return (iri for iri, _ in self.context)
+
+
+class ObjectProp(IRIProp):
     """
     A scalar SHACL object property of a SHACL object
     """
 
-    def __init__(self, cls, required):
-        super().__init__()
+    def __init__(self, cls, required, context=[]):
+        super().__init__(context)
         self.cls = cls
         self.required = required
 
@@ -264,8 +285,7 @@ class ObjectProp(Property):
             raise ValueError("Object cannot be None")
 
         if isinstance(value, str):
-            value = _NI_ENCODE_CONTEXT.get(value, value)
-            encoder.write_iri(value)
+            encoder.write_iri(value, self.compact(value))
             return
 
         return value.encode(encoder, state)
@@ -275,7 +295,7 @@ class ObjectProp(Property):
         if iri is None:
             return self.cls.decode(decoder, objectset=objectset)
 
-        iri = _NI_DECODE_CONTEXT.get(iri, iri)
+        iri = self.expand(iri) or iri
 
         if objectset is None:
             return iri
@@ -445,36 +465,27 @@ class ListProp(Property):
         return ListProxy(self.prop, data=data)
 
 
-class EnumProp(Property):
+class EnumProp(IRIProp):
     VALID_TYPES = str
 
     def __init__(self, values, *, pattern=None):
-        super().__init__(pattern=pattern)
-        self.values = values
+        super().__init__(values, pattern=pattern)
 
     def validate(self, value):
         super().validate(value)
 
-        valid_values = (iri for iri, _ in self.values)
+        valid_values = self.iri_values()
         if value not in valid_values:
             raise ValueError(
                 f"'{value}' is not a valid value. Choose one of {' '.join(valid_values)}"
             )
 
     def encode(self, encoder, value, state):
-        for iri, compact in self.values:
-            if iri == value:
-                encoder.write_enum(value, self, compact)
-                return
-
-        encoder.write_enum(value, self)
+        encoder.write_enum(value, self, self.compact(value))
 
     def decode(self, decoder, *, objectset=None):
         v = decoder.read_enum(self)
-        for iri, compact in self.values:
-            if v == compact:
-                return iri
-        return v
+        return self.expand(v) or v
 
 
 class NodeKind(Enum):
@@ -1518,14 +1529,14 @@ class JSONLDDecoder(Decoder):
 
     def object_keys(self):
         for key in self.data.keys():
-            if key in ("@type", "{{ context.compact('@type') }}"):
+            if key in ("@type", "{{ context.compact_iri('@type') }}"):
                 continue
             if self.root and key == "@context":
                 continue
             yield key
 
     def read_object(self):
-        typ = self.__get_value("@type", "{{ context.compact('@type') }}")
+        typ = self.__get_value("@type", "{{ context.compact_iri('@type') }}")
         if typ is not None:
             return typ, self
 
@@ -1717,7 +1728,7 @@ class JSONLDEncoder(Encoder):
     @contextmanager
     def write_object(self, o, _id, needs_id):
         self.data = {
-            "{{ context.compact('@type') }}": o.COMPACT_TYPE or o.TYPE,
+            "{{ context.compact_iri('@type') }}": o.COMPACT_TYPE or o.TYPE,
         }
         if needs_id:
             self.data[o.ID_ALIAS or "@id"] = _id
@@ -1841,7 +1852,7 @@ class JSONLDInlineEncoder(Encoder):
         self._write_comma()
 
         self.write("{")
-        self.write_string("{{ context.compact('@type') }}")
+        self.write_string("{{ context.compact_iri('@type') }}")
         self.write(":")
         self.write_string(o.COMPACT_TYPE or o.TYPE)
         self.comma = True
@@ -1963,26 +1974,6 @@ CONTEXT_URLS = [
 {%- endfor %}
 ]
 
-_NI_ENCODE_CONTEXT = {
-{%- for class in classes %}
-{%- for member in class.named_individuals %}
-    {%- if context.compact_vocab(member._id) != member._id %}
-    "{{ member._id }}": "{{ context.compact_vocab(member._id) }}",
-    {%- endif %}
-{%- endfor %}
-{%- endfor %}
-}
-
-_NI_DECODE_CONTEXT = {
-{%- for class in classes %}
-{%- for member in class.named_individuals %}
-    {%- if context.compact_vocab(member._id) != member._id %}
-    "{{ context.compact_vocab(member._id) }}": "{{ member._id }}",
-    {%- endif %}
-{%- endfor %}
-{%- endfor %}
-}
-
 
 # CLASSES
 {%- for class in classes %}
@@ -1991,7 +1982,7 @@ _NI_DECODE_CONTEXT = {
 #{{ (" " + l).rstrip() }}
 {%- endfor %}
 {%- endif %}
-@register("{{ class._id }}"{%- if context.compact(class._id) != class._id %}, compact_type="{{ context.compact(class._id) }}"{%- endif %}, abstract={{ class.is_abstract }})
+@register("{{ class._id }}"{%- if context.compact_iri(class._id) != class._id %}, compact_type="{{ context.compact_iri(class._id) }}"{%- endif %}, abstract={{ class.is_abstract }})
 class {{ varname(*class.clsname) }}(
 {%- if class.is_extensible -%}
     SHACLExtensibleObject{{", "}}
@@ -2042,7 +2033,19 @@ class {{ varname(*class.clsname) }}(
                 {%- endfor %}
                 ])
             {%- elif prop.class_id -%}
-                ObjectProp({{ varname(*classes.get(prop.class_id).clsname) }}, {% if prop.min_count and not is_list %}True{% else %}False{% endif %})
+                {%- set ctx = [] %}
+                {%- for value in get_all_named_individuals(classes.get(prop.class_id)) %}
+                    {%- if context.compact_vocab(value, prop.path) != value %}
+                        {{- ctx.append((value, context.compact_vocab(value, prop.path))) or "" }}
+                    {%- endif %}
+                {%- endfor -%}
+                ObjectProp({{ varname(*classes.get(prop.class_id).clsname) }}, {% if prop.min_count and not is_list %}True{% else %}False{% endif %}{% if ctx %}, context=[
+                {%- for value, compact in ctx %}
+                    ("{{ value }}", "{{ compact }}"),
+                {%- endfor %}
+                ],
+                {%- endif -%}
+                )
             {%- else -%}
                 {% if not prop.datatype in DATATYPE_CLASSES -%}
                     {{ abort("Unknown data type " + prop.datatype) -}}

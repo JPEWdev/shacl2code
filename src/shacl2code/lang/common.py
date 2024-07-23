@@ -114,6 +114,14 @@ class BasicJinjaRender(object):
             d.sort()
             return d
 
+        def get_all_named_individuals(cls):
+            ni = set(i._id for i in cls.named_individuals)
+
+            for d in get_all_derived(cls):
+                ni |= set(i._id for i in classes.get(d).named_individuals)
+
+            return ni
+
         classes = ObjectList(model.classes)
         concrete_classes = ObjectList(
             list(c for c in model.classes if not c.is_abstract)
@@ -132,6 +140,7 @@ class BasicJinjaRender(object):
 
         env = {
             "get_all_derived": get_all_derived,
+            "get_all_named_individuals": get_all_named_individuals,
             **self.get_extra_env(),
         }
 

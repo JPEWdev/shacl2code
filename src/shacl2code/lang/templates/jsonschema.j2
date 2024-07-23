@@ -69,7 +69,7 @@
                     {%- endif %}
                     "properties": {
                         "{{ class.id_property or "@id" }}": { "$ref": "#/$defs/{{ class.node_kind.split("#")[-1] }}" },
-                        "{{ context.compact("@type") }}": {
+                        "{{ context.compact_iri("@type") }}": {
                         {#- Abstract Extensible classes are weird; any type _except_ the specific class type is allowed #}
                         {%- if class.is_abstract and class.is_extensible %}
                             "allOf":  [
@@ -98,8 +98,8 @@
             {%- for d in get_all_derived(class) + [class._id] %}
                 {%- set ns.json_refs = ns.json_refs + ["#/$defs/" + varname(*classes.get(d).clsname)] %}
                 {%- for n in classes.get(d).named_individuals %}
-                    {%- if context.compact(n._id) != n._id %}
-                        {%- set ns.named_individuals = ns.named_individuals + [context.compact(n._id)] %}
+                    {%- if context.compact_iri(n._id) != n._id %}
+                        {%- set ns.named_individuals = ns.named_individuals + [context.compact_iri(n._id)] %}
                     {%- endif %}
                 {%- endfor %}
             {%- endfor %}
@@ -267,7 +267,7 @@
         "SHACLClass": {
             "type": "object",
             "properties": {
-                "{{ context.compact("@type") }}": {
+                "{{ context.compact_iri("@type") }}": {
                     "oneOf": [
                         { "$ref": "#/$defs/IRI" },
                         {
@@ -280,7 +280,7 @@
                     ]
                 }
             },
-            "required": ["{{ context.compact("@type") }}"]
+            "required": ["{{ context.compact_iri("@type") }}"]
         },
         "AnyClass": {
             "anyOf": [

@@ -178,9 +178,9 @@
                         { "$ref": "#/$defs/enumType" }
                     ]
                 },
-                { "const": "enumType/foo" },
-                { "const": "enumType/bar" },
-                { "const": "enumType/nolabel" },
+                { "const": "test:enumType/foo" },
+                { "const": "test:enumType/bar" },
+                { "const": "test:enumType/nolabel" },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -606,7 +606,7 @@
                         { "$ref": "#/$defs/parentclass" }
                     ]
                 },
-                { "const": "test-class/named" },
+                { "const": "named" },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
@@ -732,7 +732,7 @@
                         { "$ref": "#/$defs/testclass" }
                     ]
                 },
-                { "const": "test-class/named" },
+                { "const": "named" },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },

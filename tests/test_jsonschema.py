@@ -848,7 +848,7 @@ def type_tests(name, *, good=[], bad=[], typ=[]):
                 "_:blanknode",
                 "http://serialize.example.org/test",
                 # Named individual
-                "test-class/named",
+                "named",
             ],
             bad=[
                 {"@type": "test-another-class"},

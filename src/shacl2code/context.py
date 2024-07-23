@@ -2,15 +2,26 @@
 #
 # SPDX-License-Identifier: MIT
 
+import re
+from contextlib import contextmanager
+
+
+def foreach_context(contexts):
+    for ctx in contexts:
+        for name, value in ctx.items():
+            yield name, value
+
 
 class Context(object):
-    from contextlib import contextmanager
-
     def __init__(self, contexts=[]):
         self.contexts = [c for c in contexts if c]
         self.__vocabs = []
-        self.__expanded = {}
-        self.__compacted = {}
+        self.__expanded_iris = {}
+        self.__expanded_ids = {}
+        self.__expanded_vocabs = {}
+        self.__compacted_iris = {}
+        self.__compacted_ids = {}
+        self.__compacted_vocabs = {}
 
     @contextmanager
     def vocab_push(self, vocab):
@@ -24,145 +35,243 @@ class Context(object):
         finally:
             self.__vocabs.pop()
 
+    def __vocab_key(self):
+        if not self.__vocabs:
+            return ""
+
+        return self.__vocabs[-1]
+
     def __get_vocab_contexts(self):
         contexts = []
 
         for v in self.__vocabs:
-            for ctx in self.contexts:
-                # Check for vocabulary contexts
-                for name, value in ctx.items():
-                    if (
-                        isinstance(value, dict)
-                        and value["@type"] == "@vocab"
-                        and v == self.__expand(value["@id"], self.contexts)
-                    ):
+            for name, value in foreach_context(self.contexts):
+                if (
+                    isinstance(value, dict)
+                    and value["@type"] == "@vocab"
+                    and v == self.expand_iri(value["@id"])
+                ):
+                    if "@context" in value:
                         contexts.insert(0, value["@context"])
+
+        contexts.extend(self.contexts)
 
         return contexts
 
-    def compact(self, _id):
-        return self.__compact_contexts(_id)
-
-    def compact_vocab(self, _id, vocab=None):
-        with self.vocab_push(vocab):
-            if not self.__vocabs:
-                v = ""
-            else:
-                v = self.__vocabs[-1]
-
-            return self.__compact_contexts(_id, v, True)
-
-    def __compact_contexts(self, _id, v="", apply_vocabs=False):
-        if v not in self.__compacted or _id not in self.__compacted[v]:
-            if apply_vocabs:
-                contexts = self.__get_vocab_contexts() + self.contexts
-            else:
-                contexts = self.contexts
-
-            self.__compacted.setdefault(v, {})[_id] = self.__compact(
-                _id,
-                contexts,
-                apply_vocabs,
-            )
-        return self.__compacted[v][_id]
-
-    def __compact(self, _id, contexts, apply_vocabs):
+    def __choose_possible(
+        self,
+        term,
+        default,
+        contexts,
+        *,
+        vocab=False,
+        base=False,
+        exact=False,
+        prefix=False,
+    ):
         def remove_prefix(_id, value):
+            expanded_id = self.expand_iri(_id)
+            expanded_value = self.expand_iri(value)
+
             possible = set()
-            if _id.startswith(value):
-                tmp_id = _id[len(value) :]
+            if expanded_id.startswith(expanded_value):
+                tmp_id = _id[len(expanded_value) :]
                 possible.add(tmp_id)
-                possible |= collect_possible(tmp_id)
             return possible
 
-        def collect_possible(_id):
+        def helper(term):
             possible = set()
-            for ctx in contexts:
-                for name, value in ctx.items():
-                    if name == "@vocab":
-                        if apply_vocabs:
-                            possible |= remove_prefix(_id, value)
-                    elif name == "@base":
-                        if not apply_vocabs:
-                            possible |= remove_prefix(_id, value)
-                    else:
-                        if isinstance(value, dict):
-                            value = value["@id"]
+            for name, value in foreach_context(contexts):
+                if name == "@vocab":
+                    if vocab:
+                        possible |= remove_prefix(term, value)
+                    continue
 
-                        if _id == value:
-                            possible.add(name)
-                            possible |= collect_possible(name)
-                        elif _id.startswith(value) and value.endswith("/"):
-                            tmp_id = name + ":" + _id[len(value) :].lstrip("/")
-                            possible.add(tmp_id)
-                            possible |= collect_possible(tmp_id)
+                if name == "@base":
+                    if base:
+                        possible |= remove_prefix(term, value)
+                    continue
+
+                if isinstance(value, dict):
+                    value = value["@id"]
+
+                if term == self.expand_iri(value):
+                    if exact and name not in possible:
+                        possible.add(name)
+                        possible |= helper(name)
+                    continue
+
+                if not prefix:
+                    continue
+
+                if term.startswith(value) and value.endswith("/"):
+                    tmp_id = name + ":" + term[len(value) :].lstrip("/")
+                    if tmp_id not in possible:
+                        possible.add(tmp_id)
+                        possible |= helper(tmp_id)
+                    continue
+
+                if term.startswith(value + ":") and self.expand_iri(value).endswith(
+                    "/"
+                ):
+                    tmp_id = name + term[len(value) :]
+                    if tmp_id not in possible:
+                        possible.add(tmp_id)
+                        possible |= helper(tmp_id)
+                    continue
 
             return possible
 
-        possible = collect_possible(_id)
+        possible = helper(term)
+
         if not possible:
-            return _id
+            return default
 
         # To select from the possible identifiers, choose the one that has the
         # least context (fewest ":"), then the shortest, and finally
         # alphabetically
         possible = list(possible)
         possible.sort(key=lambda p: (p.count(":"), len(p), p))
-
         return possible[0]
 
-    def is_relative(self, _id):
-        import re
+    def compact_iri(self, iri):
+        if iri not in self.__compacted_iris:
+            self.__compacted_iris[iri] = self.__choose_possible(
+                iri,
+                iri,
+                self.contexts,
+                exact=True,
+                prefix=True,
+            )
 
-        return not re.match(r"[^:]+:", _id)
+        return self.__compacted_iris[iri]
 
-    def __expand_contexts(self, _id, v="", apply_vocabs=False):
-        if v not in self.__expanded or _id not in self.__expanded[v]:
-            if apply_vocabs:
-                contexts = self.__get_vocab_contexts() + self.contexts
+    def compact_id(self, _id):
+        if ":" not in _id:
+            return _id
 
-                # Apply contexts
-                for ctx in contexts:
-                    for name, value in ctx.items():
-                        if name == "@vocab":
-                            _id = value + _id
-            else:
-                contexts = self.contexts
+        if _id not in self.__compacted_ids:
+            self.__compacted_ids[_id] = self.__choose_possible(
+                _id,
+                _id,
+                self.contexts,
+                base=True,
+                prefix=True,
+            )
 
-            for ctx in contexts:
-                for name, value in ctx.items():
-                    if name == "@base" and self.is_relative(_id) and not apply_vocabs:
-                        _id = value + _id
+        return self.__compacted_ids[_id]
 
-            self.__expanded.setdefault(v, {})[_id] = self.__expand(_id, contexts)
-
-        return self.__expanded[v][_id]
-
-    def expand(self, _id):
-        return self.__expand_contexts(_id)
-
-    def expand_vocab(self, _id, vocab=""):
+    def compact_vocab(self, term, vocab=None):
         with self.vocab_push(vocab):
-            if not self.__vocabs:
-                v = ""
-            else:
-                v = self.__vocabs[-1]
+            v = self.__vocab_key()
+            if v in self.__compacted_vocabs and term in self.__compacted_vocabs[v]:
+                return self.__compacted_vocabs[v][term]
 
-            return self.__expand_contexts(_id, v, True)
+            compact = self.__choose_possible(
+                term,
+                None,
+                self.__get_vocab_contexts(),
+                vocab=True,
+                exact=True,
+            )
+            if compact is not None:
+                self.__compacted_vocabs.setdefault(v, {})[term] = self.compact_id(
+                    compact
+                )
+                return compact
 
-    def __expand(self, _id, contexts):
-        for ctx in contexts:
-            if ":" not in _id:
-                if _id in ctx:
-                    if isinstance(ctx[_id], dict):
-                        return self.__expand(ctx[_id]["@id"], contexts)
-                    return self.__expand(ctx[_id], contexts)
-                continue
+        # If unable to compact with a vocabulary, compact as an ID
+        return self.compact_id(term)
 
-            prefix, suffix = _id.split(":", 1)
-            if prefix not in ctx:
-                continue
+    def expand_iri(self, iri):
+        if iri not in self.__expanded_iris:
+            self.__expanded_iris[iri] = self.__expand(
+                iri,
+                self.contexts,
+                exact=True,
+                prefix=True,
+            )
 
-            return self.__expand(prefix, contexts) + suffix
+        return self.__expanded_iris[iri]
 
-        return _id
+    def expand_id(self, _id):
+        if _id not in self.__expanded_ids:
+            self.__expanded_ids[_id] = self.__expand(
+                _id,
+                self.contexts,
+                base=True,
+                prefix=True,
+            )
+
+        return self.__expanded_ids[_id]
+
+    def expand_vocab(self, term, vocab=None):
+        with self.vocab_push(vocab):
+            v = self.__vocab_key()
+            if v not in self.__expanded_vocabs or term not in self.__expanded_vocabs[v]:
+                value = self.__expand(
+                    term,
+                    self.__get_vocab_contexts(),
+                    vocab=True,
+                    exact=True,
+                )
+                self.__expanded_vocabs.setdefault(v, {})[term] = self.expand_id(value)
+
+        return self.__expanded_vocabs[v][term]
+
+    def __expand(
+        self,
+        term,
+        contexts,
+        *,
+        base=False,
+        exact=False,
+        prefix=False,
+        vocab=False,
+    ):
+        def helper(term):
+            vocabs = []
+            bases = []
+            prefixes = []
+            exacts = []
+            is_short = not re.match(r"[^:]+:", term)
+
+            for name, value in foreach_context(contexts):
+                if name == "@vocab":
+                    if vocab and is_short:
+                        vocabs.append(helper(value))
+                    continue
+
+                if name == "@base":
+                    if base and is_short:
+                        bases.append(value)
+                    continue
+
+                if isinstance(value, dict):
+                    value = value["@id"]
+
+                if term == name:
+                    if exact:
+                        exacts.append(helper(value))
+                    continue
+
+                if prefix:
+                    prefixes.append(name)
+
+            for e in exacts:
+                return e
+
+            if ":" in term:
+                p, suffix = term.split(":", 1)
+                for name in prefixes:
+                    if p == name:
+                        p = self.expand_iri(p)
+                        if p.endswith("/"):
+                            return p + suffix
+
+            for value in vocabs + bases:
+                return value + term
+
+            return term
+
+        return helper(term)

@@ -79,7 +79,7 @@
         {
             "@type": "test-class",
             "@id": "http://serialize.example.com/test-named-individual-reference",
-            "test-class/class-prop": "test:test-class/named"
+            "test-class/class-prop": "named"
         },
         {
             "@type": "test-class",

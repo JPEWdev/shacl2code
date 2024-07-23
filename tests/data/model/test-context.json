@@ -27,6 +27,7 @@
     "test-class-required": "test:test-class-required",
     "test-derived-class": "test:test-derived-class",
     "uses-extensible-abstract-class": "test:uses-extensible-abstract-class",
+    "named": "test:test-class/named",
     "test-class/string-list-prop": {
       "@id": "test:test-class/string-list-prop",
       "@type": "xsd:string"
@@ -89,7 +90,7 @@
     },
     "test-class/class-prop": {
       "@id": "test:test-class/class-prop",
-      "@type": "@id"
+      "@type": "@vocab"
     },
     "test-class/class-prop-no-class": {
       "@id": "test:test-class/class-prop-no-class",

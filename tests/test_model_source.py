@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
 import shutil
 import subprocess
 import pytest
@@ -289,12 +288,8 @@ def test_context_url(model_server):
 
 
 def test_context_args(http_server):
-    shutil.copyfile(
-        TEST_CONTEXT, os.path.join(http_server.document_root, "context.json")
-    )
-    shutil.copyfile(
-        TEST_CONTEXT, os.path.join(http_server.document_root, "context2.json")
-    )
+    shutil.copyfile(TEST_CONTEXT, http_server.document_root / "context.json")
+    shutil.copyfile(TEST_CONTEXT, http_server.document_root / "context2.json")
 
     def do_test(*, contexts=[], url_contexts=[]):
         cmd = [

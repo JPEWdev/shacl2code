@@ -9,8 +9,8 @@ import pytest
 import shutil
 import subprocess
 import time
+from .http import HTTPTestServer
 
-from pytest_server_fixtures.http import SimpleHTTPTestServer
 from pathlib import Path
 
 THIS_FILE = Path(__file__)
@@ -21,19 +21,18 @@ MODEL_DIR = THIS_DIR / "data" / "model"
 
 @pytest.fixture
 def http_server():
-    with SimpleHTTPTestServer() as s:
+    with HTTPTestServer() as s:
         s.start()
         yield s
 
 
 @pytest.fixture(scope="session")
 def model_server():
-    with SimpleHTTPTestServer() as s:
-        root = Path(s.document_root)
+    with HTTPTestServer() as s:
         for p in MODEL_DIR.iterdir():
             if not p.is_file():
                 continue
-            shutil.copyfile(p, root / p.name)
+            shutil.copyfile(p, s.document_root / p.name)
         s.start()
         yield s.uri
 

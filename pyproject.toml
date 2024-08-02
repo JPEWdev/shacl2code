@@ -31,7 +31,6 @@ dev = [
     "pyshacl >= 0.25.0",
     "pytest >= 7.4",
     "pytest-cov >= 4.1",
-    "pytest-server-fixtures >= 1.7",
 ]
 
 [project.urls]

@@ -9,3 +9,4 @@ from .lang import LANGUAGES  # noqa: F401
 from .jinja import JinjaRender  # noqa: F401
 from .python import PythonRender  # noqa: F401
 from .jsonschema import JsonSchemaRender  # noqa: F401
+from .golang import GolangRender # noqa: F401

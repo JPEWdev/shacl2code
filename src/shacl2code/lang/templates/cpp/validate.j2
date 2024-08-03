@@ -1,0 +1,149 @@
+/*
+ *{#
+vim: ft=cpp
+#}
+ *
+ * Generated C++ Validation program for {{ basename }}
+ *
+ * {{ disclaimer }}
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+#include <getopt.h>
+#include <libgen.h>
+
+#include <fstream>
+#include <iostream>
+
+/* {{ "*" + "/" }}
+#include "{{ basename }}-jsonld.hpp"
+#include "{{ basename }}.hpp"
+
+{%- if namespace %}
+using namespace {{ namespace }};
+{%- endif %}
+{{ "/" + "*" }} */
+
+#ifndef DOXYGEN_SKIP
+
+static int verbosity = 0;
+
+class ReportErrorHandler : public ErrorHandler {
+   public:
+    ReportErrorHandler(std::string const& path) : mPath(path) {}
+    virtual ~ReportErrorHandler() {}
+
+    void handleValidationError(std::string const& message,
+                               ObjectPath const& path) override {
+        reportError(message, path);
+    }
+
+    void handleDeserializeError(std::string const& message,
+                                ObjectPath const& path) {
+        reportError(message, path);
+    }
+
+    bool hasErrors() const { return mHasErrors; }
+
+   private:
+    std::string mPath;
+    bool mHasErrors = false;
+
+    void reportError(std::string const& message, ObjectPath const& path) {
+        mHasErrors = true;
+        std::cout << mPath << "::" << path.getPathString() << std::endl;
+        std::cout << "  " << message << std::endl;
+    }
+};
+
+static bool checkFile(char const* path) {
+    ReportErrorHandler errorHandler(path);
+
+    if (verbosity >= 1) {
+        std::cout << "Checking " << path << "..." << std::endl;
+    }
+
+    SHACLObjectSet objectSet;
+
+    {
+        std::ifstream infile;
+        infile.open(path);
+
+        JSONLDDeserializer deserializer;
+        deserializer.read(infile, objectSet, errorHandler);
+    }
+
+    if (errorHandler.hasErrors()) {
+        return false;
+    }
+
+    objectSet.checkAll(errorHandler);
+
+    return !errorHandler.hasErrors();
+}
+
+static const struct option longopts[] = {
+    {"help", no_argument, NULL, 'h'},
+    {"verbose", no_argument, NULL, 'v'},
+    {"version", no_argument, NULL, 'V'},
+    {},
+};
+static const char* const optstr = "hvV";
+
+static void showHelp(char const* name) {
+    std::cout << "Usage: " << name << " [-" << optstr << "] [FILE [FILE ...]]"
+              << std::endl;
+    std::cout << "  -h --help       Show Help" << std::endl;
+    std::cout << "  -v --verbose    Increase verbosity" << std::endl;
+    std::cout << "  -V --version    Show version" << std::endl;
+    std::cout << "  FILE            File to validate" << std::endl;
+}
+
+int main(int argc, char* argv[]) {
+    argv[0] = basename(argv[0]);
+
+    while (true) {
+        int optionIndex = 0;
+        int opt = getopt_long(argc, argv, optstr, longopts, &optionIndex);
+        if (opt == -1) {
+            break;
+        }
+
+        switch (opt) {
+            case 'h':
+                std::cout << "Validate {{ basename }}" << std::endl
+                          << "Version {{ lib_version }}" << std::endl
+                          << std::endl;
+                showHelp(argv[0]);
+                return 0;
+
+            case 'v':
+                verbosity++;
+                break;
+
+            case 'V':
+                std::cout << "{{ lib_version }}" << std::endl;
+                return 0;
+
+            case '?':
+                showHelp(argv[0]);
+                return 1;
+        }
+    }
+
+    int ret = 0;
+    if (optind >= argc && verbosity >= 1) {
+        std::cout << "Nothing to do" << std::endl;
+    }
+
+    for (int idx = optind; idx < argc; idx++) {
+        if (!checkFile(argv[idx])) {
+            ret = 1;
+        }
+    }
+
+    return ret;
+}
+
+#endif

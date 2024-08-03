@@ -1,0 +1,37 @@
+/**
+ * {#
+vim: ft=cpp
+#}@file
+ *
+ * Generated C++ bindings from a SHACL model
+ *
+ * {{ disclaimer }}
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+/* {{ guard_begin }} */
+
+#include <string>
+
+/* {{ api_def_begin }} */
+/* {{ ns_begin }} */
+
+/**
+ * @brief String is blank node?
+ *
+ * @returns true if the string is a correctly formatted blank node
+ */
+extern EXPORT bool isBlankNode(std::string const& id);
+
+/**
+ * @brief String is IRI
+ *
+ * @returns true if the string is a fully qualified IRI (and not a blank node)
+ */
+extern EXPORT bool isIRI(std::string const& id);
+
+/* {{ api_def_end }} */
+/* {{ ns_end }} */
+/* {{ guard_end }} */
+

@@ -12,6 +12,7 @@ from jinja2 import Environment, FileSystemLoader, TemplateRuntimeError
 from markupsafe import Markup
 from rdflib.namespace import SH
 from ..model import SHACL2CODE
+from ..version import VERSION
 
 THIS_DIR = Path(__file__).parent
 
@@ -21,7 +22,7 @@ class OutputFile(object):
         self.path = path
 
     @contextmanager
-    def open(self):
+    def open(self, mode):
         if self.path == "-":
             yield sys.stdout
         else:
@@ -35,34 +36,9 @@ def include_file(ctx, name):
     return Markup(env.loader.get_source(env, name)[0])
 
 
-class BasicJinjaRender(object):
-    """
-    Common Jinja Template Renderer
-
-    Renderers that only use a single Jinja file can derive from this class. For
-    example:
-
-        @language("my-lang")
-        class MyRendered(BasicJinjaRenderer):
-            HELP = "Generates my-lang bindings"
-
-            def __init__(self, args):
-                super().__init__(args, PATH / TO / TEMPLATE)
-    """
-
-    def __init__(self, args, template):
-        self.__output = args.output
-        self.__template = template
-
-    @classmethod
-    def get_arguments(cls, parser):
-        parser.add_argument(
-            "--output",
-            "-o",
-            type=OutputFile,
-            help="Output file or '-' for stdout",
-            required=True,
-        )
+class JinjaTemplateRender(object):
+    def __init__(self):
+        pass
 
     def get_additional_render_args(self):
         return {}
@@ -80,6 +56,7 @@ class BasicJinjaRender(object):
         env.globals["abort"] = abort_helper
         env.globals["SHACL2CODE"] = SHACL2CODE
         env.globals["SH"] = SH
+        env.globals["SHACL2CODE_VERSION"] = VERSION
         template = env.get_template(template.name)
 
         render = template.render(
@@ -153,10 +130,45 @@ class BasicJinjaRender(object):
             **self.get_extra_env(),
         }
 
-        with self.__output.open() as f:
-            self.render(
-                self.__template,
-                f,
-                extra_env=env,
-                render_args=render_args,
-            )
+        for output, template, args in self.get_outputs():
+            with output.open("w") as f:
+                self.render(
+                    template,
+                    f,
+                    extra_env=env,
+                    render_args={**render_args, **args},
+                )
+
+
+class BasicJinjaRender(JinjaTemplateRender):
+    """
+    Common Jinja Template Renderer
+
+    Renderers that only use a single Jinja file can derive from this class. For
+    example:
+
+        @language("my-lang")
+        class MyRendered(BasicJinjaRenderer):
+            HELP = "Generates my-lang bindings"
+
+            def __init__(self, args):
+                super().__init__(args, PATH / TO / TEMPLATE)
+    """
+
+    def __init__(self, args, template):
+        super().__init__()
+        self.__output = args.output
+        self.__template = template
+
+    @classmethod
+    def get_arguments(cls, parser):
+        parser.add_argument(
+            "--output",
+            "-o",
+            type=OutputFile,
+            help="Output file or '-' for stdout",
+            required=True,
+        )
+
+    def get_outputs(self):
+        yield self.__output, self.__template, {}

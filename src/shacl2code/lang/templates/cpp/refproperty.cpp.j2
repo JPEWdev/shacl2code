@@ -1,0 +1,49 @@
+/**
+ * {#
+vim: ft=cpp
+#}@file
+ *
+ * Generated C++ bindings from a SHACL model
+ *
+ * {{ disclaimer }}
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+#include <memory>
+
+#include "object.hpp"
+#include "objectpath.hpp"
+#include "refproperty.hpp"
+#include "walk.hpp"
+
+/* {{ "*" + "/" }}
+{%- if namespace %}
+{%- for n in namespace.split("::") %}
+namespace {{ n }} {
+{%- endfor %}
+{%- endif %}
+{{ "/" + "*" }} */
+
+using std::string_literals::operator""s;
+
+void RefPropertyHelper::walkSHACLObject(SHACLObject const* object,
+                                        WalkCallback const& callback,
+                                        ObjectPath& path) {
+    object->walk(callback, path);
+}
+
+std::shared_ptr<SHACLObject> RefPropertyHelper::decodeSHACLObject(
+    ObjectDecoder& decoder, TypeBase const* type, ErrorHandler& errorHandler,
+    ObjectPath& path) {
+    return SHACLObject::decode(decoder, type, errorHandler, path);
+}
+
+/* {{ "*" + "/" }}
+{%- if namespace %}
+{%- for n in namespace.split("::") %}
+}
+{%- endfor %}
+{%- endif %}
+{{ "/" + "*" }} */
+

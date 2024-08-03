@@ -1,0 +1,496 @@
+/**
+ * {#
+vim: ft=cpp
+#}@file
+ *
+ * Generated C++ bindings from a SHACL model
+ *
+ * {{ disclaimer }}
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+#ifndef DOXYGEN_SKIP
+/* {{ "*" + "/" }}
+{{ include_file("lang/sources/cpp/json.hpp") }}
+{{ "/" + "*" }} */
+#endif  // DOXYGEN_SKIP
+
+#include <functional>
+#include <optional>
+#include <ostream>
+#include <string>
+
+/* {{ "*" + "/" }}
+#include "{{ basename }}-jsonld.hpp"
+#include "{{ basename }}.hpp"
+
+{%- if namespace %}
+{%- for n in namespace.split("::") %}
+namespace {{ n }} {
+{%- endfor %}
+{%- endif %}
+
+{{ "/" + "*" }} */
+#ifndef DOXYGEN_SKIP
+using json = nlohmann::json;
+#endif  // DOXYGEN_SKIP
+        //
+using std::string_literals::operator""s;
+
+// EncoderState
+JSONLDEncoderState::JSONLDEncoderState(std::ostream& output)
+    : EncoderState(), mOutput(output) {}
+JSONLDEncoderState::~JSONLDEncoderState() {}
+
+void JSONLDEncoderState::writeComma() {
+    if (mNeedsComma) {
+        mOutput << ",";
+        mNeedsComma = false;
+    }
+}
+
+void JSONLDEncoderState::needsComma() { mNeedsComma = true; }
+
+// ValueEncoder
+JSONLDValueEncoder::JSONLDValueEncoder(JSONLDEncoderState& state)
+    : ValueEncoder(state), mState(state) {}
+JSONLDValueEncoder::~JSONLDValueEncoder() {}
+
+void JSONLDValueEncoder::writeString(std::string const& value) {
+    json d = value;
+    mState.output() << d;
+}
+
+void JSONLDValueEncoder::writeDateTime(DateTime const& value) {
+    writeString(value.toString());
+}
+
+void JSONLDValueEncoder::writeInteger(int value) { mState.output() << value; }
+
+void JSONLDValueEncoder::writeIRI(std::string const& value,
+                                  std::optional<std::string> const& compact) {
+    writeString(compact.value_or(value));
+}
+
+void JSONLDValueEncoder::writeEnum(std::string const& value,
+                                   std::optional<std::string> const& compact) {
+    writeString(compact.value_or(value));
+}
+
+void JSONLDValueEncoder::writeBool(bool value) {
+    mState.output() << (value ? "true" : "false");
+}
+
+void JSONLDValueEncoder::writeFloat(double value) {
+    std::ostringstream ss;
+    ss << std::setprecision(8) << std::noshowpoint << value;
+    writeString(ss.str());
+}
+
+void JSONLDValueEncoder::writeObject(
+    SHACLObject const& o, std::string const& id, bool needs_id,
+    std::function<void(ObjectEncoder&)> const& f) {
+    mState.writeComma();
+    mState.output() << "{";
+    writeString("{{ context.compact_iri('@type') }}");
+    mState.output() << ":";
+    writeString(o.getCompactTypeIRI().value_or(o.getTypeIRI()));
+    mState.needsComma();
+
+    if (needs_id) {
+        mState.writeComma();
+        writeString(o._id.getCompactIRI().value_or(o._id.getIRI()));
+        mState.output() << ":";
+        writeString(id);
+        mState.needsComma();
+    }
+
+    {
+        JSONLDObjectEncoder e(mState);
+        f(e);
+    }
+    mState.output() << "}";
+    mState.needsComma();
+}
+
+void JSONLDValueEncoder::writeList(std::function<void(ListEncoder&)> const& f) {
+    mState.writeComma();
+    mState.output() << "[";
+    {
+        JSONLDListEncoder e(mState);
+        f(e);
+    }
+    mState.output() << "]";
+    mState.needsComma();
+}
+
+// ObjectEncoder
+JSONLDObjectEncoder::JSONLDObjectEncoder(JSONLDEncoderState& state)
+    : ObjectEncoder(state), mState(state) {}
+JSONLDObjectEncoder::~JSONLDObjectEncoder() {}
+
+void JSONLDObjectEncoder::writeProperty(
+    std::string const& iri, std::optional<std::string> const& compact,
+    std::function<void(ValueEncoder&)> const& f) {
+    mState.writeComma();
+    {
+        JSONLDValueEncoder e(mState);
+        e.writeString(compact.value_or(iri));
+        mState.output() << ":";
+        f(e);
+    }
+    mState.needsComma();
+}
+
+// ListEncoder
+JSONLDListEncoder::JSONLDListEncoder(JSONLDEncoderState& state)
+    : ListEncoder(state), mState(state) {}
+
+JSONLDListEncoder::~JSONLDListEncoder() {}
+
+void JSONLDListEncoder::writeItem(std::function<void(ValueEncoder&)> const& f) {
+    mState.writeComma();
+    {
+        JSONLDValueEncoder e(mState);
+        f(e);
+    }
+    mState.needsComma();
+}
+
+// JSONLDInlineSerializer
+JSONLDInlineSerializer::JSONLDInlineSerializer() {}
+JSONLDInlineSerializer::~JSONLDInlineSerializer() {}
+
+void JSONLDInlineSerializer::write(std::ostream& output,
+                                   SHACLObjectSet& objectSet,
+                                   ErrorHandler& errorHandler) {
+    JSONLDEncoderState state(output);
+
+    output << "{";
+    JSONLDObjectEncoder top(state);
+
+    top.writeProperty("@context", {}, [&](ValueEncoder& value) {
+        if (objectSet.ContextURLs.size() > 1) {
+            value.writeList([&](ListEncoder& list) {
+                for (auto const& url : objectSet.ContextURLs) {
+                    list.writeItem([&](ValueEncoder& list_value) {
+                        list_value.writeString(url);
+                    });
+                }
+            });
+        } else {
+            value.writeString(objectSet.ContextURLs[0]);
+        }
+    });
+
+    top.writeProperty("@graph", {}, [&](ValueEncoder& value) {
+        value.writeList(
+            [&](ListEncoder& list) { objectSet.encode(list, errorHandler); });
+    });
+
+    output << "}";
+}
+
+// JSONLDDecoderState
+
+/**
+ * @brief Container for JSON Data
+ *
+ * Only defined internally
+ */
+struct JSONData {
+    /// The JSON data
+    json const* data;
+};
+
+JSONLDValueDecoder::JSONLDValueDecoder(DecoderState& state,
+                                       JSONData const& data)
+    : ValueDecoder(state), mData(data) {}
+JSONLDValueDecoder::~JSONLDValueDecoder() {}
+
+ValueDecoder::Type JSONLDValueDecoder::getType() const {
+    switch (mData.data->type()) {
+        case json::value_t::object:
+            return ValueDecoder::Type::Object;
+
+        case json::value_t::array:
+            return ValueDecoder::Type::List;
+
+        case json::value_t::string:
+            return ValueDecoder::Type::String;
+
+        case json::value_t::boolean:
+            return ValueDecoder::Type::Bool;
+
+        case json::value_t::number_integer:
+        case json::value_t::number_unsigned:
+            return ValueDecoder::Type::Integer;
+
+        case json::value_t::number_float:
+            return ValueDecoder::Type::Float;
+
+        default:
+            return ValueDecoder::Type::Unknown;
+    }
+}
+
+std::optional<std::string> JSONLDValueDecoder::readString() {
+    if (!mData.data->is_string()) {
+        return {};
+    }
+
+    return mData.data->template get<std::string>();
+}
+
+std::optional<DateTime> JSONLDValueDecoder::readDateTime() {
+    auto s = readString();
+    if (!s) {
+        return {};
+    }
+
+    return DateTime::fromString(s.value(), false);
+}
+
+std::optional<DateTime> JSONLDValueDecoder::readDateTimeStamp() {
+    auto s = readString();
+    if (!s) {
+        return {};
+    }
+
+    return DateTime::fromString(s.value(), true);
+}
+
+std::optional<int> JSONLDValueDecoder::readInteger() {
+    if (mData.data->is_string()) {
+        auto s = mData.data->template get<std::string>();
+        char* endptr = nullptr;
+        auto val = strtoll(s.c_str(), &endptr, 10);
+
+        if (!endptr || *endptr != '\0') {
+            return {};
+        }
+
+        return val;
+    }
+
+    if (!mData.data->is_number_integer()) {
+        return {};
+    }
+
+    return mData.data->template get<int>();
+}
+
+std::optional<std::string> JSONLDValueDecoder::readIRI() {
+    return readString();
+}
+
+std::optional<std::string> JSONLDValueDecoder::readEnum() {
+    return readString();
+}
+
+std::optional<bool> JSONLDValueDecoder::readBool() {
+    if (!mData.data->is_boolean()) {
+        return {};
+    }
+    return mData.data->template get<bool>();
+}
+
+std::optional<double> JSONLDValueDecoder::readFloat() {
+    if (mData.data->is_string()) {
+        auto s = mData.data->template get<std::string>();
+        if (s.empty()) {
+            return {};
+        }
+        char* endptr = nullptr;
+        auto val = strtod(s.c_str(), &endptr);
+
+        if (!endptr || *endptr != '\0') {
+            return {};
+        }
+
+        return val;
+    }
+
+    if (!mData.data->is_number()) {
+        return {};
+    }
+
+    return mData.data->template get<double>();
+}
+
+bool JSONLDValueDecoder::readObject(
+    std::function<void(ObjectDecoder&)> const& f) {
+    if (!mData.data->is_object()) {
+        return false;
+    }
+
+    JSONLDObjectDecoder decoder(getState(), mData);
+    f(decoder);
+    return true;
+}
+
+bool JSONLDValueDecoder::readList(std::function<void(ListDecoder&)> const& f) {
+    if (!mData.data->is_array()) {
+        return false;
+    }
+
+    JSONLDListDecoder decoder(getState(), mData);
+    f(decoder);
+    return true;
+}
+
+// JSONLDObjectDecoder
+JSONLDObjectDecoder::JSONLDObjectDecoder(
+    DecoderState& state, JSONData const& data,
+    std::unordered_set<std::string> const& ignoreProperties)
+    : ObjectDecoder(state), mData(data), mIgnoreProperties(ignoreProperties) {
+    mIgnoreProperties.insert("@type");
+    mIgnoreProperties.insert("{{ context.compact_iri('@type') }}");
+}
+JSONLDObjectDecoder::~JSONLDObjectDecoder() {}
+
+std::optional<std::string> JSONLDObjectDecoder::readType() {
+    auto v = readStringProp("{{ context.compact_iri('@type') }}");
+    if (v) {
+        return v;
+    }
+
+    return readStringProp("@type");
+}
+
+void JSONLDObjectDecoder::readProperties(
+    std::function<void(std::string const&, ValueDecoder&)> const& f) {
+    for (auto const& prop : mData.data->items()) {
+        if (mIgnoreProperties.find(prop.key()) != mIgnoreProperties.end()) {
+            continue;
+        }
+
+        JSONData d;
+        d.data = &prop.value();
+
+        JSONLDValueDecoder decoder(getState(), d);
+        f(prop.key(), decoder);
+    }
+}
+
+std::optional<std::string> JSONLDObjectDecoder::readStringProp(
+    std::string const& s) {
+    if (!mData.data->contains(s)) {
+        return {};
+    }
+
+    auto j = mData.data->at(s);
+    if (!j.is_string()) {
+        return {};
+    }
+
+    return j.template get<std::string>();
+}
+
+// JSONLDListDecoder
+JSONLDListDecoder::JSONLDListDecoder(DecoderState& state, JSONData const& data)
+    : ListDecoder(state), mData(data) {}
+JSONLDListDecoder::~JSONLDListDecoder() {}
+
+void JSONLDListDecoder::readItems(std::function<void(ValueDecoder&)> const& f) {
+    for (auto const& item : *mData.data) {
+        JSONData d;
+        d.data = &item;
+
+        JSONLDValueDecoder decoder(getState(), d);
+        f(decoder);
+    }
+}
+
+// JSONLDDeserializer
+JSONLDDeserializer::JSONLDDeserializer() {}
+JSONLDDeserializer::~JSONLDDeserializer() {}
+
+void JSONLDDeserializer::read(std::istream& input, SHACLObjectSet& objectSet,
+                              ErrorHandler& errorHandler) {
+    json d;
+    input >> d;
+
+    ObjectPath path;
+
+    DecoderState state(&objectSet);
+    if (!objectSet.ContextURLs.empty()) {
+        if (!d.contains("@context")) {
+            errorHandler.handleDeserializeError(
+                "@context missing when it is required", path);
+            return;
+        }
+
+        std::vector<std::string> contextURLs;
+        path.pushMember("@context", [&] {
+            if (d["@context"].is_array()) {
+                path.foreachItem(d["@context"], [&](auto const& u) {
+                    if (!u.is_string()) {
+                        errorHandler.handleDeserializeError(
+                            "Context must be a string", path);
+                        return;
+                    }
+                    contextURLs.push_back(u);
+                });
+            } else if (!d["@context"].is_string()) {
+                errorHandler.handleDeserializeError("Context must be a string",
+                                                    path);
+                return;
+            } else {
+                contextURLs.push_back(d["@context"]);
+            }
+
+            std::sort(contextURLs.begin(), contextURLs.end());
+
+            std::vector<std::string> sortedObjectSetContextURLs(
+                objectSet.ContextURLs);
+
+            std::sort(sortedObjectSetContextURLs.begin(),
+                      sortedObjectSetContextURLs.end());
+
+            if (contextURLs != sortedObjectSetContextURLs) {
+                errorHandler.handleDeserializeError("Invalid context URLs",
+                                                    path);
+                return;
+            }
+        });
+    }
+
+    if (!d.contains("@graph")) {
+        JSONData data;
+        data.data = &d;
+
+        JSONLDObjectDecoder graphDecoder(state, data, {"@context"});
+        objectSet.decode(graphDecoder, errorHandler, path);
+    } else {
+        if (!d["@graph"].is_array()) {
+            errorHandler.handleDeserializeError("@graph must be an array",
+                                                path);
+            return;
+        }
+
+        for (auto& [key, value] : d.items()) {
+            if (key != "@context" && key != "@graph") {
+                errorHandler.handleDeserializeError(
+                    "Unexpected key '"s + key + "'", path);
+            }
+        }
+
+        path.pushMember("@graph", [&] {
+            JSONData data;
+            data.data = &d["@graph"];
+
+            JSONLDListDecoder graphDecoder(state, data);
+            objectSet.decode(graphDecoder, errorHandler, path);
+        });
+    }
+}
+
+/* {{ "*" + "/" }}
+{%- if namespace %}
+{%- for n in namespace.split("::") %}
+}
+{%- endfor %}
+{%- endif %}
+{{ "/" + "*" }} */

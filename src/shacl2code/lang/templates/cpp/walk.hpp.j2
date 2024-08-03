@@ -1,0 +1,86 @@
+/**
+ * {#
+vim: ft=cpp
+#}@file
+ *
+ * Generated C++ bindings from a SHACL model
+ *
+ * {{ disclaimer }}
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+/* {{ guard_begin }} */
+
+#include <functional>
+#include <optional>
+#include <string>
+
+#include "datetime.hpp"
+
+/* {{ api_def_begin }} */
+/* {{ ns_begin }} */
+
+class ObjectPath;
+class SHACLObject;
+
+template <class C>
+class Ref;
+
+/**
+ * @brief Walk callback
+ *
+ * Callbacks to use when walking a object tree
+ */
+struct EXPORT WalkCallback {
+    /// Callback when a string property is walked
+    std::function<void(
+        ObjectPath&,
+        std::optional<std::reference_wrapper<std::string const>> const&)> const&
+        stringProp = [](auto&, auto const&) {};
+
+    /// Callback when an integer property is walked
+    std::function<void(ObjectPath const&, std::optional<int>)> const&
+        integerProp = [](auto&, auto const&) {};
+
+    /// Callback when a boolean property is walked
+    std::function<void(ObjectPath&, std::optional<bool>)> const& booleanProp =
+        [](auto const&, auto const&) {};
+
+    /// Callback when a double property is walked
+    std::function<void(ObjectPath&, std::optional<double>)> const& doubleProp =
+        [](auto&, auto const&) {};
+
+    /// Callback when a DateTime property is walked
+    std::function<void(
+        ObjectPath&,
+        std::optional<std::reference_wrapper<DateTime const>> const&)> const&
+        dateTimeProp = [](auto&, auto const&) {};
+
+    /// Callback when an Enum property is walked
+    std::function<void(
+        ObjectPath&,
+        std::optional<std::reference_wrapper<std::string const>> const&)> const&
+        enumProp = [](auto&, auto const&) {};
+
+    /// Callback when an Any URI property is walked
+    std::function<void(
+        ObjectPath&,
+        std::optional<std::reference_wrapper<std::string const>> const&)> const&
+        anyURIProp = [](auto&, auto const&) {};
+
+    /**
+     * @brief Callback when an object is walked
+     *
+     * The callback should return true if the object is to be recursed into
+     * (that is, all its properties walked), or false if not
+     */
+    std::function<bool(ObjectPath&, std::optional<std::reference_wrapper<
+                                        Ref<SHACLObject> const>> const&)> const&
+        refProp = [](auto&, auto const&) { return false; };
+};
+
+/* {{ api_def_end }} */
+/* {{ ns_end }} */
+/* {{ guard_end }} */
+

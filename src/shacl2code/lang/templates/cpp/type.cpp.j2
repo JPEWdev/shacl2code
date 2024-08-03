@@ -1,0 +1,39 @@
+/**
+ * {#
+vim: ft=cpp
+#}@file
+ *
+ * Generated C++ bindings from a SHACL model
+ *
+ * {{ disclaimer }}
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+#include <memory>
+#include <optional>
+#include <string>
+
+#include "object.hpp"
+#include "type.hpp"
+
+/* {{ ns_begin }} */
+
+// TypeBase
+TypeBase::TypeBase(std::string&& typeIRI,
+                   std::optional<std::string>&& compactTypeIRI)
+    : mTypeIRI(std::move(typeIRI)), mCompactTypeIRI(std::move(compactTypeIRI)) {
+    SHACLObject::getIRITypeRegistry().insert({mTypeIRI, this});
+    if (mCompactTypeIRI.has_value()) {
+        SHACLObject::getCompactTypeRegistry().insert(
+            {mCompactTypeIRI.value(), this});
+    }
+}
+
+TypeBase::~TypeBase() {}
+
+bool TypeBase::isSubClassOf(TypeBase const* type) const {
+    return isSubClassOf(type->getTypeIRI());
+}
+
+/* {{ ns_end }} */

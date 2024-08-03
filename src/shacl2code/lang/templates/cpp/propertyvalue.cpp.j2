@@ -1,0 +1,65 @@
+/**
+ * {#
+vim: ft=cpp
+#}@file
+ *
+ * Generated C++ bindings from a SHACL model
+ *
+ * {{ disclaimer }}
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+#include <memory>
+#include <optional>
+#include <string>
+
+#include "object.hpp"
+#include "propertyvalue.hpp"
+
+/* {{ "*" + "/" }}
+{%- if namespace %}
+{%- for n in namespace.split("::") %}
+namespace {{ n }} {
+{%- endfor %}
+{%- endif %}
+{{ "/" + "*" }} */
+
+using std::string_literals::operator""s;
+
+// PropertyValueCommon
+PropertyValueCommon::PropertyValueCommon(
+    SHACLObject* owner, std::string const& iri,
+    std::optional<std::string> const& compact)
+    : mIRI(iri), mCompactIRI(compact) {
+    if (owner) {
+        owner->mProperties.push_back(this);
+    }
+}
+
+PropertyValueCommon::~PropertyValueCommon() {}
+
+std::string const& PropertyValueCommon::getIRI() const { return mIRI; }
+
+std::optional<std::string> const& PropertyValueCommon::getCompactIRI() const {
+    return mCompactIRI;
+}
+
+bool PropertyValueCommon::matchesIRI(std::string const& s) const {
+    if (mIRI == s) {
+        return true;
+    }
+    if (mCompactIRI && mCompactIRI.value() == s) {
+        return true;
+    }
+    return false;
+}
+
+/* {{ "*" + "/" }}
+{%- if namespace %}
+{%- for n in namespace.split("::") %}
+}
+{%- endfor %}
+{%- endif %}
+{{ "/" + "*" }} */
+

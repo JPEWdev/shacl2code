@@ -1,0 +1,10 @@
+prefix=@@PREFIX@@
+exec_prefix=${prefix}
+includedir=${prefix}/include
+libdir=${exec_prefix}/lib
+
+Name: test-context
+Description: shacl2code generated binding test-context
+Version: 0.0.14
+Cflags: -I${includedir} -DSHACL2CODE_TEST_CONTEXT_DLL
+Libs: -L${libdir} -ltest-context

@@ -1,0 +1,170 @@
+/**
+ * {#
+vim: ft=cpp
+#}@file
+ *
+ * Generated C++ bindings from a SHACL model
+ *
+ * {{ disclaimer }}
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+/* {{ guard_begin }} */
+
+#include <functional>
+#include <string>
+#include <vector>
+
+/* {{ api_def_begin }} */
+/* {{ ns_begin }} */
+
+class PropertyValueCommon;
+class ListDecoder;
+class ValueDecoder;
+
+/**
+ * @brief Object Path
+ *
+ * Tracks the string path that represents an object. Implements stack-like
+ * manipulations to make it easier to correctly track object paths while
+ * navigating the object tree
+ */
+class EXPORT ObjectPath {
+   public:
+    /// Shorthand for the callback function
+    using func = std::function<void()>;
+
+    /// Constructor
+    ObjectPath();
+    /// Destructor
+    virtual ~ObjectPath();
+
+    ObjectPath(ObjectPath const&) = delete;
+    ObjectPath(ObjectPath&&) = delete;
+    ObjectPath& operator=(ObjectPath const&) = delete;
+    ObjectPath& operator=(ObjectPath&&) = delete;
+
+    /**
+     * @brief Get string path
+     *
+     * @returns The path of the current object, as a string
+     */
+    std::string getPathString() const;
+
+    /**
+     * @brief Get path vector
+     *
+     * @returns The path of the current object as a vector
+     */
+    std::vector<std::string> const& getPath() const { return mPath; }
+
+    /**
+     * @brief Push path component
+     *
+     * Appends @p p to the path while @p f is invoked. @p p will be popped off
+     * the end of the path when @p f returns
+     *
+     * @param[in] p The path string to push onto the stack
+     * @param[in] f The function to invoke while @p p is pushed on the
+     *              stack
+     */
+    void pushPath(std::string const& p, func const& f);
+
+    /**
+     * @brief Push index
+     *
+     * Appends a string representation of list index @p i to the path while @p f
+     * is invoked. The string will be popped off the path when @p f returns
+     *
+     * @param[in] i The index to push onto the stack
+     * @param[in] f The function to invoke with @p i is pushed on the stack
+     */
+    void pushIndex(int i, func const& f);
+
+    /**
+     * @brief Push member
+     *
+     * Appends a string representation of an object member with name @p name to
+     * the path list while @p f is invoked. The string will be popped off the
+     * path when @p f returns
+     *
+     * @param[in] name  The name of the object member to push onto the stack
+     * @param[in] f     The function to invoke with @p i is pushed on the stack
+     */
+    void pushMember(std::string const& name, func const& f);
+
+    /**
+     * @brief Push property
+     *
+     * Appends a string representation of @p p to the path while @p f is
+     * invoked. The string will be popped off the path when @p f returns.
+     *
+     * @param[in] p The PropertyValueCommon to push onto the stack
+     * @param[in] f The function to invoke with @p i is pushed on the stack
+     */
+    void pushProperty(PropertyValueCommon const& p, func const& f);
+
+    /**
+     * @brief List iterator helper
+     *
+     * Iterates through each item in the list and pushes its index to the path
+     * before invoking a function
+     *
+     * @tparam C    The container type
+     * @tparam T    The callback function type
+     *
+     * @param[in] c The container to iterate over
+     * @param[in] f The function to invoke for each container item
+     */
+    template <class C, class T>
+    void foreachItem(C const& c, T const& f) {
+        int i = 0;
+        for (auto const& v : c) {
+            pushIndex(i, [&] { f(v); });
+            i++;
+        }
+    }
+
+    /**
+     * @brief List iterator helper
+     *
+     * Iterates through each item between the provided iterators and pushes its
+     * index to the path before before invoking a function
+     *
+     * @tparam I            The iterator type
+     * @tparam T            The callback function type
+     *
+     * @param[in] start     The starting iterator (inclusive)
+     * @param[in] end       The ending iterator (exclusive)
+     * @param[in] f         The function to invoke for each container item
+     * @param[in] idxStart  The starting index
+     */
+    template <class I, class T>
+    void foreachItem(I start, I end, T const& f, int idxStart = 0) {
+        int i = idxStart;
+        for (auto it = start; it != end; ++it, ++i) {
+            pushIndex(i, [&] { f(*it); });
+        }
+    }
+
+    /**
+     * @brief ListDecoder helper
+     *
+     * Iterates through all the items in the ListDecoder and pushes the index
+     * on the path before invoking @p f
+     *
+     * @param decoder   ListDecoder to iterator over
+     * @param f         Function to invoke
+     */
+    void foreachListDecoder(ListDecoder& decoder,
+                            std::function<void(ValueDecoder&)> const& f);
+
+   private:
+    std::vector<std::string> mPath;
+};
+
+/* {{ api_def_end }} */
+/* {{ ns_end }} */
+/* {{ guard_end }} */
+

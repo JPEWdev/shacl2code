@@ -1,0 +1,48 @@
+/**
+ * {#
+vim: ft=cpp
+#}@file
+ *
+ * Generated C++ bindings from a SHACL model
+ *
+ * {{ disclaimer }}
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+#include "util.hpp"
+
+#include <string>
+
+/* {{ "*" + "/" }}
+{%- if namespace %}
+{%- for n in namespace.split("::") %}
+namespace {{ n }} {
+{%- endfor %}
+{%- endif %}
+{{ "/" + "*" }} */
+
+using std::string_literals::operator""s;
+
+bool isBlankNode(std::string const& id) { return id.rfind("_:", 0) == 0; }
+
+bool isIRI(std::string const& id) {
+    if (isBlankNode(id)) {
+        return false;
+    }
+
+    if (id.find(":") == std::string::npos) {
+        return false;
+    }
+
+    return true;
+}
+
+/* {{ "*" + "/" }}
+{%- if namespace %}
+{%- for n in namespace.split("::") %}
+}
+{%- endfor %}
+{%- endif %}
+{{ "/" + "*" }} */
+

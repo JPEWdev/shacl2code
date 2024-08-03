@@ -1,0 +1,101 @@
+/**
+ * {#
+vim: ft=cpp
+#}@file
+ *
+ * Generated C++ bindings from a SHACL model
+ *
+ * {{ disclaimer }}
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+/* {{ guard_begin }} */
+
+#include <exception>
+#include <string>
+
+/* {{ api_def_begin }} */
+/* {{ ns_begin }} */
+
+/**
+ * @brief Path Error
+ *
+ * Base class for exceptions that should include the path to the object that
+ * generated the failure
+ */
+class EXPORT PathError : public std::exception {
+   public:
+    /**
+     * @brief Constructor
+     *
+     * Creates a new PathError with the provided message and path
+     */
+    PathError(std::string const& message, std::string const& path)
+        : mMessage(message),
+          mPath(path),
+          mWhat(path + std::string(": ") + message) {}
+
+    /**
+     * @brief Get message
+     *
+     * @returns The error message with path
+     */
+    const char* what() const noexcept override { return mWhat.c_str(); }
+
+    /**
+     * @brief Get message
+     *
+     * @returns The error message without the path
+     */
+    std::string const& getMessage() const noexcept { return mMessage; }
+
+    /**
+     * @brief Get path
+     *
+     * @returns The property path of the error
+     */
+    std::string const& getPath() const noexcept { return mPath; }
+
+   private:
+    std::string mMessage;
+    std::string mPath;
+    std::string mWhat;
+};
+
+/**
+ * @brief Value validation error
+ *
+ * This exception is raised when an invalid value is assigned to a
+ * SHACLObject class property
+ */
+class EXPORT ValidationError : public PathError {
+   public:
+    /**
+     * @brief Constructor
+     *
+     * Creates a new ValidationError with the provided message
+     */
+    ValidationError(std::string const& message, std::string const& path)
+        : PathError(message, path) {}
+};
+
+/**
+ * @brief Deserialization error
+ *
+ * This exception is raised when there is a problem deserializing
+ */
+class EXPORT DeserializeError : public PathError {
+   public:
+    /**
+     * @brief Constructor
+     *
+     * Creates a new DeserializeError with the provided message
+     */
+    DeserializeError(std::string const& message, std::string const& path)
+        : PathError(message, path) {}
+};
+
+/* {{ api_def_end }} */
+/* {{ ns_end }} */
+/* {{ guard_end }} */

@@ -1,0 +1,47 @@
+/**
+ * {#
+vim: ft=cpp
+#}@file
+ *
+ * Generated C++ bindings from a SHACL model
+ *
+ * {{ disclaimer }}
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+/* {{ guard_begin }} */
+
+// clang-format off
+// Generic helper definitions for shared library support
+#ifndef DOXYGEN_SKIP
+#if defined _WIN32 || defined __CYGWIN__
+    #define {{ macro_prefix }}_HELPER_DLL_IMPORT __declspec(dllimport)
+    #define {{ macro_prefix }}_HELPER_DLL_EXPORT __declspec(dllexport)
+    #define {{ macro_prefix }}_HELPER_DLL_LOCAL
+#else
+    #define {{ macro_prefix }}_HELPER_DLL_IMPORT __attribute__((visibility("default")))
+    #define {{ macro_prefix }}_HELPER_DLL_EXPORT __attribute__((visibility("default")))
+    #define {{ macro_prefix }}_HELPER_DLL_LOCAL  __attribute__((visibility("hidden")))
+#endif
+
+// Now we use the generic helper definitions above to define EXPORT and LOCAL.
+// EXPORT is used for the public API symbols. It either DLL imports or DLL
+// exports (or does nothing for static build) LOCAL is used for non-api
+// symbols.
+
+#ifdef {{ macro_prefix }}_DLL         // defined if compiled as a DLL
+    #ifdef {{ macro_prefix }}_DLL_EXPORTS // defined if we are building the DLL (instead of using it)
+        #define {{ macro_prefix }}_API {{ macro_prefix }}_HELPER_DLL_EXPORT
+    #else
+        #define {{ macro_prefix }}_API {{ macro_prefix }}_HELPER_DLL_IMPORT
+    #endif  // {{ macro_prefix }}_DLL_EXPORTS
+    #define {{ macro_prefix }}_LOCAL   {{ macro_prefix }}_HELPER_DLL_LOCAL
+#else  // {{ macro_prefix }}_DLL is not defined: this means {{ macro_prefix }} is a static lib.
+    #define {{ macro_prefix }}_API
+    #define {{ macro_prefix }}_LOCAL
+#endif  // {{ macro_prefix }}_DLL
+#endif // DOXYGEN_SKIP
+// clang-format on
+
+/* {{ guard_end }} */

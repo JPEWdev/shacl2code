@@ -1,0 +1,54 @@
+/**
+ * {#
+vim: ft=cpp
+#}@file
+ *
+ * Generated C++ bindings from a SHACL model
+ *
+ * {{ disclaimer }}
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+/* {{ guard_begin }} */
+
+#include <memory>
+#include <set>
+#include <string>
+#include <unordered_set>
+
+/* {{ api_def_begin }} */
+/* {{ ns_begin }} */
+
+class SHACLObjectSet;
+class SHACLObject;
+
+/**
+ * @brief Linking State
+ *
+ * Tracks the state while Linking objects in an object set
+ */
+class EXPORT LinkState {
+   public:
+    /// Constructor
+    LinkState(SHACLObjectSet* o, std::set<std::string>* m);
+
+    /// @copydoc {{ nsprefix }}::SHACLObjectSet::findById()
+    std::shared_ptr<SHACLObject> findObjById(
+        std::string const& id,
+        std::shared_ptr<SHACLObject> const& dflt = nullptr) const;
+
+    /// A pointer to the SHACLObjectSet being linked
+    SHACLObjectSet* const objectSet;
+
+    /// A set of IRIs found during linking that had no corresponding object in
+    /// the object set
+    std::set<std::string>* const missing;
+
+    /// Set of visited objects to prevent infinite recursion
+    std::unordered_set<SHACLObject const*> visited;
+};
+
+/* {{ api_def_end }} */
+/* {{ ns_end }} */
+/* {{ guard_end }} */

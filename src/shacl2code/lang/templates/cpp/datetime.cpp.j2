@@ -1,0 +1,154 @@
+/**
+ * {#
+vim: ft=cpp
+#}@file
+ *
+ * Generated C++ bindings from a SHACL model
+ *
+ * {{ disclaimer }}
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+#include <optional>
+#include <ostream>
+#include <regex>
+#include <string>
+
+#include "datetime.hpp"
+
+/* {{ "*" + "/" }}
+{%- if namespace %}
+{%- for n in namespace.split("::") %}
+namespace {{ n }} {
+{%- endfor %}
+{%- endif %}
+{{ "/" + "*" }} */
+
+using std::string_literals::operator""s;
+
+// DateTime
+const char DateTime::TimeFormat[] = "%Y-%m-%dT%H:%M:%S";
+const char DateTime::TzFormat[] = "%+03d:%02d";
+const std::regex DateTime::MatchRegex(
+    R"REGEX(^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})?$)REGEX");
+
+DateTime::DateTime(time_t time, int tzoffset)
+    : mTime(time), mTZoffset(tzoffset) {}
+DateTime::~DateTime() {}
+
+std::string DateTime::toString() const {
+    std::string s;
+    {
+        struct tm tbuf;
+        auto* t = gmtime_r(&mTime, &tbuf);
+        char buf[30];
+        strftime(buf, sizeof(buf), TimeFormat, t);
+        s.append(buf);
+    }
+
+    if (mTZoffset == 0) {
+        s.append("Z");
+    } else {
+        int hours = mTZoffset / (60 * 60);
+        int minutes = (std::abs(mTZoffset) / 60) % 60;
+        size_t const len = snprintf(nullptr, 0, TzFormat, hours, minutes);
+        char buf[len + 1];
+        snprintf(buf, sizeof(buf), TzFormat, hours, minutes);
+        s.append(buf);
+    }
+
+    return s;
+}
+
+int DateTime::tzOffsetSeconds() const { return mTZoffset; }
+
+std::optional<DateTime> DateTime::fromString(std::string const& s,
+                                             bool tzRequired) {
+    if (!std::regex_match(s, MatchRegex)) {
+        return {};
+    }
+
+    struct tm buf = {0};
+    char const* c = strptime(s.c_str(), TimeFormat, &buf);
+    if (c == NULL) {
+        return {};
+    }
+
+    time_t t = timegm(&buf);
+    if (t == -1) {
+        return {};
+    }
+
+    if (*c == '\0') {
+        if (tzRequired) {
+            return {};
+        }
+
+        auto* p = localtime_r(&t, &buf);
+        if (!p) {
+            return {};
+        }
+
+        return DateTime(t, p->tm_gmtoff);
+    }
+
+    if (*c == 'Z') {
+        return DateTime(t);
+    }
+
+    if (*c == '+' || *c == '-') {
+        char* end = NULL;
+        long hour = std::strtol(c, &end, 10);
+        long minute = 0;
+        if (end == c) {
+            return {};
+        }
+
+        if (hour > 12 || hour < -12) {
+            return {};
+        }
+
+        if (*end != '\0') {
+            if (*end != ':') {
+                return {};
+            }
+
+            c = end + 1;
+            minute = std::strtol(c, &end, 10);
+            if (end == c) {
+                return {};
+            }
+        }
+
+        if (minute < 0 || minute >= 60) {
+            return {};
+        }
+
+        if ((hour == 12 || hour == -12) && minute != 0) {
+            return {};
+        }
+
+        if (hour < 0) {
+            minute = -minute;
+        }
+
+        return DateTime(t, ((hour * 60) + minute) * 60);
+    }
+
+    return {};
+}
+
+std::ostream& operator<<(std::ostream& stream, DateTime const& datetime) {
+    stream << datetime.toString();
+    return stream;
+}
+
+/* {{ "*" + "/" }}
+{%- if namespace %}
+{%- for n in namespace.split("::") %}
+}
+{%- endfor %}
+{%- endif %}
+{{ "/" + "*" }} */
+

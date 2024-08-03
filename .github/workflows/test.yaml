@@ -31,6 +31,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install build
           npm install -g jsonld-cli
+          sudo apt install -y build-essential doxygen graphviz
       - name: Build package
         run: |
           python -m build

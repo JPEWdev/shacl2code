@@ -1,0 +1,56 @@
+/**
+ * {#
+vim: ft=cpp
+#}@file
+ *
+ * Generated C++ bindings from a SHACL model
+ *
+ * {{ disclaimer }}
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+#include <functional>
+#include <optional>
+#include <string>
+
+#include "decode.hpp"
+
+/* {{ "*" + "/" }}
+{%- if namespace %}
+{%- for n in namespace.split("::") %}
+namespace {{ n }} {
+{%- endfor %}
+{%- endif %}
+{{ "/" + "*" }} */
+
+using std::string_literals::operator""s;
+
+// DecoderState
+DecoderState::DecoderState(SHACLObjectSet* objectSet) : mObjectSet(objectSet) {}
+DecoderState::~DecoderState() {}
+
+// ElementDecoder
+ElementDecoder::ElementDecoder(DecoderState& state) : mState(state) {}
+ElementDecoder::~ElementDecoder() {}
+
+// ValueDecoder
+ValueDecoder::ValueDecoder(DecoderState& state) : ElementDecoder(state) {}
+ValueDecoder::~ValueDecoder() {}
+
+// ObjectDecoder
+ObjectDecoder::ObjectDecoder(DecoderState& state) : ElementDecoder(state) {}
+ObjectDecoder::~ObjectDecoder() {}
+
+// ListDecoder
+ListDecoder::ListDecoder(DecoderState& state) : ElementDecoder(state) {}
+ListDecoder::~ListDecoder() {}
+
+/* {{ "*" + "/" }}
+{%- if namespace %}
+{%- for n in namespace.split("::") %}
+}
+{%- endfor %}
+{%- endif %}
+{{ "/" + "*" }} */
+

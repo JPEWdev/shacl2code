@@ -1,0 +1,340 @@
+/**
+ * {#
+vim: ft=cpp
+#}@file
+ *
+ * Generated C++ bindings from a SHACL model
+ *
+ * {{ disclaimer }}
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+#include <list>
+#include <memory>
+#include <set>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
+#include "decode.hpp"
+#include "encode.hpp"
+#include "errorhandler.hpp"
+#include "object.hpp"
+#include "objectpath.hpp"
+#include "objectset.hpp"
+#include "util.hpp"
+
+/* {{ "*" + "/" }}
+{%- if namespace %}
+{%- for n in namespace.split("::") %}
+namespace {{ n }} {
+{%- endfor %}
+{%- endif %}
+{{ "/" + "*" }} */
+
+using std::string_literals::operator""s;
+
+// SHACLObjectSet
+SHACLObjectSet::SHACLObjectSet() {}
+SHACLObjectSet::~SHACLObjectSet() {}
+
+void SHACLObjectSet::add(Ref<SHACLObject> const& ref) {
+    // Only actual objects are added to the object set
+    if (!ref.isObj()) {
+        return;
+    }
+    auto p = ref.obj();
+
+    if (mObjects.find(p) == mObjects.end()) {
+        mObjects.insert(p);
+        addIndex(p);
+    }
+}
+
+void SHACLObjectSet::createIndex() {
+    mObjByType.clear();
+    mObjById.clear();
+    for (auto const& p : mObjects) {
+        addIndex(p);
+    }
+}
+
+std::set<std::string> const& SHACLObjectSet::link() {
+    createIndex();
+    return internalLink();
+}
+
+SHACLObjectSet::ptr SHACLObjectSet::findById(
+    std::string const& id, SHACLObjectSet::ptr const& dflt) const {
+    auto it = mObjById.find(id);
+    if (it == mObjById.end()) {
+        return dflt;
+    }
+    return it->second;
+}
+
+std::set<SHACLObjectSet::ptr> const& SHACLObjectSet::findByType(
+    std::string const& id) const {
+    static const std::set<ptr> empty;
+
+    auto it = mObjByType.find(id);
+    if (it == mObjByType.end()) {
+        return empty;
+    }
+    return it->second;
+}
+
+void SHACLObjectSet::encode(ListEncoder& encoder,
+                            ErrorHandler& errorHandler) const {
+    std::unordered_map<SHACLObject const*, int> ref_counts;
+
+    auto& state = encoder.getState();
+
+    auto const visit = [&](auto const& path, auto const& v) {
+        if (!v) {
+            return false;
+        }
+        auto const& ref = v.value().get();
+        if (!ref.isObj()) {
+            return false;
+        }
+
+        // Remove blank nodes for reassignment
+        if (ref->_id.isSet() && isBlankNode(ref->_id.get())) {
+            ref->_id.clear();
+        }
+
+        if (ref->_id.isSet()) {
+            state.addRefed(ref.obj());
+        }
+
+        // Try to add the object to the local ref count
+        auto p = ref_counts.insert({ref.obj().get(), 1});
+        if (p.second) {
+            // Insertion was successful, so the key was not
+            // already seen before. Recurse into the object
+            return true;
+        }
+
+        // The object has been seen before, which means it has
+        // more than one reference. Add it to the referenced
+        // objects in the encoding state, and do not recurse
+        // into it
+        p.first->second++;
+        state.addRefed(ref.obj());
+        return false;
+    };
+
+    ObjectPath path;
+    path.foreachItem(mObjects, [&](auto& o) {
+        if (o->_id.isSet()) {
+            state.addRefed(o);
+        }
+        o->walk({.refProp = visit}, path);
+    });
+
+    std::list<std::shared_ptr<SHACLObject>> objects;
+    for (auto const& o : state.getRefed()) {
+        objects.push_back(o);
+    }
+
+    // Add any objects from the object set that haven't already been added
+    for (auto const& o : mObjects) {
+        if (!state.objectIsRefed(*o.get())) {
+            objects.push_back(o);
+        }
+    }
+
+    objects.sort([](std::shared_ptr<SHACLObject> const& first,
+                    std::shared_ptr<SHACLObject> const& second) {
+        int cmp = first->_id.value_or("").compare(second->_id.value_or(""));
+        if (cmp) {
+            return cmp < 0;
+        }
+
+        cmp = first->getTypeIRI().compare(second->getTypeIRI());
+        if (cmp) {
+            return cmp < 0;
+        }
+
+        if (first.get() < second.get()) {
+            return true;
+        }
+
+        return false;
+    });
+
+    // Ensure top level objects are only written in the top level graph
+    // node, and referenced by ID everywhere else. This is done by setting
+    // the flag that indicates this object has been written for all the top
+    // level objects, then clearing it right before serializing the object.
+    //
+    // In this way, if an object is referenced before it is supposed to be
+    // serialized into the @graph, it will serialize as a string instead of
+    // the actual object
+    for (auto& o : objects) {
+        state.addWritten(*o.get());
+    }
+
+    int i = 0;
+    path.foreachItem(objects, [&](auto& o) {
+        state.removeWritten(*o.get());
+        encoder.writeItem([&](ValueEncoder& value_encoder) {
+            o->encode(value_encoder, errorHandler, path);
+        });
+        i++;
+    });
+}
+
+void SHACLObjectSet::decode(ListDecoder& decoder, ErrorHandler& errorHandler,
+                            ObjectPath& path) {
+    createIndex();
+
+    path.foreachListDecoder(decoder, [&](ValueDecoder& item_decoder) {
+        bool ret = item_decoder.readObject([&](ObjectDecoder& obj_decoder) {
+            decodeObject(obj_decoder, errorHandler, path);
+        });
+        if (!ret) {
+            errorHandler.handleDeserializeError("Object expected"s, path);
+            return;
+        }
+    });
+
+    internalLink();
+}
+
+void SHACLObjectSet::decode(ObjectDecoder& decoder, ErrorHandler& errorHandler,
+                            ObjectPath& path) {
+    createIndex();
+    decodeObject(decoder, errorHandler, path);
+    internalLink();
+}
+
+void SHACLObjectSet::decodeObject(ObjectDecoder& decoder,
+                                  ErrorHandler& errorHandler,
+                                  ObjectPath& path) {
+    auto obj = SHACLObject::decode(decoder, nullptr, errorHandler, path);
+    if (!obj) {
+        return;
+    }
+
+    add(obj);
+}
+
+void SHACLObjectSet::walk(WalkCallback const& callbacks) const {
+    ObjectPath path;
+
+    path.foreachItem(mObjects, [&](auto const& o) {
+        Ref<SHACLObject> r(o);
+        if (callbacks.refProp(path, r)) {
+            o->walk(callbacks, path);
+        }
+    });
+}
+
+bool SHACLObjectSet::checkAll(ErrorHandler& errorHandler) const {
+    std::unordered_set<SHACLObject const*> visited;
+
+    bool ret = true;
+
+    WalkCallback callbacks = {.refProp = [&](auto& path, auto const& val) {
+        if (!val) {
+            return false;
+        }
+        auto const& ref = val.value().get();
+        if (!ref.isObj()) {
+            return false;
+        }
+
+        // Insert the key. If it fails, the key is already in the set
+        if (!visited.insert(ref.obj().get()).second) {
+            return false;
+        }
+
+        if (!ref->validate(errorHandler, path)) {
+            ret = false;
+        }
+
+        return true;
+    }};
+
+    walk(callbacks);
+
+    return ret;
+}
+
+void SHACLObjectSet::addIndex(SHACLObjectSet::ptr const& obj) {
+    if (!obj->_id.isSet() || obj->_id.get().empty()) {
+        return;
+    }
+
+    auto const& id = obj->_id.get();
+
+    auto const& type = obj->getTypeIRI();
+    // This will do nothing if the key already exists
+    mObjByType.insert({type, std::set<ptr>()});
+    mObjByType[type].insert(obj);
+
+    auto const& compact_type = obj->getCompactTypeIRI();
+    if (compact_type) {
+        // This will do nothing if the key already exists
+        mObjByType.insert({compact_type.value(), std::set<ptr>()});
+        mObjByType[compact_type.value()].insert(obj);
+    }
+
+    mMissingIds.erase(id);
+    mObjById.insert({id, obj});
+}
+
+std::set<std::string> const& SHACLObjectSet::internalLink() {
+    mMissingIds.clear();
+
+    std::set<ptr> new_objects;
+    std::unordered_set<SHACLObject*> visited;
+
+    LinkState s(this, &mMissingIds);
+
+    for (auto p : mObjects) {
+        // Deduplicate IDs
+        if (p->_id.isSet()) {
+            p = findById(p->_id.get(), p);
+        }
+        p->link(s);
+        new_objects.insert(p);
+    }
+    mObjects = std::move(new_objects);
+
+    // Remove blank nodes
+    std::unordered_map<std::string, ptr> obj_by_id;
+    for (auto i : mObjById) {
+        auto& id = i.first;
+        auto& obj = i.second;
+        if (isBlankNode(id)) {
+            obj->_id.clear();
+        } else {
+            obj_by_id.insert({id, obj});
+        }
+    }
+    mObjById = std::move(obj_by_id);
+
+    return mMissingIds;
+}
+
+const std::vector<std::string> SHACLObjectSet::ContextURLs = {
+// clang-format off
+{%- for url in context.urls %}
+    "{{ url }}",
+{%- endfor %}
+// clang-format on
+};
+
+/* {{ "*" + "/" }}
+{%- if namespace %}
+{%- for n in namespace.split("::") %}
+}
+{%- endfor %}
+{%- endif %}
+{{ "/" + "*" }} */
+

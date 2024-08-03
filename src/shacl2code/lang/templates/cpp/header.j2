@@ -1,0 +1,193 @@
+/**
+ * {#
+vim: ft=cpp
+#}@file
+ *
+ * Generated C++ bindings from a SHACL model
+ *
+ * {{ disclaimer }}
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+// clang-format off
+#ifndef _{{ macro_prefix }}_HPP
+#define _{{ macro_prefix }}_HPP
+// clang-format on
+
+/* {{ "*" + "/" }}
+{%- for h in headers %}
+#include "{{ h }}"
+{%- endfor %}
+{{ "/" + "*" }} */
+
+/* {{ api_def_begin }} */
+/* {{ ns_begin }} */
+
+/**
+ * @defgroup {{ basename }}_concrete_classes {{ basename }} Concrete Classes
+ *
+ * These are the classes that can be directly instantiated in your code,
+ * usually by invoking {{ nsprefix }}::make_obj()
+ */
+
+// clang-format off
+
+/**
+ * @brief Abstract class constructor definition
+ *
+ * @note This is for internal use only
+ */
+#define {{ macro_prefix }}_CONSTRUCTOR_ABSTRACT_true(name) name() = delete
+
+/**
+ * @brief Concrete class constructor definition
+ *
+ * @note This is for internal use only
+ */
+#define {{ macro_prefix }}_CONSTRUCTOR_ABSTRACT_false(name) name() : name(&name::Type) {}
+
+/**
+ * @brief Define a {{ basename.upper() }} class
+ *
+ * This should be the first thing used in the class body to register it as a
+ * class:
+ *
+ * @code
+ *
+ *  class MyClass : public MyParent {
+ *      {{ macro_prefix }}_CLASS(MyClass, MyParent, false)
+ *      public:
+ *          // Defined properties here
+ *  };
+ *
+ * @endcode
+ */
+#define {{ macro_prefix }}_CLASS(name, parent, abstract) \
+    public: \
+        using TypeClass = class SHACLType<name, parent, abstract>; \
+        static const TypeClass Type; \
+        {{ macro_prefix }}_CONSTRUCTOR_ABSTRACT_##abstract(name); \
+        virtual ~name(); \
+        template<auto P, typename T> \
+        auto& set(T const& value) { return SHACLObject::setHelper<P>(*this, value); } \
+        template<auto P, typename T> \
+        auto& add(T const& value) { return SHACLObject::addHelper<P>(*this, value); } \
+    protected: \
+        name(TypeBase const* type, SHACLObject::TypeIRIs const& typeIRIs = {}); \
+        name(SHACLObject::TypeIRIs const& typeIRIs) : name(&name::Type, typeIRIs) {} ; \
+    private: \
+        friend TypeClass;
+
+// Auto-Generated Classes
+
+{%- for class in classes %}
+class {{ varname(*class.clsname) }};
+{%- endfor %}
+
+{%- for class in classes %}
+{%- set cpp_name = varname(*class.clsname) %}
+/**
+ * @brief {{ cpp_name }}
+ *
+ * IRI: {{ class._id }}
+{%- if context.compact_iri(class._id) != class._id %}
+ *
+ * Compact IRI: {{ context.compact_iri(class._id) }}
+{%- endif %}
+ *
+{%- for l in class.comment.split("\n") %}
+ *{{ (" " + l).rstrip() }}
+{%- endfor %}
+ *
+{%- if class.is_abstract %}
+ *
+ * This class is abstract
+{%- else %}
+ *
+ * @ingroup {{ basename }}_concrete_classes
+ *
+ * Example:
+ * @code
+ *  auto o = make_obj<{{ cpp_name }}>();
+ *
+ * @endcode
+{%- endif %}
+ */
+class EXPORT {{ cpp_name }} : public{% for parent in parent_cpp_classes(class, classes) %}
+    {{ parent }}{% if not loop.last %},{% endif %}
+{%- endfor %} {
+   {{ macro_prefix }}_CLASS({{ cpp_name }}, {{ parent_cpp_classes(class, classes)[0] }}, {% if class.is_abstract %}true{% else %}false{% endif %})
+   public:
+    {%- if class.named_individuals %}
+    // Named Individuals
+    {%- for member in class.named_individuals %}
+    /**
+     * @brief {{ varname(member.varname) }}
+     *
+     * IRI: {{ member._id }}
+     *
+    {%- for l in member.comment.split("\n") %}
+     *{{ (" " + l).rstrip() }}
+    {%- endfor %}
+     */
+    static const NamedIndividual {{ varname(member.varname) }};
+    {%- endfor %}
+    {%- endif %}
+
+    // Properties
+    {%- for prop in class.properties %}
+    {%- set prop_name = "_" + varname(prop.varname) %}
+    /**
+     * @brief {{ varname(prop.varname) }}
+     *
+     * IRI: {{ prop.path }}
+    {%- if context.compact_vocab(prop.path) != prop.path %}
+     *
+     * Compact IRI: {{ context.compact_vocab(prop.path) }}
+    {%- endif %}
+     *
+    {%- for l in prop.comment.split("\n") %}
+     *{{ (" " + l).rstrip() }}
+    {%- endfor %}
+     */
+    {%- if prop_is_list(prop) %}
+        {%- set suffix = "List" %}
+    {%- else %}
+        {%- set suffix = "" %}
+    {%- endif %}
+    {%- if prop.enum_values %}
+    Prop::Enum{{ suffix }} {{ prop_name }};
+    {%- elif prop.class_id %}
+    Prop::Ref{{ suffix }}<{{ varname(*classes.get(prop.class_id).clsname) }}> {{ prop_name }};
+    {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#string" %}
+    Prop::String{{ suffix }} {{ prop_name }};
+    {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#anyURI" %}
+    Prop::AnyURI{{ suffix }} {{ prop_name }};
+    {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#integer" %}
+    Prop::Integer{{ suffix }} {{ prop_name }};
+    {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#positiveInteger" %}
+    Prop::Integer{{ suffix }} {{ prop_name }};
+    {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#nonNegativeInteger" %}
+    Prop::Integer{{ suffix }} {{ prop_name }};
+    {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#boolean" %}
+    Prop::Boolean{{ suffix }} {{ prop_name }};
+    {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#decimal" %}
+    Prop::Double{{ suffix }} {{ prop_name }};
+    {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#dateTime" %}
+    Prop::DateTime{{ suffix }} {{ prop_name }};
+    {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#dateTimeStamp" %}
+    Prop::DateTimeStamp{{ suffix }} {{ prop_name }};
+    {%- else %}
+    {{ abort("Unknown data type " + prop.datatype) }}
+    {%- endif %}
+    {%- endfor %}
+};
+{% endfor %}
+
+// clang-format on
+
+/* {{ api_def_end }} */
+/* {{ ns_end }} */
+
+#endif  // _{{ macro_prefix }}_HPP

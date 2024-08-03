@@ -1,0 +1,122 @@
+/**
+ * {#
+vim: ft=cpp
+#}@file
+ *
+ * Generated C++ bindings from a SHACL model
+ *
+ * {{ disclaimer }}
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+#include <exception>
+#include <list>
+#include <map>
+#include <memory>
+#include <optional>
+#include <regex>
+#include <set>
+#include <stdexcept>
+#include <string>
+#include <unordered_set>
+#include <variant>
+#include <vector>
+
+/* {{ "*" + "/" }}
+#include "{{ basename }}.hpp"
+
+{%- if namespace %}
+{%- for n in namespace.split("::") %}
+namespace {{ n }} {
+{%- endfor %}
+{%- endif %}
+{{ "/" + "*" }} */
+
+using std::string_literals::operator""s;
+
+#ifndef DOXYGEN_SKIP
+// clang-format off
+// Auto-Generated Implementation
+{%- for class in classes %}
+{%- set cpp_name = varname(*class.clsname) %}
+
+// {{ cpp_name }}
+
+const {{ cpp_name }}::TypeClass {{ cpp_name }}::Type(
+    "{{ class._id }}",
+    {% if context.compact_iri(class._id) != class._id %}"{{ context.compact_iri(class._id) }}"{% else %}{}{% endif %},
+    {% if class.id_property %}"{{ class.id_property }}"{% else %}{}{% endif %},
+    NodeKind::{{ class.node_kind.split("#")[-1] }},
+    {% if class.is_extensible %}true{% else %}false{% endif %}
+);
+
+{{ cpp_name }}::{{ cpp_name }}(TypeBase const* type, SHACLObject::TypeIRIs const& typeIRIs) :{% for parent in parent_cpp_classes(class, classes) %}
+    {{ parent }}(type, typeIRIs){% if not loop.last or class.properties %},{% endif %}
+{%- endfor %}{%- for prop in class.properties %}
+{%- set prop_name = varname(prop.varname) %}
+    _{{ prop_name }}(
+        this,
+        "{{ prop.path }}",
+        {% if context.compact_vocab(prop.path) != prop.path %}"{{ context.compact_vocab(prop.path) }}"{% else %}{}{% endif %},
+    {%- if prop_is_list(prop) %}
+        {% if not prop.min_count is none %}{{ prop.min_count }}{% else %}{}{% endif %},
+        {% if not prop.max_count is none %}{{ prop.max_count }}{% else %}{}{% endif %},
+    {%- else %}
+        {% if not prop.min_count is none %}true{% else %}false{% endif %},
+    {%- endif %}
+    {%- if prop.pattern %}
+        std::regex(R"REGEX({{ prop.pattern }})REGEX")
+    {%- else %}
+        std::optional<std::regex>()
+    {%- endif %}
+    {%- if prop.enum_values %},
+        std::unordered_set<std::string>({ {%- for value in prop.enum_values %}
+            "{{ value }}"{% if not loop.last %},{% endif %}
+        {%- endfor %}
+        }),
+        PropertyContext::Context({
+        {%- for value in prop.enum_values %}
+        {%- if value != context.compact_vocab(value, prop.path) %}
+            {"{{ value }}", "{{ context.compact_vocab(value, prop.path) }}"},
+        {%- endif %}
+        {%- endfor %}
+        })
+    {%- elif prop.class_id %},
+        PropertyContext::Context({
+        {%- for value in get_all_named_individuals(classes.get(prop.class_id)) %}
+        {%- if context.compact_vocab(value, prop.path) != value %}
+            {"{{ value }}", "{{ context.compact_vocab(value, prop.path) }}"},
+        {%- endif %}
+        {%- endfor %}
+        })
+    {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#positiveInteger" %},
+        1
+    {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#nonNegativeInteger" %},
+        0
+    {%- endif %}
+    ){% if not loop.last %},{% endif %}
+{%- endfor %}
+{}
+
+{{ cpp_name }}::~{{ cpp_name }}() {}
+
+{%- for member in class.named_individuals %}
+const NamedIndividual {{ cpp_name }}::{{ varname(member.varname) }}(
+    &{{ cpp_name }}::Type,
+    "{{ member._id }}",
+    {% if context.compact_iri(member._id) != member._id %}"{{ context.compact_iri(member._id) }}"{% else %}{}{% endif %}
+);
+{%- endfor %}
+{% endfor %}
+#endif
+
+// clang-format on
+
+/* {{ "*" + "/" }}
+{%- if namespace %}
+{%- for n in namespace.split("::") %}
+}
+{%- endfor %}
+{%- endif %}
+{{ "/" + "*" }} */

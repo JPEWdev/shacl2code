@@ -1,0 +1,48 @@
+/**
+ * {#
+vim: ft=cpp
+#}@file
+ *
+ * Generated C++ bindings from a SHACL model
+ *
+ * {{ disclaimer }}
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+#include <memory>
+#include <set>
+#include <string>
+#include <unordered_set>
+
+#include "link.hpp"
+#include "objectpath.hpp"
+#include "objectset.hpp"
+
+/* {{ "*" + "/" }}
+{%- if namespace %}
+{%- for n in namespace.split("::") %}
+namespace {{ n }} {
+{%- endfor %}
+{%- endif %}
+{{ "/" + "*" }} */
+
+using std::string_literals::operator""s;
+
+// LinkState
+LinkState::LinkState(SHACLObjectSet* o, std::set<std::string>* m)
+    : objectSet(o), missing(m) {}
+
+std::shared_ptr<SHACLObject> LinkState::findObjById(
+    std::string const& id, std::shared_ptr<SHACLObject> const& dflt) const {
+    return objectSet->findById(id, dflt);
+}
+
+/* {{ "*" + "/" }}
+{%- if namespace %}
+{%- for n in namespace.split("::") %}
+}
+{%- endfor %}
+{%- endif %}
+{{ "/" + "*" }} */
+

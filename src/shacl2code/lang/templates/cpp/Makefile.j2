@@ -1,0 +1,90 @@
+CXX=g++
+CPPFLAGS=
+CXXFLAGS=
+LDFLAGS=
+AR=ar
+LD=ld
+INSTALL=install
+PREFIX=/usr/local/
+DESTDIR=
+COPY=cp
+
+LIB_OBJS = {{ lib_obj_files }}
+
+VALIDATE_OBJS = {{ basename }}-validate.o
+ALL_OBJS = $(LIB_OBJS) $(VALIDATE_OBJS)
+
+all: lib{{ basename }}.so lib{{ basename }}.a {{ basename }}-validate docs
+
+clean:
+	rm -rf *.o *.so *.a {{ basename }}-validate doc/
+
+install: lib{{ basename }}.so lib{{ basename }}.a docs
+	# Library
+	$(INSTALL) -d $(DESTDIR)/$(PREFIX)/lib
+	$(INSTALL) -m 0755 lib{{ basename }}.so $(DESTDIR)/$(PREFIX)/lib/lib{{ basename }}.so.{{ lib_version }}
+	ln -s lib{{ basename }}.so.{{ lib_version }} $(DESTDIR)/$(PREFIX)/lib/lib{{ basename }}.so
+	ln -s lib{{ basename }}.so.{{ lib_version }} $(DESTDIR)/$(PREFIX)/lib/lib{{ basename }}.so.{{ lib_version.split(".")[0] }}
+
+	$(INSTALL) -m 0644 lib{{ basename }}.a $(DESTDIR)/$(PREFIX)/lib/
+
+	# Package Config
+	$(INSTALL) -d $(DESTDIR)/$(PREFIX)/lib/pkgconfig
+
+	$(INSTALL) -m 0644 {{ basename }}.pc $(DESTDIR)/$(PREFIX)/lib/pkgconfig/
+	sed -i -e 's^@@PREFIX@@^$(PREFIX)^g' \
+		$(DESTDIR)/$(PREFIX)/lib/pkgconfig/{{ basename }}.pc
+
+	# Headers
+	$(INSTALL) -d $(DESTDIR)/$(PREFIX)/include/{{ basename }}
+	{%- for h in headers %}
+	$(INSTALL) -m 0644 {{ h }} $(DESTDIR)/$(PREFIX)/include/{{ basename }}/
+	{%- endfor %}
+
+	# Binaries
+	$(INSTALL) -d $(DESTDIR)/$(PREFIX)/bin
+
+	$(INSTALL) -m 0755 {{ basename }}-validate $(DESTDIR)/$(PREFIX)/bin/
+
+	# Documentation
+	$(INSTALL) -d $(DESTDIR)/$(PREFIX)/share/doc/lib{{ basename }}
+	$(COPY) -dR doc/ $(DESTDIR)/$(PREFIX)/share/doc/lib{{ basename }}/
+
+%.o: %.cpp
+	@echo " [CC]  $<"
+	$(CXX) -c -o $@ $< $(CPPFLAGS) $(CXXFLAGS) \
+		-fPIC \
+		-fvisibility=hidden \
+		-fvisibility-inlines-hidden \
+		-D{{ macro_prefix }}_DLL=1 \
+		-D{{ macro_prefix }}_DLL_EXPORT=1
+
+lib{{ basename }}.a: $(LIB_OBJS)
+	# Combine all object files into a single object file. This is required
+	# otherwise the linker may only include object files that were actually
+	# referenced and the initializers will not run
+	@echo " [LD]  lib{{ basename }}.static.o"
+	$(LD) -relocatable -o lib{{ basename }}.static.o $^
+	@echo " [AR]  $@"
+	$(AR) rcs $@ lib{{ basename }}.static.o
+
+lib{{ basename }}.so: $(LIB_OBJS)
+	@echo " [LD]  $@"
+	$(CXX) -shared -fPIC -Wl,-soname,lib{{ basename }}.so.{{ lib_version.split(".")[0] }} $(LDFLAGS) -o $@ $^
+
+{{ basename }}-validate: $(VALIDATE_OBJS) lib{{ basename }}.a
+	@echo " [LD]  $@"
+	$(CXX) $(LDFLAGS) -o $@ $^
+
+docs:
+	@echo " [DOC]"
+	doxygen
+
+# Use `make V=1` to print commands.
+$(V).SILENT:
+
+.PHONY: clean all docs
+
+{#
+vim: ft=make
+#}

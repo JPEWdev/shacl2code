@@ -3,7 +3,6 @@ package runtime
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"strings"
 	"testing"
 
@@ -140,6 +139,18 @@ func Test_profileConformance(t *testing.T) {
 	encodeDecodeRecode(t, doc)
 }
 
+func Test_externalID(t *testing.T) {
+	doc := &SpdxDocument{
+		Elements: []IElement{
+			&Element{
+				SpdxId: "http://someplace.org/ac7b643f0b2d",
+			},
+		},
+	}
+	encodeDecodeRecode(t, doc)
+}
+
+// encodeDecodeRecode encodes to JSON, decodes from the JSON, and re-encodes in JSON to validate nothing is lost
 func encodeDecodeRecode[T comparable](t *testing.T, obj T) T {
 	// serialization:
 	maps, err := ldGlobal.toMaps(obj)
@@ -157,7 +168,7 @@ func encodeDecodeRecode[T comparable](t *testing.T, obj T) T {
 	}
 
 	json1 := buf.String()
-	fmt.Printf("--------- initial JSON: ----------\n%s\n\n", json1)
+	t.Logf("--------- initial JSON: ----------\n%s\n\n", json1)
 
 	// deserialization:
 	graph, err := ldGlobal.FromJSON(strings.NewReader(json1))
@@ -188,7 +199,7 @@ func encodeDecodeRecode[T comparable](t *testing.T, obj T) T {
 		t.Fatal(err)
 	}
 	json2 := buf.String()
-	fmt.Printf("--------- reserialized JSON: ----------\n%s\n", json2)
+	t.Logf("--------- reserialized JSON: ----------\n%s\n", json2)
 
 	// compare original to parsed and re-encoded
 

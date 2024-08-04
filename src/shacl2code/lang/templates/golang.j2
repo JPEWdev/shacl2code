@@ -1,0 +1,151 @@
+// {{ disclaimer }}
+{%- if license_id %}
+//
+// SPDX-License-Identifier: {{ license_id }}
+{%- endif %}
+
+package {{ package_name }}
+
+{#- include runtime code inline #}
+{{- include_runtime_code() }}
+
+{#- struct_props outputs all properties for concrete struct implementations #}
+{%- macro struct_props(cls) %}
+    {#- there is no embedding, so recursively output all parent properties #}
+    {%- for parent in parents(cls) %}
+    {%- if not use_embedding %}
+    {{- struct_props(parent) }}
+    {%- else %}
+    {{ concrete_name(parent) }}
+    {%- endif %}
+    {% endfor %}
+    {#- output direct struct properties #}
+    {% for prop in properties(cls) %}
+    {%- if include_prop(cls,prop) %}
+    {{ comment("// ", struct_prop_name(prop), prop.comment)|indent }}
+    {{ struct_prop_name(prop) }} {% if is_array(prop) %}[]{% endif %}{{ prop_type(prop) }} `iri:"{{ prop.path }}" iri-compact:"{{ context.compact_vocab(prop.path) }}"`
+    {%- endif %}
+    {%- endfor %}
+{%- endmacro %}
+
+{#- struct_funcs outputs all functions for concrete struct implementations #}
+{%- macro struct_funcs(base,cls) %}
+    {#- embedded structs may be expanded props #}
+    {%- if not use_embedding %}
+    {%- for parent in parents(cls) %}
+    {{ struct_funcs(base,parent) }}
+    {%- endfor %}
+    {%- endif %}
+
+{% if requires_interface(cls) and include_view_pointers %}
+func (o *{{ struct_name(base) }}) {{ as_concrete_prefix }}{{ concrete_name(cls) }}() *{{ concrete_name(cls) }} {
+    {%- if base == cls %}
+    return o
+    {%- else %}
+    return SuperclassView[{{ concrete_name(cls) }}](o)
+    {%- endif %}
+}
+{%- endif %}
+    {%- for prop in properties(cls) %}
+    {%- if include_prop(cls,prop) %}
+func (o *{{ struct_name(base) }}) {{ getter_name(prop) }}() {% if is_array(prop) %}[]{% endif %}{{ prop_type(prop) }} {
+    return o.{{ struct_prop_name(prop) }}
+}
+func (o *{{ struct_name(base) }}) {{ setter_name(prop) }}(v {% if is_array(prop) %}...{% endif %}{{ prop_type(prop) }}) {
+    o.{{ struct_prop_name(prop) }} = v
+}
+    {%- endif %}
+    {%- endfor %}
+{%- endmacro %}
+
+{#- interface_props outputs all interface property definitions #}
+{%- macro interface_props(cls) -%}
+    {#- embedding parent interfaces for proper inheritance #}
+    {%- for parent in parents(cls) %}
+    {{- interface_name(parent) }}
+    {% endfor %}
+    {%- for prop in properties(cls) %}
+    {%- if include_prop(cls,prop) %}
+    {{ comment("// ", getter_name(prop), prop.comment)|indent }}
+    {{ getter_name(prop) }}() {% if is_array(prop) %}[]{% endif %}{{ prop_type(prop) }}
+
+    {{ setter_name(prop) }}({% if is_array(prop) %}...{% endif %}{{ prop_type(prop) }})
+    {% endif %}
+    {%- endfor %}
+{%- endmacro %}
+
+{#- ------------------------ CONSTRUCTOR ------------------------ #}
+{%- macro constructor(cls) %}
+func New{{ pretty_name(cls) }}() {{ interface_name(cls) }} {
+    return &{{ struct_name(cls) }}{}
+}
+{%- endmacro %}
+
+{#- ------------------------ INTERFACE ------------------------ #}
+{%- macro interface(cls) %}
+type {{ interface_name(cls) }} interface {
+    {{ interface_props(cls) }}
+}
+{%- endmacro %}
+
+{#- ------------------------ STRUCT ------------------------ #}
+{%- macro struct(cls) %}
+type {{ struct_name(cls) }} struct {
+    _ ldType `iri:"{{ cls._id }}" iri-compact:"{{ context.compact_vocab(cls._id) }}"{% if cls.id_property %} id-prop:"{{ cls.id_property }}"{% endif %}`
+    {% if not cls.id_property %}
+    Iri string `iri:"@id"`
+    {%- endif %}
+    {{- struct_props(cls) }}
+}
+{%- endmacro %}
+
+{#- ------------ CLASSES AND INTERFACES -------------- #}
+{%- for cls in classes %}
+    {#- output the interface definition if required #}
+    {%- if requires_interface(cls) %}
+    {{ interface(cls) }}
+    {%- endif %}
+
+    {#- output the struct definition #}
+    {{ struct(cls) }}
+
+    {%- if include_view_pointers and concrete_name(cls) != struct_name(cls) %}
+    type {{ concrete_name(cls) }} = {{ struct_name(cls) }}
+    {%- endif %}
+
+    {#- output any named constants #}
+    {%- if cls.named_individuals %}
+        var (
+        {%- for ind in cls.named_individuals %}
+            {{ pretty_name(cls) }}{{ constant_separator }}{{ constant_var_name(ind) }} {%- if requires_interface(cls) %} {{ interface_name(cls) }} {%- endif %} = {{ struct_name(cls) }}{ {% if not cls.id_property %}Iri{% else %}{{ cls.id_property }}{% endif %}:"{{ trim_iri(cls._id,ind._id) }}" }
+        {%- endfor %}
+        )
+    {%- endif %}
+
+    {%- if not cls.is_abstract and requires_interface(cls) %}
+    {{ constructor(cls) }}
+    {%- endif %}
+
+    {{ struct_funcs(cls,cls) }}
+{%- endfor %}
+
+{#- ------------ type mapping for serialization -------------- #}
+var ldGlobal = ldContext{}
+{%- for url in context.urls %}.
+    RegisterTypes("{{ url }}",
+    {%- for cls in classes %}
+        &{{ struct_name(cls) }}{},
+    {%- endfor %}
+    )
+    {%- for cls in classes %}
+    {%- for prop in properties(cls) %}
+    {%- if prop.enum_values -%}.
+        IRIMap("{{ url }}", &{{ prop_type(prop) }}{}, map[string]string{
+        {%- for iri in prop.enum_values %}
+        "{{ iri }}": "{{ context.compact_vocab(iri, prop.path) }}",
+        {%- endfor %}
+        })
+    {%- endif %}
+    {%- endfor %}
+    {%- endfor %}
+{%- endfor %}

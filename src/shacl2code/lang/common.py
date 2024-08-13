@@ -7,7 +7,9 @@ import sys
 import os
 from pathlib import Path
 from contextlib import contextmanager
+import jinja2
 from jinja2 import Environment, FileSystemLoader, TemplateRuntimeError
+from markupsafe import Markup
 from rdflib.namespace import SH
 from ..model import SHACL2CODE
 
@@ -25,6 +27,12 @@ class OutputFile(object):
         else:
             with open(self.path, "w") as f:
                 yield f
+
+
+@jinja2.pass_context
+def include_file(ctx, name):
+    env = ctx.environment
+    return Markup(env.loader.get_source(env, name)[0])
 
 
 class BasicJinjaRender(object):
@@ -141,6 +149,7 @@ class BasicJinjaRender(object):
         env = {
             "get_all_derived": get_all_derived,
             "get_all_named_individuals": get_all_named_individuals,
+            "include_file": include_file,
             **self.get_extra_env(),
         }
 

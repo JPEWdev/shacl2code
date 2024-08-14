@@ -16,7 +16,8 @@ from pathlib import Path
 THIS_FILE = Path(__file__)
 THIS_DIR = THIS_FILE.parent
 
-MODEL_DIR = THIS_DIR / "data" / "model"
+DATA_DIR = THIS_DIR / "data"
+MODEL_DIR = DATA_DIR / "model"
 
 
 @pytest.fixture
@@ -82,3 +83,17 @@ def test_timezone():
         else:
             os.environ["TZ"] = current_tz
         time.tzset()
+
+
+@pytest.fixture(scope="session")
+def roundtrip(tmp_path_factory, model_server):
+    outfile = tmp_path_factory.mktemp("roundtrip") / "roundtrip.json"
+    with (DATA_DIR / "roundtrip.json").open("r") as f:
+        data = f.read()
+
+    data = data.replace("@CONTEXT_URL@", model_server + "/test-context.json")
+
+    with outfile.open("w") as f:
+        f.write(data)
+
+    yield outfile

@@ -31,20 +31,6 @@ SPDX3_CONTEXT_URL = "https://spdx.github.io/spdx-3-model/context.json"
 TEST_TZ = timezone(timedelta(hours=-2), name="TST")
 
 
-@pytest.fixture(scope="session")
-def roundtrip(tmp_path_factory, model_server):
-    outfile = tmp_path_factory.mktemp("python-roundtrip") / "roundtrip.json"
-    with (DATA_DIR / "python" / "roundtrip.json").open("r") as f:
-        data = f.read()
-
-    data = data.replace("@CONTEXT_URL@", model_server + "/test-context.json")
-
-    with outfile.open("w") as f:
-        f.write(data)
-
-    yield outfile
-
-
 @pytest.fixture(scope="module")
 def test_context(tmp_path_factory, model_server):
     tmp_directory = tmp_path_factory.mktemp("pythontestcontext")

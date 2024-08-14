@@ -53,6 +53,9 @@ addopts = [
     "--import-mode=importlib",
     "--cov=shacl2code",
 ]
+pythonpath = [
+    "testfixtures"
+]
 
 [tool.coverage.run]
 relative_files = true

@@ -18,14 +18,14 @@ THIS_DIR = THIS_FILE.parent
 
 RAW_TEMPLATE = THIS_DIR / "data" / "raw.j2"
 TEST_MODEL = THIS_DIR / "data" / "model" / "test.ttl"
-TEST_EXPECT = THIS_DIR / "expect" / "raw" / "test.txt"
+TEST_EXPECT = THIS_DIR / "expect" / "raw" / "nocontext" / "test.txt"
 
 
 CONTEXT_TEMPLATE = THIS_DIR / "data" / "context.j2"
 CONTEXT_URL_TEMPLATE = THIS_DIR / "data" / "context-url.j2"
 TEST_CONTEXT = THIS_DIR / "data" / "model" / "test-context.json"
 TEST_CONTEXT_URL = "https://spdx.github.io/spdx-3-model/context.json"
-TEST_CONTEXT_EXPECT = THIS_DIR / "expect" / "raw" / "test-context.txt"
+TEST_CONTEXT_EXPECT = THIS_DIR / "expect" / "raw" / "context" / "test-context.txt"
 
 
 def test_generation_file(tmp_path):

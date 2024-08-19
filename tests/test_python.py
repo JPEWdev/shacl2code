@@ -79,11 +79,11 @@ def model(test_context):
     [
         (
             ["--input", TEST_MODEL],
-            "test.py",
+            EXPECT_DIR / "python" / "nocontext" / "test.py",
         ),
         (
             ["--input", TEST_MODEL, "--context-url", TEST_CONTEXT, SPDX3_CONTEXT_URL],
-            "test-context.py",
+            EXPECT_DIR / "python" / "context" / "test-context.py",
         ),
     ],
 )
@@ -108,7 +108,7 @@ class TestOutput:
             check=True,
         )
 
-        with (EXPECT_DIR / "python" / expect).open("r") as expect_f:
+        with expect.open("r") as expect_f:
             with outfile.open("r") as out_f:
                 assert out_f.read() == expect_f.read()
 

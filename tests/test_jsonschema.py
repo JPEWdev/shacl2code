@@ -29,11 +29,11 @@ SPDX3_CONTEXT_URL = "https://spdx.github.io/spdx-3-model/context.json"
     [
         (
             ["--input", TEST_MODEL],
-            "test.json",
+            EXPECT_DIR / "jsonschema" / "nocontext" / "test.json",
         ),
         (
             ["--input", TEST_MODEL, "--context-url", TEST_CONTEXT, SPDX3_CONTEXT_URL],
-            "test-context.json",
+            EXPECT_DIR / "jsonschema" / "context" / "test-context.json",
         ),
     ],
 )
@@ -58,7 +58,7 @@ class TestOutput:
             check=True,
         )
 
-        with (EXPECT_DIR / "jsonschema" / expect).open("r") as expect_f:
+        with expect.open("r") as expect_f:
             with outfile.open("r") as out_f:
                 assert out_f.read() == expect_f.read()
 

@@ -14,8 +14,8 @@ DATA_DIR = THIS_DIR.parent / "data"
 MODEL_DIR = DATA_DIR / "model"
 
 
-def make_dest(src, lang, ext):
-    return THIS_DIR / lang / (src.stem + ext)
+def make_dest(src, lang, subdir, ext):
+    return THIS_DIR / lang / subdir / (src.stem + ext)
 
 
 def main():
@@ -36,7 +36,7 @@ def main():
                     "generate",
                     f"--input={src}",
                     lang,
-                    f"--output={make_dest(src, lang, ext)}",
+                    f"--output={make_dest(src, lang, 'nocontext', ext)}",
                 ],
                 check=True,
             )
@@ -50,7 +50,7 @@ def main():
                         context,
                         "https://spdx.github.io/spdx-3-model/context.json",
                         lang,
-                        f"--output={make_dest(context, lang, ext)}",
+                        f"--output={make_dest(context, lang, 'context', ext)}",
                     ],
                     check=True,
                 )
@@ -61,7 +61,7 @@ def main():
                 "generate",
                 f"--input={src}",
                 "jinja",
-                f"--output={make_dest(src, 'raw', '.txt')}",
+                f"--output={make_dest(src, 'raw', 'nocontext', '.txt')}",
                 "--template",
                 DATA_DIR / "raw.j2",
             ],
@@ -78,7 +78,7 @@ def main():
                     context,
                     "https://spdx.github.io/spdx-3-model/context.json",
                     "jinja",
-                    f"--output={make_dest(context, 'raw', '.txt')}",
+                    f"--output={make_dest(context, 'raw', 'context', '.txt')}",
                     "--template",
                     DATA_DIR / "context.j2",
                 ],

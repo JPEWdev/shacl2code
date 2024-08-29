@@ -36,6 +36,15 @@ The available language bindings can be viewed by running:
 shacl2code list
 ```
 
+### Generating the JSON Schema file
+
+`shacl2code` can generate a JSON schema with the following command:
+```shell
+shacl2code generate -i model.jsonld jsonschema -u context.json -o json-schema.json
+```
+
+Note that the context.json file should match the model described in the model.jsonld file.
+
 ## Developing
 
 Developing on `shacl2code` is best done using a virtual environment. You can

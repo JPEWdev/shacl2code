@@ -40,10 +40,10 @@ shacl2code list
 
 `shacl2code` can generate a JSON schema with the following command:
 ```shell
-shacl2code generate -i model.jsonld jsonschema -u context.json -o json-schema.json
+shacl2code generate -i spdx-model.json-ld -u spdx-context.jsonld https://spdx.org/rdf/3.0.1/spdx-context.jsonld jsonschema -o json-schema-3.0.1.json
 ```
 
-Note that the context.json file should match the model described in the model.jsonld file.
+Note that the spdx-context.jsonld file should match the model described in the spdx-model.json-ld file.
 
 ## Developing
 

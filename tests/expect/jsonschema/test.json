@@ -33,8 +33,7 @@
                     "type": "object",
                     "unevaluatedProperties": false,
                     "anyOf": [
-                        { "$ref": "#/$defs/http_exampleorgconcreteclass" },
-                        { "$ref": "#/$defs/http_exampleorgabstractclass" }
+                        { "$ref": "#/$defs/http_exampleorgconcreteclass" }
                     ]
                 },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
@@ -56,8 +55,7 @@
                     "type": "object",
                     "unevaluatedProperties": false,
                     "anyOf": [
-                        { "$ref": "#/$defs/http_exampleorgconcretespdxclass" },
-                        { "$ref": "#/$defs/http_exampleorgabstractspdxclass" }
+                        { "$ref": "#/$defs/http_exampleorgconcretespdxclass" }
                     ]
                 },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
@@ -210,7 +208,7 @@
                 {
                     "type": "object",
                     "anyOf": [
-                        { "$ref": "#/$defs/http_exampleorgextensibleabstractclass" }
+                        { "$ref": "#/$defs/http_exampleorgextensibleabstractclass_props" }
                     ]
                 },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }

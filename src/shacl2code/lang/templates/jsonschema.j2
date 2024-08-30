@@ -96,7 +96,11 @@
         "{{ varname(*class.clsname) }}_derived": {
             {%- set ns = namespace(json_refs=[], named_individuals=[]) %}
             {%- for d in get_all_derived(class) + [class._id] %}
-                {%- set ns.json_refs = ns.json_refs + ["#/$defs/" + varname(*classes.get(d).clsname)] %}
+                {%- if not classes.get(d).is_abstract %}
+                    {%- set ns.json_refs = ns.json_refs + ["#/$defs/" + varname(*classes.get(d).clsname)] %}
+                {%- elif classes.get(d).is_extensible %}
+                    {%- set ns.json_refs = ns.json_refs + ["#/$defs/" + varname(*classes.get(d).clsname) + "_props"] %}
+                {%- endif %}
                 {%- for n in classes.get(d).named_individuals %}
                     {%- if context.compact_iri(n._id) != n._id %}
                         {%- set ns.named_individuals = ns.named_individuals + [context.compact_iri(n._id)] %}

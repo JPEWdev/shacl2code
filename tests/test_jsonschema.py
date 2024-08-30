@@ -153,3 +153,27 @@ def test_schema_type_validation(test_jsonschema, test_context_url, passes, data)
     else:
         with pytest.raises(jsonschema.ValidationError):
             jsonschema.validate(data, schema=test_jsonschema)
+
+
+def test_schema_references(test_jsonschema):
+    DEF_PREFIX = "#/$defs/"
+
+    def check_refs(d, path):
+        if isinstance(d, dict):
+            if "$ref" in d:
+                assert d["$ref"].startswith(
+                    DEF_PREFIX
+                ), f"{''.join(path)} must start with '{DEF_PREFIX}'"
+                name = d["$ref"][len(DEF_PREFIX) :]
+                assert (
+                    name in test_jsonschema["$defs"]
+                ), f"{''.join(path)}: {name} is not in $defs"
+
+            for k, v in d.items():
+                check_refs(v, path + [f".{k}"])
+
+        if isinstance(d, list):
+            for idx, v in enumerate(d):
+                check_refs(v, path + [f"[{idx}]"])
+
+    check_refs(test_jsonschema, [])

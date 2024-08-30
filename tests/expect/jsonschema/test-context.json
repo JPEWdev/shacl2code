@@ -37,8 +37,7 @@
                     "type": "object",
                     "unevaluatedProperties": false,
                     "anyOf": [
-                        { "$ref": "#/$defs/concreteclass" },
-                        { "$ref": "#/$defs/abstractclass" }
+                        { "$ref": "#/$defs/concreteclass" }
                     ]
                 },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
@@ -60,8 +59,7 @@
                     "type": "object",
                     "unevaluatedProperties": false,
                     "anyOf": [
-                        { "$ref": "#/$defs/concretespdxclass" },
-                        { "$ref": "#/$defs/abstractspdxclass" }
+                        { "$ref": "#/$defs/concretespdxclass" }
                     ]
                 },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
@@ -217,7 +215,7 @@
                 {
                     "type": "object",
                     "anyOf": [
-                        { "$ref": "#/$defs/extensibleabstractclass" }
+                        { "$ref": "#/$defs/extensibleabstractclass_props" }
                     ]
                 },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }

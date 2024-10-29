@@ -1970,6 +1970,13 @@ class abstract_class(SHACLObject):
     }
 
 
+@register("http://example.org/abstract-sh-class", compact_type="abstract-sh-class", abstract=True)
+class abstract_sh_class(SHACLObject):
+    NODE_KIND = NodeKind.BlankNodeOrIRI
+    NAMED_INDIVIDUALS = {
+    }
+
+
 # An Abstract class using the SPDX type
 @register("http://example.org/abstract-spdx-class", compact_type="abstract-spdx-class", abstract=True)
 class abstract_spdx_class(SHACLObject):
@@ -1981,6 +1988,14 @@ class abstract_spdx_class(SHACLObject):
 # A concrete class
 @register("http://example.org/concrete-class", compact_type="concrete-class", abstract=False)
 class concrete_class(abstract_class):
+    NODE_KIND = NodeKind.BlankNodeOrIRI
+    NAMED_INDIVIDUALS = {
+    }
+
+
+# A concrete class
+@register("http://example.org/concrete-sh-class", compact_type="concrete-sh-class", abstract=False)
+class concrete_sh_class(abstract_sh_class):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     NAMED_INDIVIDUALS = {
     }

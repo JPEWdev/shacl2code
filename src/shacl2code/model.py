@@ -162,7 +162,14 @@ class Model(object):
             ) in self.model:
                 return True
 
-            return bool(self.model.value(s, SHACL2CODE.isAbstract, default=False))
+            if bool(self.model.value(s, SHACL2CODE.isAbstract, default=False)):
+                return True
+
+            for n in self.model.objects(s, SH["not"]):
+                if (n, SH["class"], s) in self.model:
+                    return True
+
+            return False
 
         class_iris = set(self.model.subjects(RDF.type, OWL.Class))
         for cls_iri in class_iris:

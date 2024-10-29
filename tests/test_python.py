@@ -1716,6 +1716,7 @@ def test_objset_foreach_type(model, roundtrip):
     [
         ("abstract_class", "concrete_class"),
         ("abstract_spdx_class", "concrete_spdx_class"),
+        ("abstract_sh_class", "concrete_sh_class"),
     ],
 )
 def test_abstract_classes(model, abstract, concrete):

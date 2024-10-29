@@ -489,6 +489,12 @@
     rdfs:comment "An Abstract class using the SPDX type"
     .
 
+<abstract-sh-class> a rdf:Class, sh:NodeShape, owl:Class ;
+    rdfs:comment: "An Abstract class using SHACL validation" ;
+    sh:not [
+        sh:class <abstract-sh-class>
+    ] .
+
 <concrete-class> a rdf:Class, sh:NodeShape, owl:Class ;
     rdfs:subClassOf <abstract-class> ;
     rdfs:comment "A concrete class"
@@ -496,6 +502,11 @@
 
 <concrete-spdx-class> a rdf:Class, sh:NodeShape, owl:Class ;
     rdfs:subClassOf <abstract-spdx-class> ;
+    rdfs:comment "A concrete class"
+    .
+
+<concrete-sh-class> a rdf:Class, sh:NodeShape, owl:Class ;
+    rdfs:subClassOf <abstract-sh-class> ;
     rdfs:comment "A concrete class"
     .
 

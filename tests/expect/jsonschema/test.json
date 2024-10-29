@@ -49,6 +49,28 @@
                 }
             ]
         },
+        "http_exampleorgabstractshclass_derived": {
+            "anyOf": [
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/http_exampleorgconcreteshclass" }
+                    ]
+                },
+                { "$ref": "#/$defs/BlankNodeOrIRI" }
+            ]
+        },
+        "http_exampleorgabstractshclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/SHACLClass" },
+                {
+                    "type": "object",
+                    "properties": {
+                    }
+                }
+            ]
+        },
         "http_exampleorgabstractspdxclass_derived": {
             "anyOf": [
                 {
@@ -102,6 +124,44 @@
         "http_exampleorgconcreteclass_props": {
             "allOf": [
                 { "$ref": "#/$defs/http_exampleorgabstractclass_props" },
+                {
+                    "type": "object",
+                    "properties": {
+                    }
+                }
+            ]
+        },
+        "http_exampleorgconcreteshclass": {
+            "allOf": [
+                {
+                    "type": "object",
+                    "properties": {
+                        "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
+                        "@type": {
+                            "oneOf": [
+                                { "const": "http://example.org/concrete-sh-class" }
+                            ]
+                        }
+                    }
+                },
+                { "$ref": "#/$defs/http_exampleorgconcreteshclass_props" }
+            ]
+        },
+        "http_exampleorgconcreteshclass_derived": {
+            "anyOf": [
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/http_exampleorgconcreteshclass" }
+                    ]
+                },
+                { "$ref": "#/$defs/BlankNodeOrIRI" }
+            ]
+        },
+        "http_exampleorgconcreteshclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/http_exampleorgabstractshclass_props" },
                 {
                     "type": "object",
                     "properties": {
@@ -1302,6 +1362,7 @@
                         {
                             "enum": [
                                 "http://example.org/concrete-class",
+                                "http://example.org/concrete-sh-class",
                                 "http://example.org/concrete-spdx-class",
                                 "http://example.org/enumType",
                                 "http://example.org/id-prop-class",
@@ -1332,6 +1393,7 @@
         "AnyClass": {
             "anyOf": [
                 { "$ref": "#/$defs/http_exampleorgconcreteclass" },
+                { "$ref": "#/$defs/http_exampleorgconcreteshclass" },
                 { "$ref": "#/$defs/http_exampleorgconcretespdxclass" },
                 { "$ref": "#/$defs/http_exampleorgenumType" },
                 { "$ref": "#/$defs/http_exampleorgidpropclass" },

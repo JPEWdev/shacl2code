@@ -593,6 +593,22 @@ def validation_tests():
                 },
             ),
             (
+                "Abstract SH style class",
+                False,
+                {
+                    "@context": CONTEXT,
+                    "@type": "abstract-sh-class",
+                },
+            ),
+            (
+                "Concrete SH style class",
+                True,
+                {
+                    "@context": CONTEXT,
+                    "@type": "concrete-sh-class",
+                },
+            ),
+            (
                 "An extensible abstract class cannot be instantiated",
                 False,
                 {

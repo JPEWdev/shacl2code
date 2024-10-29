@@ -53,6 +53,28 @@
                 }
             ]
         },
+        "abstractshclass_derived": {
+            "anyOf": [
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/concreteshclass" }
+                    ]
+                },
+                { "$ref": "#/$defs/BlankNodeOrIRI" }
+            ]
+        },
+        "abstractshclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/SHACLClass" },
+                {
+                    "type": "object",
+                    "properties": {
+                    }
+                }
+            ]
+        },
         "abstractspdxclass_derived": {
             "anyOf": [
                 {
@@ -106,6 +128,44 @@
         "concreteclass_props": {
             "allOf": [
                 { "$ref": "#/$defs/abstractclass_props" },
+                {
+                    "type": "object",
+                    "properties": {
+                    }
+                }
+            ]
+        },
+        "concreteshclass": {
+            "allOf": [
+                {
+                    "type": "object",
+                    "properties": {
+                        "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
+                        "@type": {
+                            "oneOf": [
+                                { "const": "concrete-sh-class" }
+                            ]
+                        }
+                    }
+                },
+                { "$ref": "#/$defs/concreteshclass_props" }
+            ]
+        },
+        "concreteshclass_derived": {
+            "anyOf": [
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/concreteshclass" }
+                    ]
+                },
+                { "$ref": "#/$defs/BlankNodeOrIRI" }
+            ]
+        },
+        "concreteshclass_props": {
+            "allOf": [
+                { "$ref": "#/$defs/abstractshclass_props" },
                 {
                     "type": "object",
                     "properties": {
@@ -1311,6 +1371,7 @@
                         {
                             "enum": [
                                 "concrete-class",
+                                "concrete-sh-class",
                                 "concrete-spdx-class",
                                 "enumType",
                                 "id-prop-class",
@@ -1341,6 +1402,7 @@
         "AnyClass": {
             "anyOf": [
                 { "$ref": "#/$defs/concreteclass" },
+                { "$ref": "#/$defs/concreteshclass" },
                 { "$ref": "#/$defs/concretespdxclass" },
                 { "$ref": "#/$defs/enumType" },
                 { "$ref": "#/$defs/idpropclass" },

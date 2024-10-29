@@ -3,9 +3,13 @@ Context: https://spdx.github.io/spdx-3-model/context.json
 
 http://example.org/abstract-class: abstract-class
 
+http://example.org/abstract-sh-class: abstract-sh-class
+
 http://example.org/abstract-spdx-class: abstract-spdx-class
 
 http://example.org/concrete-class: concrete-class
+
+http://example.org/concrete-sh-class: concrete-sh-class
 
 http://example.org/concrete-spdx-class: concrete-spdx-class
 

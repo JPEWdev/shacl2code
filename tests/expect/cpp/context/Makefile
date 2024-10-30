@@ -22,9 +22,9 @@ clean:
 install: libtest-context.so libtest-context.a docs
 	# Library
 	$(INSTALL) -d $(DESTDIR)/$(PREFIX)/lib
-	$(INSTALL) -m 0755 libtest-context.so $(DESTDIR)/$(PREFIX)/lib/libtest-context.so.0.0.14
-	ln -s libtest-context.so.0.0.14 $(DESTDIR)/$(PREFIX)/lib/libtest-context.so
-	ln -s libtest-context.so.0.0.14 $(DESTDIR)/$(PREFIX)/lib/libtest-context.so.0
+	$(INSTALL) -m 0755 libtest-context.so $(DESTDIR)/$(PREFIX)/lib/libtest-context.so.0.0.15
+	ln -s libtest-context.so.0.0.15 $(DESTDIR)/$(PREFIX)/lib/libtest-context.so
+	ln -s libtest-context.so.0.0.15 $(DESTDIR)/$(PREFIX)/lib/libtest-context.so.0
 
 	$(INSTALL) -m 0644 libtest-context.a $(DESTDIR)/$(PREFIX)/lib/
 

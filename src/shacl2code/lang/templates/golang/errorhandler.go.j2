@@ -1,0 +1,12 @@
+//
+//{#
+vim: ft=go
+#}
+//
+
+package {{ package }}
+
+type ErrorHandler interface {
+    HandleError(error, Path)
+}
+

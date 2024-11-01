@@ -1,0 +1,34 @@
+//
+//{#
+vim: ft=go
+#}
+//
+
+package {{ package }}
+
+type Optional[T any] struct {
+    value *T
+}
+
+func (self Optional[T]) Get() T {
+    return *self.value
+}
+
+func (self Optional[T]) GetDefault(val T) T {
+    if ! self.IsSet() {
+        return val
+    }
+    return *self.value
+}
+
+func (self Optional[T]) IsSet() bool {
+    return self.value != nil
+}
+
+func NewOptional[T any](value T) Optional[T] {
+    return Optional[T]{&value}
+}
+
+func NewEmptyOptional[T any]() Optional[T] {
+    return Optional[T]{nil}
+}

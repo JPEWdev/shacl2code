@@ -1,0 +1,325 @@
+//
+//{#
+vim: ft=go
+#}
+//
+
+package {{ package }}
+
+import (
+    "time"
+)
+
+{% for class in classes %}
+{%- for l in class.comment.splitlines() %}
+{{ ("// " + l).rstrip() }}
+{% endfor -%}
+{% set is_public = not class.is_abstract or class.is_extensible -%}
+type {{ struct_name(class) }} struct {
+{%- if class.parent_ids %}
+{%- for p in class.parent_ids %}
+    {{ struct_name(classes.get(p)) }}
+{%- endfor %}
+{%- else %}
+    SHACLObjectBase
+{%- endif %}
+{%- if class.is_extensible %}
+    SHACLExtensibleBase
+{%- endif %}
+{% for prop in class.properties %}
+    {%- for l in prop.comment.splitlines() %}
+    {{ ("// " + l).rstrip() }}
+    {%- endfor %}
+    {%- if not prop.enum_values and prop.class_id %}
+    {{ prop_name(prop) }} Ref{% if prop_is_list(prop) %}List{% endif %}Property[{{ interface_name(classes.get(prop.class_id)) }}]
+    {%- else %}
+    {{ prop_name(prop) }} {% if prop_is_list(prop) %}List{% endif %}Property[{{ prop_go_type(prop, classes) }}]
+    {%- endif %}
+{%- endfor %}
+}
+{% for member in class.named_individuals %}
+{%- for l in member.comment.splitlines() %}
+{{ ("// " + l).rstrip() }}
+{% endfor -%}
+const {{ varname(*class.clsname) }}{{ varname(member.varname) }} = "{{ member._id }}"
+{%- endfor %}
+
+type {{ struct_name(class) }}Type struct {
+    SHACLTypeBase
+}
+var {{ class_type_var(class) }} {{ struct_name(class) }}Type
+
+{%- for prop in class.properties %}
+var {{ prop_ctx_name(class, prop) }} = map[string]string{
+{%- if prop.enum_values %}
+{%- for value in prop.enum_values %}
+    "{{ value }}": "{{ context.compact_vocab(value, prop.path) }}",
+{%- endfor %}
+{%- elif prop.class_id %}
+{%- for value in get_all_named_individuals(classes.get(prop.class_id)) %}
+    {%- if context.compact_vocab(value, prop.path) != value %}
+    "{{ value }}": "{{ context.compact_vocab(value, prop.path) }}",
+    {%- endif %}
+{%- endfor -%}
+{%- endif -%}
+}
+{%- endfor %}
+
+func Decode{{ interface_name(class) }} (data any, path Path, context map[string]string, check DecodeCheckType) (Ref[{{ interface_name(class) }}], error) {
+    return DecodeRef[{{ interface_name(class) }}](data, path, context, {{ class_type_var(class) }}, check)
+}
+
+func (self {{ struct_name(class) }}Type) DecodeProperty(o SHACLObject, name string, value interface{}, path Path) (bool, error) {
+    obj := o.({{ interface_name(class) }})
+    _ = obj
+    switch name {
+{%- for prop in class.properties %}
+    case "{{ prop.path }}"{% if context.compact_vocab(prop.path) != prop.path %}, "{{ context.compact_vocab(prop.path) }}"{% endif %}:
+        val, err := {{ prop_decode_func(class, prop, classes) }}
+        if err != nil {
+            return false, err
+        }
+        err = obj.{{ varname(prop.varname) }}().Set(val)
+        if err != nil {
+            return false, err
+        }
+        return true, nil
+{%- endfor %}
+    default:
+        found, err := self.SHACLTypeBase.DecodeProperty(o, name, value, path)
+        if err != nil || found {
+            return found, err
+        }
+    }
+
+    return false, nil
+}
+
+func (self {{ struct_name(class) }}Type) Create() SHACLObject {
+    return Construct{{ struct_name(class) }}(&{{ struct_name(class) }}{}, self)
+}
+
+func Construct{{ struct_name(class) }}(o *{{ struct_name(class) }}, typ SHACLType) *{{ struct_name(class) }} {
+{%- if class.parent_ids %}
+{%- for p in class.parent_ids %}
+    Construct{{ struct_name(classes.get(p)) }}(&o.{{ struct_name(classes.get(p)) }}, typ)
+{%- endfor %}
+{%- else %}
+    ConstructSHACLObjectBase(&o.SHACLObjectBase, typ)
+{%- endif %}
+{%- for prop in class.properties %}
+    {
+        validators := []Validator[{{ prop_go_type(prop, classes) }}]{}
+        decodeValidators := []Validator[any]{}
+{%- if prop.enum_values %}
+        validators = append(validators,
+            EnumValidator{[]string{
+            {%- for e in prop.enum_values %}
+                "{{e}}",
+            {%- endfor %}
+        }})
+{%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#positiveInteger" %}
+        validators = append(validators, IntegerMinValidator{1})
+{%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#nonNegativeInteger" %}
+        validators = append(validators, IntegerMinValidator{0})
+{%- endif %}
+{%- if prop.pattern %}
+        validators = append(validators, RegexValidator[{{ prop_go_type(prop, classes) }}]{`{{ prop.pattern }}`})
+        decodeValidators = append(decodeValidators, RegexValidator[any]{`{{ prop.pattern }}`})
+{%- endif %}
+    {%- if not prop.enum_values and prop.class_id %}
+        o.{{ prop_name(prop) }} = NewRef{% if prop_is_list(prop) %}List{% endif %}Property[{{ interface_name(classes.get(prop.class_id)) }}]("{{ prop_name(prop) }}", validators, decodeValidators)
+    {%- else %}
+        o.{{ prop_name(prop) }} = New{% if prop_is_list(prop) %}List{% endif %}Property[{{ prop_go_type(prop, classes) }}]("{{ prop_name(prop) }}", validators, decodeValidators)
+    {%- endif %}
+    }
+{%- endfor %}
+    return o
+}
+
+type {{ interface_name(class) }} interface {
+{%- if class.parent_ids %}
+{%- for p in class.parent_ids %}
+    {{ interface_name(classes.get(p)) }}
+{%- endfor %}
+{%- else %}
+    SHACLObject
+{%- endif %}
+{%- for prop in class.properties %}
+{%- if prop_is_list(prop) %}
+    {{ varname(prop.varname) }}() ListPropertyInterface[{{ prop_go_type(prop, classes) }}]
+{%- elif not prop.enum_values and prop.class_id %}
+    {{ varname(prop.varname) }}() RefPropertyInterface[{{ interface_name(classes.get(prop.class_id)) }}]
+{%- else %}
+    {{ varname(prop.varname) }}() PropertyInterface[{{ prop_go_type(prop, classes) }}]
+{%- endif %}
+{%- endfor %}
+}
+
+{% if not class.is_abstract %}
+func Make{{ varname(*class.clsname) }}() {{ interface_name(class) }} {
+    return Construct{{ struct_name(class) }}(&{{ struct_name(class) }}{}, {{ class_type_var(class) }})
+}
+
+func Make{{ varname(*class.clsname) }}Ref() Ref[{{ interface_name(class) }}] {
+    o := Make{{ varname(*class.clsname) }}()
+    return MakeObjectRef[{{ interface_name(class) }}](o)
+}
+{%- endif %}
+
+func (self *{{ struct_name(class) }}) Validate(path Path, handler ErrorHandler) bool {
+    var valid bool = true
+{%- if class.parent_ids %}
+{%- for p in class.parent_ids %}
+    if ! self.{{ struct_name(classes.get(p)) }}.Validate(path, handler) {
+        valid = false
+    }
+{%- endfor %}
+{%- else %}
+    if ! self.SHACLObjectBase.Validate(path, handler) {
+        valid = false
+    }
+{%- endif %}
+{%- for prop in class.properties %}
+    {
+        prop_path := path.PushPath("{{ prop_name(prop) }}")
+        if ! self.{{ prop_name(prop) }}.Check(prop_path, handler) {
+            valid = false
+        }
+{%- if prop_is_list(prop) %}
+        {%- if not prop.min_count is none %}
+        if len(self.{{ prop_name(prop) }}.Get()) < {{ prop.min_count }} {
+            if handler != nil {
+                handler.HandleError(&ValidationError{
+                    "{{ prop_name(prop) }}",
+                    "Too few elements. Minimum of {{ prop.min_count }} required"},
+                    prop_path)
+            }
+            valid = false
+        }
+        {%- endif %}
+        {%- if not prop.max_count is none %}
+        if len(self.{{ prop_name(prop) }}.Get()) > {{ prop.max_count }} {
+            if handler != nil {
+                handler.HandleError(&ValidationError{
+                    "{{ prop_name(prop) }}",
+                    "Too many elements. Maximum of {{ prop.max_count }} allowed"},
+                    prop_path)
+            }
+            valid = false
+        }
+        {%- endif %}
+{%- else %}
+        {%- if not prop.min_count is none and prop.min_count > 0 %}
+        if ! self.{{ prop_name(prop) }}.IsSet() {
+            if handler != nil {
+                handler.HandleError(&ValidationError{"{{ prop_name(prop) }}", "Value is required"}, prop_path)
+            }
+            valid = false
+        }
+        {%- endif %}
+{%- endif %}
+    }
+{%- endfor %}
+    return valid
+}
+
+func (self *{{ struct_name(class) }}) Walk(path Path, visit Visit) {
+{%- if class.parent_ids %}
+{%- for p in class.parent_ids %}
+    self.{{ struct_name(classes.get(p)) }}.Walk(path, visit)
+{%- endfor %}
+{%- else %}
+    self.SHACLObjectBase.Walk(path, visit)
+{%- endif %}
+{%- for prop in class.properties %}
+    self.{{ prop_name(prop) }}.Walk(path, visit)
+{%- endfor %}
+}
+
+func (self *{{ struct_name(class) }}) Link(state *LinkState) error {
+{%- if class.parent_ids %}
+{%- for p in class.parent_ids %}
+    if err := self.{{ struct_name(classes.get(p)) }}.Link(state); err != nil {
+        return err
+    }
+{%- endfor %}
+{%- else %}
+    if err := self.SHACLObjectBase.Link(state); err != nil {
+        return err
+    }
+{%- endif %}
+{%- for prop in class.properties %}
+    if err := self.{{ prop_name(prop) }}.Link(state); err != nil {
+        return err
+    }
+{%- endfor %}
+    return nil
+}
+
+{% for prop in class.properties %}
+{%- if prop_is_list(prop) %}
+func (self *{{ struct_name(class) }}) {{ varname(prop.varname) }}() ListPropertyInterface[{{ prop_go_type(prop, classes) }}] { return &self.{{ prop_name(prop) }} }
+{%- elif not prop.enum_values and prop.class_id %}
+func (self *{{ struct_name(class) }}) {{ varname(prop.varname) }}() RefPropertyInterface[{{ interface_name(classes.get(prop.class_id)) }}] { return &self.{{ prop_name(prop) }} }
+{%- else %}
+func (self *{{ struct_name(class) }}) {{ varname(prop.varname) }}() PropertyInterface[{{ prop_go_type(prop, classes) }}] { return &self.{{ prop_name(prop) }} }
+{%- endif %}
+{%- endfor %}
+
+func (self *{{ struct_name(class) }}) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
+{%- if class.parent_ids %}
+{%- for p in class.parent_ids %}
+    if err := self.{{ struct_name(classes.get(p)) }}.EncodeProperties(data, path, state); err != nil {
+        return err
+    }
+{%- endfor %}
+{%- else %}
+    if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
+        return err
+    }
+{%- endif %}
+{%- for prop in class.properties %}
+    if self.{{ prop_name(prop) }}.IsSet() {
+        val, err := {{ prop_encode_func(class, prop, classes) }}
+        if err != nil {
+            return err
+        }
+        data["{{ context.compact_vocab(prop.path) }}"] = val
+    }
+{%- endfor %}
+{%- if class.is_extensible %}
+    self.SHACLExtensibleBase.EncodeExtProperties(data, path)
+{%- endif %}
+    return nil
+}
+{% endfor %}
+
+func init() {
+    objectTypes = make(map[string] SHACLType)
+
+{%- for class in classes %}
+    {{ class_type_var(class) }} = {{ struct_name(class) }}Type{
+        SHACLTypeBase: SHACLTypeBase{
+            typeIRI: "{{ class._id }}",
+    {%- if context.compact_iri(class._id) != class._id %}
+            compactTypeIRI: NewOptional[string]("{{ context.compact_iri(class._id) }}"),
+    {%- endif %}
+            isAbstract: {% if class.is_abstract %}true{% else %}false{% endif %},
+            nodeKind: NewOptional[int](NodeKind{{ class.node_kind.split('#')[-1] }}),
+    {%- if class.is_extensible %}
+            isExtensible: NewOptional[bool](true),
+    {%- endif %}
+    {%- if class.id_property %}
+            idAlias: NewOptional[string]("{{ class.id_property }}"),
+    {%- endif %}
+            parentIRIs: []string{ {%- for p in class.parent_ids %}
+                "{{ p }}",
+            {%- endfor %}
+            },
+        },
+    }
+    RegisterType({{ class_type_var(class) }})
+{%- endfor %}
+}
+

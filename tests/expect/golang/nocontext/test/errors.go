@@ -1,0 +1,42 @@
+//
+//
+//
+
+package model
+
+// Validation Error
+type ValidationError struct {
+    Property string
+    Err string
+}
+
+func (e *ValidationError) Error() string { return e.Property + ": " + e.Err }
+
+// Conversion Error
+type ConversionError struct {
+    From string
+    To string
+}
+
+func (e *ConversionError) Error() string {
+    return "Unable to convert from " + e.From + " to " + e.To
+}
+
+// Decode Error
+type DecodeError struct {
+    Path Path
+    Err string
+}
+
+func (e *DecodeError) Error() string {
+    return e.Path.ToString() + ": " + e.Err
+}
+
+type EncodeError struct {
+    Path Path
+    Err string
+}
+
+func (e *EncodeError) Error() string {
+    return e.Path.ToString() + ": " + e.Err
+}

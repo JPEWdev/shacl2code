@@ -1,0 +1,13 @@
+//
+//{#
+vim: ft=go
+#}
+//
+
+package {{ package }}
+
+type LinkState struct {
+    Objs map[string]SHACLObject
+    Missing map[string]bool
+}
+

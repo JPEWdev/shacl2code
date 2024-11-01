@@ -1,0 +1,91 @@
+//
+//{#
+vim: ft=go
+#}
+//
+
+package {{ package }}
+
+import (
+    "reflect"
+)
+
+// Reference
+type Ref[T SHACLObject] interface {
+    GetIRI() string
+    GetObj() T
+    IsSet() bool
+    IsObj() bool
+    IsIRI() bool
+
+    link(state *LinkState) error
+}
+
+type ref[T SHACLObject] struct {
+    obj *T
+    iri string
+}
+
+func (self *ref[T]) GetIRI() string {
+    if self.iri != "" {
+        return self.iri
+    }
+    if self.obj != nil {
+        o := *self.obj
+        if o.ID().IsSet() {
+            return o.ID().Get()
+        }
+    }
+    return ""
+}
+
+func (self *ref[T]) GetObj() T {
+    return *self.obj
+}
+
+func (self *ref[T]) IsSet() bool { return self.IsIRI() || self.IsObj() }
+func (self *ref[T]) IsObj() bool { return self.obj != nil }
+func (self *ref[T]) IsIRI() bool { return self.iri != "" }
+
+func (self *ref[T]) link(state *LinkState) error {
+    if ! self.IsIRI() {
+        return nil
+    }
+
+    o := state.Objs[self.iri]
+    if o == nil {
+        state.Missing[self.iri] = true
+        return nil
+    }
+
+    obj, ok := o.(T)
+    if !ok {
+        return &ConversionError{"SHACLObject", reflect.TypeOf(ref[T]{}).Name()}
+    }
+
+    self.obj = &obj
+    self.iri = ""
+
+    return nil
+}
+
+func MakeObjectRef[T SHACLObject](obj T) Ref[T] {
+    return &ref[T]{&obj, ""}
+}
+
+func MakeIRIRef[T SHACLObject](iri string) Ref[T] {
+    return &ref[T]{nil, iri}
+}
+
+// Convert one reference to another. Note that the output type is first so it
+// can be specified, while the input type is generally inferred from the argument
+func ConvertRef[TO SHACLObject, FROM SHACLObject](in Ref[FROM]) (Ref[TO], error) {
+    if in.IsObj() {
+        out_obj, ok := any(in.GetObj()).(TO)
+        if !ok {
+            return nil, &ConversionError{reflect.TypeOf(ref[FROM]{}).Name(), reflect.TypeOf(ref[TO]{}).Name()}
+        }
+        return &ref[TO]{&out_obj, in.GetIRI()}, nil
+    }
+    return &ref[TO]{nil, in.GetIRI()}, nil
+}

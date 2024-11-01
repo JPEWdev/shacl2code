@@ -1,0 +1,71 @@
+//
+//
+//
+
+package model
+
+import (
+    "strconv"
+    "time"
+
+    "github.com/ncruces/go-strftime"
+)
+
+func EncodeRef[T SHACLObject](value Ref[T], path Path, context map[string]string, state *EncodeState) (any, error) {
+    if value.IsIRI() {
+        v := value.GetIRI()
+        compact, ok := context[v]
+        if ok {
+            return compact, nil
+        }
+        return v, nil
+    }
+    return EncodeSHACLObject(value.GetObj(), path, state)
+}
+
+func EncodeString(value string, path Path, context map[string]string, state *EncodeState) (any, error) {
+    return value, nil
+}
+
+func EncodeIRI(value string, path Path, context map[string]string, state *EncodeState) (any, error) {
+    compact, ok := context[value]
+    if ok {
+        return compact, nil
+    }
+    return value, nil
+}
+
+func EncodeBoolean(value bool, path Path, context map[string]string, state *EncodeState) (any, error) {
+    return value, nil
+}
+
+func EncodeInteger(value int, path Path, context map[string]string, state *EncodeState) (any, error) {
+    return value, nil
+}
+
+func EncodeFloat(value float64, path Path, context map[string]string, state *EncodeState) (any, error) {
+    return strconv.FormatFloat(value, 'f', -1, 64), nil
+}
+
+const UtcFormatStr = "%Y-%m-%dT%H:%M:%SZ"
+const TzFormatStr = "%Y-%m-%dT%H:%M:%S%:z"
+
+func EncodeDateTime(value time.Time, path Path, context map[string]string, state *EncodeState) (any, error) {
+    if _, offset := value.Zone(); offset == 0 {
+        return strftime.Format(UtcFormatStr, value), nil
+    }
+    return strftime.Format(TzFormatStr, value), nil
+}
+
+func EncodeList[T any](value []T, path Path, context map[string]string, state *EncodeState, f func (T, Path, map[string]string, *EncodeState) (any, error)) (any, error) {
+    lst := []any{}
+    for idx, v := range value {
+        val, err := f(v, path.PushIndex(idx), context, state)
+        if err != nil {
+            return lst, err
+        }
+
+        lst = append(lst, val)
+    }
+    return lst, nil
+}

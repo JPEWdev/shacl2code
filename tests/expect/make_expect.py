@@ -29,7 +29,7 @@ def main():
 
         context = src.parent / (src.stem + "-context.json")
 
-        for lang, ext in (("python", ".py"), ("jsonschema", ".json"), ("cpp", "")):
+        for lang, ext in (("python", ".py"), ("jsonschema", ".json"), ("cpp", ""), ("golang", ".go")):
             subprocess.run(
                 [
                     "shacl2code",

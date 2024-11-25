@@ -525,6 +525,18 @@ def validation_tests():
                 },
             ),
             (
+                "Nested extensible class with non-IRI type",
+                False,
+                {
+                    "@context": CONTEXT,
+                    "@type": "link-class",
+                    "link-class-link-prop": {
+                        "@type": "not-an-iri",
+                        "extensible-class/required": "foo",
+                    },
+                },
+            ),
+            (
                 "Nested extensible class with custom type",
                 True,
                 {

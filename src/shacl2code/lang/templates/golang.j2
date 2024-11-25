@@ -1,0 +1,1596 @@
+//
+//{#
+vim: ft=go
+#}
+//
+
+package {{ package }}
+
+import (
+    "encoding/json"
+    "fmt"
+    "reflect"
+    "regexp"
+    "sort"
+    "strconv"
+    "strings"
+    "time"
+
+    "github.com/ncruces/go-strftime"
+)
+
+// Validation Error
+type ValidationError struct {
+    Property string
+    Err string
+}
+
+func (e *ValidationError) Error() string { return e.Property + ": " + e.Err }
+
+// Conversion Error
+type ConversionError struct {
+    From string
+    To string
+}
+
+func (e *ConversionError) Error() string {
+    return "Unable to convert from " + e.From + " to " + e.To
+}
+
+// Decode Error
+type DecodeError struct {
+    Path Path
+    Err string
+}
+
+func (e *DecodeError) Error() string {
+    return e.Path.ToString() + ": " + e.Err
+}
+
+// Path
+type Path struct {
+    Path []string
+}
+
+func (p *Path) PushPath(s string) Path {
+    new_p := *p
+    new_p.Path = append(new_p.Path, s)
+    return new_p
+}
+
+func (p *Path) PushIndex(idx int) Path {
+    return p.PushPath("[" + strconv.Itoa(idx) + "]")
+}
+
+func (p *Path) ToString() string {
+    return "." + strings.Join(p.Path, ".")
+}
+
+// Error Handler
+type ErrorHandler interface {
+    HandleError(error, Path)
+}
+
+// Reference
+type Ref[T SHACLObject] interface {
+    GetIRI() string
+    GetObj() T
+    IsSet() bool
+    IsObj() bool
+    IsIRI() bool
+}
+
+type ref[T SHACLObject] struct {
+    obj *T
+    iri string
+}
+
+func (r ref[T]) GetIRI() string {
+    if r.iri != "" {
+        return r.iri
+    }
+    if r.obj != nil {
+        o := *r.obj
+        if o.ID().IsSet() {
+            return o.ID().Get()
+        }
+    }
+    return ""
+}
+
+func (r ref[T]) GetObj() T {
+    return *r.obj
+}
+
+func (r ref[T]) IsSet() bool { return r.IsIRI() || r.IsObj() }
+func (r ref[T]) IsObj() bool { return r.obj != nil }
+func (r ref[T]) IsIRI() bool { return r.iri != "" }
+
+func MakeObjectRef[T SHACLObject](obj T) Ref[T] {
+    return ref[T]{&obj, ""}
+}
+
+func MakeIRIRef[T SHACLObject](iri string) Ref[T] {
+    return ref[T]{nil, iri}
+}
+
+// Convert one reference to another. Note that the output type is first so it
+// can be specified, while the input type is generally inferred from the argument
+func ConvertRef[TO SHACLObject, FROM SHACLObject](in Ref[FROM]) (Ref[TO], error) {
+    if in.IsObj() {
+        out_obj, ok := any(in.GetObj()).(TO)
+        if !ok {
+            return nil, &ConversionError{reflect.TypeOf(ref[FROM]{}).Name(), reflect.TypeOf(ref[TO]{}).Name()}
+        }
+        return ref[TO]{&out_obj, in.GetIRI()}, nil
+    }
+    return ref[TO]{nil, in.GetIRI()}, nil
+}
+
+type Visit func(Path, any)
+
+// Base SHACL Object
+type SHACLObjectBase struct {
+    // Object ID
+    id Property[string]
+    typ SHACLType
+    typeIRI string
+}
+
+func (self *SHACLObjectBase) ID() PropertyInterface[string] { return &self.id }
+
+func (self *SHACLObjectBase) Validate(path Path, handler ErrorHandler) bool {
+    var valid bool = true
+
+    switch self.typ.GetNodeKind() {
+    case NodeKindBlankNode:
+        if self.ID().IsSet() && ! IsBlankNode(self.ID().Get()) {
+            handler.HandleError(&ValidationError{
+                "id",
+                "ID must by be blank node"},
+                path.PushPath("id"))
+            valid = false
+        }
+    case NodeKindIRI:
+        if ! self.ID().IsSet() || ! IsIRI(self.ID().Get()) {
+            handler.HandleError(&ValidationError{
+                "id",
+                "ID must be an IRI"},
+                path.PushPath("id"))
+            valid = false
+        }
+    case NodeKindBlankNodeOrIRI:
+        if self.ID().IsSet() && ! IsBlankNode(self.ID().Get()) && ! IsIRI(self.ID().Get()) {
+            handler.HandleError(&ValidationError{
+                "id",
+                "ID must be a blank node or IRI"},
+                path.PushPath("id"))
+            valid = false
+        }
+    default:
+        panic("Unknown node kind")
+    }
+
+    return valid
+}
+
+func (self *SHACLObjectBase) Walk(path Path, visit Visit) {
+    self.id.Walk(path, visit)
+}
+
+func (self *SHACLObjectBase) EncodeProperties(data map[string]interface{}, path Path) error {
+    if self.typeIRI != "" {
+        data["{{ context.compact_iri('@type') }}"] = self.typeIRI
+    } else {
+        data["{{ context.compact_iri('@type') }}"] = self.typ.GetCompactTypeIRI().GetDefault(self.typ.GetTypeIRI())
+    }
+
+    if self.id.IsSet() {
+        id_prop := self.typ.GetIDAlias().GetDefault("@id")
+        data[id_prop] = EncodeIRI(self.id.Get(), path.PushPath(id_prop), map[string]string{})
+    }
+
+    return nil
+}
+
+func (self *SHACLObjectBase) GetType() SHACLType {
+    return self.typ
+}
+
+func (self *SHACLObjectBase) setType(typ SHACLType) {
+    self.typ = typ
+}
+
+func (self *SHACLObjectBase) setTypeIRI(iri string) {
+    self.typeIRI = iri
+}
+
+func ConstructSHACLObjectBase(o *SHACLObjectBase) *SHACLObjectBase {
+    o.id = NewProperty[string]("id", []Validator[string]{ IDValidator{}, })
+    return o
+}
+
+type SHACLObject interface {
+    ID() PropertyInterface[string]
+    Validate(path Path, handler ErrorHandler) bool
+    Walk(path Path, visit Visit)
+    EncodeProperties(data map[string]interface{}, path Path) error
+    GetType() SHACLType
+    setType(typ SHACLType)
+    setTypeIRI(iri string)
+}
+
+// Extensible Object
+
+type SHACLExtensibleBase struct {
+    properties map[string][]any
+}
+
+func (self *SHACLExtensibleBase) GetExtProperty(name string) []any {
+    return self.properties[name]
+}
+
+func (self *SHACLExtensibleBase) SetExtProperty(name string, value []any) {
+    if self.properties == nil {
+        self.properties = make(map[string][]any)
+    }
+    self.properties[name] = value
+}
+
+func (self *SHACLExtensibleBase) DeleteExtProperty(name string) {
+    delete(self.properties, name)
+}
+
+func (self *SHACLExtensibleBase) EncodeExtProperties(data map[string]any, path Path) error {
+    for k, values := range self.properties {
+        if len(values) == 0 {
+            continue
+        }
+
+        lst := []any{}
+        for _, v := range values {
+            lst = append(lst, v)
+        }
+        data[k] = lst
+    }
+    return nil
+}
+
+type SHACLExtensibleObject interface {
+    GetExtProperty(string) []any
+    SetExtProperty(string, []any)
+    DeleteExtProperty(string)
+}
+
+// Type Metadata
+const NodeKindBlankNode = 0
+const NodeKindIRI = 1
+const NodeKindBlankNodeOrIRI = 2
+
+type SHACLType interface {
+    GetTypeIRI() string
+    GetCompactTypeIRI() Optional[string]
+    GetNodeKind() int
+    GetIDAlias() Optional[string]
+    DecodeProperty(SHACLObject, string, interface{}, Path) (bool, error)
+    Create() SHACLObject
+    IsAbstract() bool
+    IsExtensible() bool
+    IsSubClassOf(SHACLType) bool
+}
+
+type SHACLTypeBase struct {
+    typeIRI string
+    compactTypeIRI Optional[string]
+    idAlias Optional[string]
+    isExtensible Optional[bool]
+    isAbstract bool
+    parentIRIs []string
+    nodeKind Optional[int]
+}
+
+func (self SHACLTypeBase) GetTypeIRI() string {
+    return self.typeIRI
+}
+
+func (self SHACLTypeBase) GetCompactTypeIRI() Optional[string] {
+    return self.compactTypeIRI
+}
+
+func (self SHACLTypeBase) GetNodeKind() int {
+    if self.nodeKind.IsSet() {
+        return self.nodeKind.Get()
+    }
+
+    for _, parent_id := range(self.parentIRIs) {
+        p := objectTypes[parent_id]
+        return p.GetNodeKind()
+    }
+
+    return NodeKindBlankNodeOrIRI
+}
+
+func (self SHACLTypeBase) GetIDAlias() Optional[string] {
+    if self.idAlias.IsSet() {
+        return self.idAlias
+    }
+
+    for _, parent_id := range(self.parentIRIs) {
+        p := objectTypes[parent_id]
+        a := p.GetIDAlias()
+        if a.IsSet() {
+            return a
+        }
+    }
+
+    return self.idAlias
+}
+
+func (self SHACLTypeBase) IsAbstract() bool {
+    return self.isAbstract
+}
+
+func (self SHACLTypeBase) IsExtensible() bool {
+    if self.isExtensible.IsSet() {
+        return self.isExtensible.Get()
+    }
+
+    for _, parent_id := range(self.parentIRIs) {
+        p := objectTypes[parent_id]
+        if p.IsExtensible() {
+            return true
+        }
+    }
+
+    return false
+}
+
+func (self SHACLTypeBase) IsSubClassOf(other SHACLType) bool {
+    if other.GetTypeIRI() == self.typeIRI {
+        return true
+    }
+
+    for _, parent_id := range(self.parentIRIs) {
+        p := objectTypes[parent_id]
+        if p.IsSubClassOf(other) {
+            return true
+        }
+    }
+
+    return false
+}
+
+func (self SHACLTypeBase) DecodeProperty(o SHACLObject, name string, value interface{}, path Path) (bool, error) {
+    id_alias := self.GetIDAlias()
+    if id_alias.IsSet() {
+        switch name {
+        case id_alias.Get():
+            val, err := DecodeString(value, path.PushPath(name), map[string]string{})
+            if err != nil {
+                return false, err
+            }
+            err = o.ID().Set(val)
+            if err != nil {
+                return false, err
+            }
+            return true, nil
+        case "@id":
+            return true, &DecodeError{
+                path.PushPath(name),
+                "'@id' is not allowed for " + self.GetTypeIRI() + " which has an ID alias",
+            }
+        }
+    } else if name == "@id" {
+        val, err := DecodeString(value, path.PushPath(name), map[string]string{})
+        if err != nil {
+            return false, err
+        }
+        err = o.ID().Set(val)
+        if err != nil {
+            return false, err
+        }
+        return true, nil
+    }
+
+    for _, parent_id := range(self.parentIRIs) {
+        p := objectTypes[parent_id]
+        found, err := p.DecodeProperty(o, name, value, path)
+        if err != nil || found {
+            return found, err
+        }
+    }
+
+    if self.isExtensible.GetDefault(false) {
+        obj := o.(SHACLExtensibleObject)
+        v, err := DecodeAny(value, path, map[string]string{})
+        if err != nil {
+            return false, err
+        }
+
+        lst, is_list := v.([]interface{})
+        if is_list {
+            obj.SetExtProperty(name, lst)
+        } else {
+            obj.SetExtProperty(name, []interface{}{v})
+        }
+        return true, nil
+    }
+    return false, nil
+}
+
+
+var objectTypes map[string] SHACLType
+
+func RegisterType(typ SHACLType) {
+    objectTypes[typ.GetTypeIRI()] = typ
+    compact := typ.GetCompactTypeIRI()
+    if compact.IsSet() {
+        objectTypes[compact.Get()] = typ
+    }
+}
+
+// SHACLObjectSet
+type SHACLObjectSet interface {
+    AddObject(r SHACLObject)
+    Decode(decoder *json.Decoder) error
+    Encode(encoder *json.Encoder) error
+    Walk(visit Visit)
+    Validate(handler ErrorHandler) bool
+}
+
+type SHACLObjectSetObject struct {
+    objects []SHACLObject
+}
+
+func (self *SHACLObjectSetObject) AddObject(r SHACLObject) {
+    self.objects = append(self.objects, r)
+}
+
+func (self *SHACLObjectSetObject) Decode(decoder *json.Decoder) error {
+    path := Path{}
+
+    var data map[string]interface{}
+    if err := decoder.Decode(&data); err != nil {
+        return err
+    }
+
+    {
+        v, ok := data["@context"]
+        if ! ok {
+            return &DecodeError{path, "@context missing"}
+        }
+
+        sub_path := path.PushPath("@context")
+        value, ok := v.(string)
+        if ! ok {
+            return &DecodeError{sub_path, "@context must be a string, or list of string"}
+        }
+        if value != "{{ context.urls[0] }}" {
+            return &DecodeError{sub_path, "Wrong context URL '" + value + "'"}
+        }
+    }
+
+    delete(data, "@context")
+
+    decodeProxy := func (data any, path Path, context map[string]string) (SHACLObject, error) {
+        return DecodeSHACLObject[SHACLObject](data, path, context, nil)
+    }
+
+    _, has_graph := data["@graph"]
+    if has_graph {
+        for k, v := range data {
+            switch k {
+            case "@graph": {
+                objs, err := DecodeList[SHACLObject](
+                    v,
+                    path.PushPath("@graph"),
+                    map[string]string{},
+                    decodeProxy,
+                )
+
+                if err != nil {
+                    return err
+                }
+
+                for _, obj := range objs {
+                    self.AddObject(obj)
+                }
+            }
+
+            default:
+                return &DecodeError{path, "Unknown property '" + k + "'"}
+            }
+        }
+    } else {
+        obj, err := decodeProxy(data, path, map[string]string{})
+        if err != nil {
+            return err
+        }
+
+        self.AddObject(obj)
+    }
+
+    return nil
+}
+
+func (self *SHACLObjectSetObject) Encode(encoder *json.Encoder) error {
+    data := make(map[string]interface{})
+{%- if context.urls | length > 1 %}
+    data["@context"] = []string{
+    {%- for url in context.urls %}
+        "{{ url }}",
+    {%- endfor %}
+    }
+{%- else %}
+    data["@context"] = "{{ context.urls[0] }}"
+{%- endif %}
+    path := Path{}
+
+    if len(self.objects) == 1 {
+        err := self.objects[0].EncodeProperties(data, path)
+        if err != nil {
+            return err
+        }
+    } else if len(self.objects) > 1 {
+        graph_path := path.PushPath("@graph")
+        lst := []interface{}{}
+        for idx, o := range self.objects {
+            d := make(map[string]interface{})
+            err := o.EncodeProperties(d, graph_path.PushIndex(idx))
+            if err != nil {
+                return err
+            }
+            lst = append(lst, d)
+        }
+
+        data["@graph"] = lst
+    }
+
+    return encoder.Encode(data)
+}
+
+func (self *SHACLObjectSetObject) Walk(visit Visit) {
+    path := Path{}
+    visited := map[SHACLObject]bool{}
+
+    visit_proxy := func (path Path, v any) {
+        switch v.(type) {
+        case Ref[SHACLObject]:
+            r := v.(Ref[SHACLObject])
+            if ! r.IsObj() {
+                visit(path, v)
+                return
+            }
+
+            o := r.GetObj()
+            _, ok := visited[o]
+            if ok {
+                return
+            }
+            visited[o] = true
+            visit(path, v)
+            o.Walk(path, visit)
+            return
+
+        default:
+            visit(path, v)
+            return
+        }
+    }
+
+    for idx, o := range(self.objects) {
+        sub_path := path.PushIndex(idx)
+        visit_proxy(sub_path, MakeObjectRef(o))
+    }
+}
+
+func (self *SHACLObjectSetObject) Validate(handler ErrorHandler) bool {
+    valid := true
+
+    visit_proxy := func (path Path, v any) {
+        r, ok := v.(Ref[SHACLObject])
+        if ! ok {
+            return
+        }
+
+        if ! r.IsObj() {
+            return
+        }
+
+        if ! r.GetObj().Validate(path, handler) {
+            valid = false
+        }
+    }
+
+    self.Walk(visit_proxy)
+
+    return valid
+}
+
+func NewSHACLObjectSet() SHACLObjectSet {
+    os := SHACLObjectSetObject{}
+    return &os
+}
+
+func DecodeAny(data any, path Path, context map[string]string) (any, error) {
+    switch data.(type) {
+    case map[string]interface{}:
+        return DecodeRef[SHACLObject](data, path, context, nil)
+    case string:
+        return DecodeString(data, path, context)
+    case int:
+        return DecodeInteger(data, path, context)
+    case float64:
+        return DecodeFloat(data, path, context)
+    case bool:
+        return DecodeBoolean(data, path, context)
+    case []interface{}:
+        return DecodeList[any](data, path, context, DecodeAny)
+    default:
+        return nil, &DecodeError{path, "Unknown type "+ reflect.TypeOf(data).Name()}
+    }
+}
+
+func DecodeSHACLObject[T SHACLObject](data any, path Path, context map[string]string, targetType SHACLType) (T, error) {
+    dict, ok := data.(map[string]interface{})
+    if ! ok {
+        return *new(T), &DecodeError{path, "Expected dictionary or string. Got " + reflect.TypeOf(data).Name()}
+    }
+
+    var v interface{}
+    v, ok = dict["@type"]
+    if ! ok {
+        v, ok = dict["{{ context.compact_iri('@type') }}"]
+        if ! ok {
+            return *new(T), &DecodeError{path, "type missing"}
+        }
+    }
+
+    var type_iri string
+    var create_type SHACLType
+
+    type_iri, ok = v.(string)
+    if ! ok {
+        return *new(T), &DecodeError{path, "Wrong type for @type. Got " + reflect.TypeOf(v).Name()}
+    }
+
+    iri_typ, ok := objectTypes[type_iri]
+    if ok {
+        if targetType != nil && !iri_typ.IsSubClassOf(targetType) {
+            return *new(T), &DecodeError{path, "Type " + type_iri + " is not valid where " +
+                    targetType.GetTypeIRI() + " is expected"}
+        }
+
+        if iri_typ.IsAbstract() {
+            return *new(T), &DecodeError{path, "Unable to create abstract type '" + type_iri + "'"}
+        }
+
+        create_type = iri_typ
+    } else if targetType != nil && targetType.IsExtensible() {
+        // An extensible type is expected, so make one of the correct type
+        //
+        // Note: An abstract extensible class is actually allowed to be created
+        // here
+        create_type = targetType
+    } else {
+        if IsIRI(type_iri)  {
+            // It's not clear exactly which type should be created. Search through
+            // all types and collect a list of possible Extensible types that are
+            // valid in this location.
+            possible := []SHACLType{}
+            for _, v := range objectTypes {
+                if ! v.IsExtensible() {
+                    continue
+                }
+
+                if v.IsAbstract() {
+                    continue
+                }
+
+                // If a type was specified, only subclasses of that type are
+                // allowed
+                if targetType != nil && ! v.IsSubClassOf(targetType) {
+                    continue
+                }
+
+                possible = append(possible, v)
+            }
+
+            // Sort for determinism
+            sort.Slice(possible, func(i, j int) bool {
+                return possible[i].GetTypeIRI() < possible[j].GetTypeIRI()
+            })
+
+            for _, t := range(possible) {
+                // Ignore errors
+                o, err := DecodeSHACLObject[T](data, path, context, t)
+                if err == nil {
+                    o.setTypeIRI(type_iri)
+                    return o, nil
+                }
+            }
+        }
+        return *new(T), &DecodeError{path, "Unable to create object of type '" + type_iri + "' (no matching extensible object)"}
+    }
+
+    obj, ok := create_type.Create().(T)
+    if ! ok {
+        return *new(T), &DecodeError{path, "Unable to create object of type '" + type_iri + "'"}
+    }
+    obj.setType(create_type)
+    obj.setTypeIRI(type_iri)
+
+    for k, v := range dict {
+        if k == "@type" {
+            continue
+        }
+        if k == "{{ context.compact_iri('@type') }}" {
+            continue
+        }
+
+        sub_path := path.PushPath(k)
+        found, err := create_type.DecodeProperty(obj, k, v, sub_path)
+        if err != nil {
+            return *new(T), err
+        }
+        if ! found {
+            return *new(T), &DecodeError{path, "Unknown property '" + k + "'"}
+        }
+    }
+
+    return obj, nil
+}
+
+func DecodeRef[T SHACLObject](data any, path Path, context map[string]string, typ SHACLType) (Ref[T], error) {
+    switch data.(type) {
+    case string:
+        s, err := DecodeIRI(data, path, context)
+        if err != nil {
+            return nil, err
+        }
+        return MakeIRIRef[T](s), nil
+    }
+
+    obj, err := DecodeSHACLObject[T](data, path, context, typ)
+    if err != nil {
+        return nil, err
+    }
+
+    return MakeObjectRef[T](obj), nil
+}
+
+func EncodeRef[T SHACLObject](value Ref[T], path Path, context map[string]string) any {
+    if value.IsIRI() {
+        v := value.GetIRI()
+        compact, ok := context[v]
+        if ok {
+            return compact
+        }
+        return v
+    }
+    d := make(map[string]any)
+    value.GetObj().EncodeProperties(d, path)
+    return d
+}
+
+func DecodeString(data any, path Path, context map[string]string) (string, error) {
+    v, ok := data.(string)
+    if ! ok {
+        return v, &DecodeError{path, "String expected. Got " + reflect.TypeOf(data).Name()}
+    }
+    return v, nil
+}
+
+func EncodeString(value string, path Path, context map[string]string) any {
+    return value
+}
+
+func DecodeIRI(data any, path Path, context map[string]string) (string, error) {
+    s, err := DecodeString(data, path, context)
+    if err != nil {
+        return s, err
+    }
+
+    for k, v := range context {
+        if s == v {
+            s = k
+            break
+        }
+    }
+
+    if ! IsBlankNode(s) && ! IsIRI(s) {
+        return s, &DecodeError{path, "Must be blank node or IRI. Got '" + s + "'"}
+    }
+
+    return s, nil
+}
+
+func EncodeIRI(value string, path Path, context map[string]string) any {
+    compact, ok := context[value]
+    if ok {
+        return compact
+    }
+    return value
+}
+
+func DecodeBoolean(data any, path Path, context map[string]string) (bool, error) {
+    v, ok := data.(bool)
+    if ! ok {
+        return v, &DecodeError{path, "Boolean expected. Got " + reflect.TypeOf(data).Name()}
+    }
+    return v, nil
+}
+
+func EncodeBoolean(value bool, path Path, context map[string]string) any {
+    return value
+}
+
+func DecodeInteger(data any, path Path, context map[string]string) (int, error) {
+    switch data.(type) {
+    case int:
+        return data.(int), nil
+    case float64:
+        v := data.(float64)
+        if v == float64(int64(v)) {
+            return int(v), nil
+        }
+        return 0, &DecodeError{path, "Value must be an integer. Got " + fmt.Sprintf("%f", v)}
+    default:
+        return 0, &DecodeError{path, "Integer expected. Got " + reflect.TypeOf(data).Name()}
+    }
+}
+
+func EncodeInteger(value int, path Path, context map[string]string) any {
+    return value
+}
+
+func DecodeFloat(data any, path Path, context map[string]string) (float64, error) {
+    switch data.(type) {
+    case float64:
+        return data.(float64), nil
+    case string:
+        v, err := strconv.ParseFloat(data.(string), 64)
+        if err != nil {
+            return 0, err
+        }
+        return v, nil
+    default:
+        return 0, &DecodeError{path, "Float expected. Got " + reflect.TypeOf(data).Name()}
+    }
+}
+
+func EncodeFloat(value float64, path Path, context map[string]string) any {
+    return strconv.FormatFloat(value, 'f', -1, 64)
+}
+
+const UtcFormatStr = "%Y-%m-%dT%H:%M:%SZ"
+const TzFormatStr = "%Y-%m-%dT%H:%M:%S%:z"
+
+func decodeDateTimeString(data any, path Path, re *regexp.Regexp) (time.Time, error) {
+    v, ok := data.(string)
+    if ! ok {
+        return time.Time{}, &DecodeError{path, "String expected. Got " + reflect.TypeOf(data).Name()}
+    }
+
+    match := re.FindStringSubmatch(v)
+
+    if match == nil {
+        return time.Time{}, &DecodeError{path, "Invalid date time string '" + v + "'"}
+    }
+
+    var format string
+    s := match[1]
+    tzstr := match[2]
+
+    switch tzstr {
+    case "Z":
+        s += "+00:00"
+        format = "%Y-%m-%dT%H:%M:%S%:z"
+    case "":
+        format = "%Y-%m-%dT%H:%M:%S"
+    default:
+        s += tzstr
+        format = "%Y-%m-%dT%H:%M:%S%:z"
+    }
+
+    t, err := strftime.Parse(format, v)
+    if err != nil {
+        return time.Time{}, &DecodeError{path, "Invalid date time string '" + v + "': " + err.Error()}
+    }
+    return t, nil
+}
+
+var dateTimeRegex = regexp.MustCompile(`^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(Z|[+-]\d{2}:\d{2})?$`)
+func DecodeDateTime(data any, path Path, context map[string]string) (time.Time, error) {
+    return decodeDateTimeString(data, path, dateTimeRegex)
+}
+
+var dateTimeStampRegex = regexp.MustCompile(`^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(Z|[+-]\d{2}:\d{2})$`)
+func DecodeDateTimeStamp(data any, path Path, context map[string]string) (time.Time, error) {
+    return decodeDateTimeString(data, path, dateTimeStampRegex)
+}
+
+func EncodeDateTime(value time.Time, path Path, context map[string]string) any {
+    if value.Location() == time.UTC {
+        return strftime.Format(UtcFormatStr, value)
+    }
+    return strftime.Format(TzFormatStr, value)
+}
+
+func DecodeList[T any](data any, path Path, context map[string]string, f func (any, Path, map[string]string) (T, error)) ([]T, error) {
+    lst, ok := data.([]interface{})
+    if ! ok {
+        return nil, &DecodeError{path, "Must be a list"}
+    }
+
+    var result []T
+    for idx, v := range lst {
+        sub_path := path.PushIndex(idx)
+        item, err := f(v, sub_path, context)
+        if err != nil {
+            return nil, err
+        }
+        result = append(result, item)
+    }
+
+    return result, nil
+}
+
+func EncodeList[T any](value []T, path Path, context map[string]string, f func (T, Path, map[string]string) any) any {
+    lst := []any{}
+    for idx, v := range value {
+        lst = append(lst, f(v, path.PushIndex(idx), context))
+    }
+    return lst
+}
+
+// IRI Validation
+func IsIRI(iri string) bool {
+    if strings.HasPrefix(iri, "_:") {
+        return false
+    }
+    if strings.Contains(iri, ":") {
+        return true
+    }
+    return false
+}
+
+func IsBlankNode(iri string) bool {
+    return strings.HasPrefix(iri, "_:")
+}
+
+// Optional
+type Optional[T any] struct {
+    value *T
+}
+
+func (self Optional[T]) Get() T {
+    return *self.value
+}
+
+func (self Optional[T]) GetDefault(val T) T {
+    if ! self.IsSet() {
+        return val
+    }
+    return *self.value
+}
+
+func (self Optional[T]) IsSet() bool {
+    return self.value != nil
+}
+
+func NewOptional[T any](value T) Optional[T] {
+    return Optional[T]{&value}
+}
+
+func NewEmptyOptional[T any]() Optional[T] {
+    return Optional[T]{nil}
+}
+
+// Validator
+type Validator[T any] interface {
+    Check(T, string) error
+}
+
+func ValueToString(val any) string {
+    switch val.(type) {
+    case string:
+        return val.(string)
+    case int:
+        return strconv.Itoa(val.(int))
+    case time.Time:
+        t := val.(time.Time)
+        if t.Location() == time.UTC {
+            return strftime.Format(UtcFormatStr, t)
+        }
+        return strftime.Format(TzFormatStr, t)
+    }
+    panic("Unsupported Type " + reflect.TypeOf(val).Name())
+}
+
+
+// ID Validator
+type IDValidator struct {}
+
+func (self IDValidator) Check(val string, name string) error {
+    if ! IsIRI(val) && ! IsBlankNode(val) {
+        return &ValidationError{name, "Must be an IRI or a Blank Node"}
+    }
+    return nil
+}
+
+
+// Regex Validator
+type RegexValidator[T int | time.Time | string] struct {
+    Regex string
+}
+
+func (self RegexValidator[T]) Check(val T, name string) error {
+    s := ValueToString(val)
+
+    m, err := regexp.MatchString(self.Regex, s)
+    if err != nil {
+        return err
+    }
+    if ! m {
+        return &ValidationError{name, "Value '" + s + "' does not match pattern"}
+    }
+    return nil
+}
+
+// Integer Min Validator
+type IntegerMinValidator struct {
+    Min int
+}
+
+func (self IntegerMinValidator) Check(val int, name string) error {
+    if val < self.Min {
+        return &ValidationError{name, "Value " + strconv.Itoa(val) + " is less than minimum " + strconv.Itoa(self.Min)}
+    }
+    return nil
+}
+
+// Integer Max Validator
+type IntegerMaxValidator struct {
+    Max int
+}
+
+func (self IntegerMaxValidator) Check(val int, name string) error {
+    if val > self.Max {
+        return &ValidationError{name, "Value " + strconv.Itoa(val) + " is greater than maximum" + strconv.Itoa(self.Max)}
+    }
+    return nil
+}
+
+// Enum Validator
+type EnumValidator struct {
+    Values []string
+}
+
+func (self EnumValidator) Check(val string, name string) error {
+    for _, v := range self.Values {
+        if val == v {
+            return nil
+        }
+    }
+    return &ValidationError{name, "Value '" + val + "' is not a valid enumerated value" }
+}
+
+// Property
+type PropertyInterface[T any] interface {
+    Get() T
+    Set(val T) error
+    Delete()
+    IsSet() bool
+    Walk(path Path, visit Visit)
+}
+
+type Property[T any] struct {
+    value Optional[T]
+    name string
+    validators []Validator[T]
+}
+
+func NewProperty[T any](name string, validators []Validator[T]) Property[T] {
+    return Property[T]{
+        value: NewEmptyOptional[T](),
+        name: name,
+        validators: validators,
+    }
+}
+
+func (self *Property[T]) Get() T {
+    return self.value.Get()
+}
+
+func (self *Property[T]) Set(val T) error {
+    for _, validator := range self.validators {
+        err := validator.Check(val, self.name)
+        if err != nil {
+            return err
+        }
+    }
+
+    self.value = NewOptional(val)
+    return nil
+}
+
+func (self *Property[T]) Delete() {
+    self.value = NewEmptyOptional[T]()
+}
+
+func (self *Property[T]) IsSet() bool {
+    return self.value.IsSet()
+}
+
+func (self *Property[T]) Check(path Path, handler ErrorHandler) bool {
+    if ! self.value.IsSet() {
+        return true
+    }
+
+    var valid bool
+    valid = true
+
+    for _, validator := range self.validators {
+        err := validator.Check(self.value.Get(), self.name)
+        if err != nil {
+            if handler != nil {
+                handler.HandleError(err, path)
+            }
+            valid = false
+        }
+    }
+    return valid
+}
+
+func (self *Property[T]) Walk(path Path, visit Visit) {
+    if ! self.value.IsSet() {
+        return
+    }
+
+    visit(path.PushPath(self.name), self.value.Get())
+}
+
+// Ref Property
+type RefPropertyInterface[T SHACLObject] interface {
+    PropertyInterface[Ref[T]]
+
+    GetIRI() string
+    GetObj() T
+    IsObj() bool
+    IsIRI() bool
+}
+
+type RefProperty[T SHACLObject] struct {
+    Property[Ref[T]]
+}
+
+func NewRefProperty[T SHACLObject](name string, validators []Validator[Ref[T]]) RefProperty[T] {
+    return RefProperty[T]{
+        Property: Property[Ref[T]]{
+            value: NewEmptyOptional[Ref[T]](),
+            name: name,
+            validators: validators,
+        },
+    }
+}
+
+func (self *RefProperty[T]) GetIRI() string {
+    return self.Get().GetIRI()
+}
+
+func (self *RefProperty[T]) GetObj() T {
+    return self.Get().GetObj()
+}
+
+func (self *RefProperty[T]) IsSet() bool {
+    return self.Property.IsSet() && self.Get().IsSet()
+}
+
+func (self *RefProperty[T]) IsObj() bool {
+    return self.Property.IsSet() && self.Get().IsObj()
+}
+
+func (self *RefProperty[T]) IsIRI() bool {
+    return self.Property.IsSet() && self.Get().IsIRI()
+}
+
+func (self *RefProperty[T]) Walk(path Path, visit Visit) {
+    if ! self.IsSet() {
+        return
+    }
+
+    r, err := ConvertRef[SHACLObject](self.value.Get())
+    if err != nil {
+        return
+    }
+
+    visit(path.PushPath(self.name), r)
+}
+
+// List Property
+type ListPropertyInterface[T any] interface {
+    Get() []T
+    Set(val []T) error
+    Delete()
+    Walk(path Path, visit Visit)
+    IsSet() bool
+}
+
+type ListProperty[T any] struct {
+    value []T
+    name string
+    validators []Validator[T]
+}
+
+func NewListProperty[T any](name string, validators []Validator[T]) ListProperty[T] {
+    return ListProperty[T]{
+        value: []T{},
+        name: name,
+        validators: validators,
+    }
+}
+
+func (self *ListProperty[T]) Get() []T {
+    return self.value
+}
+
+func (self *ListProperty[T]) Set(val []T) error {
+    for _, v := range val {
+        for _, validator := range self.validators {
+            err := validator.Check(v, self.name)
+            if err != nil {
+                return err
+            }
+        }
+    }
+
+    self.value = val
+    return nil
+}
+
+func (self *ListProperty[T]) Delete() {
+    self.value = []T{}
+}
+
+func (self *ListProperty[T]) IsSet() bool {
+    return self.value != nil && len(self.value) > 0
+}
+
+func (self *ListProperty[T]) Check(path Path, handler ErrorHandler) bool {
+    var valid bool
+    valid = true
+
+    for idx, v := range self.value {
+        for _, validator := range self.validators {
+            err := validator.Check(v, self.name)
+            if err != nil {
+                if handler != nil {
+                    handler.HandleError(err, path.PushIndex(idx))
+                }
+                valid = false
+            }
+        }
+    }
+    return valid
+}
+
+func (self *ListProperty[T]) Walk(path Path, visit Visit) {
+    sub_path := path.PushPath(self.name)
+
+    for idx, v := range self.value {
+        visit(sub_path.PushIndex(idx), v)
+    }
+}
+
+type RefListProperty[T SHACLObject] struct {
+    ListProperty[Ref[T]]
+}
+
+func NewRefListProperty[T SHACLObject](name string, validators []Validator[Ref[T]]) RefListProperty[T] {
+    return RefListProperty[T]{
+        ListProperty: ListProperty[Ref[T]]{
+            value: []Ref[T]{},
+            name: name,
+            validators: validators,
+        },
+    }
+}
+
+func (self *RefListProperty[T]) Walk(path Path, visit Visit) {
+    sub_path := path.PushPath(self.name)
+
+    for idx, v := range self.value {
+        r, err := ConvertRef[SHACLObject](v)
+        if err != nil {
+            visit(sub_path.PushIndex(idx), r)
+        }
+    }
+}
+
+{% for class in classes %}
+{%- for l in class.comment.splitlines() %}
+{{ ("// " + l).rstrip() }}
+{% endfor -%}
+{% set is_public = not class.is_abstract or class.is_extensible -%}
+type {{ struct_name(class) }} struct {
+{%- if class.parent_ids %}
+{%- for p in class.parent_ids %}
+    {{ struct_name(classes.get(p)) }}
+{%- endfor %}
+{%- else %}
+    SHACLObjectBase
+{%- endif %}
+{%- if class.is_extensible %}
+    SHACLExtensibleBase
+{%- endif %}
+{% for prop in class.properties %}
+    {%- for l in prop.comment.splitlines() %}
+    {{ ("// " + l).rstrip() }}
+    {%- endfor %}
+    {%- if not prop.enum_values and prop.class_id %}
+    {{ prop_name(prop) }} Ref{% if prop_is_list(prop) %}List{% endif %}Property[{{ interface_name(classes.get(prop.class_id)) }}]
+    {%- else %}
+    {{ prop_name(prop) }} {% if prop_is_list(prop) %}List{% endif %}Property[{{ prop_go_type(prop, classes) }}]
+    {%- endif %}
+{%- endfor %}
+}
+{% for member in class.named_individuals %}
+{%- for l in member.comment.splitlines() %}
+{{ ("// " + l).rstrip() }}
+{% endfor -%}
+const {{ varname(*class.clsname) }}{{ varname(member.varname) }} = "{{ member._id }}"
+{%- endfor %}
+
+type {{ struct_name(class) }}Type struct {
+    SHACLTypeBase
+}
+var {{ class_type_var(class) }} {{ struct_name(class) }}Type
+
+{%- for prop in class.properties %}
+var {{ prop_ctx_name(class, prop) }} = map[string]string{
+{%- if prop.enum_values %}
+{%- for value in prop.enum_values %}
+    "{{ value }}": "{{ context.compact_vocab(value, prop.path) }}",
+{%- endfor %}
+{%- elif prop.class_id %}
+{%- for value in get_all_named_individuals(classes.get(prop.class_id)) %}
+    {%- if context.compact_vocab(value, prop.path) != value %}
+    "{{ value }}": "{{ context.compact_vocab(value, prop.path) }}",
+    {%- endif %}
+{%- endfor -%}
+{%- endif -%}
+}
+{%- endfor %}
+
+func Decode{{ interface_name(class) }} (data any, path Path, context map[string]string) (Ref[{{ interface_name(class) }}], error) {
+    return DecodeRef[{{ interface_name(class) }}](data, path, context, {{ class_type_var(class) }})
+}
+
+func (self {{ struct_name(class) }}Type) DecodeProperty(o SHACLObject, name string, value interface{}, path Path) (bool, error) {
+    obj := o.({{ interface_name(class) }})
+    _ = obj
+    switch name {
+{%- for prop in class.properties %}
+    case "{{ prop.path }}"{% if context.compact_vocab(prop.path) != prop.path %}, "{{ context.compact_vocab(prop.path) }}"{% endif %}:
+        val, err := {{ prop_decode_func(class, prop, classes) }}
+        if err != nil {
+            return false, err
+        }
+        err = obj.{{ varname(prop.varname) }}().Set(val)
+        if err != nil {
+            return false, err
+        }
+        return true, nil
+{%- endfor %}
+    default:
+        found, err := self.SHACLTypeBase.DecodeProperty(o, name, value, path)
+        if err != nil || found {
+            return found, err
+        }
+    }
+
+    return false, nil
+}
+
+func (self {{ struct_name(class) }}Type) Create() SHACLObject {
+    return Construct{{ struct_name(class) }}(&{{ struct_name(class) }}{})
+}
+
+func Construct{{ struct_name(class) }}(o *{{ struct_name(class) }}) *{{ struct_name(class) }} {
+{%- if class.parent_ids %}
+{%- for p in class.parent_ids %}
+    Construct{{ struct_name(classes.get(p)) }}(&o.{{ struct_name(classes.get(p)) }})
+{%- endfor %}
+{%- else %}
+    ConstructSHACLObjectBase(&o.SHACLObjectBase)
+{%- endif %}
+{%- for prop in class.properties %}
+    {
+        validators := []Validator[{{ prop_go_type(prop, classes) }}]{}
+{%- if prop.enum_values %}
+        validators = append(validators,
+            EnumValidator{[]string{
+            {%- for e in prop.enum_values %}
+                "{{e}}",
+            {%- endfor %}
+        }})
+{%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#positiveInteger" %}
+        validators = append(validators, IntegerMinValidator{1})
+{%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#nonNegativeInteger" %}
+        validators = append(validators, IntegerMinValidator{0})
+{%- endif %}
+{%- if prop.pattern %}
+        validators = append(validators, RegexValidator[{{ prop_go_type(prop, classes) }}]{`{{ prop.pattern }}`})
+{%- endif %}
+    {%- if not prop.enum_values and prop.class_id %}
+        o.{{ prop_name(prop) }} = NewRef{% if prop_is_list(prop) %}List{% endif %}Property[{{ interface_name(classes.get(prop.class_id)) }}]("{{ prop_name(prop) }}", validators)
+    {%- else %}
+        o.{{ prop_name(prop) }} = New{% if prop_is_list(prop) %}List{% endif %}Property[{{ prop_go_type(prop, classes) }}]("{{ prop_name(prop) }}", validators)
+    {%- endif %}
+    }
+{%- endfor %}
+    return o
+}
+
+type {{ interface_name(class) }} interface {
+{%- if class.parent_ids %}
+{%- for p in class.parent_ids %}
+    {{ interface_name(classes.get(p)) }}
+{%- endfor %}
+{%- else %}
+    SHACLObject
+{%- endif %}
+{%- for prop in class.properties %}
+{%- if prop_is_list(prop) %}
+    {{ varname(prop.varname) }}() ListPropertyInterface[{{ prop_go_type(prop, classes) }}]
+{%- elif not prop.enum_values and prop.class_id %}
+    {{ varname(prop.varname) }}() RefPropertyInterface[{{ interface_name(classes.get(prop.class_id)) }}]
+{%- else %}
+    {{ varname(prop.varname) }}() PropertyInterface[{{ prop_go_type(prop, classes) }}]
+{%- endif %}
+{%- endfor %}
+}
+
+{% if not class.is_abstract %}
+func Make{{ varname(*class.clsname) }}() {{ interface_name(class) }} {
+    return Construct{{ struct_name(class) }}(&{{ struct_name(class) }}{})
+}
+
+func Make{{ varname(*class.clsname) }}Ref() Ref[{{ interface_name(class) }}] {
+    o := Make{{ varname(*class.clsname) }}()
+    return MakeObjectRef[{{ interface_name(class) }}](o)
+}
+{%- endif %}
+
+func (self *{{ struct_name(class) }}) Validate(path Path, handler ErrorHandler) bool {
+    var valid bool = true
+{%- if class.parent_ids %}
+{%- for p in class.parent_ids %}
+    if ! self.{{ struct_name(classes.get(p)) }}.Validate(path, handler) {
+        valid = false
+    }
+{%- endfor %}
+{%- else %}
+    if ! self.SHACLObjectBase.Validate(path, handler) {
+        valid = false
+    }
+{%- endif %}
+{%- for prop in class.properties %}
+    {
+        prop_path := path.PushPath("{{ prop_name(prop) }}")
+        if ! self.{{ prop_name(prop) }}.Check(prop_path, handler) {
+            valid = false
+        }
+{%- if prop_is_list(prop) %}
+        {%- if not prop.min_count is none %}
+        if len(self.{{ prop_name(prop) }}.Get()) < {{ prop.min_count }} {
+            if handler != nil {
+                handler.HandleError(&ValidationError{
+                    "{{ prop_name(prop) }}",
+                    "Too few elements. Minimum of {{ prop.min_count }} required"},
+                    prop_path)
+            }
+            valid = false
+        }
+        {%- endif %}
+        {%- if not prop.max_count is none %}
+        if len(self.{{ prop_name(prop) }}.Get()) > {{ prop.max_count }} {
+            if handler != nil {
+                handler.HandleError(&ValidationError{
+                    "{{ prop_name(prop) }}",
+                    "Too many elements. Maximum of {{ prop.max_count }} allowed"},
+                    prop_path)
+            }
+            valid = false
+        }
+        {%- endif %}
+{%- else %}
+        {%- if not prop.min_count is none and prop.min_count > 0 %}
+        if ! self.{{ prop_name(prop) }}.IsSet() {
+            if handler != nil {
+                handler.HandleError(&ValidationError{"{{ prop_name(prop) }}", "Value is required"}, prop_path)
+            }
+            valid = false
+        }
+        {%- endif %}
+{%- endif %}
+    }
+{%- endfor %}
+    return valid
+}
+
+func (self *{{ struct_name(class) }}) Walk(path Path, visit Visit) {
+{%- if class.parent_ids %}
+{%- for p in class.parent_ids %}
+    self.{{ struct_name(classes.get(p)) }}.Walk(path, visit)
+{%- endfor %}
+{%- else %}
+    self.SHACLObjectBase.Walk(path, visit)
+{%- endif %}
+{%- for prop in class.properties %}
+    self.{{ prop_name(prop) }}.Walk(path, visit)
+{%- endfor %}
+}
+
+{% for prop in class.properties %}
+{%- if prop_is_list(prop) %}
+func (self *{{ struct_name(class) }}) {{ varname(prop.varname) }}() ListPropertyInterface[{{ prop_go_type(prop, classes) }}] { return &self.{{ prop_name(prop) }} }
+{%- elif not prop.enum_values and prop.class_id %}
+func (self *{{ struct_name(class) }}) {{ varname(prop.varname) }}() RefPropertyInterface[{{ interface_name(classes.get(prop.class_id)) }}] { return &self.{{ prop_name(prop) }} }
+{%- else %}
+func (self *{{ struct_name(class) }}) {{ varname(prop.varname) }}() PropertyInterface[{{ prop_go_type(prop, classes) }}] { return &self.{{ prop_name(prop) }} }
+{%- endif %}
+{%- endfor %}
+
+func (self *{{ struct_name(class) }}) EncodeProperties(data map[string]interface{}, path Path) error {
+{%- if class.parent_ids %}
+{%- for p in class.parent_ids %}
+    if err := self.{{ struct_name(classes.get(p)) }}.EncodeProperties(data, path); err != nil {
+        return err
+    }
+{%- endfor %}
+{%- else %}
+    if err := self.SHACLObjectBase.EncodeProperties(data, path); err != nil {
+        return err
+    }
+{%- endif %}
+{%- for prop in class.properties %}
+    if self.{{ prop_name(prop) }}.IsSet() {
+        data["{{ context.compact_vocab(prop.path) }}"] = {{ prop_encode_func(class, prop, classes) }}
+    }
+{%- endfor %}
+{%- if class.is_extensible %}
+    self.SHACLExtensibleBase.EncodeExtProperties(data, path)
+{%- endif %}
+    return nil
+}
+{% endfor %}
+
+func init() {
+    objectTypes = make(map[string] SHACLType)
+
+{%- for class in classes %}
+    {{ class_type_var(class) }} = {{ struct_name(class) }}Type{
+        SHACLTypeBase: SHACLTypeBase{
+            typeIRI: "{{ class._id }}",
+    {%- if context.compact_iri(class._id) != class._id %}
+            compactTypeIRI: NewOptional[string]("{{ context.compact_iri(class._id) }}"),
+    {%- endif %}
+            isAbstract: {% if class.is_abstract %}true{% else %}false{% endif %},
+            nodeKind: NewOptional[int](NodeKind{{ class.node_kind.split('#')[-1] }}),
+    {%- if class.is_extensible %}
+            isExtensible: NewOptional[bool](true),
+    {%- endif %}
+    {%- if class.id_property %}
+            idAlias: NewOptional[string]("{{ class.id_property }}"),
+    {%- endif %}
+            parentIRIs: []string{ {%- for p in class.parent_ids %}
+                "{{ p }}",
+            {%- endfor %}
+            },
+        },
+    }
+    RegisterType({{ class_type_var(class) }})
+{%- endfor %}
+}

@@ -1197,7 +1197,7 @@ class SHACLObjectSet(object):
 
         return SHACLObjectSet(new_objects, link=True)
 
-    def encode(self, encoder, force_list=False):
+    def encode(self, encoder, force_list=False, *, key=None):
         """
         Serialize a list of objects to a serialization encoder
 
@@ -1244,7 +1244,7 @@ class SHACLObjectSet(object):
         else:
             objects = list(self.objects)
 
-        objects.sort()
+        objects.sort(key=key)
 
         if use_list:
             # Ensure top level objects are only written in the top level graph

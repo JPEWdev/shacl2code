@@ -165,10 +165,6 @@ class Model(object):
             if bool(self.model.value(s, SHACL2CODE.isAbstract, default=False)):
                 return True
 
-            for n in self.model.objects(s, SH["not"]):
-                if (n, SH["class"], s) in self.model:
-                    return True
-
             return False
 
         class_iris = set(self.model.subjects(RDF.type, OWL.Class))
@@ -200,6 +196,11 @@ class Model(object):
 
             for obj_prop in self.model.objects(cls_iri, SH.property):
                 prop = self.model.value(obj_prop, SH.path)
+                if prop == RDF.type:
+                    for n in self.model.objects(obj_prop, SH["not"]):
+                        if (n, SH.hasValue, cls_iri) in self.model:
+                            c.is_abstract = True
+                    continue
 
                 p = Property(
                     varname=self.model.value(

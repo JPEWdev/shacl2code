@@ -491,8 +491,9 @@
 
 <abstract-sh-class> a rdf:Class, sh:NodeShape, owl:Class ;
     rdfs:comment: "An Abstract class using SHACL validation" ;
-    sh:not [
-        sh:class <abstract-sh-class>
+    sh:property [
+        sh:path rdf:type ;
+        sh:not [ sh:hasValue <abstract-sh-class> ]
     ] .
 
 <concrete-class> a rdf:Class, sh:NodeShape, owl:Class ;

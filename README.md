@@ -166,8 +166,9 @@ with the following turtle:
 
 <MyClass> a owl:Class, sh:NodeShape ;
     # SHACL to prevent a class from being instansiated as this exact type
-    sh:not [
-        sh:class <MyClass>
+    sh:property [
+        sh:path rdf:type ;
+        sh:not [ sh:hasValue <MyClass> ]
     ] .
 
 ```

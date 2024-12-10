@@ -1265,7 +1265,7 @@ class SHACLObjectSet(object):
                     with list_s.write_list_item() as item_s:
                         o.encode(item_s, state)
 
-        else:
+        elif objects:
             objects[0].encode(encoder, state)
 
     def decode(self, decoder):

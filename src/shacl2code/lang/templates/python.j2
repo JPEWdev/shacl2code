@@ -96,7 +96,12 @@ class StringProp(Property):
         encoder.write_string(value)
 
     def decode(self, decoder, *, objectset=None):
-        return decoder.read_string()
+        s = decoder.read_string()
+        if is_IRI(s) and objectset:
+            obj = objectset.find_by_id(s)
+            if obj is not None:
+                return obj._id
+        return s
 
 
 class AnyURIProp(StringProp):

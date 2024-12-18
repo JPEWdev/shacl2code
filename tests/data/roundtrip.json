@@ -90,7 +90,10 @@
             "@type": "uses-extensible-abstract-class",
             "@id": "http://serialize.example.com/test-uses-extensible-abstract",
             "uses-extensible-abstract-class/prop": {
-                "@type": " http://serialize.example.com/custom-extensible"
+                "@type": " http://serialize.example.com/custom-extensible",
+                "http://custom-prop": [
+                    "abc"
+                ]
             }
         }
     ]

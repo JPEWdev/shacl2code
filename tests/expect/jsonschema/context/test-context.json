@@ -426,6 +426,9 @@
                         },
                         "link-class-link-prop-no-class": {
                             "$ref": "#/$defs/prop_linkclass_linkclasslinkpropnoclass"
+                        },
+                        "link-class-tag": {
+                            "$ref": "#/$defs/prop_linkclass_linkclasstag"
                         }
                     }
                 }
@@ -442,6 +445,9 @@
         },
         "prop_linkclass_linkclasslinkpropnoclass": {
                 "$ref": "#/$defs/linkclass_derived"
+        },
+        "prop_linkclass_linkclasstag": {
+                    "type": "string"
         },
         "linkderivedclass": {
             "allOf": [

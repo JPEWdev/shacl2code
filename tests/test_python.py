@@ -16,6 +16,8 @@ import importlib
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 
+import jsonvalidation
+
 THIS_FILE = Path(__file__)
 THIS_DIR = THIS_FILE.parent
 
@@ -245,38 +247,27 @@ def test_jsonschema_validation(roundtrip, test_jsonschema):
     jsonschema.validate(data, schema=test_jsonschema)
 
 
-@pytest.mark.parametrize(
-    "name,expect",
-    [
-        (
-            "http://serialize.example.com/self",
-            "http://serialize.example.com/self",
-        ),
-        (
-            "http://serialize.example.com/self-derived",
-            "http://serialize.example.com/self-derived",
-        ),
-        (
-            "http://serialize.example.com/base-to-derived",
-            "http://serialize.example.com/self-derived",
-        ),
-        (
-            "http://serialize.example.com/derived-to-base",
-            "http://serialize.example.com/self",
-        ),
-    ],
-)
-def test_links(model, name, expect):
-    doc = model.SHACLObjectSet()
-    with (DATA_DIR / "python" / "links.json").open("r") as f:
+@jsonvalidation.link_tests()
+def test_links(filename, name, expect_tag, model, tmp_path, test_context_url):
+    data_file = tmp_path / "data.json"
+    data_file.write_text(
+        filename.read_text().replace("@CONTEXT_URL@", test_context_url)
+    )
+
+    objset = model.SHACLObjectSet()
+    with data_file.open("r") as f:
         deserializer = model.JSONLDDeserializer()
-        deserializer.read(f, doc)
+        deserializer.read(f, objset)
 
-    c = doc.find_by_id(name)
+    c = objset.find_by_id(name)
     assert isinstance(c, model.link_class)
 
-    link = doc.find_by_id(expect)
-    assert isinstance(c, model.link_class)
+    for o in objset.foreach_type(model.link_class):
+        if o.link_class_tag == expect_tag:
+            link = o
+            break
+    else:
+        assert False, f"Unable to find object with tag '{expect_tag}'"
 
     assert c.link_class_link_prop is link
     assert c.link_class_link_prop_no_class is link
@@ -300,42 +291,6 @@ def test_deserialize(model, filename, expect):
                 deserializer.read(f, objset)
         else:
             deserializer.read(f, objset)
-
-
-@pytest.mark.parametrize(
-    "name,cls",
-    [
-        (
-            "http://serialize.example.com/base-to-blank-base",
-            "link_class",
-        ),
-        (
-            "http://serialize.example.com/base-to-blank-derived",
-            "link_derived_class",
-        ),
-        (
-            "http://serialize.example.com/derived-to-blank-base",
-            "link_class",
-        ),
-        (
-            "http://serialize.example.com/derived-to-blank-derived",
-            "link_derived_class",
-        ),
-    ],
-)
-def test_blank_links(model, name, cls):
-    doc = model.SHACLObjectSet()
-    with (DATA_DIR / "python" / "links.json").open("r") as f:
-        deserializer = model.JSONLDDeserializer()
-        deserializer.read(f, doc)
-
-    c = doc.find_by_id(name)
-    assert isinstance(c, model.link_class)
-
-    expect = c.link_class_link_prop
-    assert type(expect) is getattr(model, cls)
-    assert c.link_class_link_prop_no_class is expect
-    assert c.link_class_link_list_prop == [expect, expect]
 
 
 def test_node_kind_blank(model, test_context_url):

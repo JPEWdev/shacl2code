@@ -5,6 +5,12 @@
 
 import pytest
 
+from pathlib import Path
+
+THIS_FILE = Path(__file__)
+THIS_DIR = THIS_FILE.parent
+
+DATA_DIR = THIS_DIR.parent / "tests" / "data"
 
 CONTEXT = object()
 
@@ -859,6 +865,62 @@ def type_tests():
                     [{"@type": "parent-class"}],
                 ],
                 typ=[object, str, list],
+            ),
+        ],
+    )
+
+
+def link_tests():
+    return _parametrize(
+        "filename,name,expect_tag",
+        [
+            (
+                "links to self",
+                DATA_DIR / "links.json",
+                "http://serialize.example.com/self",
+                "self",
+            ),
+            (
+                "links to self from derived class",
+                DATA_DIR / "links.json",
+                "http://serialize.example.com/self-derived",
+                "self-derived",
+            ),
+            (
+                "links to derived class from base class",
+                DATA_DIR / "links.json",
+                "http://serialize.example.com/base-to-derived",
+                "self-derived",
+            ),
+            (
+                "links to base class from derived class",
+                DATA_DIR / "links.json",
+                "http://serialize.example.com/derived-to-base",
+                "self",
+            ),
+            (
+                "links to blank node base",
+                DATA_DIR / "links.json",
+                "http://serialize.example.com/base-to-blank-base",
+                "blank-base",
+            ),
+            (
+                "links to blank node derived",
+                DATA_DIR / "links.json",
+                "http://serialize.example.com/base-to-blank-derived",
+                "blank-derived",
+            ),
+            (
+                "links to blank node base from derived class",
+                DATA_DIR / "links.json",
+                "http://serialize.example.com/derived-to-blank-base",
+                "blank-base",
+            ),
+            (
+                "links to blank node derived from derived class",
+                DATA_DIR / "links.json",
+                "http://serialize.example.com/derived-to-blank-derived",
+                "blank-derived",
             ),
         ],
     )

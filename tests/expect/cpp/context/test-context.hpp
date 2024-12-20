@@ -456,6 +456,16 @@ class EXPORT link_class : public
      * A link-class property with no sh:class
      */
     Prop::Ref<link_class> _link_class_link_prop_no_class;
+    /**
+     * @brief link_class_tag
+     *
+     * IRI: http://example.org/link-class-tag
+     *
+     * Compact IRI: link-class-tag
+     *
+     * Tag used to identify object for testing
+     */
+    Prop::String _link_class_tag;
 };
 
 /**

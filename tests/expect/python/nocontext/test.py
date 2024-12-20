@@ -2108,6 +2108,12 @@ class http_example_org_link_class(SHACLObject):
             ObjectProp(http_example_org_link_class, False),
             iri="http://example.org/link-class-link-prop-no-class",
         )
+        # Tag used to identify object for testing
+        cls._add_property(
+            "tag",
+            StringProp(),
+            iri="http://example.org/link-class-tag",
+        )
 
 
 # A class derived from link-class

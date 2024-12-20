@@ -265,6 +265,13 @@ link_class::link_class(TypeBase const* type, SHACLObject::TypeIRIs const& typeIR
         std::optional<std::regex>(),
         PropertyContext::Context({
         })
+    ),
+    _link_class_tag(
+        this,
+        "http://example.org/link-class-tag",
+        "link-class-tag",
+        false,
+        std::optional<std::regex>()
     )
 {}
 

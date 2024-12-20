@@ -419,6 +419,9 @@
                         },
                         "http://example.org/link-class-link-prop-no-class": {
                             "$ref": "#/$defs/prop_http_exampleorglinkclass_linkpropnoclass"
+                        },
+                        "http://example.org/link-class-tag": {
+                            "$ref": "#/$defs/prop_http_exampleorglinkclass_tag"
                         }
                     }
                 }
@@ -435,6 +438,9 @@
         },
         "prop_http_exampleorglinkclass_linkpropnoclass": {
                 "$ref": "#/$defs/http_exampleorglinkclass_derived"
+        },
+        "prop_http_exampleorglinkclass_tag": {
+                    "type": "string"
         },
         "http_exampleorglinkderivedclass": {
             "allOf": [

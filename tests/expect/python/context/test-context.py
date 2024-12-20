@@ -2113,6 +2113,13 @@ class link_class(SHACLObject):
             iri="http://example.org/link-class-link-prop-no-class",
             compact="link-class-link-prop-no-class",
         )
+        # Tag used to identify object for testing
+        cls._add_property(
+            "link_class_tag",
+            StringProp(),
+            iri="http://example.org/link-class-tag",
+            compact="link-class-tag",
+        )
 
 
 # A class derived from link-class

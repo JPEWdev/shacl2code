@@ -426,6 +426,14 @@ class EXPORT http_example_org_link_class : public
      * A link-class property with no sh:class
      */
     Prop::Ref<http_example_org_link_class> _link_prop_no_class;
+    /**
+     * @brief tag
+     *
+     * IRI: http://example.org/link-class-tag
+     *
+     * Tag used to identify object for testing
+     */
+    Prop::String _tag;
 };
 
 /**

@@ -155,6 +155,10 @@
         "@id": "test:link-class-extensible",
         "@type": "@id"
     },
+    "link-class-tag": {
+        "@id": "test:link-class-tag",
+        "@type": "xsd:string"
+    },
     "extensible-class/property": {
       "@id": "test:extensible-class/property",
       "@type": "xsd:string"

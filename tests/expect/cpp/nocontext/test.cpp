@@ -265,6 +265,13 @@ http_example_org_link_class::http_example_org_link_class(TypeBase const* type, S
         std::optional<std::regex>(),
         PropertyContext::Context({
         })
+    ),
+    _tag(
+        this,
+        "http://example.org/link-class-tag",
+        {},
+        false,
+        std::optional<std::regex>()
     )
 {}
 

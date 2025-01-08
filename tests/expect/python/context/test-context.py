@@ -922,6 +922,12 @@ class SHACLExtensibleObject(object):
         return obj
 
     def _decode_properties(self, decoder, objectset=None):
+        def decode_value(d):
+            if not d.is_list():
+                return d.read_value()
+
+            return [decode_value(val_d) for val_d in d.read_list()]
+
         if self.CLOSED:
             super()._decode_properties(decoder, objectset=objectset)
             return
@@ -936,7 +942,7 @@ class SHACLExtensibleObject(object):
                 )
 
             with decoder.read_property(key) as prop_d:
-                self.__dict__["_obj_data"][key] = prop_d.read_value()
+                self.__dict__["_obj_data"][key] = decode_value(prop_d)
 
     def _encode_properties(self, encoder, state):
         def encode_value(encoder, v):
@@ -948,6 +954,11 @@ class SHACLExtensibleObject(object):
                 encoder.write_integer(v)
             elif isinstance(v, float):
                 encoder.write_float(v)
+            elif isinstance(v, list):
+                with encoder.write_list() as list_s:
+                    for i in v:
+                        with list_s.write_list_item() as item_s:
+                            encode_value(item_s, i)
             else:
                 raise TypeError(
                     f"Unsupported serialized type {type(v)} with value '{v}'"
@@ -1410,6 +1421,15 @@ class Decoder(ABC):
         pass
 
     @abstractmethod
+    def is_list(self):
+        """
+        Checks if the next item is a list
+
+        Returns True if the next item is a list, or False if it is a scalar
+        """
+        pass
+
+    @abstractmethod
     def read_object(self):
         """
         Consume next item as an object
@@ -1507,11 +1527,14 @@ class JSONLDDecoder(Decoder):
         return None
 
     def read_list(self):
-        if isinstance(self.data, (list, tuple, set)):
+        if self.is_list():
             for v in self.data:
                 yield self.__class__(v)
         else:
             yield self
+
+    def is_list(self):
+        return isinstance(self.data, (list, tuple, set))
 
     def __get_value(self, *keys):
         for k in keys:

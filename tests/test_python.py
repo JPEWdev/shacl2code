@@ -1317,7 +1317,7 @@ def test_extensible_prop(model, test_context_url, prop, serkey, value, expect):
             "http://example.org/extensible-test-prop",
             [1, "foo", 1.123],
             SAME_AS_VALUE,
-            TypeError,
+            [1, "foo", "1.123"],
         ),
         (
             "http://example.org/extensible-test-prop",

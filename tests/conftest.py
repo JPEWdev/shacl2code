@@ -9,7 +9,7 @@ import pytest
 import shutil
 import subprocess
 import time
-from httpserver import HTTPTestServer
+from testfixtures.httpserver import HTTPTestServer
 
 from pathlib import Path
 

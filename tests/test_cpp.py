@@ -12,7 +12,7 @@ import multiprocessing
 from pathlib import Path
 from enum import Enum
 from dataclasses import dataclass
-import jsonvalidation
+from testfixtures import jsonvalidation
 
 THIS_FILE = Path(__file__)
 THIS_DIR = THIS_FILE.parent

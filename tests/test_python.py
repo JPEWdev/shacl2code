@@ -16,7 +16,7 @@ import importlib
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 
-import jsonvalidation
+from testfixtures import jsonvalidation, timetests
 
 THIS_FILE = Path(__file__)
 THIS_DIR = THIS_FILE.parent
@@ -607,10 +607,10 @@ def type_tests(name, *typ):
                 0,
                 0,
                 0,
-                tzinfo=timezone(timedelta(hours=-1, minutes=21, seconds=31)),
+                tzinfo=timezone(timedelta(hours=-1, minutes=-21, seconds=-31)),
             ),
             datetime(
-                2024, 3, 11, 0, 0, 0, tzinfo=timezone(timedelta(hours=-1, minutes=21))
+                2024, 3, 11, 0, 0, 0, tzinfo=timezone(timedelta(hours=-1, minutes=-21))
             ),
         ),
         *type_tests("test_class_datetime_scalar_prop", datetime),
@@ -663,10 +663,10 @@ def type_tests(name, *typ):
                 0,
                 0,
                 0,
-                tzinfo=timezone(timedelta(hours=-1, minutes=21, seconds=31)),
+                tzinfo=timezone(timedelta(hours=-1, minutes=-21, seconds=-31)),
             ),
             datetime(
-                2024, 3, 11, 0, 0, 0, tzinfo=timezone(timedelta(hours=-1, minutes=21))
+                2024, 3, 11, 0, 0, 0, tzinfo=timezone(timedelta(hours=-1, minutes=-21))
             ),
         ),
         *type_tests("test_class_datetimestamp_scalar_prop", datetime),
@@ -864,7 +864,7 @@ def list_type_tests(name, *typ):
                     0,
                     0,
                     0,
-                    tzinfo=timezone(timedelta(hours=-1, minutes=21, seconds=31)),
+                    tzinfo=timezone(timedelta(hours=-1, minutes=-21, seconds=-31)),
                 ),
             ],
             [
@@ -889,7 +889,7 @@ def list_type_tests(name, *typ):
                     0,
                     0,
                     0,
-                    tzinfo=timezone(timedelta(hours=-1, minutes=21)),
+                    tzinfo=timezone(timedelta(hours=-1, minutes=-21)),
                 ),
             ],
         ),
@@ -1018,172 +1018,35 @@ def test_list_prop_validation(model, prop, value, expect):
             assert getattr(c, prop) == expect
 
 
-@pytest.mark.parametrize(
-    "value,expect",
-    [
-        (
-            "2024-03-11T01:02:03",
-            datetime(2024, 3, 11, 1, 2, 3).astimezone(),
-        ),
-        (
-            "2024-03-11T01:02:03Z",
-            datetime(2024, 3, 11, 1, 2, 3, tzinfo=timezone.utc),
-        ),
-        (
-            "2024-03-11T01:02:03+00:00",
-            datetime(2024, 3, 11, 1, 2, 3, tzinfo=timezone.utc),
-        ),
-        (
-            "2024-03-11T01:02:03+03:00",
-            datetime(2024, 3, 11, 1, 2, 3, tzinfo=timezone(timedelta(hours=3))),
-        ),
-        (
-            "2024-03-11T01:02:03-03:00",
-            datetime(2024, 3, 11, 1, 2, 3, tzinfo=timezone(timedelta(hours=-3))),
-        ),
-        (
-            "2024-03-11T01:02:03+03:21",
-            datetime(
-                2024, 3, 11, 1, 2, 3, tzinfo=timezone(timedelta(hours=3, minutes=21))
-            ),
-        ),
-        # Microseconds not allowed
-        (
-            "2024-03-11T01:02:03.999Z",
-            ValueError,
-        ),
-        # Timezone with seconds not allowed
-        (
-            "2024-03-11T01:02:03+03:00:01",
-            ValueError,
-        ),
-    ],
-)
+@timetests.datetime_decode_tests()
 def test_datetime_from_string(model, value, expect):
     p = model.DateTimeProp()
 
-    if isinstance(expect, type) and issubclass(expect, Exception):
-        with pytest.raises(expect):
+    if expect is None:
+        with pytest.raises(ValueError):
             p.from_string(value)
     else:
         v = p.from_string(value)
         assert v == expect
 
 
-@pytest.mark.parametrize(
-    "value,expect",
-    [
-        (
-            "2024-03-11T01:02:03Z",
-            datetime(2024, 3, 11, 1, 2, 3, tzinfo=timezone.utc),
-        ),
-        (
-            "2024-03-11T01:02:03+00:00",
-            datetime(2024, 3, 11, 1, 2, 3, tzinfo=timezone.utc),
-        ),
-        (
-            "2024-03-11T01:02:03+03:00",
-            datetime(2024, 3, 11, 1, 2, 3, tzinfo=timezone(timedelta(hours=3))),
-        ),
-        (
-            "2024-03-11T01:02:03-03:00",
-            datetime(2024, 3, 11, 1, 2, 3, tzinfo=timezone(timedelta(hours=-3))),
-        ),
-        (
-            "2024-03-11T01:02:03+03:21",
-            datetime(
-                2024, 3, 11, 1, 2, 3, tzinfo=timezone(timedelta(hours=3, minutes=21))
-            ),
-        ),
-        # No timezone
-        (
-            "2024-03-11T01:02:03",
-            ValueError,
-        ),
-        # Microseconds not allowed
-        (
-            "2024-03-11T01:02:03.999Z",
-            ValueError,
-        ),
-        # Timezone with seconds not allowed
-        (
-            "2024-03-11T01:02:03+03:00:01",
-            ValueError,
-        ),
-    ],
-)
+@timetests.datetimestamp_decode_tests()
 def test_datetimestamp_from_string(model, value, expect):
     p = model.DateTimeStampProp()
 
-    if isinstance(expect, type) and issubclass(expect, Exception):
-        with pytest.raises(expect):
+    if expect is None:
+        with pytest.raises(ValueError):
             p.from_string(value)
     else:
         v = p.from_string(value)
         assert v == expect
 
 
-@pytest.mark.parametrize(
-    "value,expect",
-    [
-        (
-            datetime(2024, 3, 11, 1, 2, 3, tzinfo=timezone.utc),
-            "2024-03-11T01:02:03Z",
-        ),
-        (
-            datetime(2024, 3, 11, 1, 2, 3, tzinfo=timezone(timedelta(hours=0))),
-            "2024-03-11T01:02:03Z",
-        ),
-        (
-            datetime(2024, 3, 11, 1, 2, 3, tzinfo=timezone(timedelta(hours=3))),
-            "2024-03-11T01:02:03+03:00",
-        ),
-        (
-            datetime(2024, 3, 11, 1, 2, 3, tzinfo=timezone(timedelta(hours=-3))),
-            "2024-03-11T01:02:03-03:00",
-        ),
-        (
-            datetime(
-                2024, 3, 11, 1, 2, 3, tzinfo=timezone(timedelta(hours=3, minutes=21))
-            ),
-            "2024-03-11T01:02:03+03:21",
-        ),
-        # Microseconds ignored
-        (
-            datetime(2024, 3, 11, 1, 2, 3, 999, tzinfo=timezone.utc),
-            "2024-03-11T01:02:03Z",
-        ),
-        # Seconds in timezone ignored
-        (
-            datetime(
-                2024,
-                3,
-                11,
-                1,
-                2,
-                3,
-                tzinfo=timezone(timedelta(hours=3, minutes=21, seconds=31)),
-            ),
-            "2024-03-11T01:02:03+03:21",
-        ),
-        (
-            datetime(
-                2024,
-                3,
-                11,
-                1,
-                2,
-                3,
-                tzinfo=timezone(timedelta(hours=-3, minutes=-21, seconds=31)),
-            ),
-            "2024-03-11T01:02:03-03:21",
-        ),
-    ],
-)
+@timetests.datetime_encode_tests()
 def test_datetime_to_string(model, value, expect):
     p = model.DateTimeProp()
 
-    if isinstance(expect, type) and issubclass(expect, Exception):
+    if expect is None:
         with pytest.raises(expect):
             p.to_string(value)
     else:

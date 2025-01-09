@@ -22,9 +22,9 @@ clean:
 install: libtest.so libtest.a docs
 	# Library
 	$(INSTALL) -d $(DESTDIR)/$(PREFIX)/lib
-	$(INSTALL) -m 0755 libtest.so $(DESTDIR)/$(PREFIX)/lib/libtest.so.0.0.16
-	ln -s libtest.so.0.0.16 $(DESTDIR)/$(PREFIX)/lib/libtest.so
-	ln -s libtest.so.0.0.16 $(DESTDIR)/$(PREFIX)/lib/libtest.so.0
+	$(INSTALL) -m 0755 libtest.so $(DESTDIR)/$(PREFIX)/lib/libtest.so.0.0.17
+	ln -s libtest.so.0.0.17 $(DESTDIR)/$(PREFIX)/lib/libtest.so
+	ln -s libtest.so.0.0.17 $(DESTDIR)/$(PREFIX)/lib/libtest.so.0
 
 	$(INSTALL) -m 0644 libtest.a $(DESTDIR)/$(PREFIX)/lib/
 

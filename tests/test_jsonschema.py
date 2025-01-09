@@ -9,7 +9,7 @@ import json
 import jsonschema
 import pytest
 from pathlib import Path
-import jsonvalidation
+from testfixtures import jsonvalidation
 
 THIS_FILE = Path(__file__)
 THIS_DIR = THIS_FILE.parent

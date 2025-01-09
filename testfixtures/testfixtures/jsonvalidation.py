@@ -3,14 +3,14 @@
 #
 # SPDX-License-Identifier: MIT
 
-import pytest
-
 from pathlib import Path
+
+from .utils import parametrize
 
 THIS_FILE = Path(__file__)
 THIS_DIR = THIS_FILE.parent
 
-DATA_DIR = THIS_DIR.parent / "tests" / "data"
+DATA_DIR = THIS_DIR.parent.parent / "tests" / "data"
 
 CONTEXT = object()
 
@@ -27,18 +27,6 @@ BASE_OBJ = {
     "@context": CONTEXT,
     "@type": "test-class",
 }
-
-
-def _parametrize(names, data):
-    params = []
-    for d in data:
-        params.append(d[1:])
-
-    ids = []
-    for idx, d in enumerate(data):
-        ids.append(f"{idx + 1}/{len(data)}: {d[0]}")
-
-    return pytest.mark.parametrize(names, params, ids=ids)
 
 
 def validation_tests():
@@ -107,7 +95,7 @@ def validation_tests():
             ),
         ]
 
-    return _parametrize(
+    return parametrize(
         "passes,data",
         [
             (
@@ -711,7 +699,7 @@ def type_tests():
 
         return tests
 
-    return _parametrize(
+    return parametrize(
         "passes,data",
         [
             *create_type_tests(
@@ -871,7 +859,7 @@ def type_tests():
 
 
 def link_tests():
-    return _parametrize(
+    return parametrize(
         "filename,name,expect_tag",
         [
             (

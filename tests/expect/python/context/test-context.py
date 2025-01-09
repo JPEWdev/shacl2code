@@ -133,8 +133,9 @@ class DateTimeProp(Property):
         if value.utcoffset() is None:
             value = value.astimezone()
         offset = value.utcoffset()
-        if offset % timedelta(minutes=1):
-            offset = offset - (offset % timedelta(minutes=1))
+        seconds = offset % timedelta(minutes=-1 if offset.total_seconds() < 0 else 1)
+        if seconds:
+            offset = offset - seconds
             value = value.replace(tzinfo=timezone(offset))
         value = value.replace(microsecond=0)
         return value

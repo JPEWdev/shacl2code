@@ -94,7 +94,7 @@ class CppRender(JinjaTemplateRender):
     )
 
     def __init__(self, args):
-        super().__init__()
+        super().__init__(args)
         self.basename = args.basename
         self.namespace = args.namespace or id_str(args.basename.name)
         self.lib_version = args.version

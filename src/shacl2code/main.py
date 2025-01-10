@@ -110,6 +110,12 @@ def main(args=None):
         action="append",
         default=[],
     )
+    generate_parser.add_argument(
+        "--license",
+        "-l",
+        help="SPDX License Identifier to use for generated source code. Default is %(default)s",
+        default="MIT",
+    )
     generate_parser.set_defaults(func=handle_generate)
 
     lang_subparser = generate_parser.add_subparsers(

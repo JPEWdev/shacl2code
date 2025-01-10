@@ -152,6 +152,7 @@ class Model(object):
                         ),
                     )
                 )
+            members.sort(key=lambda i: i._id)
             return members
 
         def is_abstract(s):

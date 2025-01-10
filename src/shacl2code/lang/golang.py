@@ -233,7 +233,7 @@ class GoLangRender(JinjaTemplateRender):
     )
 
     def __init__(self, args):
-        super().__init__()
+        super().__init__(args)
         self.__output = args.output
         self.__render_args = {
             "package": args.package,

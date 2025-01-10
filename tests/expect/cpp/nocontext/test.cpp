@@ -149,14 +149,14 @@ http_example_org_enumType::http_example_org_enumType(TypeBase const* type, SHACL
 {}
 
 http_example_org_enumType::~http_example_org_enumType() {}
-const NamedIndividual http_example_org_enumType::foo(
-    &http_example_org_enumType::Type,
-    "http://example.org/enumType/foo",
-    {}
-);
 const NamedIndividual http_example_org_enumType::bar(
     &http_example_org_enumType::Type,
     "http://example.org/enumType/bar",
+    {}
+);
+const NamedIndividual http_example_org_enumType::foo(
+    &http_example_org_enumType::Type,
+    "http://example.org/enumType/foo",
     {}
 );
 const NamedIndividual http_example_org_enumType::nolabel(

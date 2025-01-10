@@ -475,10 +475,10 @@ type HttpExampleOrgEnumTypeObject struct {
 
 }
 
-// The foo value of enumType
-const HttpExampleOrgEnumTypeFoo = "http://example.org/enumType/foo"
 // The bar value of enumType
 const HttpExampleOrgEnumTypeBar = "http://example.org/enumType/bar"
+// The foo value of enumType
+const HttpExampleOrgEnumTypeFoo = "http://example.org/enumType/foo"
 // This value has no label
 const HttpExampleOrgEnumTypeNolabel = "http://example.org/enumType/nolabel"
 

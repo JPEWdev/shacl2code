@@ -2038,14 +2038,14 @@ class concrete_spdx_class(abstract_spdx_class):
 class enumType(SHACLObject):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     NAMED_INDIVIDUALS = {
-        "foo": "http://example.org/enumType/foo",
         "bar": "http://example.org/enumType/bar",
+        "foo": "http://example.org/enumType/foo",
         "nolabel": "http://example.org/enumType/nolabel",
     }
-    # The foo value of enumType
-    foo = "http://example.org/enumType/foo"
     # The bar value of enumType
     bar = "http://example.org/enumType/bar"
+    # The foo value of enumType
+    foo = "http://example.org/enumType/foo"
     # This value has no label
     nolabel = "http://example.org/enumType/nolabel"
 

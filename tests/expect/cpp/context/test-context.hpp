@@ -293,14 +293,6 @@ class EXPORT enumType : public
    public:
     // Named Individuals
     /**
-     * @brief foo
-     *
-     * IRI: http://example.org/enumType/foo
-     *
-     * The foo value of enumType
-     */
-    static const NamedIndividual foo;
-    /**
      * @brief bar
      *
      * IRI: http://example.org/enumType/bar
@@ -308,6 +300,14 @@ class EXPORT enumType : public
      * The bar value of enumType
      */
     static const NamedIndividual bar;
+    /**
+     * @brief foo
+     *
+     * IRI: http://example.org/enumType/foo
+     *
+     * The foo value of enumType
+     */
+    static const NamedIndividual foo;
     /**
      * @brief nolabel
      *

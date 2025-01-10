@@ -236,8 +236,8 @@
                         { "$ref": "#/$defs/enumType" }
                     ]
                 },
-                { "const": "test:enumType/foo" },
                 { "const": "test:enumType/bar" },
+                { "const": "test:enumType/foo" },
                 { "const": "test:enumType/nolabel" },
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]

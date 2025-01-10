@@ -105,6 +105,8 @@ class JinjaTemplateRender(object):
             for d in get_all_derived(cls):
                 ni |= set(i._id for i in classes.get(d).named_individuals)
 
+            ni = list(ni)
+            ni.sort()
             return ni
 
         classes = ObjectList(model.classes)

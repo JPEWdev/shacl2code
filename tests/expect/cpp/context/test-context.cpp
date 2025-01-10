@@ -149,15 +149,15 @@ enumType::enumType(TypeBase const* type, SHACLObject::TypeIRIs const& typeIRIs) 
 {}
 
 enumType::~enumType() {}
-const NamedIndividual enumType::foo(
-    &enumType::Type,
-    "http://example.org/enumType/foo",
-    "test:enumType/foo"
-);
 const NamedIndividual enumType::bar(
     &enumType::Type,
     "http://example.org/enumType/bar",
     "test:enumType/bar"
+);
+const NamedIndividual enumType::foo(
+    &enumType::Type,
+    "http://example.org/enumType/foo",
+    "test:enumType/foo"
 );
 const NamedIndividual enumType::nolabel(
     &enumType::Type,

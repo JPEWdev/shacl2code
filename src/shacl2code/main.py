@@ -114,7 +114,7 @@ def main(args=None):
         "--license",
         "-l",
         help="SPDX License Identifier to use for generated source code. Default is %(default)s",
-        default="MIT",
+        default="0BSD",
     )
     generate_parser.set_defaults(func=handle_generate)
 

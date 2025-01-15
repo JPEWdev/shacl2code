@@ -194,7 +194,8 @@ func (self *SHACLObjectSetObject) Encode(encoder *json.Encoder) error {
             continue
         }
 
-        o.ID().Set(fmt.Sprintf("_:%d", blank_count))
+
+        o.ID().Set(fmt.Sprintf("_:%s%d", o.GetType().GetCompactTypeIRI().GetDefault(""), blank_count))
         blank_count += 1
         top_objects[o] = true
     }

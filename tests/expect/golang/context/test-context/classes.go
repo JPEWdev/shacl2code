@@ -927,7 +927,7 @@ func ConstructLinkClassObject(o *LinkClassObject, typ SHACLType) *LinkClassObjec
 type LinkClass interface {
     SHACLObject
     LinkClassExtensible() RefPropertyInterface[ExtensibleClass]
-    LinkClassLinkListProp() ListPropertyInterface[Ref[LinkClass]]
+    LinkClassLinkListProp() RefListPropertyInterface[LinkClass]
     LinkClassLinkProp() RefPropertyInterface[LinkClass]
     LinkClassLinkPropNoClass() RefPropertyInterface[LinkClass]
     LinkClassTag() PropertyInterface[string]
@@ -1013,11 +1013,21 @@ func (self *LinkClassObject) Link(state *LinkState) error {
 }
 
 
-func (self *LinkClassObject) LinkClassExtensible() RefPropertyInterface[ExtensibleClass] { return &self.linkClassExtensible }
-func (self *LinkClassObject) LinkClassLinkListProp() ListPropertyInterface[Ref[LinkClass]] { return &self.linkClassLinkListProp }
-func (self *LinkClassObject) LinkClassLinkProp() RefPropertyInterface[LinkClass] { return &self.linkClassLinkProp }
-func (self *LinkClassObject) LinkClassLinkPropNoClass() RefPropertyInterface[LinkClass] { return &self.linkClassLinkPropNoClass }
-func (self *LinkClassObject) LinkClassTag() PropertyInterface[string] { return &self.linkClassTag }
+func (self *LinkClassObject) LinkClassExtensible() RefPropertyInterface[ExtensibleClass] {
+    return &self.linkClassExtensible
+}
+func (self *LinkClassObject) LinkClassLinkListProp() RefListPropertyInterface[LinkClass] {
+    return &self.linkClassLinkListProp
+}
+func (self *LinkClassObject) LinkClassLinkProp() RefPropertyInterface[LinkClass] {
+    return &self.linkClassLinkProp
+}
+func (self *LinkClassObject) LinkClassLinkPropNoClass() RefPropertyInterface[LinkClass] {
+    return &self.linkClassLinkPropNoClass
+}
+func (self *LinkClassObject) LinkClassTag() PropertyInterface[string] {
+    return &self.linkClassTag
+}
 
 func (self *LinkClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -1655,7 +1665,9 @@ func (self *RequiredAbstractObject) Link(state *LinkState) error {
 }
 
 
-func (self *RequiredAbstractObject) RequiredAbstractAbstractClassProp() RefPropertyInterface[AbstractClass] { return &self.requiredAbstractAbstractClassProp }
+func (self *RequiredAbstractObject) RequiredAbstractAbstractClassProp() RefPropertyInterface[AbstractClass] {
+    return &self.requiredAbstractAbstractClassProp
+}
 
 func (self *RequiredAbstractObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -2311,7 +2323,7 @@ type TestClass interface {
     Import() PropertyInterface[string]
     TestClassAnyuriProp() PropertyInterface[string]
     TestClassBooleanProp() PropertyInterface[bool]
-    TestClassClassListProp() ListPropertyInterface[Ref[TestClass]]
+    TestClassClassListProp() RefListPropertyInterface[TestClass]
     TestClassClassProp() RefPropertyInterface[TestClass]
     TestClassClassPropNoClass() RefPropertyInterface[TestClass]
     TestClassDatetimeListProp() ListPropertyInterface[time.Time]
@@ -2625,32 +2637,84 @@ func (self *TestClassObject) Link(state *LinkState) error {
 }
 
 
-func (self *TestClassObject) Encode() PropertyInterface[string] { return &self.encode }
-func (self *TestClassObject) Import() PropertyInterface[string] { return &self.import_ }
-func (self *TestClassObject) TestClassAnyuriProp() PropertyInterface[string] { return &self.testClassAnyuriProp }
-func (self *TestClassObject) TestClassBooleanProp() PropertyInterface[bool] { return &self.testClassBooleanProp }
-func (self *TestClassObject) TestClassClassListProp() ListPropertyInterface[Ref[TestClass]] { return &self.testClassClassListProp }
-func (self *TestClassObject) TestClassClassProp() RefPropertyInterface[TestClass] { return &self.testClassClassProp }
-func (self *TestClassObject) TestClassClassPropNoClass() RefPropertyInterface[TestClass] { return &self.testClassClassPropNoClass }
-func (self *TestClassObject) TestClassDatetimeListProp() ListPropertyInterface[time.Time] { return &self.testClassDatetimeListProp }
-func (self *TestClassObject) TestClassDatetimeScalarProp() PropertyInterface[time.Time] { return &self.testClassDatetimeScalarProp }
-func (self *TestClassObject) TestClassDatetimestampScalarProp() PropertyInterface[time.Time] { return &self.testClassDatetimestampScalarProp }
-func (self *TestClassObject) TestClassEnumListProp() ListPropertyInterface[string] { return &self.testClassEnumListProp }
-func (self *TestClassObject) TestClassEnumProp() PropertyInterface[string] { return &self.testClassEnumProp }
-func (self *TestClassObject) TestClassEnumPropNoClass() PropertyInterface[string] { return &self.testClassEnumPropNoClass }
-func (self *TestClassObject) TestClassFloatProp() PropertyInterface[float64] { return &self.testClassFloatProp }
-func (self *TestClassObject) TestClassIntegerProp() PropertyInterface[int] { return &self.testClassIntegerProp }
-func (self *TestClassObject) NamedProperty() PropertyInterface[string] { return &self.namedProperty }
-func (self *TestClassObject) TestClassNonShape() RefPropertyInterface[NonShapeClass] { return &self.testClassNonShape }
-func (self *TestClassObject) TestClassNonnegativeIntegerProp() PropertyInterface[int] { return &self.testClassNonnegativeIntegerProp }
-func (self *TestClassObject) TestClassPositiveIntegerProp() PropertyInterface[int] { return &self.testClassPositiveIntegerProp }
-func (self *TestClassObject) TestClassRegex() PropertyInterface[string] { return &self.testClassRegex }
-func (self *TestClassObject) TestClassRegexDatetime() PropertyInterface[time.Time] { return &self.testClassRegexDatetime }
-func (self *TestClassObject) TestClassRegexDatetimestamp() PropertyInterface[time.Time] { return &self.testClassRegexDatetimestamp }
-func (self *TestClassObject) TestClassRegexList() ListPropertyInterface[string] { return &self.testClassRegexList }
-func (self *TestClassObject) TestClassStringListNoDatatype() ListPropertyInterface[string] { return &self.testClassStringListNoDatatype }
-func (self *TestClassObject) TestClassStringListProp() ListPropertyInterface[string] { return &self.testClassStringListProp }
-func (self *TestClassObject) TestClassStringScalarProp() PropertyInterface[string] { return &self.testClassStringScalarProp }
+func (self *TestClassObject) Encode() PropertyInterface[string] {
+    return &self.encode
+}
+func (self *TestClassObject) Import() PropertyInterface[string] {
+    return &self.import_
+}
+func (self *TestClassObject) TestClassAnyuriProp() PropertyInterface[string] {
+    return &self.testClassAnyuriProp
+}
+func (self *TestClassObject) TestClassBooleanProp() PropertyInterface[bool] {
+    return &self.testClassBooleanProp
+}
+func (self *TestClassObject) TestClassClassListProp() RefListPropertyInterface[TestClass] {
+    return &self.testClassClassListProp
+}
+func (self *TestClassObject) TestClassClassProp() RefPropertyInterface[TestClass] {
+    return &self.testClassClassProp
+}
+func (self *TestClassObject) TestClassClassPropNoClass() RefPropertyInterface[TestClass] {
+    return &self.testClassClassPropNoClass
+}
+func (self *TestClassObject) TestClassDatetimeListProp() ListPropertyInterface[time.Time] {
+    return &self.testClassDatetimeListProp
+}
+func (self *TestClassObject) TestClassDatetimeScalarProp() PropertyInterface[time.Time] {
+    return &self.testClassDatetimeScalarProp
+}
+func (self *TestClassObject) TestClassDatetimestampScalarProp() PropertyInterface[time.Time] {
+    return &self.testClassDatetimestampScalarProp
+}
+func (self *TestClassObject) TestClassEnumListProp() ListPropertyInterface[string] {
+    return &self.testClassEnumListProp
+}
+func (self *TestClassObject) TestClassEnumProp() PropertyInterface[string] {
+    return &self.testClassEnumProp
+}
+func (self *TestClassObject) TestClassEnumPropNoClass() PropertyInterface[string] {
+    return &self.testClassEnumPropNoClass
+}
+func (self *TestClassObject) TestClassFloatProp() PropertyInterface[float64] {
+    return &self.testClassFloatProp
+}
+func (self *TestClassObject) TestClassIntegerProp() PropertyInterface[int] {
+    return &self.testClassIntegerProp
+}
+func (self *TestClassObject) NamedProperty() PropertyInterface[string] {
+    return &self.namedProperty
+}
+func (self *TestClassObject) TestClassNonShape() RefPropertyInterface[NonShapeClass] {
+    return &self.testClassNonShape
+}
+func (self *TestClassObject) TestClassNonnegativeIntegerProp() PropertyInterface[int] {
+    return &self.testClassNonnegativeIntegerProp
+}
+func (self *TestClassObject) TestClassPositiveIntegerProp() PropertyInterface[int] {
+    return &self.testClassPositiveIntegerProp
+}
+func (self *TestClassObject) TestClassRegex() PropertyInterface[string] {
+    return &self.testClassRegex
+}
+func (self *TestClassObject) TestClassRegexDatetime() PropertyInterface[time.Time] {
+    return &self.testClassRegexDatetime
+}
+func (self *TestClassObject) TestClassRegexDatetimestamp() PropertyInterface[time.Time] {
+    return &self.testClassRegexDatetimestamp
+}
+func (self *TestClassObject) TestClassRegexList() ListPropertyInterface[string] {
+    return &self.testClassRegexList
+}
+func (self *TestClassObject) TestClassStringListNoDatatype() ListPropertyInterface[string] {
+    return &self.testClassStringListNoDatatype
+}
+func (self *TestClassObject) TestClassStringListProp() ListPropertyInterface[string] {
+    return &self.testClassStringListProp
+}
+func (self *TestClassObject) TestClassStringScalarProp() PropertyInterface[string] {
+    return &self.testClassStringScalarProp
+}
 
 func (self *TestClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.ParentClassObject.EncodeProperties(data, path, state); err != nil {
@@ -2994,8 +3058,12 @@ func (self *TestClassRequiredObject) Link(state *LinkState) error {
 }
 
 
-func (self *TestClassRequiredObject) TestClassRequiredStringListProp() ListPropertyInterface[string] { return &self.testClassRequiredStringListProp }
-func (self *TestClassRequiredObject) TestClassRequiredStringScalarProp() PropertyInterface[string] { return &self.testClassRequiredStringScalarProp }
+func (self *TestClassRequiredObject) TestClassRequiredStringListProp() ListPropertyInterface[string] {
+    return &self.testClassRequiredStringListProp
+}
+func (self *TestClassRequiredObject) TestClassRequiredStringScalarProp() PropertyInterface[string] {
+    return &self.testClassRequiredStringScalarProp
+}
 
 func (self *TestClassRequiredObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.TestClassObject.EncodeProperties(data, path, state); err != nil {
@@ -3120,7 +3188,9 @@ func (self *TestDerivedClassObject) Link(state *LinkState) error {
 }
 
 
-func (self *TestDerivedClassObject) TestDerivedClassStringProp() PropertyInterface[string] { return &self.testDerivedClassStringProp }
+func (self *TestDerivedClassObject) TestDerivedClassStringProp() PropertyInterface[string] {
+    return &self.testDerivedClassStringProp
+}
 
 func (self *TestDerivedClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.TestClassObject.EncodeProperties(data, path, state); err != nil {
@@ -3244,7 +3314,9 @@ func (self *UsesExtensibleAbstractClassObject) Link(state *LinkState) error {
 }
 
 
-func (self *UsesExtensibleAbstractClassObject) UsesExtensibleAbstractClassProp() RefPropertyInterface[ExtensibleAbstractClass] { return &self.usesExtensibleAbstractClassProp }
+func (self *UsesExtensibleAbstractClassObject) UsesExtensibleAbstractClassProp() RefPropertyInterface[ExtensibleAbstractClass] {
+    return &self.usesExtensibleAbstractClassProp
+}
 
 func (self *UsesExtensibleAbstractClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -3560,8 +3632,12 @@ func (self *ExtensibleClassObject) Link(state *LinkState) error {
 }
 
 
-func (self *ExtensibleClassObject) ExtensibleClassProperty() PropertyInterface[string] { return &self.extensibleClassProperty }
-func (self *ExtensibleClassObject) ExtensibleClassRequired() PropertyInterface[string] { return &self.extensibleClassRequired }
+func (self *ExtensibleClassObject) ExtensibleClassProperty() PropertyInterface[string] {
+    return &self.extensibleClassProperty
+}
+func (self *ExtensibleClassObject) ExtensibleClassRequired() PropertyInterface[string] {
+    return &self.extensibleClassRequired
+}
 
 func (self *ExtensibleClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.LinkClassObject.EncodeProperties(data, path, state); err != nil {

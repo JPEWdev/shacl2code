@@ -927,7 +927,7 @@ func ConstructHttpExampleOrgLinkClassObject(o *HttpExampleOrgLinkClassObject, ty
 type HttpExampleOrgLinkClass interface {
     SHACLObject
     Extensible() RefPropertyInterface[HttpExampleOrgExtensibleClass]
-    LinkListProp() ListPropertyInterface[Ref[HttpExampleOrgLinkClass]]
+    LinkListProp() RefListPropertyInterface[HttpExampleOrgLinkClass]
     LinkProp() RefPropertyInterface[HttpExampleOrgLinkClass]
     LinkPropNoClass() RefPropertyInterface[HttpExampleOrgLinkClass]
     Tag() PropertyInterface[string]
@@ -1013,11 +1013,21 @@ func (self *HttpExampleOrgLinkClassObject) Link(state *LinkState) error {
 }
 
 
-func (self *HttpExampleOrgLinkClassObject) Extensible() RefPropertyInterface[HttpExampleOrgExtensibleClass] { return &self.extensible }
-func (self *HttpExampleOrgLinkClassObject) LinkListProp() ListPropertyInterface[Ref[HttpExampleOrgLinkClass]] { return &self.linkListProp }
-func (self *HttpExampleOrgLinkClassObject) LinkProp() RefPropertyInterface[HttpExampleOrgLinkClass] { return &self.linkProp }
-func (self *HttpExampleOrgLinkClassObject) LinkPropNoClass() RefPropertyInterface[HttpExampleOrgLinkClass] { return &self.linkPropNoClass }
-func (self *HttpExampleOrgLinkClassObject) Tag() PropertyInterface[string] { return &self.tag }
+func (self *HttpExampleOrgLinkClassObject) Extensible() RefPropertyInterface[HttpExampleOrgExtensibleClass] {
+    return &self.extensible
+}
+func (self *HttpExampleOrgLinkClassObject) LinkListProp() RefListPropertyInterface[HttpExampleOrgLinkClass] {
+    return &self.linkListProp
+}
+func (self *HttpExampleOrgLinkClassObject) LinkProp() RefPropertyInterface[HttpExampleOrgLinkClass] {
+    return &self.linkProp
+}
+func (self *HttpExampleOrgLinkClassObject) LinkPropNoClass() RefPropertyInterface[HttpExampleOrgLinkClass] {
+    return &self.linkPropNoClass
+}
+func (self *HttpExampleOrgLinkClassObject) Tag() PropertyInterface[string] {
+    return &self.tag
+}
 
 func (self *HttpExampleOrgLinkClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -1655,7 +1665,9 @@ func (self *HttpExampleOrgRequiredAbstractObject) Link(state *LinkState) error {
 }
 
 
-func (self *HttpExampleOrgRequiredAbstractObject) AbstractClassProp() RefPropertyInterface[HttpExampleOrgAbstractClass] { return &self.abstractClassProp }
+func (self *HttpExampleOrgRequiredAbstractObject) AbstractClassProp() RefPropertyInterface[HttpExampleOrgAbstractClass] {
+    return &self.abstractClassProp
+}
 
 func (self *HttpExampleOrgRequiredAbstractObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -2308,7 +2320,7 @@ type HttpExampleOrgTestClass interface {
     Import() PropertyInterface[string]
     AnyuriProp() PropertyInterface[string]
     BooleanProp() PropertyInterface[bool]
-    ClassListProp() ListPropertyInterface[Ref[HttpExampleOrgTestClass]]
+    ClassListProp() RefListPropertyInterface[HttpExampleOrgTestClass]
     ClassProp() RefPropertyInterface[HttpExampleOrgTestClass]
     ClassPropNoClass() RefPropertyInterface[HttpExampleOrgTestClass]
     DatetimeListProp() ListPropertyInterface[time.Time]
@@ -2622,32 +2634,84 @@ func (self *HttpExampleOrgTestClassObject) Link(state *LinkState) error {
 }
 
 
-func (self *HttpExampleOrgTestClassObject) Encode() PropertyInterface[string] { return &self.encode }
-func (self *HttpExampleOrgTestClassObject) Import() PropertyInterface[string] { return &self.import_ }
-func (self *HttpExampleOrgTestClassObject) AnyuriProp() PropertyInterface[string] { return &self.anyuriProp }
-func (self *HttpExampleOrgTestClassObject) BooleanProp() PropertyInterface[bool] { return &self.booleanProp }
-func (self *HttpExampleOrgTestClassObject) ClassListProp() ListPropertyInterface[Ref[HttpExampleOrgTestClass]] { return &self.classListProp }
-func (self *HttpExampleOrgTestClassObject) ClassProp() RefPropertyInterface[HttpExampleOrgTestClass] { return &self.classProp }
-func (self *HttpExampleOrgTestClassObject) ClassPropNoClass() RefPropertyInterface[HttpExampleOrgTestClass] { return &self.classPropNoClass }
-func (self *HttpExampleOrgTestClassObject) DatetimeListProp() ListPropertyInterface[time.Time] { return &self.datetimeListProp }
-func (self *HttpExampleOrgTestClassObject) DatetimeScalarProp() PropertyInterface[time.Time] { return &self.datetimeScalarProp }
-func (self *HttpExampleOrgTestClassObject) DatetimestampScalarProp() PropertyInterface[time.Time] { return &self.datetimestampScalarProp }
-func (self *HttpExampleOrgTestClassObject) EnumListProp() ListPropertyInterface[string] { return &self.enumListProp }
-func (self *HttpExampleOrgTestClassObject) EnumProp() PropertyInterface[string] { return &self.enumProp }
-func (self *HttpExampleOrgTestClassObject) EnumPropNoClass() PropertyInterface[string] { return &self.enumPropNoClass }
-func (self *HttpExampleOrgTestClassObject) FloatProp() PropertyInterface[float64] { return &self.floatProp }
-func (self *HttpExampleOrgTestClassObject) IntegerProp() PropertyInterface[int] { return &self.integerProp }
-func (self *HttpExampleOrgTestClassObject) NamedProperty() PropertyInterface[string] { return &self.namedProperty }
-func (self *HttpExampleOrgTestClassObject) NonShape() RefPropertyInterface[HttpExampleOrgNonShapeClass] { return &self.nonShape }
-func (self *HttpExampleOrgTestClassObject) NonnegativeIntegerProp() PropertyInterface[int] { return &self.nonnegativeIntegerProp }
-func (self *HttpExampleOrgTestClassObject) PositiveIntegerProp() PropertyInterface[int] { return &self.positiveIntegerProp }
-func (self *HttpExampleOrgTestClassObject) Regex() PropertyInterface[string] { return &self.regex }
-func (self *HttpExampleOrgTestClassObject) RegexDatetime() PropertyInterface[time.Time] { return &self.regexDatetime }
-func (self *HttpExampleOrgTestClassObject) RegexDatetimestamp() PropertyInterface[time.Time] { return &self.regexDatetimestamp }
-func (self *HttpExampleOrgTestClassObject) RegexList() ListPropertyInterface[string] { return &self.regexList }
-func (self *HttpExampleOrgTestClassObject) StringListNoDatatype() ListPropertyInterface[string] { return &self.stringListNoDatatype }
-func (self *HttpExampleOrgTestClassObject) StringListProp() ListPropertyInterface[string] { return &self.stringListProp }
-func (self *HttpExampleOrgTestClassObject) StringScalarProp() PropertyInterface[string] { return &self.stringScalarProp }
+func (self *HttpExampleOrgTestClassObject) Encode() PropertyInterface[string] {
+    return &self.encode
+}
+func (self *HttpExampleOrgTestClassObject) Import() PropertyInterface[string] {
+    return &self.import_
+}
+func (self *HttpExampleOrgTestClassObject) AnyuriProp() PropertyInterface[string] {
+    return &self.anyuriProp
+}
+func (self *HttpExampleOrgTestClassObject) BooleanProp() PropertyInterface[bool] {
+    return &self.booleanProp
+}
+func (self *HttpExampleOrgTestClassObject) ClassListProp() RefListPropertyInterface[HttpExampleOrgTestClass] {
+    return &self.classListProp
+}
+func (self *HttpExampleOrgTestClassObject) ClassProp() RefPropertyInterface[HttpExampleOrgTestClass] {
+    return &self.classProp
+}
+func (self *HttpExampleOrgTestClassObject) ClassPropNoClass() RefPropertyInterface[HttpExampleOrgTestClass] {
+    return &self.classPropNoClass
+}
+func (self *HttpExampleOrgTestClassObject) DatetimeListProp() ListPropertyInterface[time.Time] {
+    return &self.datetimeListProp
+}
+func (self *HttpExampleOrgTestClassObject) DatetimeScalarProp() PropertyInterface[time.Time] {
+    return &self.datetimeScalarProp
+}
+func (self *HttpExampleOrgTestClassObject) DatetimestampScalarProp() PropertyInterface[time.Time] {
+    return &self.datetimestampScalarProp
+}
+func (self *HttpExampleOrgTestClassObject) EnumListProp() ListPropertyInterface[string] {
+    return &self.enumListProp
+}
+func (self *HttpExampleOrgTestClassObject) EnumProp() PropertyInterface[string] {
+    return &self.enumProp
+}
+func (self *HttpExampleOrgTestClassObject) EnumPropNoClass() PropertyInterface[string] {
+    return &self.enumPropNoClass
+}
+func (self *HttpExampleOrgTestClassObject) FloatProp() PropertyInterface[float64] {
+    return &self.floatProp
+}
+func (self *HttpExampleOrgTestClassObject) IntegerProp() PropertyInterface[int] {
+    return &self.integerProp
+}
+func (self *HttpExampleOrgTestClassObject) NamedProperty() PropertyInterface[string] {
+    return &self.namedProperty
+}
+func (self *HttpExampleOrgTestClassObject) NonShape() RefPropertyInterface[HttpExampleOrgNonShapeClass] {
+    return &self.nonShape
+}
+func (self *HttpExampleOrgTestClassObject) NonnegativeIntegerProp() PropertyInterface[int] {
+    return &self.nonnegativeIntegerProp
+}
+func (self *HttpExampleOrgTestClassObject) PositiveIntegerProp() PropertyInterface[int] {
+    return &self.positiveIntegerProp
+}
+func (self *HttpExampleOrgTestClassObject) Regex() PropertyInterface[string] {
+    return &self.regex
+}
+func (self *HttpExampleOrgTestClassObject) RegexDatetime() PropertyInterface[time.Time] {
+    return &self.regexDatetime
+}
+func (self *HttpExampleOrgTestClassObject) RegexDatetimestamp() PropertyInterface[time.Time] {
+    return &self.regexDatetimestamp
+}
+func (self *HttpExampleOrgTestClassObject) RegexList() ListPropertyInterface[string] {
+    return &self.regexList
+}
+func (self *HttpExampleOrgTestClassObject) StringListNoDatatype() ListPropertyInterface[string] {
+    return &self.stringListNoDatatype
+}
+func (self *HttpExampleOrgTestClassObject) StringListProp() ListPropertyInterface[string] {
+    return &self.stringListProp
+}
+func (self *HttpExampleOrgTestClassObject) StringScalarProp() PropertyInterface[string] {
+    return &self.stringScalarProp
+}
 
 func (self *HttpExampleOrgTestClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.HttpExampleOrgParentClassObject.EncodeProperties(data, path, state); err != nil {
@@ -2991,8 +3055,12 @@ func (self *HttpExampleOrgTestClassRequiredObject) Link(state *LinkState) error 
 }
 
 
-func (self *HttpExampleOrgTestClassRequiredObject) RequiredStringListProp() ListPropertyInterface[string] { return &self.requiredStringListProp }
-func (self *HttpExampleOrgTestClassRequiredObject) RequiredStringScalarProp() PropertyInterface[string] { return &self.requiredStringScalarProp }
+func (self *HttpExampleOrgTestClassRequiredObject) RequiredStringListProp() ListPropertyInterface[string] {
+    return &self.requiredStringListProp
+}
+func (self *HttpExampleOrgTestClassRequiredObject) RequiredStringScalarProp() PropertyInterface[string] {
+    return &self.requiredStringScalarProp
+}
 
 func (self *HttpExampleOrgTestClassRequiredObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.HttpExampleOrgTestClassObject.EncodeProperties(data, path, state); err != nil {
@@ -3117,7 +3185,9 @@ func (self *HttpExampleOrgTestDerivedClassObject) Link(state *LinkState) error {
 }
 
 
-func (self *HttpExampleOrgTestDerivedClassObject) StringProp() PropertyInterface[string] { return &self.stringProp }
+func (self *HttpExampleOrgTestDerivedClassObject) StringProp() PropertyInterface[string] {
+    return &self.stringProp
+}
 
 func (self *HttpExampleOrgTestDerivedClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.HttpExampleOrgTestClassObject.EncodeProperties(data, path, state); err != nil {
@@ -3241,7 +3311,9 @@ func (self *HttpExampleOrgUsesExtensibleAbstractClassObject) Link(state *LinkSta
 }
 
 
-func (self *HttpExampleOrgUsesExtensibleAbstractClassObject) Prop() RefPropertyInterface[HttpExampleOrgExtensibleAbstractClass] { return &self.prop }
+func (self *HttpExampleOrgUsesExtensibleAbstractClassObject) Prop() RefPropertyInterface[HttpExampleOrgExtensibleAbstractClass] {
+    return &self.prop
+}
 
 func (self *HttpExampleOrgUsesExtensibleAbstractClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -3557,8 +3629,12 @@ func (self *HttpExampleOrgExtensibleClassObject) Link(state *LinkState) error {
 }
 
 
-func (self *HttpExampleOrgExtensibleClassObject) Property() PropertyInterface[string] { return &self.property }
-func (self *HttpExampleOrgExtensibleClassObject) Required() PropertyInterface[string] { return &self.required }
+func (self *HttpExampleOrgExtensibleClassObject) Property() PropertyInterface[string] {
+    return &self.property
+}
+func (self *HttpExampleOrgExtensibleClassObject) Required() PropertyInterface[string] {
+    return &self.required
+}
 
 func (self *HttpExampleOrgExtensibleClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.HttpExampleOrgLinkClassObject.EncodeProperties(data, path, state); err != nil {

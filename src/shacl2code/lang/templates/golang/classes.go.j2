@@ -148,13 +148,17 @@ type {{ interface_name(class) }} interface {
     SHACLObject
 {%- endif %}
 {%- for prop in class.properties %}
-{%- if prop_is_list(prop) %}
-    {{ varname(prop.varname) }}() ListPropertyInterface[{{ prop_go_type(prop, classes) }}]
-{%- elif not prop.enum_values and prop.class_id %}
-    {{ varname(prop.varname) }}() RefPropertyInterface[{{ interface_name(classes.get(prop.class_id)) }}]
-{%- else %}
-    {{ varname(prop.varname) }}() PropertyInterface[{{ prop_go_type(prop, classes) }}]
-{%- endif %}
+    {{ varname(prop.varname) }}() {% if not prop.enum_values and prop.class_id -%}
+            Ref
+        {%- endif %}{% if prop_is_list(prop) -%}
+            List
+        {%- endif %}PropertyInterface[
+        {%- if not prop.enum_values and prop.class_id -%}
+            {{ interface_name(classes.get(prop.class_id)) }}
+        {%- else -%}
+            {{ prop_go_type(prop, classes) }}
+        {%- endif -%}
+        ]
 {%- endfor %}
 }
 
@@ -260,13 +264,19 @@ func (self *{{ struct_name(class) }}) Link(state *LinkState) error {
 }
 
 {% for prop in class.properties %}
-{%- if prop_is_list(prop) %}
-func (self *{{ struct_name(class) }}) {{ varname(prop.varname) }}() ListPropertyInterface[{{ prop_go_type(prop, classes) }}] { return &self.{{ prop_name(prop) }} }
-{%- elif not prop.enum_values and prop.class_id %}
-func (self *{{ struct_name(class) }}) {{ varname(prop.varname) }}() RefPropertyInterface[{{ interface_name(classes.get(prop.class_id)) }}] { return &self.{{ prop_name(prop) }} }
-{%- else %}
-func (self *{{ struct_name(class) }}) {{ varname(prop.varname) }}() PropertyInterface[{{ prop_go_type(prop, classes) }}] { return &self.{{ prop_name(prop) }} }
-{%- endif %}
+func (self *{{ struct_name(class) }}) {{ varname(prop.varname) }}() {% if not prop.enum_values and prop.class_id -%}
+            Ref
+        {%- endif %}{% if prop_is_list(prop) -%}
+            List
+        {%- endif %}PropertyInterface[
+        {%- if not prop.enum_values and prop.class_id -%}
+            {{ interface_name(classes.get(prop.class_id)) }}
+        {%- else -%}
+            {{ prop_go_type(prop, classes) }}
+        {%- endif -%}
+        ] {
+    return &self.{{ prop_name(prop) }}
+}
 {%- endfor %}
 
 func (self *{{ struct_name(class) }}) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {

@@ -6,6 +6,12 @@
 
 package model
 
+type RefListPropertyInterface[T SHACLObject] interface {
+    ListPropertyInterface[Ref[T]]
+    AppendObj(obj T) error
+    AppendIRI(iri string) error
+}
+
 type RefListProperty[T SHACLObject] struct {
     ListProperty[Ref[T]]
 }
@@ -40,3 +46,14 @@ func (self *RefListProperty[T]) Link(state *LinkState) error {
     }
     return nil
 }
+
+func (self *RefListProperty[T]) AppendObj(obj T) error {
+    // Shorthand to append an object by making a reference to it
+    return self.Append(MakeObjectRef(obj))
+}
+
+func (self *RefListProperty[T]) AppendIRI(iri string) error {
+    // Shorthand to append an IRI by making a reference to it
+    return self.Append(MakeIRIRef[T](iri))
+}
+

@@ -11,6 +11,7 @@ package {{ package }}
 import (
     "encoding/json"
     "fmt"
+    "sort"
 )
 
 type SHACLObjectSet interface {
@@ -27,6 +28,46 @@ type SHACLObjectSet interface {
 type SHACLObjectSetObject struct {
     objects []SHACLObject
     missingIDs map[string]bool
+}
+
+
+type shaclObjectList struct {
+    v []SHACLObject
+    idx map[SHACLObject]int
+}
+
+func makeshaclObjectList(lst []SHACLObject) shaclObjectList {
+    idx := make(map[SHACLObject]int)
+    for i, o := range lst {
+        idx[o] = i
+    }
+
+    return shaclObjectList{lst, idx}
+}
+
+func (v shaclObjectList) Len() int {
+    return len(v.v)
+}
+
+func (v shaclObjectList) Swap(i, j int) {
+    v.v[i], v.v[j] = v.v[j], v.v[i]
+}
+
+func (v shaclObjectList) Less(i, j int) bool {
+    if v.v[i].ID().IsSet() {
+        if v.v[j].ID().IsSet() {
+            return v.v[i].ID().Get() < v.v[j].ID().Get()
+        } else {
+            return false;
+        }
+    } else {
+        if v.v[j].ID().IsSet() {
+            return true
+        } else {
+            // Neither has an ID. Preserve original insertion order
+            return v.idx[v.v[i]] < v.idx[v.v[j]]
+        }
+    }
 }
 
 func (self *SHACLObjectSetObject) Objects(yield func(SHACLObject) bool) {
@@ -129,6 +170,7 @@ func (self *SHACLObjectSetObject) Encode(encoder *json.Encoder) error {
     }
 
     ref_counts := make(map[SHACLObject]int)
+    top_objects := make(map[SHACLObject]bool)
 
     // Count references
     self.Walk(func (path Path, v any) {
@@ -151,6 +193,7 @@ func (self *SHACLObjectSetObject) Encode(encoder *json.Encoder) error {
         ref_counts[o] = ref_counts[o] + 1
     })
 
+    // Assign blank nodes to objects that have more than one reference
     blank_count := 0
     for o, count := range ref_counts {
         if count <= 1 {
@@ -163,25 +206,38 @@ func (self *SHACLObjectSetObject) Encode(encoder *json.Encoder) error {
 
         o.ID().Set(fmt.Sprintf("_:%d", blank_count))
         blank_count += 1
+        top_objects[o] = true
     }
 
-    if len(self.objects) == 1 {
-        err := self.objects[0].EncodeProperties(data, path, &state)
+    for _, o := range self.objects {
+        top_objects[o] = true
+    }
+
+    // Convert to a list and sort
+    top_list := []SHACLObject{}
+    for o, _ := range top_objects {
+        top_list = append(top_list, o)
+    }
+
+    sort.Sort(makeshaclObjectList(top_list))
+
+    if len(top_list) == 1 {
+        err := top_list[0].EncodeProperties(data, path, &state)
         if err != nil {
             return err
         }
-    } else if len(self.objects) > 1 {
+    } else if len(top_objects) > 1 {
         // All objects directly added to the object set should be written as
         // top level objects, so mark then as written until they are ready to
         // be serialized, which will force them to be referenced by IRI until
         // we are ready
-        for _, o := range self.objects {
+        for _, o := range top_list {
             state.Written[o] = true
         }
 
         graph_path := path.PushPath("@graph")
         lst := []interface{}{}
-        for idx, o := range self.objects {
+        for idx, o := range top_list {
             // Remove this object from the written set now so it gets serialized
             delete(state.Written, o)
 

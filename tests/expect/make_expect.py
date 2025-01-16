@@ -45,7 +45,8 @@ def main():
                     f"--input={src}",
                     lang,
                     f"--output={make_dest(src, lang, 'nocontext', ext)}",
-                ] + args,
+                ]
+                + args,
                 check=True,
             )
             if context.is_file():
@@ -59,7 +60,8 @@ def main():
                         "https://spdx.github.io/spdx-3-model/context.json",
                         lang,
                         f"--output={make_dest(context, lang, 'context', ext)}",
-                    ] + args,
+                    ]
+                    + args,
                     check=True,
                 )
 

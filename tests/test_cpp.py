@@ -56,6 +56,7 @@ def build_lib(tmp_path_factory, model_server, tmpname, *, namespace=None):
             "cpp",
             "--output",
             out_basename,
+            "--version=0.0.1",
         ]
         + extra_args,
         check=True,
@@ -270,6 +271,7 @@ class TestOutput:
                 "cpp",
                 "--output",
                 tmp_path / basename,
+                "--version=0.0.1",
             ],
             check=True,
         )
@@ -293,6 +295,7 @@ class TestOutput:
                 "cpp",
                 "--output",
                 tmp_path / basename,
+                "--version=0.0.1",
             ],
             check=True,
         )
@@ -319,6 +322,7 @@ class TestOutput:
                 "cpp",
                 "--output",
                 tmp_path / basename,
+                "--version=0.0.1",
             ],
             check=True,
         )
@@ -344,6 +348,7 @@ class TestOutput:
                 "cpp",
                 "--output",
                 tmp_path / basename,
+                "--version=0.0.1",
             ],
             check=True,
         )

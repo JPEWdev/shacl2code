@@ -106,7 +106,7 @@ int main(int argc, char* argv[]) {
         switch (opt) {
             case 'h':
                 std::cout << "Validate test-context" << std::endl
-                          << "Version 0.0.18" << std::endl
+                          << "Version 0.0.1" << std::endl
                           << std::endl;
                 showHelp(argv[0]);
                 return 0;
@@ -116,7 +116,7 @@ int main(int argc, char* argv[]) {
                 break;
 
             case 'V':
-                std::cout << "0.0.18" << std::endl;
+                std::cout << "0.0.1" << std::endl;
                 return 0;
 
             case '?':

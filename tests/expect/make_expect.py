@@ -18,6 +18,14 @@ def make_dest(src, lang, subdir, ext):
     return THIS_DIR / lang / subdir / (src.stem + ext)
 
 
+LANGS = (
+    ("python", ".py", []),
+    ("jsonschema", ".json", []),
+    ("cpp", "", ["--version=0.0.1"]),
+    ("golang", "", []),
+)
+
+
 def main():
     found = False
     for src in MODEL_DIR.iterdir():
@@ -29,12 +37,7 @@ def main():
 
         context = src.parent / (src.stem + "-context.json")
 
-        for lang, ext in (
-            ("python", ".py"),
-            ("jsonschema", ".json"),
-            ("cpp", ""),
-            ("golang", ""),
-        ):
+        for lang, ext, args in LANGS:
             subprocess.run(
                 [
                     "shacl2code",
@@ -42,7 +45,7 @@ def main():
                     f"--input={src}",
                     lang,
                     f"--output={make_dest(src, lang, 'nocontext', ext)}",
-                ],
+                ] + args,
                 check=True,
             )
             if context.is_file():
@@ -56,7 +59,7 @@ def main():
                         "https://spdx.github.io/spdx-3-model/context.json",
                         lang,
                         f"--output={make_dest(context, lang, 'context', ext)}",
-                    ],
+                    ] + args,
                     check=True,
                 )
 

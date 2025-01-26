@@ -57,7 +57,7 @@
     "$defs": {
     {%- for class in classes %}
         {#- Classes are divided into 2 parts. The properties are separated into a separate object #}
-        {#- so that a object can references the properties of its parent without needing the const #}
+        {#- so that an object can references the properties of its parent without needing the const #}
         {#- @type tag #}
         {%- if not class.is_abstract or class.is_extensible %}
         "{{ varname(*class.clsname) }}": {

@@ -523,7 +523,7 @@ def type_tests(name, *typ):
 @pytest.mark.parametrize(
     "prop,value,expect",
     [
-        # postive integer
+        # positive integer
         ("test_class_positive_integer_prop", -1, ValueError),
         ("test_class_positive_integer_prop", 0, ValueError),
         ("test_class_positive_integer_prop", 1, 1),
@@ -1546,7 +1546,7 @@ def test_required_abstract_class_property(model, tmp_path):
     objset.add(c)
     s = model.JSONLDSerializer()
 
-    # Atempting to serialize without assigning the property should fail
+    # Attempting to serialize without assigning the property should fail
     with outfile.open("wb") as f:
         with pytest.raises(ValueError):
             s.write(objset, f, indent=4)

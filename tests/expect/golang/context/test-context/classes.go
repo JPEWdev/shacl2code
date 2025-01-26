@@ -1772,9 +1772,9 @@ type TestClassObject struct {
     encode Property[string]
     // A property that is a keyword
     import_ Property[string]
-    // a URI
+    // A URI
     testClassAnyuriProp Property[string]
-    // a boolean property
+    // A boolean property
     testClassBooleanProp Property[bool]
     // A test-class list property
     testClassClassListProp RefListProperty[TestClass]
@@ -1788,21 +1788,21 @@ type TestClassObject struct {
     testClassDatetimeScalarProp Property[time.Time]
     // A scalar dateTimeStamp property
     testClassDatetimestampScalarProp Property[time.Time]
-    // A enum list property
+    // An enum list property
     testClassEnumListProp ListProperty[string]
-    // A enum property
+    // An enum property
     testClassEnumProp Property[string]
-    // A enum property with no sh:class
+    // An enum property with no sh:class
     testClassEnumPropNoClass Property[string]
-    // a float property
+    // A float property
     testClassFloatProp Property[float64]
-    // a non-negative integer
+    // A non-negative integer
     testClassIntegerProp Property[int]
     // A named property
     namedProperty Property[string]
     // A class with no shape
     testClassNonShape RefProperty[NonShapeClass]
-    // a non-negative integer
+    // A non-negative integer
     testClassNonnegativeIntegerProp Property[int]
     // A positive integer
     testClassPositiveIntegerProp Property[int]

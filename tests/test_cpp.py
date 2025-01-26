@@ -834,7 +834,7 @@ def test_ref_implict_cast_to_abstract(compile_test):
 @pytest.mark.parametrize(
     "A,B,progress",
     [
-        # Explict cast to parent class
+        # Explicit cast to parent class
         ("test_class", "parent_class", Progress.RUNS),
         # Explicit cast to self
         ("test_class", "test_class", Progress.RUNS),

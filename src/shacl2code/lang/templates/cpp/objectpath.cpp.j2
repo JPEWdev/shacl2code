@@ -34,7 +34,7 @@ using std::string_literals::operator""s;
  */
 class Finally {
    public:
-    /// Contructor
+    /// Constructor
     explicit Finally(std::function<void(void)>&& func)
         : mFunc(std::move(func)) {}
 

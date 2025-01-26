@@ -741,7 +741,7 @@ class SHACLObject(object):
         idname = self.ID_ALIAS or self._OBJ_IRIS["_id"]
         if not self._id and self.NODE_KIND == NodeKind.IRI:
             raise ValueError(
-                f"{self.__class__.__name__} ({id(self)}) must have a IRI for property '{idname}'"
+                f"{self.__class__.__name__} ({id(self)}) must have an IRI for property '{idname}'"
             )
 
         if state.is_written(self):
@@ -1344,8 +1344,8 @@ class Decoder(ABC):
         """
         Consumes the next item as a date & time string
 
-        Returns the string value of the next item, if it is a ISO datetime, or
-        `None` if the next item is not a ISO datetime string.
+        Returns the string value of the next item, if it is an ISO datetime, or
+        `None` if the next item is not an ISO datetime string.
 
         Note that validation of the string is done by the caller, so a minimal
         implementation can just check if the next item is a string without
@@ -1435,7 +1435,7 @@ class Decoder(ABC):
         """
         Consume next item as an object
 
-        A context manager that "enters" the next item as a object and yields a
+        A context manager that "enters" the next item as an object and yields a
         `Decoder` that can read properties from it. If the next item is not an
         object, yields `None`
 
@@ -2225,14 +2225,14 @@ class test_class(parent_class):
             iri="http://example.org/import",
             compact="import",
         )
-        # a URI
+        # A URI
         cls._add_property(
             "test_class_anyuri_prop",
             AnyURIProp(),
             iri="http://example.org/test-class/anyuri-prop",
             compact="test-class/anyuri-prop",
         )
-        # a boolean property
+        # A boolean property
         cls._add_property(
             "test_class_boolean_prop",
             BooleanProp(),
@@ -2287,7 +2287,7 @@ class test_class(parent_class):
             iri="http://example.org/test-class/datetimestamp-scalar-prop",
             compact="test-class/datetimestamp-scalar-prop",
         )
-        # A enum list property
+        # An enum list property
         cls._add_property(
             "test_class_enum_list_prop",
             ListProp(EnumProp([
@@ -2299,7 +2299,7 @@ class test_class(parent_class):
             iri="http://example.org/test-class/enum-list-prop",
             compact="test-class/enum-list-prop",
         )
-        # A enum property
+        # An enum property
         cls._add_property(
             "test_class_enum_prop",
             EnumProp([
@@ -2311,7 +2311,7 @@ class test_class(parent_class):
             iri="http://example.org/test-class/enum-prop",
             compact="test-class/enum-prop",
         )
-        # A enum property with no sh:class
+        # An enum property with no sh:class
         cls._add_property(
             "test_class_enum_prop_no_class",
             EnumProp([
@@ -2323,14 +2323,14 @@ class test_class(parent_class):
             iri="http://example.org/test-class/enum-prop-no-class",
             compact="test-class/enum-prop-no-class",
         )
-        # a float property
+        # A float property
         cls._add_property(
             "test_class_float_prop",
             FloatProp(),
             iri="http://example.org/test-class/float-prop",
             compact="test-class/float-prop",
         )
-        # a non-negative integer
+        # A non-negative integer
         cls._add_property(
             "test_class_integer_prop",
             IntegerProp(),
@@ -2351,7 +2351,7 @@ class test_class(parent_class):
             iri="http://example.org/test-class/non-shape",
             compact="test-class/non-shape",
         )
-        # a non-negative integer
+        # A non-negative integer
         cls._add_property(
             "test_class_nonnegative_integer_prop",
             NonNegativeIntegerProp(),

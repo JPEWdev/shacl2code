@@ -686,7 +686,7 @@ class EXPORT http_example_org_test_class : public
      *
      * IRI: http://example.org/test-class/anyuri-prop
      *
-     * a URI
+     * A URI
      */
     Prop::AnyURI _anyuri_prop;
     /**
@@ -694,7 +694,7 @@ class EXPORT http_example_org_test_class : public
      *
      * IRI: http://example.org/test-class/boolean-prop
      *
-     * a boolean property
+     * A boolean property
      */
     Prop::Boolean _boolean_prop;
     /**
@@ -750,7 +750,7 @@ class EXPORT http_example_org_test_class : public
      *
      * IRI: http://example.org/test-class/enum-list-prop
      *
-     * A enum list property
+     * An enum list property
      */
     Prop::EnumList _enum_list_prop;
     /**
@@ -758,7 +758,7 @@ class EXPORT http_example_org_test_class : public
      *
      * IRI: http://example.org/test-class/enum-prop
      *
-     * A enum property
+     * An enum property
      */
     Prop::Enum _enum_prop;
     /**
@@ -766,7 +766,7 @@ class EXPORT http_example_org_test_class : public
      *
      * IRI: http://example.org/test-class/enum-prop-no-class
      *
-     * A enum property with no sh:class
+     * An enum property with no sh:class
      */
     Prop::Enum _enum_prop_no_class;
     /**
@@ -774,7 +774,7 @@ class EXPORT http_example_org_test_class : public
      *
      * IRI: http://example.org/test-class/float-prop
      *
-     * a float property
+     * A float property
      */
     Prop::Double _float_prop;
     /**
@@ -782,7 +782,7 @@ class EXPORT http_example_org_test_class : public
      *
      * IRI: http://example.org/test-class/integer-prop
      *
-     * a non-negative integer
+     * A non-negative integer
      */
     Prop::Integer _integer_prop;
     /**
@@ -806,7 +806,7 @@ class EXPORT http_example_org_test_class : public
      *
      * IRI: http://example.org/test-class/nonnegative-integer-prop
      *
-     * a non-negative integer
+     * A non-negative integer
      */
     Prop::Integer _nonnegative_integer_prop;
     /**

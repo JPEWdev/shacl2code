@@ -622,7 +622,7 @@ def validation_tests():
                     "@type": "extensible-abstract-class",
                 },
             ),
-            # Any can type can be used where a extensible abstract class is
+            # Any can type can be used where an extensible abstract class is
             # references, except... (SEE NEXT)"
             (
                 "Any type for extensible",

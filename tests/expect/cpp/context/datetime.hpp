@@ -65,7 +65,7 @@ class EXPORT DateTime {
     /**
      * @brief Get DateTime as a string
      *
-     * @returns a ISO 8601 formatted string representing the DateTime
+     * @returns an ISO 8601 formatted string representing the DateTime
      */
     std::string toString() const;
 
@@ -83,7 +83,7 @@ class EXPORT DateTime {
     /**
      * @brief Parse string as a DateTime
      *
-     * Parses a ISO 8601 formatted string as a DateTime.
+     * Parses an ISO 8601 formatted string as a DateTime.
      *
      * @note Not all ISO 8601 strings can be correctly parsed
      */

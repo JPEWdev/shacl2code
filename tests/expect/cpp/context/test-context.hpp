@@ -744,7 +744,7 @@ class EXPORT test_class : public
      *
      * Compact IRI: test-class/anyuri-prop
      *
-     * a URI
+     * A URI
      */
     Prop::AnyURI _test_class_anyuri_prop;
     /**
@@ -754,7 +754,7 @@ class EXPORT test_class : public
      *
      * Compact IRI: test-class/boolean-prop
      *
-     * a boolean property
+     * A boolean property
      */
     Prop::Boolean _test_class_boolean_prop;
     /**
@@ -824,7 +824,7 @@ class EXPORT test_class : public
      *
      * Compact IRI: test-class/enum-list-prop
      *
-     * A enum list property
+     * An enum list property
      */
     Prop::EnumList _test_class_enum_list_prop;
     /**
@@ -834,7 +834,7 @@ class EXPORT test_class : public
      *
      * Compact IRI: test-class/enum-prop
      *
-     * A enum property
+     * An enum property
      */
     Prop::Enum _test_class_enum_prop;
     /**
@@ -844,7 +844,7 @@ class EXPORT test_class : public
      *
      * Compact IRI: test-class/enum-prop-no-class
      *
-     * A enum property with no sh:class
+     * An enum property with no sh:class
      */
     Prop::Enum _test_class_enum_prop_no_class;
     /**
@@ -854,7 +854,7 @@ class EXPORT test_class : public
      *
      * Compact IRI: test-class/float-prop
      *
-     * a float property
+     * A float property
      */
     Prop::Double _test_class_float_prop;
     /**
@@ -864,7 +864,7 @@ class EXPORT test_class : public
      *
      * Compact IRI: test-class/integer-prop
      *
-     * a non-negative integer
+     * A non-negative integer
      */
     Prop::Integer _test_class_integer_prop;
     /**
@@ -894,7 +894,7 @@ class EXPORT test_class : public
      *
      * Compact IRI: test-class/nonnegative-integer-prop
      *
-     * a non-negative integer
+     * A non-negative integer
      */
     Prop::Integer _test_class_nonnegative_integer_prop;
     /**

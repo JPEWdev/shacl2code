@@ -741,7 +741,7 @@ class SHACLObject(object):
         idname = self.ID_ALIAS or self._OBJ_IRIS["_id"]
         if not self._id and self.NODE_KIND == NodeKind.IRI:
             raise ValueError(
-                f"{self.__class__.__name__} ({id(self)}) must have an IRI for property '{idname}'"
+                f"{self.__class__.__name__} ({id(self)}) must have a IRI for property '{idname}'"
             )
 
         if state.is_written(self):
@@ -1344,8 +1344,8 @@ class Decoder(ABC):
         """
         Consumes the next item as a date & time string
 
-        Returns the string value of the next item, if it is an ISO datetime, or
-        `None` if the next item is not an ISO datetime string.
+        Returns the string value of the next item, if it is a ISO datetime, or
+        `None` if the next item is not a ISO datetime string.
 
         Note that validation of the string is done by the caller, so a minimal
         implementation can just check if the next item is a string without
@@ -1435,7 +1435,7 @@ class Decoder(ABC):
         """
         Consume next item as an object
 
-        A context manager that "enters" the next item as an object and yields a
+        A context manager that "enters" the next item as a object and yields a
         `Decoder` that can read properties from it. If the next item is not an
         object, yields `None`
 

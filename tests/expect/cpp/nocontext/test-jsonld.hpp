@@ -119,7 +119,7 @@ class EXPORT JSONLDValueEncoder : public ValueEncoder {
 /**
  * @brief JSON LD Object Encoder
  *
- * Encodes an object using JSON LD
+ * Encodes a object using JSON LD
  */
 class EXPORT JSONLDObjectEncoder : public ObjectEncoder {
    public:

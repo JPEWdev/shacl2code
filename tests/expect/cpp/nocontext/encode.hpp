@@ -92,7 +92,7 @@ class EXPORT EncoderState {
     /**
      * @brief Add object as referenced
      *
-     * Marks an object as "referenced", meaning it will be in the top level
+     * Marks a object as "referenced", meaning it will be in the top level
      * of the encoded output and referenced elsewhere by IRI. Any unrefed
      * objects will be encoded inline
      */

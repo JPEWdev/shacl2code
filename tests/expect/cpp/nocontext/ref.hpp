@@ -34,7 +34,7 @@ class SHACLObject;
  * @brief A reference to a SHACLObject
  *
  * A reference can either be a pointer an actual instance of a SHACLObject
- * derived object, or a string IRI that references an object by its
+ * derived object, or a string IRI that references a object by its
  * ::test::SHACLObject::_id
  *
  * @see ::test::SHACLObject::_id

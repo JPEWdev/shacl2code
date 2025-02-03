@@ -39,7 +39,7 @@ namespace test_context {
  * derived from SHACLObject to declare their properties.
  *
  * All Properties use the same general format for declaration. For example to
- * declare an object with a single string property use:
+ * declare a object with a single string property use:
  *
  * @code
  *  class MyClass : public SHACLObject {

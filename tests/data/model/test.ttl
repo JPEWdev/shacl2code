@@ -251,27 +251,27 @@
     .
 
 <test-class/nonnegative-integer-prop> a rdf:Property ;
-    rdfs:comment "a non-negative integer" ;
+    rdfs:comment "A non-negative integer" ;
     rdfs:range xsd:nonNegativeInteger
     .
 
 <test-class/integer-prop> a rdf:Property ;
-    rdfs:comment "a non-negative integer" ;
+    rdfs:comment "A non-negative integer" ;
     rdfs:range xsd:integer
     .
 
 <test-class/anyuri-prop> a rdf:Property ;
-    rdfs:comment "a URI" ;
+    rdfs:comment "A URI" ;
     rdfs:range xsd:anyURI
     .
 
 <test-class/boolean-prop> a rdf:Property ;
-    rdfs:comment "a boolean property" ;
+    rdfs:comment "A boolean property" ;
     rdfs:range xsd:boolean
     .
 
 <test-class/float-prop> a rdf:Property ;
-    rdfs:comment "a float property" ;
+    rdfs:comment "A float property" ;
     rdfs:range xsd:decimal
     .
 
@@ -291,17 +291,17 @@
     .
 
 <test-class/enum-prop> a rdf:Property ;
-    rdfs:comment "A enum property" ;
+    rdfs:comment "An enum property" ;
     rdfs:range <enumType>
     .
 
 <test-class/enum-list-prop> a rdf:Property ;
-    rdfs:comment "A enum list property" ;
+    rdfs:comment "An enum list property" ;
     rdfs:range <enumType>
     .
 
 <test-class/enum-prop-no-class> a rdf:Property ;
-    rdfs:comment "A enum property with no sh:class" ;
+    rdfs:comment "An enum property with no sh:class" ;
     rdfs:range <enumType>
     .
 

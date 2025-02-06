@@ -1,4 +1,5 @@
 # Convert SHACL Model to code bindings
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/JPEWdev/shacl2code/badge)](https://scorecard.dev/viewer/?uri=github.com/JPEWdev/shacl2code)
 [![Coverage Report](https://raw.githubusercontent.com/JPEWdev/shacl2code/python-coverage-comment-action-data/badge.svg)](https://htmlpreview.github.io/?https://github.com/JPEWdev/shacl2code/blob/python-coverage-comment-action-data/htmlcov/index.html)
 
 This tool can be used to convert a SHACL model into various code bindings

@@ -18,6 +18,7 @@
     "inherited-id-prop-class": "test:inherited-id-prop-class",
     "link-class": "test:link-class",
     "link-derived-class": "test:link-derived-class",
+    "link-derived-2-class": "test:link-derived-2-class",
     "node-kind-blank": "test:node-kind-blank",
     "node-kind-iri": "test:node-kind-iri",
     "node-kind-iri-or-blank": "test:node-kind-iri-or-blank",
@@ -158,6 +159,10 @@
     "link-class-tag": {
         "@id": "test:link-class-tag",
         "@type": "xsd:string"
+    },
+    "link-class-derived-prop": {
+      "@id": "test:link-class-derived-prop",
+      "@type": "@id"
     },
     "extensible-class/property": {
       "@id": "test:extensible-class/property",

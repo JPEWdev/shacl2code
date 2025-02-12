@@ -2086,6 +2086,13 @@ class link_class(SHACLObject):
     @classmethod
     def _register_props(cls):
         super()._register_props()
+        # A link to a derived class
+        cls._add_property(
+            "link_class_derived_prop",
+            ObjectProp(link_derived_class, False),
+            iri="http://example.org/link-class-derived-prop",
+            compact="link-class-derived-prop",
+        )
         # A link to an extensible-class
         cls._add_property(
             "link_class_extensible",
@@ -2121,6 +2128,14 @@ class link_class(SHACLObject):
             iri="http://example.org/link-class-tag",
             compact="link-class-tag",
         )
+
+
+# A class derived from link-class
+@register("http://example.org/link-derived-2-class", compact_type="link-derived-2-class", abstract=False)
+class link_derived_2_class(link_class):
+    NODE_KIND = NodeKind.BlankNodeOrIRI
+    NAMED_INDIVIDUALS = {
+    }
 
 
 # A class derived from link-class

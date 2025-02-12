@@ -23,6 +23,8 @@ http://example.org/inherited-id-prop-class: inherited-id-prop-class
 
 http://example.org/link-class: link-class
 
+http://example.org/link-derived-2-class: link-derived-2-class
+
 http://example.org/link-derived-class: link-derived-class
 
 http://example.org/node-kind-blank: node-kind-blank

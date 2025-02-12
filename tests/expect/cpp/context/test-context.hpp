@@ -114,6 +114,7 @@ class extensible_abstract_class;
 class id_prop_class;
 class inherited_id_prop_class;
 class link_class;
+class link_derived_2_class;
 class link_derived_class;
 class node_kind_blank;
 class node_kind_iri;
@@ -415,6 +416,16 @@ class EXPORT link_class : public
 
     // Properties
     /**
+     * @brief link_class_derived_prop
+     *
+     * IRI: http://example.org/link-class-derived-prop
+     *
+     * Compact IRI: link-class-derived-prop
+     *
+     * A link to a derived class
+     */
+    Prop::Ref<link_derived_class> _link_class_derived_prop;
+    /**
      * @brief link_class_extensible
      *
      * IRI: http://example.org/link-class-extensible
@@ -464,6 +475,32 @@ class EXPORT link_class : public
      * Tag used to identify object for testing
      */
     Prop::String _link_class_tag;
+};
+
+/**
+ * @brief link_derived_2_class
+ *
+ * IRI: http://example.org/link-derived-2-class
+ *
+ * Compact IRI: link-derived-2-class
+ *
+ * A class derived from link-class
+ *
+ *
+ * @ingroup test-context_concrete_classes
+ *
+ * Example:
+ * @code
+ *  auto o = make_obj<link_derived_2_class>();
+ *
+ * @endcode
+ */
+class EXPORT link_derived_2_class : public
+    link_class {
+   SHACL2CODE_TEST_CONTEXT_CLASS(link_derived_2_class, link_class, false)
+   public:
+
+    // Properties
 };
 
 /**

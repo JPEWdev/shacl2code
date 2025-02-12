@@ -114,6 +114,7 @@ class http_example_org_extensible_abstract_class;
 class http_example_org_id_prop_class;
 class http_example_org_inherited_id_prop_class;
 class http_example_org_link_class;
+class http_example_org_link_derived_2_class;
 class http_example_org_link_derived_class;
 class http_example_org_node_kind_blank;
 class http_example_org_node_kind_iri;
@@ -393,6 +394,14 @@ class EXPORT http_example_org_link_class : public
 
     // Properties
     /**
+     * @brief derived_prop
+     *
+     * IRI: http://example.org/link-class-derived-prop
+     *
+     * A link to a derived class
+     */
+    Prop::Ref<http_example_org_link_derived_class> _derived_prop;
+    /**
      * @brief extensible
      *
      * IRI: http://example.org/link-class-extensible
@@ -432,6 +441,30 @@ class EXPORT http_example_org_link_class : public
      * Tag used to identify object for testing
      */
     Prop::String _tag;
+};
+
+/**
+ * @brief http_example_org_link_derived_2_class
+ *
+ * IRI: http://example.org/link-derived-2-class
+ *
+ * A class derived from link-class
+ *
+ *
+ * @ingroup test_concrete_classes
+ *
+ * Example:
+ * @code
+ *  auto o = make_obj<http_example_org_link_derived_2_class>();
+ *
+ * @endcode
+ */
+class EXPORT http_example_org_link_derived_2_class : public
+    http_example_org_link_class {
+   SHACL2CODE_TEST_CLASS(http_example_org_link_derived_2_class, http_example_org_link_class, false)
+   public:
+
+    // Properties
 };
 
 /**

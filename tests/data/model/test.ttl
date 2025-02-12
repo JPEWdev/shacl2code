@@ -396,10 +396,22 @@
         sh:datatype xsd:string ;
         sh:path <link-class-tag> ;
         sh:maxCount 1
+    ],
+    [
+        sh:class <link-derived-class> ;
+        sh:path <link-class-derived-prop> ;
+        sh:maxCount 1
     ]
     .
 
+# Note: link-derived-class and link-derived-2-class should both have no
+# properties to test an edge case in the go bindings
 <link-derived-class> a sh:NodeShape, owl:Class ;
+    rdfs:subClassOf <link-class> ;
+    rdfs:comment "A class derived from link-class"
+    .
+
+<link-derived-2-class> a sh:NodeShape, owl:Class ;
     rdfs:subClassOf <link-class> ;
     rdfs:comment "A class derived from link-class"
     .
@@ -427,6 +439,11 @@
 <link-class-tag> a rdf:Property ;
     rdfs:comment "Tag used to identify object for testing" ;
     rdfs:range xsd:string
+    .
+
+<link-class-derived-prop> a rdf:Property ;
+    rdfs:comment "A link to a derived class" ;
+    rdfs:range <link-derived-class>
     .
 
 <id-prop-class> a rdf:Class, sh:NodeShape, owl:Class ;

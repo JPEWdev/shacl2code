@@ -160,6 +160,9 @@ type {{ interface_name(class) }} interface {
         {%- endif -%}
         ]
 {%- endfor %}
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolder{{ interface_name(class) }}()
 }
 
 {% if not class.is_abstract %}
@@ -278,6 +281,8 @@ func (self *{{ struct_name(class) }}) {{ varname(prop.varname) }}() {% if not pr
     return &self.{{ prop_name(prop) }}
 }
 {%- endfor %}
+
+func (self *{{ struct_name(class) }}) typeHolder{{ interface_name(class) }}() {}
 
 func (self *{{ struct_name(class) }}) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
 {%- if class.parent_ids %}

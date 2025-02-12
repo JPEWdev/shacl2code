@@ -52,6 +52,9 @@ func ConstructAbstractClassObject(o *AbstractClassObject, typ SHACLType) *Abstra
 
 type AbstractClass interface {
     SHACLObject
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderAbstractClass()
 }
 
 
@@ -76,6 +79,8 @@ func (self *AbstractClassObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *AbstractClassObject) typeHolderAbstractClass() {}
 
 func (self *AbstractClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -123,6 +128,9 @@ func ConstructAbstractShClassObject(o *AbstractShClassObject, typ SHACLType) *Ab
 
 type AbstractShClass interface {
     SHACLObject
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderAbstractShClass()
 }
 
 
@@ -147,6 +155,8 @@ func (self *AbstractShClassObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *AbstractShClassObject) typeHolderAbstractShClass() {}
 
 func (self *AbstractShClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -196,6 +206,9 @@ func ConstructAbstractSpdxClassObject(o *AbstractSpdxClassObject, typ SHACLType)
 
 type AbstractSpdxClass interface {
     SHACLObject
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderAbstractSpdxClass()
 }
 
 
@@ -220,6 +233,8 @@ func (self *AbstractSpdxClassObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *AbstractSpdxClassObject) typeHolderAbstractSpdxClass() {}
 
 func (self *AbstractSpdxClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -269,6 +284,9 @@ func ConstructConcreteClassObject(o *ConcreteClassObject, typ SHACLType) *Concre
 
 type ConcreteClass interface {
     AbstractClass
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderConcreteClass()
 }
 
 
@@ -301,6 +319,8 @@ func (self *ConcreteClassObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *ConcreteClassObject) typeHolderConcreteClass() {}
 
 func (self *ConcreteClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.AbstractClassObject.EncodeProperties(data, path, state); err != nil {
@@ -350,6 +370,9 @@ func ConstructConcreteShClassObject(o *ConcreteShClassObject, typ SHACLType) *Co
 
 type ConcreteShClass interface {
     AbstractShClass
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderConcreteShClass()
 }
 
 
@@ -382,6 +405,8 @@ func (self *ConcreteShClassObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *ConcreteShClassObject) typeHolderConcreteShClass() {}
 
 func (self *ConcreteShClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.AbstractShClassObject.EncodeProperties(data, path, state); err != nil {
@@ -431,6 +456,9 @@ func ConstructConcreteSpdxClassObject(o *ConcreteSpdxClassObject, typ SHACLType)
 
 type ConcreteSpdxClass interface {
     AbstractSpdxClass
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderConcreteSpdxClass()
 }
 
 
@@ -463,6 +491,8 @@ func (self *ConcreteSpdxClassObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *ConcreteSpdxClassObject) typeHolderConcreteSpdxClass() {}
 
 func (self *ConcreteSpdxClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.AbstractSpdxClassObject.EncodeProperties(data, path, state); err != nil {
@@ -518,6 +548,9 @@ func ConstructEnumTypeObject(o *EnumTypeObject, typ SHACLType) *EnumTypeObject {
 
 type EnumType interface {
     SHACLObject
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderEnumType()
 }
 
 
@@ -550,6 +583,8 @@ func (self *EnumTypeObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *EnumTypeObject) typeHolderEnumType() {}
 
 func (self *EnumTypeObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -600,6 +635,9 @@ func ConstructExtensibleAbstractClassObject(o *ExtensibleAbstractClassObject, ty
 
 type ExtensibleAbstractClass interface {
     SHACLObject
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderExtensibleAbstractClass()
 }
 
 
@@ -624,6 +662,8 @@ func (self *ExtensibleAbstractClassObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *ExtensibleAbstractClassObject) typeHolderExtensibleAbstractClass() {}
 
 func (self *ExtensibleAbstractClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -674,6 +714,9 @@ func ConstructIdPropClassObject(o *IdPropClassObject, typ SHACLType) *IdPropClas
 
 type IdPropClass interface {
     SHACLObject
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderIdPropClass()
 }
 
 
@@ -706,6 +749,8 @@ func (self *IdPropClassObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *IdPropClassObject) typeHolderIdPropClass() {}
 
 func (self *IdPropClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -755,6 +800,9 @@ func ConstructInheritedIdPropClassObject(o *InheritedIdPropClassObject, typ SHAC
 
 type InheritedIdPropClass interface {
     IdPropClass
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderInheritedIdPropClass()
 }
 
 
@@ -788,6 +836,8 @@ func (self *InheritedIdPropClassObject) Link(state *LinkState) error {
 
 
 
+func (self *InheritedIdPropClassObject) typeHolderInheritedIdPropClass() {}
+
 func (self *InheritedIdPropClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.IdPropClassObject.EncodeProperties(data, path, state); err != nil {
         return err
@@ -799,6 +849,8 @@ func (self *InheritedIdPropClassObject) EncodeProperties(data map[string]interfa
 type LinkClassObject struct {
     SHACLObjectBase
 
+    // A link to a derived class
+    linkClassDerivedProp RefProperty[LinkDerivedClass]
     // A link to an extensible-class
     linkClassExtensible RefProperty[ExtensibleClass]
     // A link-class list property
@@ -816,6 +868,7 @@ type LinkClassObjectType struct {
     SHACLTypeBase
 }
 var linkClassType LinkClassObjectType
+var linkClassLinkClassDerivedPropContext = map[string]string{}
 var linkClassLinkClassExtensibleContext = map[string]string{}
 var linkClassLinkClassLinkListPropContext = map[string]string{}
 var linkClassLinkClassLinkPropContext = map[string]string{}
@@ -830,6 +883,16 @@ func (self LinkClassObjectType) DecodeProperty(o SHACLObject, name string, value
     obj := o.(LinkClass)
     _ = obj
     switch name {
+    case "http://example.org/link-class-derived-prop", "link-class-derived-prop":
+        val, err := DecodeLinkDerivedClass(value, path, linkClassLinkClassDerivedPropContext, obj.LinkClassDerivedProp())
+        if err != nil {
+            return false, err
+        }
+        err = obj.LinkClassDerivedProp().Set(val)
+        if err != nil {
+            return false, err
+        }
+        return true, nil
     case "http://example.org/link-class-extensible", "link-class-extensible":
         val, err := DecodeExtensibleClass(value, path, linkClassLinkClassExtensibleContext, obj.LinkClassExtensible())
         if err != nil {
@@ -897,6 +960,11 @@ func (self LinkClassObjectType) Create() SHACLObject {
 func ConstructLinkClassObject(o *LinkClassObject, typ SHACLType) *LinkClassObject {
     ConstructSHACLObjectBase(&o.SHACLObjectBase, typ)
     {
+        validators := []Validator[Ref[LinkDerivedClass]]{}
+        decodeValidators := []Validator[any]{}
+        o.linkClassDerivedProp = NewRefProperty[LinkDerivedClass]("linkClassDerivedProp", validators, decodeValidators)
+    }
+    {
         validators := []Validator[Ref[ExtensibleClass]]{}
         decodeValidators := []Validator[any]{}
         o.linkClassExtensible = NewRefProperty[ExtensibleClass]("linkClassExtensible", validators, decodeValidators)
@@ -926,11 +994,15 @@ func ConstructLinkClassObject(o *LinkClassObject, typ SHACLType) *LinkClassObjec
 
 type LinkClass interface {
     SHACLObject
+    LinkClassDerivedProp() RefPropertyInterface[LinkDerivedClass]
     LinkClassExtensible() RefPropertyInterface[ExtensibleClass]
     LinkClassLinkListProp() RefListPropertyInterface[LinkClass]
     LinkClassLinkProp() RefPropertyInterface[LinkClass]
     LinkClassLinkPropNoClass() RefPropertyInterface[LinkClass]
     LinkClassTag() PropertyInterface[string]
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderLinkClass()
 }
 
 
@@ -947,6 +1019,12 @@ func (self *LinkClassObject) Validate(path Path, handler ErrorHandler) bool {
     var valid bool = true
     if ! self.SHACLObjectBase.Validate(path, handler) {
         valid = false
+    }
+    {
+        prop_path := path.PushPath("linkClassDerivedProp")
+        if ! self.linkClassDerivedProp.Check(prop_path, handler) {
+            valid = false
+        }
     }
     {
         prop_path := path.PushPath("linkClassExtensible")
@@ -983,6 +1061,7 @@ func (self *LinkClassObject) Validate(path Path, handler ErrorHandler) bool {
 
 func (self *LinkClassObject) Walk(path Path, visit Visit) {
     self.SHACLObjectBase.Walk(path, visit)
+    self.linkClassDerivedProp.Walk(path, visit)
     self.linkClassExtensible.Walk(path, visit)
     self.linkClassLinkListProp.Walk(path, visit)
     self.linkClassLinkProp.Walk(path, visit)
@@ -992,6 +1071,9 @@ func (self *LinkClassObject) Walk(path Path, visit Visit) {
 
 func (self *LinkClassObject) Link(state *LinkState) error {
     if err := self.SHACLObjectBase.Link(state); err != nil {
+        return err
+    }
+    if err := self.linkClassDerivedProp.Link(state); err != nil {
         return err
     }
     if err := self.linkClassExtensible.Link(state); err != nil {
@@ -1013,6 +1095,9 @@ func (self *LinkClassObject) Link(state *LinkState) error {
 }
 
 
+func (self *LinkClassObject) LinkClassDerivedProp() RefPropertyInterface[LinkDerivedClass] {
+    return &self.linkClassDerivedProp
+}
 func (self *LinkClassObject) LinkClassExtensible() RefPropertyInterface[ExtensibleClass] {
     return &self.linkClassExtensible
 }
@@ -1029,9 +1114,18 @@ func (self *LinkClassObject) LinkClassTag() PropertyInterface[string] {
     return &self.linkClassTag
 }
 
+func (self *LinkClassObject) typeHolderLinkClass() {}
+
 func (self *LinkClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
         return err
+    }
+    if self.linkClassDerivedProp.IsSet() {
+        val, err := EncodeRef[LinkDerivedClass](self.linkClassDerivedProp.Get(), path.PushPath("linkClassDerivedProp"), linkClassLinkClassDerivedPropContext, state)
+        if err != nil {
+            return err
+        }
+        data["link-class-derived-prop"] = val
     }
     if self.linkClassExtensible.IsSet() {
         val, err := EncodeRef[ExtensibleClass](self.linkClassExtensible.Get(), path.PushPath("linkClassExtensible"), linkClassLinkClassExtensibleContext, state)
@@ -1067,6 +1161,92 @@ func (self *LinkClassObject) EncodeProperties(data map[string]interface{}, path 
             return err
         }
         data["link-class-tag"] = val
+    }
+    return nil
+}
+
+// A class derived from link-class
+type LinkDerived2ClassObject struct {
+    LinkClassObject
+
+}
+
+
+type LinkDerived2ClassObjectType struct {
+    SHACLTypeBase
+}
+var linkDerived2ClassType LinkDerived2ClassObjectType
+
+func DecodeLinkDerived2Class (data any, path Path, context map[string]string, check DecodeCheckType) (Ref[LinkDerived2Class], error) {
+    return DecodeRef[LinkDerived2Class](data, path, context, linkDerived2ClassType, check)
+}
+
+func (self LinkDerived2ClassObjectType) DecodeProperty(o SHACLObject, name string, value interface{}, path Path) (bool, error) {
+    obj := o.(LinkDerived2Class)
+    _ = obj
+    switch name {
+    default:
+        found, err := self.SHACLTypeBase.DecodeProperty(o, name, value, path)
+        if err != nil || found {
+            return found, err
+        }
+    }
+
+    return false, nil
+}
+
+func (self LinkDerived2ClassObjectType) Create() SHACLObject {
+    return ConstructLinkDerived2ClassObject(&LinkDerived2ClassObject{}, self)
+}
+
+func ConstructLinkDerived2ClassObject(o *LinkDerived2ClassObject, typ SHACLType) *LinkDerived2ClassObject {
+    ConstructLinkClassObject(&o.LinkClassObject, typ)
+    return o
+}
+
+type LinkDerived2Class interface {
+    LinkClass
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderLinkDerived2Class()
+}
+
+
+func MakeLinkDerived2Class() LinkDerived2Class {
+    return ConstructLinkDerived2ClassObject(&LinkDerived2ClassObject{}, linkDerived2ClassType)
+}
+
+func MakeLinkDerived2ClassRef() Ref[LinkDerived2Class] {
+    o := MakeLinkDerived2Class()
+    return MakeObjectRef[LinkDerived2Class](o)
+}
+
+func (self *LinkDerived2ClassObject) Validate(path Path, handler ErrorHandler) bool {
+    var valid bool = true
+    if ! self.LinkClassObject.Validate(path, handler) {
+        valid = false
+    }
+    return valid
+}
+
+func (self *LinkDerived2ClassObject) Walk(path Path, visit Visit) {
+    self.LinkClassObject.Walk(path, visit)
+}
+
+func (self *LinkDerived2ClassObject) Link(state *LinkState) error {
+    if err := self.LinkClassObject.Link(state); err != nil {
+        return err
+    }
+    return nil
+}
+
+
+
+func (self *LinkDerived2ClassObject) typeHolderLinkDerived2Class() {}
+
+func (self *LinkDerived2ClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
+    if err := self.LinkClassObject.EncodeProperties(data, path, state); err != nil {
+        return err
     }
     return nil
 }
@@ -1112,6 +1292,9 @@ func ConstructLinkDerivedClassObject(o *LinkDerivedClassObject, typ SHACLType) *
 
 type LinkDerivedClass interface {
     LinkClass
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderLinkDerivedClass()
 }
 
 
@@ -1144,6 +1327,8 @@ func (self *LinkDerivedClassObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *LinkDerivedClassObject) typeHolderLinkDerivedClass() {}
 
 func (self *LinkDerivedClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.LinkClassObject.EncodeProperties(data, path, state); err != nil {
@@ -1193,6 +1378,9 @@ func ConstructNodeKindBlankObject(o *NodeKindBlankObject, typ SHACLType) *NodeKi
 
 type NodeKindBlank interface {
     LinkClass
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderNodeKindBlank()
 }
 
 
@@ -1225,6 +1413,8 @@ func (self *NodeKindBlankObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *NodeKindBlankObject) typeHolderNodeKindBlank() {}
 
 func (self *NodeKindBlankObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.LinkClassObject.EncodeProperties(data, path, state); err != nil {
@@ -1274,6 +1464,9 @@ func ConstructNodeKindIriObject(o *NodeKindIriObject, typ SHACLType) *NodeKindIr
 
 type NodeKindIri interface {
     LinkClass
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderNodeKindIri()
 }
 
 
@@ -1306,6 +1499,8 @@ func (self *NodeKindIriObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *NodeKindIriObject) typeHolderNodeKindIri() {}
 
 func (self *NodeKindIriObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.LinkClassObject.EncodeProperties(data, path, state); err != nil {
@@ -1355,6 +1550,9 @@ func ConstructNodeKindIriOrBlankObject(o *NodeKindIriOrBlankObject, typ SHACLTyp
 
 type NodeKindIriOrBlank interface {
     LinkClass
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderNodeKindIriOrBlank()
 }
 
 
@@ -1387,6 +1585,8 @@ func (self *NodeKindIriOrBlankObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *NodeKindIriOrBlankObject) typeHolderNodeKindIriOrBlank() {}
 
 func (self *NodeKindIriOrBlankObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.LinkClassObject.EncodeProperties(data, path, state); err != nil {
@@ -1436,6 +1636,9 @@ func ConstructNonShapeClassObject(o *NonShapeClassObject, typ SHACLType) *NonSha
 
 type NonShapeClass interface {
     SHACLObject
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderNonShapeClass()
 }
 
 
@@ -1468,6 +1671,8 @@ func (self *NonShapeClassObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *NonShapeClassObject) typeHolderNonShapeClass() {}
 
 func (self *NonShapeClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -1517,6 +1722,9 @@ func ConstructParentClassObject(o *ParentClassObject, typ SHACLType) *ParentClas
 
 type ParentClass interface {
     SHACLObject
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderParentClass()
 }
 
 
@@ -1549,6 +1757,8 @@ func (self *ParentClassObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *ParentClassObject) typeHolderParentClass() {}
 
 func (self *ParentClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -1617,6 +1827,9 @@ func ConstructRequiredAbstractObject(o *RequiredAbstractObject, typ SHACLType) *
 type RequiredAbstract interface {
     SHACLObject
     RequiredAbstractAbstractClassProp() RefPropertyInterface[AbstractClass]
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderRequiredAbstract()
 }
 
 
@@ -1668,6 +1881,8 @@ func (self *RequiredAbstractObject) Link(state *LinkState) error {
 func (self *RequiredAbstractObject) RequiredAbstractAbstractClassProp() RefPropertyInterface[AbstractClass] {
     return &self.requiredAbstractAbstractClassProp
 }
+
+func (self *RequiredAbstractObject) typeHolderRequiredAbstract() {}
 
 func (self *RequiredAbstractObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -1724,6 +1939,9 @@ func ConstructTestAnotherClassObject(o *TestAnotherClassObject, typ SHACLType) *
 
 type TestAnotherClass interface {
     SHACLObject
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderTestAnotherClass()
 }
 
 
@@ -1756,6 +1974,8 @@ func (self *TestAnotherClassObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *TestAnotherClassObject) typeHolderTestAnotherClass() {}
 
 func (self *TestAnotherClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -2345,6 +2565,9 @@ type TestClass interface {
     TestClassStringListNoDatatype() ListPropertyInterface[string]
     TestClassStringListProp() ListPropertyInterface[string]
     TestClassStringScalarProp() PropertyInterface[string]
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderTestClass()
 }
 
 
@@ -2716,6 +2939,8 @@ func (self *TestClassObject) TestClassStringScalarProp() PropertyInterface[strin
     return &self.testClassStringScalarProp
 }
 
+func (self *TestClassObject) typeHolderTestClass() {}
+
 func (self *TestClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.ParentClassObject.EncodeProperties(data, path, state); err != nil {
         return err
@@ -2982,6 +3207,9 @@ type TestClassRequired interface {
     TestClass
     TestClassRequiredStringListProp() ListPropertyInterface[string]
     TestClassRequiredStringScalarProp() PropertyInterface[string]
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderTestClassRequired()
 }
 
 
@@ -3065,6 +3293,8 @@ func (self *TestClassRequiredObject) TestClassRequiredStringScalarProp() Propert
     return &self.testClassRequiredStringScalarProp
 }
 
+func (self *TestClassRequiredObject) typeHolderTestClassRequired() {}
+
 func (self *TestClassRequiredObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.TestClassObject.EncodeProperties(data, path, state); err != nil {
         return err
@@ -3146,6 +3376,9 @@ func ConstructTestDerivedClassObject(o *TestDerivedClassObject, typ SHACLType) *
 type TestDerivedClass interface {
     TestClass
     TestDerivedClassStringProp() PropertyInterface[string]
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderTestDerivedClass()
 }
 
 
@@ -3191,6 +3424,8 @@ func (self *TestDerivedClassObject) Link(state *LinkState) error {
 func (self *TestDerivedClassObject) TestDerivedClassStringProp() PropertyInterface[string] {
     return &self.testDerivedClassStringProp
 }
+
+func (self *TestDerivedClassObject) typeHolderTestDerivedClass() {}
 
 func (self *TestDerivedClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.TestClassObject.EncodeProperties(data, path, state); err != nil {
@@ -3266,6 +3501,9 @@ func ConstructUsesExtensibleAbstractClassObject(o *UsesExtensibleAbstractClassOb
 type UsesExtensibleAbstractClass interface {
     SHACLObject
     UsesExtensibleAbstractClassProp() RefPropertyInterface[ExtensibleAbstractClass]
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderUsesExtensibleAbstractClass()
 }
 
 
@@ -3317,6 +3555,8 @@ func (self *UsesExtensibleAbstractClassObject) Link(state *LinkState) error {
 func (self *UsesExtensibleAbstractClassObject) UsesExtensibleAbstractClassProp() RefPropertyInterface[ExtensibleAbstractClass] {
     return &self.usesExtensibleAbstractClassProp
 }
+
+func (self *UsesExtensibleAbstractClassObject) typeHolderUsesExtensibleAbstractClass() {}
 
 func (self *UsesExtensibleAbstractClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -3373,6 +3613,9 @@ func ConstructAaaDerivedClassObject(o *AaaDerivedClassObject, typ SHACLType) *Aa
 
 type AaaDerivedClass interface {
     ParentClass
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderAaaDerivedClass()
 }
 
 
@@ -3405,6 +3648,8 @@ func (self *AaaDerivedClassObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *AaaDerivedClassObject) typeHolderAaaDerivedClass() {}
 
 func (self *AaaDerivedClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.ParentClassObject.EncodeProperties(data, path, state); err != nil {
@@ -3454,6 +3699,9 @@ func ConstructDerivedNodeKindIriObject(o *DerivedNodeKindIriObject, typ SHACLTyp
 
 type DerivedNodeKindIri interface {
     NodeKindIri
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderDerivedNodeKindIri()
 }
 
 
@@ -3486,6 +3734,8 @@ func (self *DerivedNodeKindIriObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *DerivedNodeKindIriObject) typeHolderDerivedNodeKindIri() {}
 
 func (self *DerivedNodeKindIriObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.NodeKindIriObject.EncodeProperties(data, path, state); err != nil {
@@ -3574,6 +3824,9 @@ type ExtensibleClass interface {
     LinkClass
     ExtensibleClassProperty() PropertyInterface[string]
     ExtensibleClassRequired() PropertyInterface[string]
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderExtensibleClass()
 }
 
 
@@ -3638,6 +3891,8 @@ func (self *ExtensibleClassObject) ExtensibleClassProperty() PropertyInterface[s
 func (self *ExtensibleClassObject) ExtensibleClassRequired() PropertyInterface[string] {
     return &self.extensibleClassRequired
 }
+
+func (self *ExtensibleClassObject) typeHolderExtensibleClass() {}
 
 func (self *ExtensibleClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.LinkClassObject.EncodeProperties(data, path, state); err != nil {
@@ -3792,6 +4047,18 @@ func init() {
         },
     }
     RegisterType(linkClassType)
+    linkDerived2ClassType = LinkDerived2ClassObjectType{
+        SHACLTypeBase: SHACLTypeBase{
+            typeIRI: "http://example.org/link-derived-2-class",
+            compactTypeIRI: NewOptional[string]("link-derived-2-class"),
+            isAbstract: false,
+            nodeKind: NewOptional[int](NodeKindBlankNodeOrIRI),
+            parentIRIs: []string{
+                "http://example.org/link-class",
+            },
+        },
+    }
+    RegisterType(linkDerived2ClassType)
     linkDerivedClassType = LinkDerivedClassObjectType{
         SHACLTypeBase: SHACLTypeBase{
             typeIRI: "http://example.org/link-derived-class",

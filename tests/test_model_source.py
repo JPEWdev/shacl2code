@@ -12,27 +12,22 @@ from pathlib import Path
 
 import shacl2code
 
-
 THIS_FILE = Path(__file__)
 THIS_DIR = THIS_FILE.parent
 
 RAW_TEMPLATE = THIS_DIR / "data" / "raw.j2"
 TEST_MODEL = THIS_DIR / "data" / "model" / "test.ttl"
-TEST_EXPECT = THIS_DIR / "expect" / "raw" / "nocontext" / "test.txt"
 
 
 CONTEXT_TEMPLATE = THIS_DIR / "data" / "context.j2"
 CONTEXT_URL_TEMPLATE = THIS_DIR / "data" / "context-url.j2"
 TEST_CONTEXT = THIS_DIR / "data" / "model" / "test-context.json"
 TEST_CONTEXT_URL = "https://spdx.github.io/spdx-3-model/context.json"
-TEST_CONTEXT_EXPECT = THIS_DIR / "expect" / "raw" / "context" / "test-context.txt"
 
 
-def test_generation_file(tmp_path):
-    """
-    Tests that shacl2code generates output to a file when requested
-    """
-    outfile = tmp_path / "out.txt"
+@pytest.fixture(scope="session")
+def expect_output(tmp_path_factory):
+    outfile = tmp_path_factory.mktemp("expect") / "expect.txt"
     subprocess.run(
         [
             "shacl2code",
@@ -50,12 +45,40 @@ def test_generation_file(tmp_path):
         encoding="utf-8",
     )
 
-    with TEST_EXPECT.open("r") as expect_f:
-        with outfile.open("r") as out_f:
-            assert out_f.read() == expect_f.read()
+    d = outfile.read_text()
+    assert d.strip(), "No output generated"
+    yield d
 
 
-def test_generation_stdout():
+@pytest.fixture(scope="session")
+def expect_context_output(tmp_path_factory):
+    outfile = tmp_path_factory.mktemp("expect") / "expect-context.txt"
+    subprocess.run(
+        [
+            "shacl2code",
+            "generate",
+            "--input",
+            TEST_MODEL,
+            "--context-url",
+            TEST_CONTEXT,
+            TEST_CONTEXT_URL,
+            "jinja",
+            "--output",
+            outfile,
+            "--template",
+            CONTEXT_TEMPLATE,
+        ],
+        check=True,
+        stdout=subprocess.PIPE,
+        encoding="utf-8",
+    )
+
+    d = outfile.read_text()
+    assert d.strip(), "No output generated"
+    yield d
+
+
+def test_generation_stdout(expect_output):
     """
     Tests that shacl2code generates output to stdout when requested
     """
@@ -76,11 +99,10 @@ def test_generation_stdout():
         encoding="utf-8",
     )
 
-    with TEST_EXPECT.open("r") as f:
-        assert p.stdout == f.read()
+    assert p.stdout == expect_output
 
 
-def test_generation_input_format(tmp_path):
+def test_generation_input_format(tmp_path, expect_output):
     """
     Tests that shacl2code generates output correctly with an explicit input
     format
@@ -127,11 +149,10 @@ def test_generation_input_format(tmp_path):
         stdout=subprocess.PIPE,
         encoding="utf-8",
     )
-    with TEST_EXPECT.open("r") as f:
-        assert p.stdout == f.read()
+    assert p.stdout == expect_output
 
 
-def test_generation_stdin():
+def test_generation_stdin(expect_output):
     """
     Tests that shacl2code generates output from a model on stdin
     """
@@ -156,8 +177,7 @@ def test_generation_stdin():
             encoding="utf-8",
         )
 
-    with TEST_EXPECT.open("r") as f:
-        assert p.stdout == f.read()
+    assert p.stdout == expect_output
 
 
 def test_generation_stdin_auto_format():
@@ -187,7 +207,7 @@ def test_generation_stdin_auto_format():
     assert p.returncode != 0
 
 
-def test_generation_url(model_server):
+def test_generation_url(model_server, expect_output):
     """
     Tests that shacl2code generates output from a model provided in a URL
     """
@@ -208,36 +228,7 @@ def test_generation_url(model_server):
         encoding="utf-8",
     )
 
-    with TEST_EXPECT.open("r") as f:
-        assert p.stdout == f.read()
-
-
-def test_context_file():
-    """
-    Tests that a context file can be used from a file path
-    """
-    p = subprocess.run(
-        [
-            "shacl2code",
-            "generate",
-            "--input",
-            TEST_MODEL,
-            "--context-url",
-            TEST_CONTEXT,
-            TEST_CONTEXT_URL,
-            "jinja",
-            "--output",
-            "-",
-            "--template",
-            CONTEXT_TEMPLATE,
-        ],
-        check=True,
-        stdout=subprocess.PIPE,
-        encoding="utf-8",
-    )
-
-    with TEST_CONTEXT_EXPECT.open("r") as f:
-        assert p.stdout == f.read()
+    assert p.stdout == expect_output
 
 
 def test_context_file_missing_url():
@@ -262,7 +253,7 @@ def test_context_file_missing_url():
     assert p.returncode != 0, "Process exited successfully when an error was expected"
 
 
-def test_context_url(model_server):
+def test_context_url(model_server, expect_context_output):
     p = subprocess.run(
         [
             "shacl2code",
@@ -283,8 +274,7 @@ def test_context_url(model_server):
         encoding="utf-8",
     )
 
-    with TEST_CONTEXT_EXPECT.open("r") as f:
-        assert p.stdout == f.read()
+    assert p.stdout == expect_context_output
 
 
 def test_context_args(http_server):

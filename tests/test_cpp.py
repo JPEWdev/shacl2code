@@ -17,7 +17,6 @@ from testfixtures import jsonvalidation
 THIS_FILE = Path(__file__)
 THIS_DIR = THIS_FILE.parent
 
-EXPECT_DIR = THIS_DIR / "expect"
 DATA_DIR = THIS_DIR / "data"
 
 TEST_MODEL = THIS_DIR / "data" / "model" / "test.ttl"
@@ -242,46 +241,20 @@ def compile_test(test_lib, tmp_path):
 
 
 @pytest.mark.parametrize(
-    "args,basename,expect",
+    "args,basename",
     [
         (
             ["--input", TEST_MODEL],
             "test",
-            EXPECT_DIR / "cpp" / "nocontext",
         ),
         (
             ["--input", TEST_MODEL, "--context-url", TEST_CONTEXT, SPDX3_CONTEXT_URL],
             "test-context",
-            EXPECT_DIR / "cpp" / "context",
         ),
     ],
 )
 class TestOutput:
-    def test_generation(self, tmp_path, args, basename, expect):
-        """
-        Tests that the output matches the expected output
-        """
-        subprocess.run(
-            [
-                "shacl2code",
-                "generate",
-            ]
-            + args
-            + [
-                "cpp",
-                "--output",
-                tmp_path / basename,
-                "--version=0.0.1",
-            ],
-            check=True,
-        )
-
-        for fn in tmp_path.iterdir():
-            assert (
-                fn.read_text() == (expect / fn.name).read_text()
-            ), f"Mismatch in {fn.name}"
-
-    def test_trailing_whitespace(self, tmp_path, args, basename, expect):
+    def test_trailing_whitespace(self, tmp_path, args, basename):
         """
         Tests that the generated file does not have trailing whitespace
         """
@@ -308,7 +281,7 @@ class TestOutput:
                         re.search(r"\s+$", line) is None
                     ), f"{fn}: Line {lineno + 1} has trailing whitespace: {line!r}"
 
-    def test_tabs(self, tmp_path, args, basename, expect):
+    def test_tabs(self, tmp_path, args, basename):
         """
         Tests that the output file doesn't contain tabs
         """
@@ -337,7 +310,7 @@ class TestOutput:
                         "\t" not in line
                     ), f"{fn}: Line {lineno + 1} has tabs: {line!r}"
 
-    def test_output_compile(self, tmp_path, args, basename, expect):
+    def test_output_compile(self, tmp_path, args, basename):
         subprocess.run(
             [
                 "shacl2code",

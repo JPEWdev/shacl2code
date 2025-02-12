@@ -392,6 +392,7 @@
                     "anyOf": [
                         { "$ref": "#/$defs/derivednodekindiri" },
                         { "$ref": "#/$defs/extensibleclass" },
+                        { "$ref": "#/$defs/linkderived2class" },
                         { "$ref": "#/$defs/linkderivedclass" },
                         { "$ref": "#/$defs/nodekindblank" },
                         { "$ref": "#/$defs/nodekindiri" },
@@ -408,6 +409,9 @@
                 {
                     "type": "object",
                     "properties": {
+                        "link-class-derived-prop": {
+                            "$ref": "#/$defs/prop_linkclass_linkclassderivedprop"
+                        },
                         "link-class-extensible": {
                             "$ref": "#/$defs/prop_linkclass_linkclassextensible"
                         },
@@ -434,6 +438,9 @@
                 }
             ]
         },
+        "prop_linkclass_linkclassderivedprop": {
+                "$ref": "#/$defs/linkderivedclass_derived"
+        },
         "prop_linkclass_linkclassextensible": {
                 "$ref": "#/$defs/extensibleclass_derived"
         },
@@ -448,6 +455,44 @@
         },
         "prop_linkclass_linkclasstag": {
                     "type": "string"
+        },
+        "linkderived2class": {
+            "allOf": [
+                {
+                    "type": "object",
+                    "properties": {
+                        "@id": { "$ref": "#/$defs/BlankNodeOrIRI" },
+                        "@type": {
+                            "oneOf": [
+                                { "const": "link-derived-2-class" }
+                            ]
+                        }
+                    }
+                },
+                { "$ref": "#/$defs/linkderived2class_props" }
+            ]
+        },
+        "linkderived2class_derived": {
+            "anyOf": [
+                {
+                    "type": "object",
+                    "unevaluatedProperties": false,
+                    "anyOf": [
+                        { "$ref": "#/$defs/linkderived2class" }
+                    ]
+                },
+                { "$ref": "#/$defs/BlankNodeOrIRI" }
+            ]
+        },
+        "linkderived2class_props": {
+            "allOf": [
+                { "$ref": "#/$defs/linkclass_props" },
+                {
+                    "type": "object",
+                    "properties": {
+                    }
+                }
+            ]
         },
         "linkderivedclass": {
             "allOf": [
@@ -1383,6 +1428,7 @@
                                 "id-prop-class",
                                 "inherited-id-prop-class",
                                 "link-class",
+                                "link-derived-2-class",
                                 "link-derived-class",
                                 "node-kind-blank",
                                 "node-kind-iri",
@@ -1414,6 +1460,7 @@
                 { "$ref": "#/$defs/idpropclass" },
                 { "$ref": "#/$defs/inheritedidpropclass" },
                 { "$ref": "#/$defs/linkclass" },
+                { "$ref": "#/$defs/linkderived2class" },
                 { "$ref": "#/$defs/linkderivedclass" },
                 { "$ref": "#/$defs/nodekindblank" },
                 { "$ref": "#/$defs/nodekindiri" },

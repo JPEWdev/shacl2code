@@ -1053,6 +1053,17 @@ def test_ref_prop_obj_short_validation(compile_test, prop, value, expect):
         ), f"Bad output. Expected {expect!r}, got {output.rstrip()!r}"
 
 
+def test_empty_property_assignment(compile_test):
+    compile_test(
+        """\
+        p := model.MakeLinkClass()
+        derived_2 := model.MakeLinkDerived2Class()
+        p.LinkClassDerivedProp().SetObj(derived_2)
+        """,
+        progress=Progress.COMPILE_FAILS,
+    )
+
+
 def test_roundtrip(tmp_path, roundtrip, roundtrip_test):
     out_file = tmp_path / "out.json"
 

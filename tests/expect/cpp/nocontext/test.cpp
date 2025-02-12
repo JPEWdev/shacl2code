@@ -227,6 +227,15 @@ const http_example_org_link_class::TypeClass http_example_org_link_class::Type(
 
 http_example_org_link_class::http_example_org_link_class(TypeBase const* type, SHACLObject::TypeIRIs const& typeIRIs) :
     SHACLObject(type, typeIRIs),
+    _derived_prop(
+        this,
+        "http://example.org/link-class-derived-prop",
+        {},
+        false,
+        std::optional<std::regex>(),
+        PropertyContext::Context({
+        })
+    ),
     _extensible(
         this,
         "http://example.org/link-class-extensible",
@@ -274,6 +283,23 @@ http_example_org_link_class::http_example_org_link_class(TypeBase const* type, S
 {}
 
 http_example_org_link_class::~http_example_org_link_class() {}
+
+
+// http_example_org_link_derived_2_class
+
+const http_example_org_link_derived_2_class::TypeClass http_example_org_link_derived_2_class::Type(
+    "http://example.org/link-derived-2-class",
+    {},
+    {},
+    NodeKind::BlankNodeOrIRI,
+    false
+);
+
+http_example_org_link_derived_2_class::http_example_org_link_derived_2_class(TypeBase const* type, SHACLObject::TypeIRIs const& typeIRIs) :
+    http_example_org_link_class(type, typeIRIs)
+{}
+
+http_example_org_link_derived_2_class::~http_example_org_link_derived_2_class() {}
 
 
 // http_example_org_link_derived_class

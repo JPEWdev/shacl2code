@@ -52,6 +52,9 @@ func ConstructHttpExampleOrgAbstractClassObject(o *HttpExampleOrgAbstractClassOb
 
 type HttpExampleOrgAbstractClass interface {
     SHACLObject
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgAbstractClass()
 }
 
 
@@ -76,6 +79,8 @@ func (self *HttpExampleOrgAbstractClassObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *HttpExampleOrgAbstractClassObject) typeHolderHttpExampleOrgAbstractClass() {}
 
 func (self *HttpExampleOrgAbstractClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -123,6 +128,9 @@ func ConstructHttpExampleOrgAbstractShClassObject(o *HttpExampleOrgAbstractShCla
 
 type HttpExampleOrgAbstractShClass interface {
     SHACLObject
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgAbstractShClass()
 }
 
 
@@ -147,6 +155,8 @@ func (self *HttpExampleOrgAbstractShClassObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *HttpExampleOrgAbstractShClassObject) typeHolderHttpExampleOrgAbstractShClass() {}
 
 func (self *HttpExampleOrgAbstractShClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -196,6 +206,9 @@ func ConstructHttpExampleOrgAbstractSpdxClassObject(o *HttpExampleOrgAbstractSpd
 
 type HttpExampleOrgAbstractSpdxClass interface {
     SHACLObject
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgAbstractSpdxClass()
 }
 
 
@@ -220,6 +233,8 @@ func (self *HttpExampleOrgAbstractSpdxClassObject) Link(state *LinkState) error 
 }
 
 
+
+func (self *HttpExampleOrgAbstractSpdxClassObject) typeHolderHttpExampleOrgAbstractSpdxClass() {}
 
 func (self *HttpExampleOrgAbstractSpdxClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -269,6 +284,9 @@ func ConstructHttpExampleOrgConcreteClassObject(o *HttpExampleOrgConcreteClassOb
 
 type HttpExampleOrgConcreteClass interface {
     HttpExampleOrgAbstractClass
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgConcreteClass()
 }
 
 
@@ -301,6 +319,8 @@ func (self *HttpExampleOrgConcreteClassObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *HttpExampleOrgConcreteClassObject) typeHolderHttpExampleOrgConcreteClass() {}
 
 func (self *HttpExampleOrgConcreteClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.HttpExampleOrgAbstractClassObject.EncodeProperties(data, path, state); err != nil {
@@ -350,6 +370,9 @@ func ConstructHttpExampleOrgConcreteShClassObject(o *HttpExampleOrgConcreteShCla
 
 type HttpExampleOrgConcreteShClass interface {
     HttpExampleOrgAbstractShClass
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgConcreteShClass()
 }
 
 
@@ -382,6 +405,8 @@ func (self *HttpExampleOrgConcreteShClassObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *HttpExampleOrgConcreteShClassObject) typeHolderHttpExampleOrgConcreteShClass() {}
 
 func (self *HttpExampleOrgConcreteShClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.HttpExampleOrgAbstractShClassObject.EncodeProperties(data, path, state); err != nil {
@@ -431,6 +456,9 @@ func ConstructHttpExampleOrgConcreteSpdxClassObject(o *HttpExampleOrgConcreteSpd
 
 type HttpExampleOrgConcreteSpdxClass interface {
     HttpExampleOrgAbstractSpdxClass
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgConcreteSpdxClass()
 }
 
 
@@ -463,6 +491,8 @@ func (self *HttpExampleOrgConcreteSpdxClassObject) Link(state *LinkState) error 
 }
 
 
+
+func (self *HttpExampleOrgConcreteSpdxClassObject) typeHolderHttpExampleOrgConcreteSpdxClass() {}
 
 func (self *HttpExampleOrgConcreteSpdxClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.HttpExampleOrgAbstractSpdxClassObject.EncodeProperties(data, path, state); err != nil {
@@ -518,6 +548,9 @@ func ConstructHttpExampleOrgEnumTypeObject(o *HttpExampleOrgEnumTypeObject, typ 
 
 type HttpExampleOrgEnumType interface {
     SHACLObject
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgEnumType()
 }
 
 
@@ -550,6 +583,8 @@ func (self *HttpExampleOrgEnumTypeObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *HttpExampleOrgEnumTypeObject) typeHolderHttpExampleOrgEnumType() {}
 
 func (self *HttpExampleOrgEnumTypeObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -600,6 +635,9 @@ func ConstructHttpExampleOrgExtensibleAbstractClassObject(o *HttpExampleOrgExten
 
 type HttpExampleOrgExtensibleAbstractClass interface {
     SHACLObject
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgExtensibleAbstractClass()
 }
 
 
@@ -624,6 +662,8 @@ func (self *HttpExampleOrgExtensibleAbstractClassObject) Link(state *LinkState) 
 }
 
 
+
+func (self *HttpExampleOrgExtensibleAbstractClassObject) typeHolderHttpExampleOrgExtensibleAbstractClass() {}
 
 func (self *HttpExampleOrgExtensibleAbstractClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -674,6 +714,9 @@ func ConstructHttpExampleOrgIdPropClassObject(o *HttpExampleOrgIdPropClassObject
 
 type HttpExampleOrgIdPropClass interface {
     SHACLObject
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgIdPropClass()
 }
 
 
@@ -706,6 +749,8 @@ func (self *HttpExampleOrgIdPropClassObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *HttpExampleOrgIdPropClassObject) typeHolderHttpExampleOrgIdPropClass() {}
 
 func (self *HttpExampleOrgIdPropClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -755,6 +800,9 @@ func ConstructHttpExampleOrgInheritedIdPropClassObject(o *HttpExampleOrgInherite
 
 type HttpExampleOrgInheritedIdPropClass interface {
     HttpExampleOrgIdPropClass
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgInheritedIdPropClass()
 }
 
 
@@ -788,6 +836,8 @@ func (self *HttpExampleOrgInheritedIdPropClassObject) Link(state *LinkState) err
 
 
 
+func (self *HttpExampleOrgInheritedIdPropClassObject) typeHolderHttpExampleOrgInheritedIdPropClass() {}
+
 func (self *HttpExampleOrgInheritedIdPropClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.HttpExampleOrgIdPropClassObject.EncodeProperties(data, path, state); err != nil {
         return err
@@ -799,6 +849,8 @@ func (self *HttpExampleOrgInheritedIdPropClassObject) EncodeProperties(data map[
 type HttpExampleOrgLinkClassObject struct {
     SHACLObjectBase
 
+    // A link to a derived class
+    derivedProp RefProperty[HttpExampleOrgLinkDerivedClass]
     // A link to an extensible-class
     extensible RefProperty[HttpExampleOrgExtensibleClass]
     // A link-class list property
@@ -816,6 +868,7 @@ type HttpExampleOrgLinkClassObjectType struct {
     SHACLTypeBase
 }
 var httpExampleOrgLinkClassType HttpExampleOrgLinkClassObjectType
+var httpExampleOrgLinkClassDerivedPropContext = map[string]string{}
 var httpExampleOrgLinkClassExtensibleContext = map[string]string{}
 var httpExampleOrgLinkClassLinkListPropContext = map[string]string{}
 var httpExampleOrgLinkClassLinkPropContext = map[string]string{}
@@ -830,6 +883,16 @@ func (self HttpExampleOrgLinkClassObjectType) DecodeProperty(o SHACLObject, name
     obj := o.(HttpExampleOrgLinkClass)
     _ = obj
     switch name {
+    case "http://example.org/link-class-derived-prop":
+        val, err := DecodeHttpExampleOrgLinkDerivedClass(value, path, httpExampleOrgLinkClassDerivedPropContext, obj.DerivedProp())
+        if err != nil {
+            return false, err
+        }
+        err = obj.DerivedProp().Set(val)
+        if err != nil {
+            return false, err
+        }
+        return true, nil
     case "http://example.org/link-class-extensible":
         val, err := DecodeHttpExampleOrgExtensibleClass(value, path, httpExampleOrgLinkClassExtensibleContext, obj.Extensible())
         if err != nil {
@@ -897,6 +960,11 @@ func (self HttpExampleOrgLinkClassObjectType) Create() SHACLObject {
 func ConstructHttpExampleOrgLinkClassObject(o *HttpExampleOrgLinkClassObject, typ SHACLType) *HttpExampleOrgLinkClassObject {
     ConstructSHACLObjectBase(&o.SHACLObjectBase, typ)
     {
+        validators := []Validator[Ref[HttpExampleOrgLinkDerivedClass]]{}
+        decodeValidators := []Validator[any]{}
+        o.derivedProp = NewRefProperty[HttpExampleOrgLinkDerivedClass]("derivedProp", validators, decodeValidators)
+    }
+    {
         validators := []Validator[Ref[HttpExampleOrgExtensibleClass]]{}
         decodeValidators := []Validator[any]{}
         o.extensible = NewRefProperty[HttpExampleOrgExtensibleClass]("extensible", validators, decodeValidators)
@@ -926,11 +994,15 @@ func ConstructHttpExampleOrgLinkClassObject(o *HttpExampleOrgLinkClassObject, ty
 
 type HttpExampleOrgLinkClass interface {
     SHACLObject
+    DerivedProp() RefPropertyInterface[HttpExampleOrgLinkDerivedClass]
     Extensible() RefPropertyInterface[HttpExampleOrgExtensibleClass]
     LinkListProp() RefListPropertyInterface[HttpExampleOrgLinkClass]
     LinkProp() RefPropertyInterface[HttpExampleOrgLinkClass]
     LinkPropNoClass() RefPropertyInterface[HttpExampleOrgLinkClass]
     Tag() PropertyInterface[string]
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgLinkClass()
 }
 
 
@@ -947,6 +1019,12 @@ func (self *HttpExampleOrgLinkClassObject) Validate(path Path, handler ErrorHand
     var valid bool = true
     if ! self.SHACLObjectBase.Validate(path, handler) {
         valid = false
+    }
+    {
+        prop_path := path.PushPath("derivedProp")
+        if ! self.derivedProp.Check(prop_path, handler) {
+            valid = false
+        }
     }
     {
         prop_path := path.PushPath("extensible")
@@ -983,6 +1061,7 @@ func (self *HttpExampleOrgLinkClassObject) Validate(path Path, handler ErrorHand
 
 func (self *HttpExampleOrgLinkClassObject) Walk(path Path, visit Visit) {
     self.SHACLObjectBase.Walk(path, visit)
+    self.derivedProp.Walk(path, visit)
     self.extensible.Walk(path, visit)
     self.linkListProp.Walk(path, visit)
     self.linkProp.Walk(path, visit)
@@ -992,6 +1071,9 @@ func (self *HttpExampleOrgLinkClassObject) Walk(path Path, visit Visit) {
 
 func (self *HttpExampleOrgLinkClassObject) Link(state *LinkState) error {
     if err := self.SHACLObjectBase.Link(state); err != nil {
+        return err
+    }
+    if err := self.derivedProp.Link(state); err != nil {
         return err
     }
     if err := self.extensible.Link(state); err != nil {
@@ -1013,6 +1095,9 @@ func (self *HttpExampleOrgLinkClassObject) Link(state *LinkState) error {
 }
 
 
+func (self *HttpExampleOrgLinkClassObject) DerivedProp() RefPropertyInterface[HttpExampleOrgLinkDerivedClass] {
+    return &self.derivedProp
+}
 func (self *HttpExampleOrgLinkClassObject) Extensible() RefPropertyInterface[HttpExampleOrgExtensibleClass] {
     return &self.extensible
 }
@@ -1029,9 +1114,18 @@ func (self *HttpExampleOrgLinkClassObject) Tag() PropertyInterface[string] {
     return &self.tag
 }
 
+func (self *HttpExampleOrgLinkClassObject) typeHolderHttpExampleOrgLinkClass() {}
+
 func (self *HttpExampleOrgLinkClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
         return err
+    }
+    if self.derivedProp.IsSet() {
+        val, err := EncodeRef[HttpExampleOrgLinkDerivedClass](self.derivedProp.Get(), path.PushPath("derivedProp"), httpExampleOrgLinkClassDerivedPropContext, state)
+        if err != nil {
+            return err
+        }
+        data["http://example.org/link-class-derived-prop"] = val
     }
     if self.extensible.IsSet() {
         val, err := EncodeRef[HttpExampleOrgExtensibleClass](self.extensible.Get(), path.PushPath("extensible"), httpExampleOrgLinkClassExtensibleContext, state)
@@ -1067,6 +1161,92 @@ func (self *HttpExampleOrgLinkClassObject) EncodeProperties(data map[string]inte
             return err
         }
         data["http://example.org/link-class-tag"] = val
+    }
+    return nil
+}
+
+// A class derived from link-class
+type HttpExampleOrgLinkDerived2ClassObject struct {
+    HttpExampleOrgLinkClassObject
+
+}
+
+
+type HttpExampleOrgLinkDerived2ClassObjectType struct {
+    SHACLTypeBase
+}
+var httpExampleOrgLinkDerived2ClassType HttpExampleOrgLinkDerived2ClassObjectType
+
+func DecodeHttpExampleOrgLinkDerived2Class (data any, path Path, context map[string]string, check DecodeCheckType) (Ref[HttpExampleOrgLinkDerived2Class], error) {
+    return DecodeRef[HttpExampleOrgLinkDerived2Class](data, path, context, httpExampleOrgLinkDerived2ClassType, check)
+}
+
+func (self HttpExampleOrgLinkDerived2ClassObjectType) DecodeProperty(o SHACLObject, name string, value interface{}, path Path) (bool, error) {
+    obj := o.(HttpExampleOrgLinkDerived2Class)
+    _ = obj
+    switch name {
+    default:
+        found, err := self.SHACLTypeBase.DecodeProperty(o, name, value, path)
+        if err != nil || found {
+            return found, err
+        }
+    }
+
+    return false, nil
+}
+
+func (self HttpExampleOrgLinkDerived2ClassObjectType) Create() SHACLObject {
+    return ConstructHttpExampleOrgLinkDerived2ClassObject(&HttpExampleOrgLinkDerived2ClassObject{}, self)
+}
+
+func ConstructHttpExampleOrgLinkDerived2ClassObject(o *HttpExampleOrgLinkDerived2ClassObject, typ SHACLType) *HttpExampleOrgLinkDerived2ClassObject {
+    ConstructHttpExampleOrgLinkClassObject(&o.HttpExampleOrgLinkClassObject, typ)
+    return o
+}
+
+type HttpExampleOrgLinkDerived2Class interface {
+    HttpExampleOrgLinkClass
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgLinkDerived2Class()
+}
+
+
+func MakeHttpExampleOrgLinkDerived2Class() HttpExampleOrgLinkDerived2Class {
+    return ConstructHttpExampleOrgLinkDerived2ClassObject(&HttpExampleOrgLinkDerived2ClassObject{}, httpExampleOrgLinkDerived2ClassType)
+}
+
+func MakeHttpExampleOrgLinkDerived2ClassRef() Ref[HttpExampleOrgLinkDerived2Class] {
+    o := MakeHttpExampleOrgLinkDerived2Class()
+    return MakeObjectRef[HttpExampleOrgLinkDerived2Class](o)
+}
+
+func (self *HttpExampleOrgLinkDerived2ClassObject) Validate(path Path, handler ErrorHandler) bool {
+    var valid bool = true
+    if ! self.HttpExampleOrgLinkClassObject.Validate(path, handler) {
+        valid = false
+    }
+    return valid
+}
+
+func (self *HttpExampleOrgLinkDerived2ClassObject) Walk(path Path, visit Visit) {
+    self.HttpExampleOrgLinkClassObject.Walk(path, visit)
+}
+
+func (self *HttpExampleOrgLinkDerived2ClassObject) Link(state *LinkState) error {
+    if err := self.HttpExampleOrgLinkClassObject.Link(state); err != nil {
+        return err
+    }
+    return nil
+}
+
+
+
+func (self *HttpExampleOrgLinkDerived2ClassObject) typeHolderHttpExampleOrgLinkDerived2Class() {}
+
+func (self *HttpExampleOrgLinkDerived2ClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
+    if err := self.HttpExampleOrgLinkClassObject.EncodeProperties(data, path, state); err != nil {
+        return err
     }
     return nil
 }
@@ -1112,6 +1292,9 @@ func ConstructHttpExampleOrgLinkDerivedClassObject(o *HttpExampleOrgLinkDerivedC
 
 type HttpExampleOrgLinkDerivedClass interface {
     HttpExampleOrgLinkClass
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgLinkDerivedClass()
 }
 
 
@@ -1144,6 +1327,8 @@ func (self *HttpExampleOrgLinkDerivedClassObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *HttpExampleOrgLinkDerivedClassObject) typeHolderHttpExampleOrgLinkDerivedClass() {}
 
 func (self *HttpExampleOrgLinkDerivedClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.HttpExampleOrgLinkClassObject.EncodeProperties(data, path, state); err != nil {
@@ -1193,6 +1378,9 @@ func ConstructHttpExampleOrgNodeKindBlankObject(o *HttpExampleOrgNodeKindBlankOb
 
 type HttpExampleOrgNodeKindBlank interface {
     HttpExampleOrgLinkClass
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgNodeKindBlank()
 }
 
 
@@ -1225,6 +1413,8 @@ func (self *HttpExampleOrgNodeKindBlankObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *HttpExampleOrgNodeKindBlankObject) typeHolderHttpExampleOrgNodeKindBlank() {}
 
 func (self *HttpExampleOrgNodeKindBlankObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.HttpExampleOrgLinkClassObject.EncodeProperties(data, path, state); err != nil {
@@ -1274,6 +1464,9 @@ func ConstructHttpExampleOrgNodeKindIriObject(o *HttpExampleOrgNodeKindIriObject
 
 type HttpExampleOrgNodeKindIri interface {
     HttpExampleOrgLinkClass
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgNodeKindIri()
 }
 
 
@@ -1306,6 +1499,8 @@ func (self *HttpExampleOrgNodeKindIriObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *HttpExampleOrgNodeKindIriObject) typeHolderHttpExampleOrgNodeKindIri() {}
 
 func (self *HttpExampleOrgNodeKindIriObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.HttpExampleOrgLinkClassObject.EncodeProperties(data, path, state); err != nil {
@@ -1355,6 +1550,9 @@ func ConstructHttpExampleOrgNodeKindIriOrBlankObject(o *HttpExampleOrgNodeKindIr
 
 type HttpExampleOrgNodeKindIriOrBlank interface {
     HttpExampleOrgLinkClass
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgNodeKindIriOrBlank()
 }
 
 
@@ -1387,6 +1585,8 @@ func (self *HttpExampleOrgNodeKindIriOrBlankObject) Link(state *LinkState) error
 }
 
 
+
+func (self *HttpExampleOrgNodeKindIriOrBlankObject) typeHolderHttpExampleOrgNodeKindIriOrBlank() {}
 
 func (self *HttpExampleOrgNodeKindIriOrBlankObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.HttpExampleOrgLinkClassObject.EncodeProperties(data, path, state); err != nil {
@@ -1436,6 +1636,9 @@ func ConstructHttpExampleOrgNonShapeClassObject(o *HttpExampleOrgNonShapeClassOb
 
 type HttpExampleOrgNonShapeClass interface {
     SHACLObject
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgNonShapeClass()
 }
 
 
@@ -1468,6 +1671,8 @@ func (self *HttpExampleOrgNonShapeClassObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *HttpExampleOrgNonShapeClassObject) typeHolderHttpExampleOrgNonShapeClass() {}
 
 func (self *HttpExampleOrgNonShapeClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -1517,6 +1722,9 @@ func ConstructHttpExampleOrgParentClassObject(o *HttpExampleOrgParentClassObject
 
 type HttpExampleOrgParentClass interface {
     SHACLObject
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgParentClass()
 }
 
 
@@ -1549,6 +1757,8 @@ func (self *HttpExampleOrgParentClassObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *HttpExampleOrgParentClassObject) typeHolderHttpExampleOrgParentClass() {}
 
 func (self *HttpExampleOrgParentClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -1617,6 +1827,9 @@ func ConstructHttpExampleOrgRequiredAbstractObject(o *HttpExampleOrgRequiredAbst
 type HttpExampleOrgRequiredAbstract interface {
     SHACLObject
     AbstractClassProp() RefPropertyInterface[HttpExampleOrgAbstractClass]
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgRequiredAbstract()
 }
 
 
@@ -1668,6 +1881,8 @@ func (self *HttpExampleOrgRequiredAbstractObject) Link(state *LinkState) error {
 func (self *HttpExampleOrgRequiredAbstractObject) AbstractClassProp() RefPropertyInterface[HttpExampleOrgAbstractClass] {
     return &self.abstractClassProp
 }
+
+func (self *HttpExampleOrgRequiredAbstractObject) typeHolderHttpExampleOrgRequiredAbstract() {}
 
 func (self *HttpExampleOrgRequiredAbstractObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -1724,6 +1939,9 @@ func ConstructHttpExampleOrgTestAnotherClassObject(o *HttpExampleOrgTestAnotherC
 
 type HttpExampleOrgTestAnotherClass interface {
     SHACLObject
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgTestAnotherClass()
 }
 
 
@@ -1756,6 +1974,8 @@ func (self *HttpExampleOrgTestAnotherClassObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *HttpExampleOrgTestAnotherClassObject) typeHolderHttpExampleOrgTestAnotherClass() {}
 
 func (self *HttpExampleOrgTestAnotherClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -2342,6 +2562,9 @@ type HttpExampleOrgTestClass interface {
     StringListNoDatatype() ListPropertyInterface[string]
     StringListProp() ListPropertyInterface[string]
     StringScalarProp() PropertyInterface[string]
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgTestClass()
 }
 
 
@@ -2713,6 +2936,8 @@ func (self *HttpExampleOrgTestClassObject) StringScalarProp() PropertyInterface[
     return &self.stringScalarProp
 }
 
+func (self *HttpExampleOrgTestClassObject) typeHolderHttpExampleOrgTestClass() {}
+
 func (self *HttpExampleOrgTestClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.HttpExampleOrgParentClassObject.EncodeProperties(data, path, state); err != nil {
         return err
@@ -2979,6 +3204,9 @@ type HttpExampleOrgTestClassRequired interface {
     HttpExampleOrgTestClass
     RequiredStringListProp() ListPropertyInterface[string]
     RequiredStringScalarProp() PropertyInterface[string]
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgTestClassRequired()
 }
 
 
@@ -3062,6 +3290,8 @@ func (self *HttpExampleOrgTestClassRequiredObject) RequiredStringScalarProp() Pr
     return &self.requiredStringScalarProp
 }
 
+func (self *HttpExampleOrgTestClassRequiredObject) typeHolderHttpExampleOrgTestClassRequired() {}
+
 func (self *HttpExampleOrgTestClassRequiredObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.HttpExampleOrgTestClassObject.EncodeProperties(data, path, state); err != nil {
         return err
@@ -3143,6 +3373,9 @@ func ConstructHttpExampleOrgTestDerivedClassObject(o *HttpExampleOrgTestDerivedC
 type HttpExampleOrgTestDerivedClass interface {
     HttpExampleOrgTestClass
     StringProp() PropertyInterface[string]
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgTestDerivedClass()
 }
 
 
@@ -3188,6 +3421,8 @@ func (self *HttpExampleOrgTestDerivedClassObject) Link(state *LinkState) error {
 func (self *HttpExampleOrgTestDerivedClassObject) StringProp() PropertyInterface[string] {
     return &self.stringProp
 }
+
+func (self *HttpExampleOrgTestDerivedClassObject) typeHolderHttpExampleOrgTestDerivedClass() {}
 
 func (self *HttpExampleOrgTestDerivedClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.HttpExampleOrgTestClassObject.EncodeProperties(data, path, state); err != nil {
@@ -3263,6 +3498,9 @@ func ConstructHttpExampleOrgUsesExtensibleAbstractClassObject(o *HttpExampleOrgU
 type HttpExampleOrgUsesExtensibleAbstractClass interface {
     SHACLObject
     Prop() RefPropertyInterface[HttpExampleOrgExtensibleAbstractClass]
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgUsesExtensibleAbstractClass()
 }
 
 
@@ -3314,6 +3552,8 @@ func (self *HttpExampleOrgUsesExtensibleAbstractClassObject) Link(state *LinkSta
 func (self *HttpExampleOrgUsesExtensibleAbstractClassObject) Prop() RefPropertyInterface[HttpExampleOrgExtensibleAbstractClass] {
     return &self.prop
 }
+
+func (self *HttpExampleOrgUsesExtensibleAbstractClassObject) typeHolderHttpExampleOrgUsesExtensibleAbstractClass() {}
 
 func (self *HttpExampleOrgUsesExtensibleAbstractClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.SHACLObjectBase.EncodeProperties(data, path, state); err != nil {
@@ -3370,6 +3610,9 @@ func ConstructHttpExampleOrgAaaDerivedClassObject(o *HttpExampleOrgAaaDerivedCla
 
 type HttpExampleOrgAaaDerivedClass interface {
     HttpExampleOrgParentClass
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgAaaDerivedClass()
 }
 
 
@@ -3402,6 +3645,8 @@ func (self *HttpExampleOrgAaaDerivedClassObject) Link(state *LinkState) error {
 }
 
 
+
+func (self *HttpExampleOrgAaaDerivedClassObject) typeHolderHttpExampleOrgAaaDerivedClass() {}
 
 func (self *HttpExampleOrgAaaDerivedClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.HttpExampleOrgParentClassObject.EncodeProperties(data, path, state); err != nil {
@@ -3451,6 +3696,9 @@ func ConstructHttpExampleOrgDerivedNodeKindIriObject(o *HttpExampleOrgDerivedNod
 
 type HttpExampleOrgDerivedNodeKindIri interface {
     HttpExampleOrgNodeKindIri
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgDerivedNodeKindIri()
 }
 
 
@@ -3483,6 +3731,8 @@ func (self *HttpExampleOrgDerivedNodeKindIriObject) Link(state *LinkState) error
 }
 
 
+
+func (self *HttpExampleOrgDerivedNodeKindIriObject) typeHolderHttpExampleOrgDerivedNodeKindIri() {}
 
 func (self *HttpExampleOrgDerivedNodeKindIriObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.HttpExampleOrgNodeKindIriObject.EncodeProperties(data, path, state); err != nil {
@@ -3571,6 +3821,9 @@ type HttpExampleOrgExtensibleClass interface {
     HttpExampleOrgLinkClass
     Property() PropertyInterface[string]
     Required() PropertyInterface[string]
+    // Type placeholder to ensure this interface cannot be assigned
+    // incorrectly, even if it has no properties
+    typeHolderHttpExampleOrgExtensibleClass()
 }
 
 
@@ -3635,6 +3888,8 @@ func (self *HttpExampleOrgExtensibleClassObject) Property() PropertyInterface[st
 func (self *HttpExampleOrgExtensibleClassObject) Required() PropertyInterface[string] {
     return &self.required
 }
+
+func (self *HttpExampleOrgExtensibleClassObject) typeHolderHttpExampleOrgExtensibleClass() {}
 
 func (self *HttpExampleOrgExtensibleClassObject) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if err := self.HttpExampleOrgLinkClassObject.EncodeProperties(data, path, state); err != nil {
@@ -3778,6 +4033,17 @@ func init() {
         },
     }
     RegisterType(httpExampleOrgLinkClassType)
+    httpExampleOrgLinkDerived2ClassType = HttpExampleOrgLinkDerived2ClassObjectType{
+        SHACLTypeBase: SHACLTypeBase{
+            typeIRI: "http://example.org/link-derived-2-class",
+            isAbstract: false,
+            nodeKind: NewOptional[int](NodeKindBlankNodeOrIRI),
+            parentIRIs: []string{
+                "http://example.org/link-class",
+            },
+        },
+    }
+    RegisterType(httpExampleOrgLinkDerived2ClassType)
     httpExampleOrgLinkDerivedClassType = HttpExampleOrgLinkDerivedClassObjectType{
         SHACLTypeBase: SHACLTypeBase{
             typeIRI: "http://example.org/link-derived-class",

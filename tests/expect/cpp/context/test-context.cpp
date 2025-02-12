@@ -227,6 +227,15 @@ const link_class::TypeClass link_class::Type(
 
 link_class::link_class(TypeBase const* type, SHACLObject::TypeIRIs const& typeIRIs) :
     SHACLObject(type, typeIRIs),
+    _link_class_derived_prop(
+        this,
+        "http://example.org/link-class-derived-prop",
+        "link-class-derived-prop",
+        false,
+        std::optional<std::regex>(),
+        PropertyContext::Context({
+        })
+    ),
     _link_class_extensible(
         this,
         "http://example.org/link-class-extensible",
@@ -274,6 +283,23 @@ link_class::link_class(TypeBase const* type, SHACLObject::TypeIRIs const& typeIR
 {}
 
 link_class::~link_class() {}
+
+
+// link_derived_2_class
+
+const link_derived_2_class::TypeClass link_derived_2_class::Type(
+    "http://example.org/link-derived-2-class",
+    "link-derived-2-class",
+    {},
+    NodeKind::BlankNodeOrIRI,
+    false
+);
+
+link_derived_2_class::link_derived_2_class(TypeBase const* type, SHACLObject::TypeIRIs const& typeIRIs) :
+    link_class(type, typeIRIs)
+{}
+
+link_derived_2_class::~link_derived_2_class() {}
 
 
 // link_derived_class

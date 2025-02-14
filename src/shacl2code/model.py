@@ -72,6 +72,7 @@ class Property:
     class_id: str = ""
     datatype: str = ""
     pattern: str = ""
+    deprecated: bool = False
 
 
 @dataclass
@@ -87,6 +88,7 @@ class Class:
     is_extensible: bool = False
     is_abstract: bool = False
     named_individuals: list = None
+    deprecated: bool = False
 
 
 class Model(object):
@@ -168,7 +170,9 @@ class Model(object):
 
             return False
 
-        class_iris = set(self.model.subjects(RDF.type, OWL.Class))
+        class_iris = set(self.model.subjects(RDF.type, OWL.Class)) | set(
+            self.model.subjects(RDF.type, OWL.DeprecatedClass)
+        )
         for cls_iri in class_iris:
             c = Class(
                 _id=str(cls_iri),
@@ -188,6 +192,7 @@ class Model(object):
                 is_extensible=bool(self.model.value(cls_iri, SHACL2CODE.isExtensible)),
                 is_abstract=is_abstract(cls_iri),
                 named_individuals=get_named_individuals(cls_iri),
+                deprecated=(cls_iri, RDF.type, OWL.DeprecatedClass) in self.model,
             )
 
             if c.node_kind not in (SH.IRI, SH.BlankNode, SH.BlankNodeOrIRI):
@@ -216,6 +221,7 @@ class Model(object):
                     comment=str(self.model.value(prop, RDFS.comment, default="")),
                     max_count=int_val(self.model.value(obj_prop, SH.maxCount)),
                     min_count=int_val(self.model.value(obj_prop, SH.minCount)),
+                    deprecated=(prop, RDF.type, OWL.DeprecatedProperty) in self.model,
                 )
 
                 if in_list := self.model.value(obj_prop, SH["in"]):

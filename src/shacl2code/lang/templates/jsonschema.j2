@@ -64,6 +64,9 @@
             "allOf": [
                 {
                     "type": "object",
+                    {%- if class.deprecated %}
+                    "deprecated": true,
+                    {%- endif %}
                     {%- if class.is_extensible %}
                     "unevaluatedProperties": true,
                     {%- endif %}
@@ -183,6 +186,9 @@
         },
         {%- for prop in class.properties %}
         "prop_{{ varname(*class.clsname) }}_{{ varname(prop.varname) }}": {
+            {%- if prop.deprecated %}
+                "deprecated": true,
+            {%- endif %}
             {%- if prop.enum_values %}
                 "enum": [
                 {%- for e in prop.enum_values %}

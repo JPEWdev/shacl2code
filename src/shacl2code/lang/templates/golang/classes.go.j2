@@ -16,6 +16,9 @@ import (
 {%- for l in class.comment.splitlines() %}
 {{ ("// " + l).rstrip() }}
 {% endfor -%}
+{%- if class.deprecated %}
+// Deprecated: This class is deprecated
+{%- endif %}
 {% set is_public = not class.is_abstract or class.is_extensible -%}
 type {{ struct_name(class) }} struct {
 {%- if class.parent_ids %}
@@ -267,6 +270,9 @@ func (self *{{ struct_name(class) }}) Link(state *LinkState) error {
 }
 
 {% for prop in class.properties %}
+{%- if prop.deprecated %}
+// Deprecated: This property is deprecated
+{%- endif %}
 func (self *{{ struct_name(class) }}) {{ varname(prop.varname) }}() {% if not prop.enum_values and prop.class_id -%}
             Ref
         {%- endif %}{% if prop_is_list(prop) -%}

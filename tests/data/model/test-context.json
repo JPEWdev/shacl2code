@@ -26,11 +26,16 @@
     "parent-class": "test:parent-class",
     "required-abstract": "test:required-abstract",
     "test-another-class": "test:test-another-class",
+    "test-deprecated-class": "test:test-deprecated-class",
     "test-class": "test:test-class",
     "test-class-required": "test:test-class-required",
     "test-derived-class": "test:test-derived-class",
     "uses-extensible-abstract-class": "test:uses-extensible-abstract-class",
     "named": "test:test-class/named",
+    "test-deprecated-class/deprecated-string-prop": {
+      "@id": "test:test-deprecated-class/deprecated-string-prop",
+      "@type": "xsd:string"
+    },
     "test-class/string-list-prop": {
       "@id": "test:test-class/string-list-prop",
       "@type": "xsd:string"

@@ -13,6 +13,7 @@ import re
 import sys
 import threading
 import time
+import warnings
 from contextlib import contextmanager
 from datetime import datetime, timezone, timedelta
 from enum import Enum
@@ -555,6 +556,7 @@ class SHACLObject(object):
     NODE_KIND = NodeKind.BlankNodeOrIRI
     ID_ALIAS = None
     IS_ABSTRACT = True
+    IS_DEPRECATED = False
 
     def __init__(self, **kwargs):
         if self._is_abstract():
@@ -562,11 +564,15 @@ class SHACLObject(object):
                 f"{self.__class__.__name__} is abstract and cannot be implemented"
             )
 
+        if self.__class__.IS_DEPRECATED:
+            warnings.warn(f"{self.__class__.__name__} is deprecated", DeprecationWarning)
+
         with register_lock:
             cls = self.__class__
             if cls._NEEDS_REG:
                 cls._OBJ_PROPERTIES = {}
                 cls._OBJ_IRIS = {}
+                cls._OBJ_DEPRECATED = set()
                 cls._register_props()
                 cls._NEEDS_REG = False
 
@@ -595,6 +601,7 @@ class SHACLObject(object):
         min_count=None,
         max_count=None,
         compact=None,
+        deprecated=False,
     ):
         if pyname in cls._OBJ_IRIS:
             raise KeyError(f"'{pyname}' is already defined for '{cls.__name__}'")
@@ -609,6 +616,8 @@ class SHACLObject(object):
 
         cls._OBJ_IRIS[pyname] = iri
         cls._OBJ_PROPERTIES[iri] = (prop, min_count, max_count, pyname, compact)
+        if deprecated:
+            cls._OBJ_DEPRECATED.add(iri)
 
     def __setattr__(self, name, value):
         if name == self.ID_ALIAS:
@@ -692,8 +701,10 @@ class SHACLObject(object):
                         f"{self.__class__.__name__} ({id(self)}) Has invalid Property '{iri}' '{value}'. Must be a blank node or IRI"
                     )
 
-        prop, _, _, _, _ = self.__get_prop(iri)
+        prop, _, _, pyname, _ = self.__get_prop(iri)
         prop.validate(value)
+        if iri in self._OBJ_DEPRECATED:
+            warnings.warn(f"{self.__class__.__name__}.{pyname} is deprecated", DeprecationWarning)
         self.__dict__["_obj_data"][iri] = prop.set(value)
 
     def __delitem__(self, iri):
@@ -2022,6 +2033,7 @@ class {{ varname(*class.clsname) }}(
     {%- if class.id_property %}
     ID_ALIAS = "{{ class.id_property }}"
     {%- endif %}
+    IS_DEPRECATED = {{ class.deprecated }}
     NAMED_INDIVIDUALS = {
         {%- for member in class.named_individuals %}
         "{{ varname(member.varname) }}": "{{ member._id }}",
@@ -2086,6 +2098,7 @@ class {{ varname(*class.clsname) }}(
             {%- if context.compact_vocab(prop.path) != prop.path %}
             compact="{{ context.compact_vocab(prop.path) }}",
             {%- endif %}
+            deprecated={{ prop.deprecated }}
         )
         {%- endfor %}
     {%- endif %}

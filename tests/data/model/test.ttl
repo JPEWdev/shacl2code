@@ -200,6 +200,20 @@
     rdfs:comment "Another class"
     .
 
+<test-deprecated-class> a sh:NodeShape, owl:DeprecatedClass ;
+    rdfs:subClassOf <test-class> ;
+    rdfs:comment "A deprecated class" ;
+    sh:property [
+        sh:datatype: xsd:string ;
+        sh:path <test-deprecated-class/deprecated-string-prop> ;
+        sh:maxCount 1
+    ]
+    .
+
+<test-deprecated-class/deprecated-string-prop> a owl:DeprecatedProperty ;
+    rdfs:comment "A deprecated property" ;
+    rdfs:range xsd:string
+    .
 
 <test-class/string-list-prop> a rdf:Property ;
     rdfs:comment "A string list property" ;

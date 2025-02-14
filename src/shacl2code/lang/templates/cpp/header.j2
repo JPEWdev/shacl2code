@@ -102,6 +102,10 @@ class {{ varname(*class.clsname) }};
  *
  * This class is abstract
 {%- else %}
+{%- if class.deprecated %}
+ *
+ * @deprecated This class is deprecated
+{%- endif %}
  *
  * @ingroup {{ basename }}_concrete_classes
  *
@@ -143,6 +147,10 @@ class EXPORT {{ cpp_name }} : public{% for parent in parent_cpp_classes(class, c
     {%- if context.compact_vocab(prop.path) != prop.path %}
      *
      * Compact IRI: {{ context.compact_vocab(prop.path) }}
+    {%- endif %}
+    {%- if prop.deprecated %}
+     *
+     * @deprecated This property is deprecated
     {%- endif %}
      *
     {%- for l in prop.comment.split("\n") %}

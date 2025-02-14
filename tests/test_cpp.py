@@ -701,7 +701,7 @@ def test_class_prop_validation(compile_test, prop, value, expect):
         ("test_class", "test_another_class", Progress.COMPILE_FAILS),
     ],
 )
-def test_ref_implict_cast(compile_test, A, B, progress):
+def test_ref_implicit_cast(compile_test, A, B, progress):
     # Check types are valid
     compile_test(
         f"""\
@@ -781,7 +781,7 @@ def test_ref_prop_assignment(compile_test):
     assert output.rstrip() == "_:foo"
 
 
-def test_ref_implict_cast_to_abstract(compile_test):
+def test_ref_implicit_cast_to_abstract(compile_test):
     output = compile_test(
         """\
         auto r = make_obj<concrete_class>();
@@ -807,7 +807,7 @@ def test_ref_implict_cast_to_abstract(compile_test):
 @pytest.mark.parametrize(
     "A,B,progress",
     [
-        # Explict cast to parent class
+        # Explicit cast to parent class
         ("test_class", "parent_class", Progress.RUNS),
         # Explicit cast to self
         ("test_class", "test_class", Progress.RUNS),
@@ -913,7 +913,7 @@ def test_ref_explicit_cast_to_derived(compile_test):
     assert output.rstrip() == "_:foo"
 
 
-def test_ref_explict_cast_to_abstract(compile_test):
+def test_ref_explicit_cast_to_abstract(compile_test):
     output = compile_test(
         """\
         auto r = make_obj<concrete_class>();

@@ -492,7 +492,7 @@ def type_tests(name, *typ):
 @pytest.mark.parametrize(
     "prop,value,expect",
     [
-        # postive integer
+        # positive integer
         ("test_class_positive_integer_prop", -1, ValueError),
         ("test_class_positive_integer_prop", 0, ValueError),
         ("test_class_positive_integer_prop", 1, 1),
@@ -535,13 +535,13 @@ def type_tests(name, *typ):
             datetime(2024, 3, 11, 0, 0, 0, tzinfo=TEST_TZ),
         ),
         (
-            # Explict timezone
+            # Explicit timezone
             "test_class_datetime_scalar_prop",
             datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone(-timedelta(hours=6))),
             SAME_AS_VALUE,
         ),
         (
-            # Explict timezone
+            # Explicit timezone
             "test_class_datetime_scalar_prop",
             datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone(timedelta(hours=0))),
             SAME_AS_VALUE,
@@ -591,13 +591,13 @@ def type_tests(name, *typ):
             datetime(2024, 3, 11, 0, 0, 0, tzinfo=TEST_TZ),
         ),
         (
-            # Explict timezone
+            # Explicit timezone
             "test_class_datetimestamp_scalar_prop",
             datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone(-timedelta(hours=6))),
             SAME_AS_VALUE,
         ),
         (
-            # Explict timezone
+            # Explicit timezone
             "test_class_datetimestamp_scalar_prop",
             datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone(timedelta(hours=0))),
             SAME_AS_VALUE,
@@ -1270,7 +1270,7 @@ def test_enum_named_individuals(model):
 
 def test_mandatory_properties(model, tmp_path):
     """
-    Tests that property ordinality (e.g. min count & max count) is checked when
+    Tests that property cardinality (e.g. min count & max count) is checked when
     writing out a file
     """
     s = model.JSONLDSerializer()
@@ -1515,7 +1515,7 @@ def test_required_abstract_class_property(model, tmp_path):
     objset.add(c)
     s = model.JSONLDSerializer()
 
-    # Atempting to serialize without assigning the property should fail
+    # Attempting to serialize without assigning the property should fail
     with outfile.open("wb") as f:
         with pytest.raises(ValueError):
             s.write(objset, f, indent=4)

@@ -42,7 +42,7 @@ def test_jinja_abort(tmp_path):
 
 def test_bad_id_get(tmp_path):
     """
-    Tests that getting an ID that doens't exists fails
+    Tests that getting an ID that doesn't exists fails
     """
     outfile = tmp_path / "out.txt"
     p = subprocess.run(

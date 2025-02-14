@@ -1,4 +1,5 @@
 # Convert SHACL Model to code bindings
+
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9999/badge)](https://www.bestpractices.dev/projects/9999)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/JPEWdev/shacl2code/badge)](https://scorecard.dev/viewer/?uri=github.com/JPEWdev/shacl2code)
 [![Coverage Report](https://raw.githubusercontent.com/JPEWdev/shacl2code/python-coverage-comment-action-data/badge.svg)](https://htmlpreview.github.io/?https://github.com/JPEWdev/shacl2code/blob/python-coverage-comment-action-data/htmlcov/index.html)
@@ -16,24 +17,31 @@ python3 -m pip install shacl2code
 ## Usage
 
 `shacl2code` can generate bindings from either a local file:
+
 ```shell
 shacl2code generate -i model.jsonld python -o out.py
 ```
+
 Or from a URL:
+
 ```shell
 shacl2code generate -i https://example.com/rdf/model.jsonld python -o out.py
 ```
+
 Or from stdin:
+
 ```shell
 cat model.jsonld | shacl2code generate -i - python -o - > out.py
 ```
 
 For more information, run:
+
 ```shell
 shacl2code --help
 ```
 
 The available language bindings can be viewed by running:
+
 ```shell
 shacl2code list
 ```
@@ -54,13 +62,13 @@ pip install -e ".[dev]"
 
 `shacl2code` has a test suite written in [pytest][pytest]. To run it, setup a
 virtual environment as shown above, then run:
+
 ```shell
 pytest
 ```
 
 In addition to the test results, a test coverage report will also be generated
 using [pytest-cov][pytest-cov]
-
 
 ## Custom Annotations
 
@@ -90,6 +98,7 @@ turtle will use `MyId` instead of `@id` when writing JSON-LD bindings:
 ```
 
 When doing this, the class would then look like this in JSON-LD:
+
 ```json
 {
     "@type": "MyClass",
@@ -97,7 +106,7 @@ When doing this, the class would then look like this in JSON-LD:
 }
 ```
 
-The `idProperyName` annotation is inherited by derived classes, so for example
+The `idPropertyName` annotation is inherited by derived classes, so for example
 any class that derived from `MyClass` would also use `MyId` as the subject
 property.
 
@@ -129,7 +138,6 @@ indicates if a class can be extended, and defaults to `false`. For example, the
 following turtle will declare a class as extensible:
 
 ```ttl
-
 <MyClass> a owl:Class, sh:NodeShape ;
     sh-to-code:isExtensible true
     .
@@ -165,14 +173,12 @@ a constraint on the shape that it cannot be of its own type. This can be done
 with the following turtle:
 
 ```ttl
-
 <MyClass> a owl:Class, sh:NodeShape ;
-    # SHACL to prevent a class from being instansiated as this exact type
+    # SHACL to prevent a class from being instantiated as this exact type
     sh:property [
         sh:path rdf:type ;
         sh:not [ sh:hasValue <MyClass> ]
     ] .
-
 ```
 
 `shacl2code` will detect this pattern and generate abstract bindings for
@@ -188,7 +194,6 @@ abstract. This can be done with the boolean `isAbstract` property. For
 example, the following turtle will declare a class as abstract:
 
 ```ttl
-
 <MyClass> a owl:Class, sh:NodeShape ;
     sh-to-code:isAbstract true
     .

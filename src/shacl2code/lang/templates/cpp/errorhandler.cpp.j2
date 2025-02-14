@@ -25,7 +25,7 @@ namespace {{ n }} {
 
 using std::string_literals::operator""s;
 
-// DefaultErrorHanlder
+// DefaultErrorHandler
 DefaultErrorHandler::DefaultErrorHandler() {}
 DefaultErrorHandler::~DefaultErrorHandler() {}
 
@@ -41,7 +41,7 @@ void DefaultErrorHandler::handleDeserializeError(std::string const& message,
 
 DefaultErrorHandler DefaultErrorHandler::handler;
 
-// NoopErrorHanlder
+// NoopErrorHandler
 NoopErrorHandler::NoopErrorHandler() {}
 NoopErrorHandler::~NoopErrorHandler() {}
 

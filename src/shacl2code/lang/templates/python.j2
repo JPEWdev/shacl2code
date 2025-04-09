@@ -253,11 +253,6 @@ class ObjectProp(IRIProp):
         self.cls = cls
         self.required = required
 
-    def init(self):
-        if self.required and not self.cls.IS_ABSTRACT:
-            return self.cls()
-        return None
-
     def validate(self, value):
         check_type(value, (self.cls, str))
 

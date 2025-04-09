@@ -390,8 +390,6 @@ def test_context_contents():
         context = json.load(f)
 
     def check_prefix(iri, typ):
-        nonlocal context
-
         test_prefix = context["@context"]["test"]
 
         assert iri.startswith(
@@ -403,8 +401,6 @@ def test_context_contents():
         return name
 
     def check_subject(iri, typ):
-        nonlocal context
-
         name = check_prefix(iri, typ)
 
         assert name in context["@context"], f"{typ} '{name}' missing from context"

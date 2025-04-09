@@ -131,8 +131,6 @@ class Model(object):
             return default
 
         def set_prop_range(p, range_id):
-            nonlocal class_iris
-
             if range_id in class_iris:
                 p.class_id = str(range_id)
                 return True

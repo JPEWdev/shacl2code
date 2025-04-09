@@ -88,8 +88,6 @@ class JinjaTemplateRender(object):
                 raise KeyError(f"Object with ID {_id} not found")
 
         def get_all_derived(cls):
-            nonlocal classes
-
             def _recurse(cls):
                 result = set(cls.derived_ids)
                 for r in cls.derived_ids:

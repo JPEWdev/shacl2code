@@ -14,10 +14,11 @@ import sys
 import threading
 import time
 import warnings
-from contextlib import contextmanager
-from datetime import datetime, timezone, timedelta
-from enum import Enum
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
+from datetime import datetime, timedelta, timezone
+from enum import Enum
+from typing import Any
 
 
 def check_type(obj, types):
@@ -34,6 +35,8 @@ class Property(ABC):
     A generic SHACL object property. The different types will derive from this
     class
     """
+
+    VALID_TYPES = Any
 
     def __init__(self, *, pattern=None):
         self.pattern = pattern

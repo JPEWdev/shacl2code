@@ -18,11 +18,10 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Any
 
 
 def check_type(obj, types):
-    if not isinstance(obj, types):
+    if types and not isinstance(obj, types):
         if isinstance(types, (list, tuple)):
             raise TypeError(
                 f"Value must be one of type: {', '.join(t.__name__ for t in types)}. Got {type(obj)}"
@@ -36,7 +35,7 @@ class Property(ABC):
     class
     """
 
-    VALID_TYPES = Any
+    VALID_TYPES = ()
 
     def __init__(self, *, pattern=None):
         self.pattern = pattern

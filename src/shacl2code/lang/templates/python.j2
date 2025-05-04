@@ -35,7 +35,7 @@ class Property(ABC):
     class
     """
 
-    VALID_TYPES = ()
+    VALID_TYPES = ()  # if empty, everything is valid
 
     def __init__(self, *, pattern=None):
         self.pattern = pattern

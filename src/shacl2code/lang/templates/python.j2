@@ -1111,7 +1111,7 @@ class SHACLObjectSet(object):
         """
         return item in self.objects
 
-    def link(self):
+    def link(self) -> set:
         """
         Link object set
 
@@ -1127,7 +1127,7 @@ class SHACLObjectSet(object):
         self.create_index()
         return self._link()
 
-    def _link(self):
+    def _link(self) -> set:
         global NAMED_INDIVIDUALS
 
         self.missing_ids = set()

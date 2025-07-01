@@ -71,7 +71,7 @@ class Property(ABC):
     def link_prop(self, value, objectset, missing, visited):
         return value
 
-    def to_string(self, value):
+    def to_string(self, value) -> str:
         return str(value)
 
     @abstractmethod
@@ -90,7 +90,7 @@ class StringProp(Property):
 
     VALID_TYPES = str
 
-    def set(self, value):
+    def set(self, value) -> str:
         return str(value)
 
     def encode(self, encoder, value, state):
@@ -375,7 +375,7 @@ class ListProxy(object):
     def __len__(self):
         return len(self.__data)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.__data)
 
     def __repr__(self):
@@ -491,7 +491,7 @@ class NodeKind(Enum):
     BlankNodeOrIRI = 3
 
 
-def is_IRI(s):
+def is_IRI(s) -> bool:
     if not isinstance(s, str):
         return False
     if s.startswith("_:"):
@@ -501,7 +501,7 @@ def is_IRI(s):
     return True
 
 
-def is_blank_node(s):
+def is_blank_node(s) -> bool:
     if not isinstance(s, str):
         return False
     if not s.startswith("_:"):
@@ -580,7 +580,7 @@ class SHACLObject(object):
         for k, v in kwargs.items():
             setattr(self, k, v)
 
-    def _is_abstract(self):
+    def _is_abstract(self) -> bool:
         return self.__class__.IS_ABSTRACT
 
     @classmethod
@@ -910,7 +910,7 @@ class SHACLExtensibleObject(object):
             self.__dict__["_obj_TYPE"] = (self._OBJ_TYPE, self._OBJ_COMPACT_TYPE)
         super().__init__(**kwargs)
 
-    def _is_abstract(self):
+    def _is_abstract(self) -> bool:
         # Unknown classes are assumed to not be abstract so that they can be
         # deserialized
         typ = self.__dict__["_obj_TYPE"][0]
@@ -1312,13 +1312,13 @@ class EncodeState(object):
 
         return self.blank_objects[o]
 
-    def is_refed(self, o):
+    def is_refed(self, o) -> bool:
         return o in self.ref_objects
 
     def add_refed(self, o):
         self.ref_objects.add(o)
 
-    def is_written(self, o):
+    def is_written(self, o) -> bool:
         return o in self.written_objects
 
     def add_written(self, o):
@@ -1428,7 +1428,7 @@ class Decoder(ABC):
         pass
 
     @abstractmethod
-    def is_list(self):
+    def is_list(self) -> bool:
         """
         Checks if the next item is a list
 
@@ -1540,7 +1540,7 @@ class JSONLDDecoder(Decoder):
         else:
             yield self
 
-    def is_list(self):
+    def is_list(self) -> bool:
         return isinstance(self.data, (list, tuple, set))
 
     def __get_value(self, *keys):

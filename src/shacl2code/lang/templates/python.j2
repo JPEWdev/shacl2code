@@ -118,7 +118,7 @@ class DateTimeProp(Property):
     UTC_FORMAT_STR = "%Y-%m-%dT%H:%M:%SZ"
     REGEX = r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})?$"
 
-    def set(self, value):
+    def set(self, value) -> datetime:
         return self._normalize(value)
 
     def encode(self, encoder, value, state):
@@ -131,7 +131,7 @@ class DateTimeProp(Property):
         v = self.from_string(s)
         return self._normalize(v)
 
-    def _normalize(self, value):
+    def _normalize(self, value: datetime) -> datetime:
         if value.utcoffset() is None:
             value = value.astimezone()
         offset = value.utcoffset()
@@ -142,13 +142,13 @@ class DateTimeProp(Property):
         value = value.replace(microsecond=0)
         return value
 
-    def to_string(self, value):
+    def to_string(self, value: datetime) -> str:
         value = self._normalize(value)
         if value.tzinfo == timezone.utc:
             return value.strftime(self.UTC_FORMAT_STR)
         return value.isoformat()
 
-    def from_string(self, value):
+    def from_string(self, value: str) -> datetime:
         if not re.match(self.REGEX, value):
             raise ValueError(f"'{value}' is not a correctly formatted datetime")
         if "Z" in value:
@@ -173,7 +173,7 @@ class DateTimeStampProp(DateTimeProp):
 class IntegerProp(Property):
     VALID_TYPES = int
 
-    def set(self, value):
+    def set(self, value) -> int:
         return int(value)
 
     def encode(self, encoder, value, state):
@@ -200,7 +200,7 @@ class NonNegativeIntegerProp(IntegerProp):
 class BooleanProp(Property):
     VALID_TYPES = bool
 
-    def set(self, value):
+    def set(self, value) -> bool:
         return bool(value)
 
     def encode(self, encoder, value, state):
@@ -213,7 +213,7 @@ class BooleanProp(Property):
 class FloatProp(Property):
     VALID_TYPES = (float, int)
 
-    def set(self, value):
+    def set(self, value) -> float:
         return float(value)
 
     def encode(self, encoder, value, state):

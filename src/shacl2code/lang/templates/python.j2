@@ -18,10 +18,10 @@ from contextlib import contextmanager
 from datetime import datetime, timezone, timedelta
 from enum import Enum
 from abc import ABC, abstractmethod
-from typing import Optional, Set
+from typing import Callable, Optional, Set
 
 
-def check_type(obj, types):
+def check_type(obj, types) -> None:
     if not isinstance(obj, types):
         if isinstance(types, (list, tuple)):
             raise TypeError(
@@ -39,10 +39,10 @@ class Property(ABC):
     def __init__(self, *, pattern=None):
         self.pattern = pattern
 
-    def init(self):
+    def init(self) -> None:
         return None
 
-    def validate(self, value):
+    def validate(self, value) -> None:
         check_type(value, self.VALID_TYPES)
         if self.pattern is not None and not re.search(
             self.pattern, self.to_string(value)
@@ -54,19 +54,19 @@ class Property(ABC):
     def set(self, value):
         return value
 
-    def check_min_count(self, value, min_count) -> bool:
+    def check_min_count(self, value, min_count: int) -> bool:
         return min_count == 1
 
-    def check_max_count(self, value, max_count) -> bool:
+    def check_max_count(self, value, max_count: int) -> bool:
         return max_count == 1
 
     def elide(self, value) -> bool:
         return value is None
 
-    def walk(self, value, callback, path):
+    def walk(self, value, callback: Callable, path) -> None:
         callback(value, path)
 
-    def iter_objects(self, value, recursive, visited):
+    def iter_objects(self, value, recursive: bool, visited):
         return []
 
     def link_prop(self, value, objectset, missing, visited):
@@ -76,7 +76,7 @@ class Property(ABC):
         return str(value)
 
     @abstractmethod
-    def encode(self, encoder, value, state):
+    def encode(self, encoder, value, state) -> None:
         pass
 
     @abstractmethod
@@ -94,18 +94,18 @@ class StringProp(Property):
     def set(self, value) -> str:
         return str(value)
 
-    def encode(self, encoder, value, state):
+    def encode(self, encoder, value, state) -> None:
         encoder.write_string(value)
 
-    def decode(self, decoder, *, objectset=None):
+    def decode(self, decoder, *, objectset=None) -> Optional[str]:
         return decoder.read_string()
 
 
 class AnyURIProp(StringProp):
-    def encode(self, encoder, value, state):
+    def encode(self, encoder, value, state) -> None:
         encoder.write_iri(value)
 
-    def decode(self, decoder, *, objectset=None):
+    def decode(self, decoder, *, objectset=None) -> Optional[str]:
         return decoder.read_iri()
 
 
@@ -121,10 +121,10 @@ class DateTimeProp(Property):
     def set(self, value) -> datetime:
         return self._normalize(value)
 
-    def encode(self, encoder, value, state):
+    def encode(self, encoder, value, state) -> None:
         encoder.write_datetime(self.to_string(value))
 
-    def decode(self, decoder, *, objectset=None):
+    def decode(self, decoder, *, objectset=None) -> Optional[datetime]:
         s = decoder.read_datetime()
         if s is None:
             return None
@@ -176,22 +176,22 @@ class IntegerProp(Property):
     def set(self, value) -> int:
         return int(value)
 
-    def encode(self, encoder, value, state):
+    def encode(self, encoder, value, state) -> None:
         encoder.write_integer(value)
 
-    def decode(self, decoder, *, objectset=None):
+    def decode(self, decoder, *, objectset=None) -> Optional[int]:
         return decoder.read_integer()
 
 
 class PositiveIntegerProp(IntegerProp):
-    def validate(self, value):
+    def validate(self, value) -> None:
         super().validate(value)
         if value < 1:
             raise ValueError(f"Value must be >=1. Got {value}")
 
 
 class NonNegativeIntegerProp(IntegerProp):
-    def validate(self, value):
+    def validate(self, value) -> None:
         super().validate(value)
         if value < 0:
             raise ValueError(f"Value must be >= 0. Got {value}")
@@ -203,10 +203,10 @@ class BooleanProp(Property):
     def set(self, value) -> bool:
         return bool(value)
 
-    def encode(self, encoder, value, state):
+    def encode(self, encoder, value, state) -> None:
         encoder.write_bool(value)
 
-    def decode(self, decoder, *, objectset=None):
+    def decode(self, decoder, *, objectset=None) -> Optional[bool]:
         return decoder.read_bool()
 
 
@@ -216,10 +216,10 @@ class FloatProp(Property):
     def set(self, value) -> float:
         return float(value)
 
-    def encode(self, encoder, value, state):
+    def encode(self, encoder, value, state) -> None:
         encoder.write_float(value)
 
-    def decode(self, decoder, *, objectset=None):
+    def decode(self, decoder, *, objectset=None) -> Optional[float]:
         return decoder.read_float()
 
 
@@ -228,13 +228,13 @@ class IRIProp(Property):
         super().__init__(pattern=pattern)
         self.context = context
 
-    def compact(self, value):
+    def compact(self, value) -> Optional[str]:
         for iri, compact in self.context:
             if value == iri:
                 return compact
         return None
 
-    def expand(self, value):
+    def expand(self, value) -> Optional[str]:
         for iri, compact in self.context:
             if value == compact:
                 return iri
@@ -254,10 +254,10 @@ class ObjectProp(IRIProp):
         self.cls = cls
         self.required = required
 
-    def validate(self, value):
+    def validate(self, value) -> None:
         check_type(value, (self.cls, str))
 
-    def walk(self, value, callback, path):
+    def walk(self, value, callback: Callable, path) -> None:
         if value is None:
             return
 
@@ -266,7 +266,7 @@ class ObjectProp(IRIProp):
         else:
             callback(value, path)
 
-    def iter_objects(self, value, recursive, visited):
+    def iter_objects(self, value, recursive: bool, visited):
         if value is None or isinstance(value, str):
             return
 
@@ -278,7 +278,7 @@ class ObjectProp(IRIProp):
                 for c in value.iter_objects(recursive=True, visited=visited):
                     yield c
 
-    def encode(self, encoder, value, state):
+    def encode(self, encoder, value, state) -> None:
         if value is None:
             raise ValueError("Object cannot be None")
 
@@ -337,19 +337,19 @@ class ListProxy(object):
             self.__data = data
         self.__prop = prop
 
-    def append(self, value):
+    def append(self, value) -> None:
         self.__prop.validate(value)
         self.__data.append(self.__prop.set(value))
 
-    def insert(self, idx, value):
+    def insert(self, idx, value) -> None:
         self.__prop.validate(value)
         self.__data.insert(idx, self.__prop.set(value))
 
-    def extend(self, items):
+    def extend(self, items) -> None:
         for i in items:
             self.append(i)
 
-    def sort(self, *args, **kwargs):
+    def sort(self, *args, **kwargs) -> None:
         self.__data.sort(*args, **kwargs)
 
     def __getitem__(self, key):
@@ -400,26 +400,26 @@ class ListProp(Property):
         super().__init__()
         self.prop = prop
 
-    def init(self):
+    def init(self) -> ListProxy:
         return ListProxy(self.prop)
 
-    def validate(self, value):
+    def validate(self, value) -> None:
         super().validate(value)
 
         for i in value:
             self.prop.validate(i)
 
-    def set(self, value):
+    def set(self, value) -> ListProxy:
         if isinstance(value, ListProxy):
             return value
 
         return ListProxy(self.prop, [self.prop.set(d) for d in value])
 
-    def check_min_count(self, value, min_count) -> bool:
+    def check_min_count(self, value, min_count: int) -> bool:
         check_type(value, ListProxy)
         return len(value) >= min_count
 
-    def check_max_count(self, value, max_count) -> bool:
+    def check_max_count(self, value, max_count: int) -> bool:
         check_type(value, ListProxy)
         return len(value) <= max_count
 
@@ -427,12 +427,12 @@ class ListProp(Property):
         check_type(value, ListProxy)
         return len(value) == 0
 
-    def walk(self, value, callback, path):
+    def walk(self, value, callback: Callable, path) -> None:
         callback(value, path)
         for idx, v in enumerate(value):
             self.prop.walk(v, callback, path + [f"[{idx}]"])
 
-    def iter_objects(self, value, recursive, visited):
+    def iter_objects(self, value, recursive: bool, visited):
         for v in value:
             for c in self.prop.iter_objects(v, recursive, visited):
                 yield c
@@ -445,7 +445,7 @@ class ListProp(Property):
 
         return ListProxy(self.prop, data=data)
 
-    def encode(self, encoder, value, state):
+    def encode(self, encoder, value, state) -> None:
         check_type(value, ListProxy)
 
         with encoder.write_list() as list_s:
@@ -453,7 +453,7 @@ class ListProp(Property):
                 with list_s.write_list_item() as item_s:
                     self.prop.encode(item_s, v, state)
 
-    def decode(self, decoder, *, objectset=None):
+    def decode(self, decoder, *, objectset=None) -> ListProxy:
         data = []
         for val_d in decoder.read_list():
             v = self.prop.decode(val_d, objectset=objectset)
@@ -469,7 +469,7 @@ class EnumProp(IRIProp):
     def __init__(self, values, *, pattern=None):
         super().__init__(values, pattern=pattern)
 
-    def validate(self, value):
+    def validate(self, value) -> None:
         super().validate(value)
 
         valid_values = self.iri_values()
@@ -478,10 +478,10 @@ class EnumProp(IRIProp):
                 f"'{value}' is not a valid value. Choose one of {' '.join(valid_values)}"
             )
 
-    def encode(self, encoder, value, state):
+    def encode(self, encoder, value, state) -> None:
         encoder.write_enum(value, self, self.compact(value))
 
-    def decode(self, decoder, *, objectset=None):
+    def decode(self, decoder, *, objectset=None) -> str:
         v = decoder.read_enum(self)
         return self.expand(v) or v
 
@@ -510,7 +510,7 @@ def is_blank_node(s) -> bool:
     return True
 
 
-def register(type_iri, *, compact_type=None, abstract=False):
+def register(type_iri: str, *, compact_type: Optional[str] = None, abstract: bool = False):
     def add_class(key, c):
         assert (
             key not in SHACLObject.CLASSES
@@ -597,7 +597,7 @@ class SHACLObject(object):
         min_count=None,
         max_count=None,
         compact=None,
-        deprecated=False,
+        deprecated: bool = False,
     ):
         if pyname in cls._OBJ_IRIS:
             raise KeyError(f"'{pyname}' is already defined for '{cls.__name__}'")
@@ -710,7 +710,7 @@ class SHACLObject(object):
     def __iter__(self):
         return self._OBJ_PROPERTIES.keys()
 
-    def walk(self, callback, path=None):
+    def walk(self, callback: Callable, path=None) -> None:
         """
         Walk object tree, invoking the callback for each item
 
@@ -731,7 +731,7 @@ class SHACLObject(object):
                 compact = self.ID_ALIAS
             yield pyname, iri, compact
 
-    def iter_objects(self, *, recursive=False, visited=None):
+    def iter_objects(self, *, recursive: bool = False, visited=None):
         """
         Iterate of all objects that are a child of this one
         """
@@ -744,7 +744,7 @@ class SHACLObject(object):
             ):
                 yield c
 
-    def encode(self, encoder, state):
+    def encode(self, encoder, state) -> None:
         idname = self.ID_ALIAS or self._OBJ_IRIS["_id"]
         if not self._id and self.NODE_KIND == NodeKind.IRI:
             raise ValueError(
@@ -858,7 +858,7 @@ class SHACLObject(object):
 
         return False
 
-    def link_helper(self, objectset, missing, visited):
+    def link_helper(self, objectset, missing, visited) -> None:
         if self in visited:
             return
 
@@ -1027,7 +1027,7 @@ class SHACLExtensibleObject(object):
 
 
 class SHACLObjectSet(object):
-    def __init__(self, objects=[], *, link=False):
+    def __init__(self, objects=[], *, link: bool = False):
         self.objects = set()
         self.missing_ids = set()
         for o in objects:
@@ -1036,7 +1036,7 @@ class SHACLObjectSet(object):
         if link:
             self._link()
 
-    def create_index(self):
+    def create_index(self) -> None:
         """
         (re)Create object index
 
@@ -1048,7 +1048,7 @@ class SHACLObjectSet(object):
         for o in self.foreach():
             self.add_index(o)
 
-    def add_index(self, obj):
+    def add_index(self, obj) -> None:
         """
         Add object to index
 
@@ -1098,7 +1098,7 @@ class SHACLObjectSet(object):
             self.add_index(obj)
         return obj
 
-    def update(self, *others):
+    def update(self, *others) -> None:
         """
         Update object set adding all objects in each other iterable
         """
@@ -1158,7 +1158,7 @@ class SHACLObjectSet(object):
 
         return self.missing_ids
 
-    def find_by_id(self, _id, default=None):
+    def find_by_id(self, _id: str, default=None):
         """
         Find object by ID
 
@@ -1182,7 +1182,7 @@ class SHACLObjectSet(object):
             for child in o.iter_objects(recursive=True, visited=visited):
                 yield child
 
-    def foreach_type(self, typ, *, match_subclass=True):
+    def foreach_type(self, typ, *, match_subclass: bool = True):
         """
         Iterate over each object of a specified type (or subclass there of)
 
@@ -1216,7 +1216,7 @@ class SHACLObjectSet(object):
 
         return SHACLObjectSet(new_objects, link=True)
 
-    def encode(self, encoder, force_list=False, *, key=None):
+    def encode(self, encoder, force_list: bool = False, *, key=None):
         """
         Serialize a list of objects to a serialization encoder
 
@@ -1287,7 +1287,7 @@ class SHACLObjectSet(object):
         elif objects:
             objects[0].encode(encoder, state)
 
-    def decode(self, decoder):
+    def decode(self, decoder) -> Set:
         self.create_index()
 
         for obj_d in decoder.read_list():
@@ -1489,7 +1489,7 @@ class Decoder(ABC):
 
 
 class JSONLDDecoder(Decoder):
-    def __init__(self, data, root=False):
+    def __init__(self, data, root: bool = False):
         self.data = data
         self.root = root
 
@@ -1787,7 +1787,7 @@ class JSONLDSerializer(object):
     def serialize_data(
         self,
         objectset: SHACLObjectSet,
-        force_at_graph=False,
+        force_at_graph: bool = False,
     ):
         h = JSONLDEncoder()
         objectset.encode(h, force_at_graph)
@@ -1809,7 +1809,7 @@ class JSONLDSerializer(object):
         self,
         objectset: SHACLObjectSet,
         f,
-        force_at_graph=False,
+        force_at_graph: bool = False,
         **kwargs,
     ):
         """
@@ -1921,7 +1921,7 @@ class JSONLDInlineSerializer(object):
         self,
         objectset: SHACLObjectSet,
         f,
-        force_at_graph=False,
+        force_at_graph: bool = False,
     ):
         """
         Write a SHACLObjectSet to a JSON LD file
@@ -1947,7 +1947,7 @@ class JSONLDInlineSerializer(object):
         return sha1.hexdigest()
 
 
-def print_tree(objects, all_fields=False):
+def print_tree(objects, all_fields: bool = False) -> None:
     """
     Print object tree
     """

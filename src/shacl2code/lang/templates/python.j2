@@ -18,7 +18,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone, timedelta
 from enum import Enum
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Set
 
 
 def check_type(obj, types):
@@ -1112,7 +1112,7 @@ class SHACLObjectSet(object):
         """
         return item in self.objects
 
-    def link(self) -> set:
+    def link(self) -> Set:
         """
         Link object set
 
@@ -1128,7 +1128,7 @@ class SHACLObjectSet(object):
         self.create_index()
         return self._link()
 
-    def _link(self) -> set:
+    def _link(self) -> Set:
         global NAMED_INDIVIDUALS
 
         self.missing_ids = set()

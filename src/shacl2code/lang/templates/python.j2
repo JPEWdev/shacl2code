@@ -54,13 +54,13 @@ class Property(ABC):
     def set(self, value):
         return value
 
-    def check_min_count(self, value, min_count):
+    def check_min_count(self, value, min_count) -> bool:
         return min_count == 1
 
-    def check_max_count(self, value, max_count):
+    def check_max_count(self, value, max_count) -> bool:
         return max_count == 1
 
-    def elide(self, value):
+    def elide(self, value) -> bool:
         return value is None
 
     def walk(self, value, callback, path):
@@ -415,15 +415,15 @@ class ListProp(Property):
 
         return ListProxy(self.prop, [self.prop.set(d) for d in value])
 
-    def check_min_count(self, value, min_count):
+    def check_min_count(self, value, min_count) -> bool:
         check_type(value, ListProxy)
         return len(value) >= min_count
 
-    def check_max_count(self, value, max_count):
+    def check_max_count(self, value, max_count) -> bool:
         check_type(value, ListProxy)
         return len(value) <= max_count
 
-    def elide(self, value):
+    def elide(self, value) -> bool:
         check_type(value, ListProxy)
         return len(value) == 0
 

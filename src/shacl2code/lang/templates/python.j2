@@ -916,6 +916,7 @@ class SHACLObject(object):
 
 
 class SHACLExtensibleObject(SHACLObject):
+    CLASSES: Dict[str, Type] = {}
     CLOSED = False
 
     def __init__(self, typ=None, **kwargs):
@@ -1849,8 +1850,9 @@ class JSONLDSerializer(object):
 
         sha1 = hashlib.sha1()
         for chunk in json.JSONEncoder(**args).iterencode(data):
-            f.write(chunk)
-            sha1.update(chunk.encode("utf-8"))
+            chunk = chunk.encode("utf-8")
+            f.write(chunk)  # type: ignore[arg-type]
+            sha1.update(chunk)
 
         return sha1.hexdigest()
 

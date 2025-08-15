@@ -19,7 +19,7 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Callable, Dict, List, Optional, Set, Tuple, Type, Union
+from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Type, Union
 
 
 def check_type(obj, types) -> None:
@@ -37,7 +37,7 @@ class Property(ABC):
     class
     """
 
-    VALID_TYPES: Union[List, Tuple, Type] = ()
+    VALID_TYPES = ()
 
     def __init__(self, *, pattern=None):
         self.pattern = pattern
@@ -1046,8 +1046,8 @@ class SHACLObjectSet(object):
         Creates or recreates the indices for the object set to enable fast
         lookup. All objects and their children are walked and indexed
         """
-        self.obj_by_id = {}
-        self.obj_by_type = {}
+        self.obj_by_id: dict[str, SHACLObject] = {}
+        self.obj_by_type: dict[str, set[tuple[bool, SHACLObject]]] = {}
         for o in self.foreach():
             self.add_index(o)
 
@@ -1172,7 +1172,7 @@ class SHACLObjectSet(object):
             return default
         return self.obj_by_id[_id]
 
-    def foreach(self):
+    def foreach(self) -> Iterable[SHACLObject]:
         """
         Iterate over every object in the object set, and all child objects
         """
@@ -1185,7 +1185,7 @@ class SHACLObjectSet(object):
             for child in o.iter_objects(recursive=True, visited=visited):
                 yield child
 
-    def foreach_type(self, typ, *, match_subclass: bool = True):
+    def foreach_type(self, typ, *, match_subclass: bool = True) -> Iterable[SHACLObject]:
         """
         Iterate over each object of a specified type (or subclass there of)
 

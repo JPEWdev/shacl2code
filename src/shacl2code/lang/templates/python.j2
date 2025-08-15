@@ -1216,7 +1216,7 @@ class SHACLObjectSet(object):
         """
         if not isinstance(typ, str):
             if not isinstance(typ, type) or not issubclass(typ, SHACLObject):
-                raise TypeError(f"Type must be derived from SHACLObject, got {typ}")    
+                raise TypeError(f"Type must be derived from SHACLObject, got {typ}")
             obj_type = getattr(typ, "_OBJ_TYPE", None)
             if obj_type is None:
                 raise AttributeError(f"Type {typ} does not have _OBJ_TYPE attribute")

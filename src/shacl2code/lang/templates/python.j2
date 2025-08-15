@@ -16,10 +16,11 @@ import time
 import warnings
 
 from abc import ABC, abstractmethod
+from collections.abc import Collection
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional, Set, Tuple, Type, Union, cast
 
 
 def check_type(obj, types) -> None:
@@ -37,12 +38,12 @@ class Property(ABC):
     class
     """
 
-    VALID_TYPES = ()
+    VALID_TYPES: Union[List, Tuple, Type] = ()
 
     def __init__(self, *, pattern=None):
         self.pattern = pattern
 
-    def init(self) -> None:
+    def init(self) -> Any:
         return None
 
     def validate(self, value) -> None:
@@ -69,7 +70,7 @@ class Property(ABC):
     def walk(self, value, callback: Callable, path) -> None:
         callback(value, path)
 
-    def iter_objects(self, value, recursive: bool, visited):
+    def iter_objects(self, value, recursive: bool, visited) -> Iterable[Any]:
         return []
 
     def link_prop(self, value, objectset, missing, visited):
@@ -83,7 +84,7 @@ class Property(ABC):
         pass
 
     @abstractmethod
-    def decode(self, decoder, *, objectset=None):
+    def decode(self, decoder, *, objectset=None) -> Any:
         pass
 
 
@@ -138,10 +139,11 @@ class DateTimeProp(Property):
         if value.utcoffset() is None:
             value = value.astimezone()
         offset = value.utcoffset()
-        seconds = offset % timedelta(minutes=-1 if offset.total_seconds() < 0 else 1)
-        if seconds:
-            offset = offset - seconds
-            value = value.replace(tzinfo=timezone(offset))
+        if offset is not None:
+            seconds = offset % timedelta(minutes=-1 if offset.total_seconds() < 0 else 1)
+            if seconds:
+                offset = offset - seconds
+                value = value.replace(tzinfo=timezone(offset))
         value = value.replace(microsecond=0)
         return value
 
@@ -551,11 +553,20 @@ register_lock = threading.Lock()
 
 @functools.total_ordering
 class SHACLObject(object):
-    CLASSES = {}
+    CLASSES: Dict[str, Type] = {}
+    NAMED_INDIVIDUALS: Dict[str, str] = {}
     NODE_KIND = NodeKind.BlankNodeOrIRI
     ID_ALIAS = None
     IS_ABSTRACT = True
     IS_DEPRECATED = False
+    # These will be redefined during registration,
+    # defined here first to avoid reference errors
+    _OBJ_TYPE: Optional[str] = None
+    _OBJ_COMPACT_TYPE: Optional[str] = None
+    _OBJ_PROPERTIES = {}
+    _OBJ_IRIS = {}
+    _OBJ_DEPRECATED = set()
+    _NEEDS_REG = True
 
     def __init__(self, **kwargs):
         if self._is_abstract():
@@ -815,10 +826,10 @@ class SHACLObject(object):
                     continue
 
                 _id = prop_d.read_iri()
-                if _id is None:
+                if _id is None or not isinstance(_id, str):
                     raise TypeError(f"Object key '{key}' is the wrong type")
 
-                obj._id = _id
+                obj._id = str(_id)
                 break
 
         if obj.NODE_KIND == NodeKind.IRI and not obj._id:
@@ -904,7 +915,7 @@ class SHACLObject(object):
         return sort_key(self) < sort_key(other)
 
 
-class SHACLExtensibleObject(object):
+class SHACLExtensibleObject(SHACLObject):
     CLOSED = False
 
     def __init__(self, typ=None, **kwargs):
@@ -1030,11 +1041,11 @@ class SHACLExtensibleObject(object):
 
 
 class SHACLObjectSet(object):
-    def __init__(self, objects=[], *, link: bool = False):
-        self.objects = set()
-        self.missing_ids = set()
-        for o in objects:
-            self.objects.add(o)
+    def __init__(self, objects: Collection[SHACLObject] = [], *, link: bool = False):
+        self.objects: Set[SHACLObject] = set(objects)
+        self.missing_ids: Set[str] = set()
+        self.obj_by_id: Dict[str, SHACLObject] = {}
+        self.obj_by_type: Dict[str, Set[Tuple[bool, SHACLObject]]] = {}
         self.create_index()
         if link:
             self._link()
@@ -1046,12 +1057,10 @@ class SHACLObjectSet(object):
         Creates or recreates the indices for the object set to enable fast
         lookup. All objects and their children are walked and indexed
         """
-        self.obj_by_id: Dict[str, SHACLObject] = {}
-        self.obj_by_type: Dict[str, Set[Tuple[bool, SHACLObject]]] = {}
         for o in self.foreach():
             self.add_index(o)
 
-    def add_index(self, obj) -> None:
+    def add_index(self, obj: SHACLObject) -> None:
         """
         Add object to index
 
@@ -1077,6 +1086,9 @@ class SHACLObjectSet(object):
 
         if not obj._id:
             return
+
+        if not isinstance(obj._id, str):
+            raise TypeError(f"Object ID must be a string. Got {type(obj._id)}")
 
         self.missing_ids.discard(obj._id)
 
@@ -1115,7 +1127,7 @@ class SHACLObjectSet(object):
         """
         return item in self.objects
 
-    def link(self) -> Set:
+    def link(self) -> Set[str]:
         """
         Link object set
 
@@ -1131,26 +1143,30 @@ class SHACLObjectSet(object):
         self.create_index()
         return self._link()
 
-    def _link(self) -> Set:
+    def _link(self) -> Set[str]:
         global NAMED_INDIVIDUALS
 
         self.missing_ids = set()
         visited = set()
 
-        new_objects = set()
+        new_objects: Set[SHACLObject] = set()
 
         for o in self.objects:
-            if o._id:
+            if o is None:
+                continue
+            if o._id and isinstance(o._id, str):
                 o = self.find_by_id(o._id, o)
+            if not isinstance(o, SHACLObject):
+                raise TypeError(f"Object must be of type SHACLObject. Got {type(o)}")
             o.link_helper(self, self.missing_ids, visited)
             new_objects.add(o)
 
         self.objects = new_objects
 
         # Remove blank nodes
-        obj_by_id = {}
+        obj_by_id: Dict[str, SHACLObject] = {}
         for _id, obj in self.obj_by_id.items():
-            if _id.startswith("_:"):
+            if isinstance(_id, str) and _id.startswith("_:"):
                 del obj._id
             else:
                 obj_by_id[_id] = obj
@@ -1185,7 +1201,7 @@ class SHACLObjectSet(object):
             for child in o.iter_objects(recursive=True, visited=visited):
                 yield child
 
-    def foreach_type(self, typ, *, match_subclass: bool = True) -> Iterable[SHACLObject]:
+    def foreach_type(self, typ: Union[str, SHACLObject], *, match_subclass: bool = True) -> Iterable[SHACLObject]:
         """
         Iterate over each object of a specified type (or subclass there of)
 
@@ -1194,9 +1210,12 @@ class SHACLObjectSet(object):
         returned
         """
         if not isinstance(typ, str):
-            if not issubclass(typ, SHACLObject):
-                raise TypeError(f"Type must be derived from SHACLObject, got {typ}")
-            typ = typ._OBJ_TYPE
+            if not isinstance(typ, type) or not issubclass(typ, SHACLObject):
+                raise TypeError(f"Type must be derived from SHACLObject, got {typ}")    
+            obj_type = getattr(typ, "_OBJ_TYPE", None)
+            if obj_type is None:
+                raise AttributeError(f"Type {typ} does not have _OBJ_TYPE attribute")
+            typ = obj_type
 
         if typ not in self.obj_by_type:
             return
@@ -1228,7 +1247,7 @@ class SHACLObjectSet(object):
         ref_counts = {}
         state = EncodeState()
 
-        def walk_callback(value, path):
+        def walk_callback(value: SHACLObject, path):
             nonlocal state
             nonlocal ref_counts
 
@@ -1236,7 +1255,7 @@ class SHACLObjectSet(object):
                 return True
 
             # Remove blank node ID for re-assignment
-            if value._id and value._id.startswith("_:"):
+            if value._id and isinstance(value._id, str) and value._id.startswith("_:"):
                 del value._id
 
             if value._id:
@@ -1290,7 +1309,7 @@ class SHACLObjectSet(object):
         elif objects:
             objects[0].encode(encoder, state)
 
-    def decode(self, decoder) -> Set:
+    def decode(self, decoder):
         self.create_index()
 
         for obj_d in decoder.read_list():
@@ -1331,7 +1350,7 @@ class EncodeState(object):
 
 class Decoder(ABC):
     @abstractmethod
-    def read_value(self):
+    def read_value(self) -> Optional[Any]:
         """
         Consume next item
 
@@ -1340,7 +1359,7 @@ class Decoder(ABC):
         pass
 
     @abstractmethod
-    def read_string(self):
+    def read_string(self) -> Optional[str]:
         """
         Consume the next item as a string.
 
@@ -1350,7 +1369,7 @@ class Decoder(ABC):
         pass
 
     @abstractmethod
-    def read_datetime(self):
+    def read_datetime(self) -> Optional[str]:
         """
         Consumes the next item as a date & time string
 
@@ -1364,7 +1383,7 @@ class Decoder(ABC):
         pass
 
     @abstractmethod
-    def read_integer(self):
+    def read_integer(self) -> Optional[int]:
         """
         Consumes the next item as an integer
 
@@ -1374,7 +1393,7 @@ class Decoder(ABC):
         pass
 
     @abstractmethod
-    def read_iri(self):
+    def read_iri(self) -> Optional[str]:
         """
         Consumes the next item as an IRI string
 
@@ -1387,7 +1406,7 @@ class Decoder(ABC):
         pass
 
     @abstractmethod
-    def read_enum(self, e):
+    def read_enum(self, e) -> Optional[str]:
         """
         Consumes the next item as an Enum value string
 
@@ -1401,7 +1420,7 @@ class Decoder(ABC):
         pass
 
     @abstractmethod
-    def read_bool(self):
+    def read_bool(self) -> Optional[bool]:
         """
         Consume the next item as a boolean value
 
@@ -1411,7 +1430,7 @@ class Decoder(ABC):
         pass
 
     @abstractmethod
-    def read_float(self):
+    def read_float(self) -> Optional[float]:
         """
         Consume the next item as a float value
 
@@ -1421,7 +1440,7 @@ class Decoder(ABC):
         pass
 
     @abstractmethod
-    def read_list(self):
+    def read_list(self) -> Iterator["Decoder"]:
         """
         Consume the next item as a list generator
 
@@ -1441,7 +1460,7 @@ class Decoder(ABC):
         pass
 
     @abstractmethod
-    def read_object(self):
+    def read_object(self) -> Tuple[Any, "Decoder"]:
         """
         Consume next item as an object
 
@@ -1456,7 +1475,7 @@ class Decoder(ABC):
 
     @abstractmethod
     @contextmanager
-    def read_property(self, key):
+    def read_property(self, key) -> Iterator[Optional["Decoder"]]:
         """
         Read property from object
 
@@ -1464,10 +1483,10 @@ class Decoder(ABC):
         value of the property with the given key in current object, or `None`
         if the property does not exist in the current object.
         """
-        pass
+        yield
 
     @abstractmethod
-    def object_keys(self):
+    def object_keys(self) -> Iterator[str]:
         """
         Read property keys from an object
 
@@ -1496,7 +1515,7 @@ class JSONLDDecoder(Decoder):
         self.data = data
         self.root = root
 
-    def read_value(self):
+    def read_value(self) -> Optional[Any]:
         if isinstance(self.data, str):
             try:
                 return float(self.data)
@@ -1509,7 +1528,7 @@ class JSONLDDecoder(Decoder):
             return self.data
         return None
 
-    def read_datetime(self):
+    def read_datetime(self) -> Optional[str]:
         return self.read_string()
 
     def read_integer(self) -> Optional[int]:
@@ -1537,7 +1556,7 @@ class JSONLDDecoder(Decoder):
             return self.data
         return None
 
-    def read_list(self):
+    def read_list(self) -> Iterator["JSONLDDecoder"]:
         if self.is_list():
             for v in self.data:
                 yield self.__class__(v)
@@ -1554,14 +1573,14 @@ class JSONLDDecoder(Decoder):
         return None
 
     @contextmanager
-    def read_property(self, key):
+    def read_property(self, key) -> Iterator[Optional["JSONLDDecoder"]]:
         v = self.__get_value(key)
         if v is not None:
             yield self.__class__(v)
         else:
             yield None
 
-    def object_keys(self):
+    def object_keys(self) -> Iterator[str]:
         for key in self.data.keys():
             if key in ("@type", "{{ context.compact_iri('@type') }}"):
                 continue
@@ -1569,7 +1588,7 @@ class JSONLDDecoder(Decoder):
                 continue
             yield key
 
-    def read_object(self):
+    def read_object(self) -> Tuple[Any, "JSONLDDecoder"]:
         typ = self.__get_value("@type", "{{ context.compact_iri('@type') }}")
         if typ is not None:
             return typ, self
@@ -1667,7 +1686,7 @@ class Encoder(ABC):
 
     @abstractmethod
     @contextmanager
-    def write_object(self, o, _id, needs_id):
+    def write_object(self, o, _id, needs_id: bool):
         """
         Write object
 
@@ -1685,7 +1704,7 @@ class Encoder(ABC):
 
         Properties will be written the object using `write_property`
         """
-        pass
+        yield self
 
     @abstractmethod
     @contextmanager
@@ -1700,7 +1719,7 @@ class Encoder(ABC):
         the serialization supports compacted IRIs, it should be preferred to
         the full IRI.
         """
-        pass
+        yield self
 
     @abstractmethod
     @contextmanager
@@ -1713,7 +1732,7 @@ class Encoder(ABC):
 
         Each item of the list will be added using `write_list_item`
         """
-        pass
+        yield self
 
     @abstractmethod
     @contextmanager
@@ -1724,7 +1743,7 @@ class Encoder(ABC):
         A context manager that yields an `Encoder` that can be used to encode
         the value for a list item
         """
-        pass
+        yield self
 
 
 class JSONLDEncoder(Encoder):
@@ -1757,6 +1776,8 @@ class JSONLDEncoder(Encoder):
         s = self.__class__(None)
         yield s
         if s.data is not None:
+            if self.data is None:
+                self.data = {}
             self.data[compact or iri] = s.data
 
     @contextmanager
@@ -1780,6 +1801,8 @@ class JSONLDEncoder(Encoder):
         s = self.__class__(None)
         yield s
         if s.data is not None:
+            if self.data is None:
+                self.data = []
             self.data.append(s.data)
 
 
@@ -1802,7 +1825,7 @@ class JSONLDSerializer(object):
 
         if isinstance(h.data, list):
             data["@graph"] = h.data
-        else:
+        elif h.data is not None:
             for k, v in h.data.items():
                 data[k] = v
 
@@ -1826,9 +1849,8 @@ class JSONLDSerializer(object):
 
         sha1 = hashlib.sha1()
         for chunk in json.JSONEncoder(**args).iterencode(data):
-            chunk = chunk.encode("utf-8")
             f.write(chunk)
-            sha1.update(chunk)
+            sha1.update(chunk.encode("utf-8"))
 
         return sha1.hexdigest()
 

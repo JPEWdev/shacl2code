@@ -519,8 +519,6 @@ def is_blank_node(s) -> bool:
     return True
 
 
-NAMED_INDIVIDUALS = set()
-
 def register(type_iri: str, *, compact_type: Optional[str] = None, abstract: bool = False):
     def add_class(key, c):
         assert (
@@ -554,6 +552,7 @@ def register(type_iri: str, *, compact_type: Optional[str] = None, abstract: boo
 
 
 register_lock = threading.Lock()
+NAMED_INDIVIDUALS = set()
 
 @functools.total_ordering
 class SHACLObject(object):
@@ -1062,6 +1061,8 @@ class SHACLObjectSet(object):
         Creates or recreates the indices for the object set to enable fast
         lookup. All objects and their children are walked and indexed
         """
+        self.obj_by_id: Dict[str, SHACLObject] = {}
+        self.obj_by_type: Dict[str, Set[Tuple[bool, SHACLObject]]] = {}
         for o in self.foreach():
             self.add_index(o)
 

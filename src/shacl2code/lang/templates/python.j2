@@ -81,11 +81,15 @@ class Property(ABC):
 
     @abstractmethod
     def encode(self, encoder, value, state) -> None:
-        pass
+        raise NotImplementedError(
+            "Subclasses must implement encode method"
+        )
 
     @abstractmethod
     def decode(self, decoder, *, objectset=None) -> Any:
-        pass
+        raise NotImplementedError(
+            "Subclasses must implement decode method"
+        )
 
 
 class StringProp(Property):
@@ -1357,7 +1361,9 @@ class Decoder(ABC):
 
         Consumes the next item of any type
         """
-        pass
+        raise NotImplementedError(
+            "Subclasses must implement read_value method"
+        )
 
     @abstractmethod
     def read_string(self) -> Optional[str]:
@@ -1367,7 +1373,9 @@ class Decoder(ABC):
         Returns the string value of the next item, or `None` if the next item
         is not a string
         """
-        pass
+        raise NotImplementedError(
+            "Subclasses must implement read_string method"
+        )
 
     @abstractmethod
     def read_datetime(self) -> Optional[str]:
@@ -1381,7 +1389,9 @@ class Decoder(ABC):
         implementation can just check if the next item is a string without
         worrying about the format
         """
-        pass
+        raise NotImplementedError(
+            "Subclasses must implement read_datetime method"
+        )
 
     @abstractmethod
     def read_integer(self) -> Optional[int]:
@@ -1391,7 +1401,9 @@ class Decoder(ABC):
         Returns the integer value of the next item, or `None` if the next item
         is not an integer
         """
-        pass
+        raise NotImplementedError(
+            "Subclasses must implement read_integer method"
+        )
 
     @abstractmethod
     def read_iri(self) -> Optional[str]:
@@ -1404,7 +1416,9 @@ class Decoder(ABC):
         The returned string should be either a fully-qualified IRI, or a blank
         node ID
         """
-        pass
+        raise NotImplementedError(
+            "Subclasses must implement read_iri method"
+        )
 
     @abstractmethod
     def read_enum(self, e) -> Optional[str]:
@@ -1418,7 +1432,9 @@ class Decoder(ABC):
         actually a member of the specified Enum, so the `Decoder` does not need
         to check that, but can if it wishes
         """
-        pass
+        raise NotImplementedError(
+            "Subclasses must implement read_enum method"
+        )
 
     @abstractmethod
     def read_bool(self) -> Optional[bool]:
@@ -1428,7 +1444,9 @@ class Decoder(ABC):
         Returns the boolean value of the next item, or `None` if the next item
         is not a boolean
         """
-        pass
+        raise NotImplementedError(
+            "Subclasses must implement read_bool method"
+        )
 
     @abstractmethod
     def read_float(self) -> Optional[float]:
@@ -1438,7 +1456,9 @@ class Decoder(ABC):
         Returns the float value of the next item, or `None` if the next item is
         not a float
         """
-        pass
+        raise NotImplementedError(
+            "Subclasses must implement read_float method"
+        )
 
     @abstractmethod
     def read_list(self) -> Iterator["Decoder"]:
@@ -1449,7 +1469,9 @@ class Decoder(ABC):
         generated `Decoder` can be used to read the corresponding item from the
         list
         """
-        pass
+        raise NotImplementedError(
+            "Subclasses must implement read_list method"
+        )
 
     @abstractmethod
     def is_list(self) -> bool:
@@ -1458,7 +1480,9 @@ class Decoder(ABC):
 
         Returns True if the next item is a list, or False if it is a scalar
         """
-        pass
+        raise NotImplementedError(
+            "Subclasses must implement is_list method"
+        )
 
     @abstractmethod
     def read_object(self) -> Tuple[Any, "Decoder"]:
@@ -1472,7 +1496,9 @@ class Decoder(ABC):
         Properties will be read out of the object using `read_property` and
         `read_object_id`
         """
-        pass
+        raise NotImplementedError(
+            "Subclasses must implement read_object method"
+        )
 
     @abstractmethod
     @contextmanager
@@ -1484,7 +1510,9 @@ class Decoder(ABC):
         value of the property with the given key in current object, or `None`
         if the property does not exist in the current object.
         """
-        yield
+        raise NotImplementedError(
+            "Subclasses must implement read_property method"
+        )
 
     @abstractmethod
     def object_keys(self) -> Iterator[str]:
@@ -1493,10 +1521,12 @@ class Decoder(ABC):
 
         Iterates over all the serialized keys for the current object
         """
-        pass
+        raise NotImplementedError(
+            "Subclasses must implement object_keys method"
+        )
 
     @abstractmethod
-    def read_object_id(self, alias=None):
+    def read_object_id(self, alias=None) -> Optional[Any]:
         """
         Read current object ID property
 
@@ -1508,7 +1538,9 @@ class Decoder(ABC):
         If `alias` is provided, is is a hint as to another name by which the ID
         might be found, if the `Decoder` supports aliases for an ID
         """
-        pass
+        raise NotImplementedError(
+            "Subclasses must implement read_object_id method"
+        )
 
 
 class JSONLDDecoder(Decoder):
@@ -1596,12 +1628,12 @@ class JSONLDDecoder(Decoder):
 
         return None, self
 
-    def read_object_id(self, alias=None):
+    def read_object_id(self, alias=None) -> Optional[Any]:
         return self.__get_value(alias, "@id")
 
 
 class JSONLDDeserializer(object):
-    def deserialize_data(self, data, objectset: SHACLObjectSet):
+    def deserialize_data(self, data, objectset: SHACLObjectSet) -> None:
         if "@graph" in data:
             h = JSONLDDecoder(data["@graph"], True)
         else:
@@ -1609,23 +1641,25 @@ class JSONLDDeserializer(object):
 
         objectset.decode(h)
 
-    def read(self, f, objectset: SHACLObjectSet):
+    def read(self, f, objectset: SHACLObjectSet) -> None:
         data = json.load(f)
         self.deserialize_data(data, objectset)
 
 
 class Encoder(ABC):
     @abstractmethod
-    def write_string(self, v):
+    def write_string(self, v) -> None:
         """
         Write a string value
 
         Encodes the value as a string in the output
         """
-        pass
+        raise NotImplementedError(
+            "Subclasses must implement write_string method"
+        )
 
     @abstractmethod
-    def write_datetime(self, v):
+    def write_datetime(self, v) -> None:
         """
         Write a date & time string
 
@@ -1633,19 +1667,23 @@ class Encoder(ABC):
 
         Note: The provided string is already correctly encoded as an ISO datetime
         """
-        pass
+        raise NotImplementedError(
+            "Subclasses must implement write_datetime method"
+        )
 
     @abstractmethod
-    def write_integer(self, v):
+    def write_integer(self, v) -> None:
         """
         Write an integer value
 
         Encodes the value as an integer in the output
         """
-        pass
+        raise NotImplementedError(
+            "Subclasses must implement write_integer method"
+        )
 
     @abstractmethod
-    def write_iri(self, v, compact=None):
+    def write_iri(self, v, compact=None) -> None:
         """
         Write IRI
 
@@ -1654,10 +1692,12 @@ class Encoder(ABC):
         the serialization supports compacted IRIs, it should be preferred to
         the full IRI
         """
-        pass
+        raise NotImplementedError(
+            "Subclasses must implement write_iri method"
+        )
 
     @abstractmethod
-    def write_enum(self, v, e, compact=None):
+    def write_enum(self, v, e, compact=None) -> None:
         """
         Write enum value IRI
 
@@ -1665,25 +1705,31 @@ class Encoder(ABC):
         qualified IRI. If `compact` is provided and the serialization supports
         compacted IRIs, it should be preferred to the full IRI.
         """
-        pass
+        raise NotImplementedError(
+            "Subclasses must implement write_enum method"
+        )
 
     @abstractmethod
-    def write_bool(self, v):
+    def write_bool(self, v) -> None:
         """
         Write boolean
 
         Encodes the value as a boolean in the output
         """
-        pass
+        raise NotImplementedError(
+            "Subclasses must implement write_bool method"
+        )
 
     @abstractmethod
-    def write_float(self, v):
+    def write_float(self, v) -> None:
         """
         Write float
 
         Encodes the value as a floating point number in the output
         """
-        pass
+        raise NotImplementedError(
+            "Subclasses must implement write_float method"
+        )
 
     @abstractmethod
     @contextmanager
@@ -1705,7 +1751,9 @@ class Encoder(ABC):
 
         Properties will be written the object using `write_property`
         """
-        yield self
+        raise NotImplementedError(
+            "Subclasses must implement write_object method"
+        )
 
     @abstractmethod
     @contextmanager
@@ -1720,7 +1768,9 @@ class Encoder(ABC):
         the serialization supports compacted IRIs, it should be preferred to
         the full IRI.
         """
-        yield self
+        raise NotImplementedError(
+            "Subclasses must implement write_property method"
+        )
 
     @abstractmethod
     @contextmanager
@@ -1733,7 +1783,9 @@ class Encoder(ABC):
 
         Each item of the list will be added using `write_list_item`
         """
-        yield self
+        raise NotImplementedError(
+            "Subclasses must implement write_list method"
+        )
 
     @abstractmethod
     @contextmanager
@@ -1744,7 +1796,9 @@ class Encoder(ABC):
         A context manager that yields an `Encoder` that can be used to encode
         the value for a list item
         """
-        yield self
+        raise NotImplementedError(
+            "Subclasses must implement write_list_item method"
+        )
 
 
 class JSONLDEncoder(Encoder):

@@ -919,7 +919,6 @@ class SHACLObject(object):
 
 
 class SHACLExtensibleObject(SHACLObject):
-    CLASSES: Dict[str, Type] = {}
     CLOSED = False
 
     def __init__(self, typ=None, **kwargs):

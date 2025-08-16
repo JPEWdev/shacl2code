@@ -566,24 +566,28 @@ def register(type_iri: str, *, compact_type: Optional[str] = None, abstract: boo
 
 
 register_lock = threading.Lock()
-NAMED_INDIVIDUALS = set()
+NAMED_INDIVIDUALS: Set[str] = set()
 
 @functools.total_ordering
 class SHACLObject(object):
     CLASSES: Dict[str, Type] = {}
     NAMED_INDIVIDUALS: Dict[str, str] = {}
     NODE_KIND = NodeKind.BlankNodeOrIRI
-    ID_ALIAS = None
-    IS_ABSTRACT = True
-    IS_DEPRECATED = False
-    # These will be redefined during registration,
+    ID_ALIAS: Optional[str] = None
+    IS_ABSTRACT: bool = True
+    IS_DEPRECATED: bool = False
+
+    # These will be reinitialized during registration,
     # defined here first to avoid reference errors
     _OBJ_TYPE: Optional[str] = None
     _OBJ_COMPACT_TYPE: Optional[str] = None
     _OBJ_PROPERTIES = {}
-    _OBJ_IRIS = {}
-    _OBJ_DEPRECATED = set()
-    _NEEDS_REG = True
+    _OBJ_IRIS: Dict[str, str] = {}
+    _OBJ_DEPRECATED: Set[str] = set()
+    _NEEDS_REG: bool = True
+
+    _obj_data: Dict[str, Any]
+    _obj_metadata: Dict[str, Any]
 
     def __init__(self, **kwargs):
         if self._is_abstract():
@@ -622,12 +626,12 @@ class SHACLObject(object):
     @classmethod
     def _add_property(
         cls,
-        pyname,
+        pyname: str,
         prop,
-        iri,
-        min_count=None,
-        max_count=None,
-        compact=None,
+        iri: str,
+        min_count: Optional[int] = None,
+        max_count: Optional[int] = None,
+        compact: Optional[str] = None,
         deprecated: bool = False,
     ):
         if pyname in cls._OBJ_IRIS:
@@ -837,6 +841,7 @@ class SHACLObject(object):
             raise TypeError("Unable to determine type for object")
 
         obj = cls._make_object(typ)
+        _id = None
         for key in (obj.ID_ALIAS, obj._OBJ_IRIS["_id"]):
             with obj_d.read_property(key) as prop_d:
                 if prop_d is None:
@@ -1074,8 +1079,8 @@ class SHACLObjectSet(object):
         Creates or recreates the indices for the object set to enable fast
         lookup. All objects and their children are walked and indexed
         """
-        self.obj_by_id: Dict[str, SHACLObject] = {}
-        self.obj_by_type: Dict[str, Set[Tuple[bool, SHACLObject]]] = {}
+        self.obj_by_id = {}
+        self.obj_by_type = {}
         for o in self.foreach():
             self.add_index(o)
 
@@ -1166,7 +1171,7 @@ class SHACLObjectSet(object):
         global NAMED_INDIVIDUALS
 
         self.missing_ids = set()
-        visited = set()
+        visited: Set[SHACLObject] = set()
 
         new_objects: Set[SHACLObject] = set()
 
@@ -1236,6 +1241,8 @@ class SHACLObjectSet(object):
                 raise AttributeError(f"Type {typ} does not have _OBJ_TYPE attribute")
             typ = obj_type
 
+        typ = cast(str, typ)
+
         if typ not in self.obj_by_type:
             return
 
@@ -1263,7 +1270,7 @@ class SHACLObjectSet(object):
 
         If force_list is true, a list will always be written using the encoder.
         """
-        ref_counts = {}
+        ref_counts: Dict[SHACLObject, int] = {}
         state = EncodeState()
 
         def walk_callback(value: SHACLObject, path):

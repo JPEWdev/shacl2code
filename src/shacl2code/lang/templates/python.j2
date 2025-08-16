@@ -1893,7 +1893,7 @@ class JSONLDSerializer(object):
     ):
         h = JSONLDEncoder()
         objectset.encode(h, force_at_graph)
-        data = {}
+        data: Dict[str, Union[str, List[str]]] = {}
         if len(CONTEXT_URLS) == 1:
             data["@context"] = CONTEXT_URLS[0]
         elif CONTEXT_URLS:
@@ -1928,9 +1928,9 @@ class JSONLDSerializer(object):
 
         sha1 = hashlib.sha1()
         for chunk in json.JSONEncoder(**args).iterencode(data):
-            chunk = chunk.encode("utf-8")
-            f.write(chunk)  # type: ignore[arg-type]
-            sha1.update(chunk)
+            chunk_bytes = chunk.encode("utf-8")
+            f.write(chunk_bytes)
+            sha1.update(chunk_bytes)
 
         return sha1.hexdigest()
 
@@ -2104,7 +2104,7 @@ DATATYPE_CLASSES = {
 }
 %}
 
-CONTEXT_URLS = [
+CONTEXT_URLS: List[str] = [
 {%- for url in context.urls %}
     "{{ url }}",
 {%- endfor %}

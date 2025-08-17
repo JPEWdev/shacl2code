@@ -193,11 +193,10 @@ class TestCheckType:
                 str(outfile)
             ],
             stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
             encoding="utf-8",
             check=True,
         )
-        assert result.returncode == 0, f"mypy failed:\n{result.stdout}"
+        assert result.returncode == 0, "mypy failed"
 
     def test_pyrefly(self, tmp_path, args):
         """
@@ -224,11 +223,10 @@ class TestCheckType:
                 str(outfile)
             ],
             stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
             encoding="utf-8",
             check=True,
         )
-        assert result.returncode == 0, f"pyrefly failed:\n{result.stdout}"
+        assert result.returncode == 0, "pyrefly failed"
 
     def test_pyright(self, tmp_path, args):
         """
@@ -254,11 +252,10 @@ class TestCheckType:
                 str(outfile)
             ],
             stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
             encoding="utf-8",
             check=True,
         )
-        assert result.returncode == 0, f"pyright failed:\n{result.stdout}"
+        assert result.returncode == 0, "pyright failed"
 
 
 def test_roundtrip(model, tmp_path, roundtrip):

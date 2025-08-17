@@ -56,7 +56,7 @@ class Property(ABC):
 
     VALID_TYPES: Union[List, Tuple, Type] = ()
 
-    def __init__(self, *, pattern=None):
+    def __init__(self, *, pattern: Optional[str] = None):
         self.pattern = pattern
 
     def init(self) -> Any:
@@ -71,7 +71,7 @@ class Property(ABC):
                 f"Value is not correctly formatted. Got '{self.to_string(value)}'"
             )
 
-    def set(self, value):
+    def set(self, value: Any) -> Any:
         return value
 
     def check_min_count(self, value, min_count: int) -> bool:
@@ -249,7 +249,14 @@ class FloatProp(Property):
 
 
 class IRIProp(Property):
-    def __init__(self, context=[], *, pattern=None):
+    def __init__(
+        self,
+        context: Optional[List[Tuple[str, str]]] = None,
+        *,
+        pattern: Optional[str] = None,
+    ):
+        if context is None:
+            context = []
         super().__init__(pattern=pattern)
         self.context = context
 
@@ -274,7 +281,11 @@ class ObjectProp(IRIProp):
     A scalar SHACL object property of a SHACL object
     """
 
-    def __init__(self, cls, required, context=[]):
+    def __init__(
+        self, cls, required: bool, context: Optional[List[Tuple[str, str]]] = None
+    ):
+        if context is None:
+            context = []
         super().__init__(context)
         self.cls = cls
         self.required = required
@@ -366,11 +377,11 @@ class ListProxy(object):
         self.__prop.validate(value)
         self.__data.append(self.__prop.set(value))
 
-    def insert(self, idx, value) -> None:
+    def insert(self, idx: int, value) -> None:
         self.__prop.validate(value)
         self.__data.insert(idx, self.__prop.set(value))
 
-    def extend(self, items) -> None:
+    def extend(self, items: Iterable[Any]) -> None:
         for i in items:
             self.append(i)
 
@@ -493,7 +504,7 @@ class ListProp(Property):
 class EnumProp(IRIProp):
     VALID_TYPES = str
 
-    def __init__(self, values, *, pattern=None):
+    def __init__(self, values, *, pattern: Optional[str] = None):
         super().__init__(values, pattern=pattern)
 
     def validate(self, value) -> None:

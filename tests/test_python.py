@@ -83,6 +83,10 @@ def model(test_context):
     ],
 )
 class TestOutput:
+    """
+    Test syntax and formatting of the output file
+    """
+
     def test_output_syntax(self, tmp_path, args):
         """
         Checks that the output file is valid python syntax by executing it"
@@ -151,6 +155,110 @@ class TestOutput:
 
         for num, line in enumerate(p.stdout.splitlines()):
             assert "\t" not in line, f"Line {num + 1} has tabs"
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        ["--input", TEST_MODEL],
+        ["--input", TEST_MODEL, "--context-url", TEST_CONTEXT, SPDX3_CONTEXT_URL],
+    ],
+)
+class TestCheckType:
+    """
+    Static type checking tests for the generated Python code
+    """
+
+    def test_mypy(self, tmp_path, args):
+        """
+        Mypy static type checking
+        """
+        outfile = tmp_path / "output.py"
+        subprocess.run(
+            [
+                "shacl2code",
+                "generate",
+            ]
+            + args
+            + [
+                "python",
+                "--output",
+                outfile,
+            ],
+            check=True,
+        )
+        result = subprocess.run(
+            [
+                "mypy",
+                str(outfile)
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            encoding="utf-8",
+            check=True,
+        )
+        assert result.returncode == 0, f"mypy failed:\n{result.stdout}"
+
+    def test_pyrefly(self, tmp_path, args):
+        """
+        Pyrefly static type checking
+        """
+        outfile = tmp_path / "output.py"
+        subprocess.run(
+            [
+                "shacl2code",
+                "generate",
+            ]
+            + args
+            + [
+                "python",
+                "--output",
+                outfile,
+            ],
+            check=True,
+        )
+        result = subprocess.run(
+            [
+                "pyrefly",
+                "check",
+                str(outfile)
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            encoding="utf-8",
+            check=True,
+        )
+        assert result.returncode == 0, f"pyrefly failed:\n{result.stdout}"
+
+    def test_pyright(self, tmp_path, args):
+        """
+        Pyright static type checking
+        """
+        outfile = tmp_path / "output.py"
+        subprocess.run(
+            [
+                "shacl2code",
+                "generate",
+            ]
+            + args
+            + [
+                "python",
+                "--output",
+                outfile,
+            ],
+            check=True,
+        )
+        result = subprocess.run(
+            [
+                "pyright",
+                str(outfile)
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            encoding="utf-8",
+            check=True,
+        )
+        assert result.returncode == 0, f"pyright failed:\n{result.stdout}"
 
 
 def test_roundtrip(model, tmp_path, roundtrip):

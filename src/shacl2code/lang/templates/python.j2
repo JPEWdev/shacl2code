@@ -581,7 +581,7 @@ class SHACLObject(object):
     # defined here first to avoid reference errors
     _OBJ_TYPE: Optional[str] = None
     _OBJ_COMPACT_TYPE: Optional[str] = None
-    _OBJ_PROPERTIES = {}
+    _OBJ_PROPERTIES: Dict[str, Tuple] = {}
     _OBJ_IRIS: Dict[str, str] = {}
     _OBJ_DEPRECATED: Set[str] = set()
     _NEEDS_REG: bool = True
@@ -626,14 +626,16 @@ class SHACLObject(object):
     @classmethod
     def _add_property(
         cls,
-        pyname: str,
-        prop,
+        pyname: Optional[str],
+        prop: Property,
         iri: str,
         min_count: Optional[int] = None,
         max_count: Optional[int] = None,
         compact: Optional[str] = None,
         deprecated: bool = False,
     ):
+        if pyname is None:
+            raise ValueError("pyname must not be None")
         if pyname in cls._OBJ_IRIS:
             raise KeyError(f"'{pyname}' is already defined for '{cls.__name__}'")
         if iri in cls._OBJ_PROPERTIES:
@@ -707,14 +709,14 @@ class SHACLObject(object):
 
         return self._OBJ_PROPERTIES[iri]
 
-    def __iter_props(self):
+    def __iter_props(self) -> Iterator[Tuple[str, Property, Optional[int], Optional[int], str, Optional[str]]]:
         for iri, v in self._OBJ_PROPERTIES.items():
             yield iri, *v
 
-    def __getitem__(self, iri):
+    def __getitem__(self, iri: str) -> Any:
         return self.__dict__["_obj_data"][iri]
 
-    def __setitem__(self, iri, value):
+    def __setitem__(self, iri: str, value) -> None:
         if iri == "@id":
             if self.NODE_KIND == NodeKind.BlankNode:
                 if not is_blank_node(value):
@@ -738,14 +740,14 @@ class SHACLObject(object):
             warnings.warn(f"{self.__class__.__name__}.{pyname} is deprecated", DeprecationWarning)
         self.__dict__["_obj_data"][iri] = prop.set(value)
 
-    def __delitem__(self, iri):
+    def __delitem__(self, iri) -> None:
         prop, _, _, _, _ = self.__get_prop(iri)
         self.__dict__["_obj_data"][iri] = prop.init()
 
-    def __iter__(self):
-        return self._OBJ_PROPERTIES.keys()
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._OBJ_PROPERTIES.keys())
 
-    def walk(self, callback: Callable, path=None) -> None:
+    def walk(self, callback: Callable, path: Optional[List[str]] = None) -> None:
         """
         Walk object tree, invoking the callback for each item
 
@@ -760,7 +762,7 @@ class SHACLObject(object):
             for iri, prop, _, _, _, _ in self.__iter_props():
                 prop.walk(self.__dict__["_obj_data"][iri], callback, path + [f".{iri}"])
 
-    def property_keys(self):
+    def property_keys(self) -> Iterator[Tuple[Optional[str], str, Optional[str]]]:
         for iri, _, _, _, pyname, compact in self.__iter_props():
             if iri == "@id":
                 compact = self.ID_ALIAS
@@ -1048,8 +1050,8 @@ class SHACLExtensibleObject(SHACLObject):
             return self.__dict__["_obj_TYPE"][1]
         return super().__getattr__(name)
 
-    def property_keys(self):
-        iris = set()
+    def property_keys(self) -> Iterator[Tuple[Optional[str], str, Optional[str]]]:
+        iris: Set[str] = set()
         for pyname, iri, compact in super().property_keys():
             iris.add(iri)
             yield pyname, iri, compact
@@ -2058,7 +2060,7 @@ def print_tree(objects, all_fields: bool = False) -> None:
     """
     seen = set()
 
-    def callback(value, path):
+    def callback(value, path: List[str]):
         nonlocal seen
 
         s = ("  " * (len(path) - 1)) + f"{path[-1]}"

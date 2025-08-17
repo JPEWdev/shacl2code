@@ -30,7 +30,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install build mypy pyrefly
+          pip install build mypy pyrefly pyright
           npm install -g jsonld-cli
           sudo apt install -y build-essential doxygen graphviz
       - name: Build package
@@ -48,3 +48,6 @@ jobs:
       - name: Run pyrefly on generated code
         run: |
           pyrefly check out.py
+      - name: Run pyright on generated code
+        run: |
+          pyright out.py

@@ -37,13 +37,15 @@ from typing import (
 )
 
 
-def check_type(obj, types) -> None:
+def check_type(obj: Any, types: Union[Type[Any], Tuple[Type[Any], ...], List[Type[Any]]]) -> None:
+    if isinstance(types, list):
+        types = tuple(types) # convert list to tuple for isinstance()
     if not isinstance(obj, types):
         if isinstance(types, (list, tuple)):
             raise TypeError(
-                f"Value must be one of type: {', '.join(t.__name__ for t in types)}. Got {type(obj)}"
+                f"Value must be one of type: {', '.join(t.__name__ for t in types)}. Got {type(obj).__name__}"
             )
-        raise TypeError(f"Value must be of type {types.__name__}. Got {type(obj)}")
+        raise TypeError(f"Value must be of type {types.__name__}. Got {type(obj).__name__}")
 
 
 class Property(ABC):
@@ -353,9 +355,9 @@ class ObjectProp(IRIProp):
 
 
 class ListProxy(object):
-    def __init__(self, prop, data=None):
+    def __init__(self, prop: Property, data: Optional[List[Any]] = None):
         if data is None:
-            self.__data = []
+            self.__data: List[Any] = []
         else:
             self.__data = data
         self.__prop = prop
@@ -378,16 +380,18 @@ class ListProxy(object):
     def __getitem__(self, key):
         return self.__data[key]
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value) -> None:
         if isinstance(key, slice):
             for v in value:
                 self.__prop.validate(v)
             self.__data[key] = [self.__prop.set(v) for v in value]
-        else:
+        elif isinstance(key, int):
             self.__prop.validate(value)
             self.__data[key] = self.__prop.set(value)
+        else:
+            raise TypeError(f"ListProxy indices must be integers or slices. Got {type(key).__name__}")
 
-    def __delitem__(self, key):
+    def __delitem__(self, key) -> None:
         del self.__data[key]
 
     def __contains__(self, item):
@@ -396,7 +400,7 @@ class ListProxy(object):
     def __iter__(self):
         return iter(self.__data)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.__data)
 
     def __str__(self) -> str:
@@ -419,7 +423,7 @@ class ListProp(Property):
 
     VALID_TYPES = (list, ListProxy)
 
-    def __init__(self, prop):
+    def __init__(self, prop: Property):
         super().__init__()
         self.prop = prop
 
@@ -688,7 +692,7 @@ class SHACLObject(object):
             f"'{name}' is not a valid property of {self.__class__.__name__}"
         )
 
-    def __delattr__(self, name):
+    def __delattr__(self, name) -> None:
         if name == self.ID_ALIAS:
             del self["@id"]
             return
@@ -1021,7 +1025,7 @@ class SHACLExtensibleObject(SHACLObject):
             with encoder.write_property(iri) as prop_s:
                 encode_value(prop_s, value)
 
-    def __setitem__(self, iri, value):
+    def __setitem__(self, iri: str, value) -> None:
         try:
             super().__setitem__(iri, value)
         except KeyError:
@@ -1030,9 +1034,14 @@ class SHACLExtensibleObject(SHACLObject):
 
             if not is_IRI(iri):
                 raise KeyError(f"Key '{iri}' must be an IRI")
-            self.__dict__["_obj_data"][iri] = value
+            obj_data = self.__dict__["_obj_data"]
+            if not isinstance(obj_data, dict):
+                raise TypeError(
+                    f"Object data must be a dictionary. Got {type(obj_data).__name__}"
+                )
+            obj_data[iri] = value
 
-    def __delitem__(self, iri):
+    def __delitem__(self, iri: str) -> None:
         try:
             super().__delitem__(iri)
         except KeyError:
@@ -1114,7 +1123,7 @@ class SHACLObjectSet(object):
             return
 
         if not isinstance(obj._id, str):
-            raise TypeError(f"Object ID must be a string. Got {type(obj._id)}")
+            raise TypeError(f"Object ID must be a string. Got {type(obj._id).__name__}")
 
         self.missing_ids.discard(obj._id)
 
@@ -1183,7 +1192,7 @@ class SHACLObjectSet(object):
             if o._id and isinstance(o._id, str):
                 o = self.find_by_id(o._id, o)
             if not isinstance(o, SHACLObject):
-                raise TypeError(f"Object must be of type SHACLObject. Got {type(o)}")
+                raise TypeError(f"Object must be of type SHACLObject. Got {type(o).__name__}")
             o.link_helper(self, self.missing_ids, visited)
             new_objects.add(o)
 
@@ -1366,7 +1375,7 @@ class EncodeState(object):
     def is_refed(self, o) -> bool:
         return o in self.ref_objects
 
-    def add_refed(self, o):
+    def add_refed(self, o) -> None:
         self.ref_objects.add(o)
 
     def is_written(self, o) -> bool:
@@ -1780,7 +1789,7 @@ class Encoder(ABC):
 
     @abstractmethod
     @contextmanager
-    def write_property(self, iri, compact=None):
+    def write_property(self, iri: str, compact: Optional[str] = None):
         """
         Write object property
 
@@ -1850,11 +1859,11 @@ class JSONLDEncoder(Encoder):
         self.data = str(v)
 
     @contextmanager
-    def write_property(self, iri, compact=None):
+    def write_property(self, iri: str, compact: Optional[str] = None):
         s = self.__class__(None)
         yield s
         if s.data is not None:
-            if self.data is None:
+            if not isinstance(self.data, dict):
                 self.data = {}
             self.data[compact or iri] = s.data
 
@@ -1879,7 +1888,7 @@ class JSONLDEncoder(Encoder):
         s = self.__class__(None)
         yield s
         if s.data is not None:
-            if self.data is None:
+            if not isinstance(self.data, list):
                 self.data = []
             self.data.append(s.data)
 
@@ -1903,9 +1912,11 @@ class JSONLDSerializer(object):
 
         if isinstance(h.data, list):
             data["@graph"] = h.data
-        elif h.data is not None:
+        elif isinstance(h.data, dict):
             for k, v in h.data.items():
                 data[k] = v
+        # elif h.data is not None: # str, int, float, bool
+        #    data["value"] = h.data
 
         return data
 
@@ -1978,7 +1989,7 @@ class JSONLDInlineEncoder(Encoder):
         self.write(json.dumps(str(v)))
 
     @contextmanager
-    def write_property(self, iri, compact=None):
+    def write_property(self, iri: str, compact: Optional[str] = None):
         self._write_comma()
         self.write_string(compact or iri)
         self.write(":")

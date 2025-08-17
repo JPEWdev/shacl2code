@@ -188,10 +188,7 @@ class TestCheckType:
             check=True,
         )
         result = subprocess.run(
-            [
-                "mypy",
-                str(outfile)
-            ],
+            ["mypy", str(outfile)],
             stdout=subprocess.PIPE,
             encoding="utf-8",
             check=True,
@@ -217,11 +214,7 @@ class TestCheckType:
             check=True,
         )
         result = subprocess.run(
-            [
-                "pyrefly",
-                "check",
-                str(outfile)
-            ],
+            ["pyrefly", "check", str(outfile)],
             stdout=subprocess.PIPE,
             encoding="utf-8",
             check=True,
@@ -247,10 +240,7 @@ class TestCheckType:
             check=True,
         )
         result = subprocess.run(
-            [
-                "pyright",
-                str(outfile)
-            ],
+            ["pyright", str(outfile)],
             stdout=subprocess.PIPE,
             encoding="utf-8",
             check=True,

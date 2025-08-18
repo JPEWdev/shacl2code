@@ -601,6 +601,7 @@ class SHACLObject(object):
     _OBJ_DEPRECATED: Set[str] = set()
     _NEEDS_REG: bool = True
 
+    _id: Optional[str]
     _obj_data: Dict[str, Any]
     _obj_metadata: Dict[str, Any]
 
@@ -1198,14 +1199,8 @@ class SHACLObjectSet(object):
         new_objects: Set[SHACLObject] = set()
 
         for o in self.objects:
-            if o is None:
-                continue
             if o._id and isinstance(o._id, str):
-                found = self.find_by_id(o._id, o)
-                if found is not None:
-                    o = found
-            if not isinstance(o, SHACLObject):
-                raise TypeError(f"Object must be of type SHACLObject. Got {type(o).__name__}")
+                o = cast(SHACLObject, self.find_by_id(o._id, o))
             o.link_helper(self, self.missing_ids, visited)
             new_objects.add(o)
 

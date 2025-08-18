@@ -102,7 +102,7 @@ class Property(ABC):
         )
 
     @abstractmethod
-    def decode(self, decoder, *, objectset=None) -> Any:
+    def decode(self, decoder, *, objectset: Optional[SHACLObjectSet] = None) -> Any:
         raise NotImplementedError(
             "Subclasses must implement decode method"
         )
@@ -121,7 +121,7 @@ class StringProp(Property):
     def encode(self, encoder, value, state) -> None:
         encoder.write_string(value)
 
-    def decode(self, decoder, *, objectset=None) -> Optional[str]:
+    def decode(self, decoder, *, objectset: Optional[SHACLObjectSet] = None) -> Optional[str]:
         return decoder.read_string()
 
 
@@ -129,7 +129,7 @@ class AnyURIProp(StringProp):
     def encode(self, encoder, value, state) -> None:
         encoder.write_iri(value)
 
-    def decode(self, decoder, *, objectset=None) -> Optional[str]:
+    def decode(self, decoder, *, objectset: Optional[SHACLObjectSet] = None) -> Optional[str]:
         return decoder.read_iri()
 
 
@@ -148,7 +148,7 @@ class DateTimeProp(Property):
     def encode(self, encoder, value, state) -> None:
         encoder.write_datetime(self.to_string(value))
 
-    def decode(self, decoder, *, objectset=None) -> Optional[datetime]:
+    def decode(self, decoder, *, objectset: Optional[SHACLObjectSet] = None) -> Optional[datetime]:
         s = decoder.read_datetime()
         if s is None:
             return None
@@ -204,7 +204,7 @@ class IntegerProp(Property):
     def encode(self, encoder, value, state) -> None:
         encoder.write_integer(value)
 
-    def decode(self, decoder, *, objectset=None) -> Optional[int]:
+    def decode(self, decoder, *, objectset: Optional[SHACLObjectSet] = None) -> Optional[int]:
         return decoder.read_integer()
 
 
@@ -231,7 +231,7 @@ class BooleanProp(Property):
     def encode(self, encoder, value, state) -> None:
         encoder.write_bool(value)
 
-    def decode(self, decoder, *, objectset=None) -> Optional[bool]:
+    def decode(self, decoder, *, objectset: Optional[SHACLObjectSet] = None) -> Optional[bool]:
         return decoder.read_bool()
 
 
@@ -244,7 +244,7 @@ class FloatProp(Property):
     def encode(self, encoder, value, state) -> None:
         encoder.write_float(value)
 
-    def decode(self, decoder, *, objectset=None) -> Optional[float]:
+    def decode(self, decoder, *, objectset: Optional[SHACLObjectSet] = None) -> Optional[float]:
         return decoder.read_float()
 
 
@@ -324,7 +324,7 @@ class ObjectProp(IRIProp):
 
         return value.encode(encoder, state)
 
-    def decode(self, decoder, *, objectset=None):
+    def decode(self, decoder, *, objectset: Optional[SHACLObjectSet] =None):
         iri = decoder.read_iri()
         if iri is None:
             return self.cls.decode(decoder, objectset=objectset)
@@ -491,7 +491,7 @@ class ListProp(Property):
                 with list_s.write_list_item() as item_s:
                     self.prop.encode(item_s, v, state)
 
-    def decode(self, decoder, *, objectset=None) -> ListProxy:
+    def decode(self, decoder, *, objectset: Optional[SHACLObjectSet] = None) -> ListProxy:
         data = []
         for val_d in decoder.read_list():
             v = self.prop.decode(val_d, objectset=objectset)
@@ -519,7 +519,7 @@ class EnumProp(IRIProp):
     def encode(self, encoder, value, state) -> None:
         encoder.write_enum(value, self, self.compact(value))
 
-    def decode(self, decoder, *, objectset=None) -> str:
+    def decode(self, decoder, *, objectset: Optional[SHACLObjectSet] = None) -> str:
         v = decoder.read_enum(self)
         return self.expand(v) or v
 
@@ -852,7 +852,7 @@ class SHACLObject(object):
         return cls.CLASSES[typ]()
 
     @classmethod
-    def decode(cls, decoder, *, objectset=None):
+    def decode(cls, decoder, *, objectset: Optional[SHACLObjectSet] = None):
         typ, obj_d = decoder.read_object()
         if typ is None:
             raise TypeError("Unable to determine type for object")
@@ -876,7 +876,7 @@ class SHACLObject(object):
 
         if objectset is not None:
             if obj._id:
-                v = objectset.find_by_id(_id)
+                v = objectset.find_by_id(obj._id)
                 if v is not None:
                     return v
 
@@ -886,12 +886,12 @@ class SHACLObject(object):
             objectset.add_index(obj)
         return obj
 
-    def _decode_properties(self, decoder, objectset=None):
+    def _decode_properties(self, decoder, objectset: Optional[SHACLObjectSet] = None):
         for key in decoder.object_keys():
             if not self._decode_prop(decoder, key, objectset=objectset):
                 raise KeyError(f"Unknown property '{key}'")
 
-    def _decode_prop(self, decoder, key, objectset=None):
+    def _decode_prop(self, decoder, key, objectset: Optional[SHACLObjectSet] = None):
         if key in (self._OBJ_IRIS["_id"], self.ID_ALIAS):
             return True
 
@@ -911,7 +911,7 @@ class SHACLObject(object):
 
         return False
 
-    def link_helper(self, objectset, missing, visited) -> None:
+    def link_helper(self, objectset: Optional[SHACLObjectSet], missing, visited) -> None:
         if self in visited:
             return
 
@@ -982,7 +982,7 @@ class SHACLExtensibleObject(SHACLObject):
         obj = cls(typ)
         return obj
 
-    def _decode_properties(self, decoder, objectset=None):
+    def _decode_properties(self, decoder, objectset: Optional[SHACLObjectSet] = None):
         def decode_value(d):
             if not d.is_list():
                 return d.read_value()
@@ -1143,7 +1143,7 @@ class SHACLObjectSet(object):
 
         self.obj_by_id[obj._id] = obj
 
-    def add(self, obj):
+    def add(self, obj: SHACLObject) -> SHACLObject:
         """
         Add object to object set
 
@@ -1167,7 +1167,7 @@ class SHACLObjectSet(object):
             for obj in o:
                 self.add(obj)
 
-    def __contains__(self, item):
+    def __contains__(self, item: SHACLObject) -> bool:
         """
         Returns True if the item is in the object set
         """
@@ -1201,7 +1201,9 @@ class SHACLObjectSet(object):
             if o is None:
                 continue
             if o._id and isinstance(o._id, str):
-                o = self.find_by_id(o._id, o)
+                found = self.find_by_id(o._id, o)
+                if found is not None:
+                    o = found
             if not isinstance(o, SHACLObject):
                 raise TypeError(f"Object must be of type SHACLObject. Got {type(o).__name__}")
             o.link_helper(self, self.missing_ids, visited)
@@ -1223,7 +1225,7 @@ class SHACLObjectSet(object):
 
         return self.missing_ids
 
-    def find_by_id(self, _id: str, default=None):
+    def find_by_id(self, _id: str, default: Optional[SHACLObject] = None) -> Optional[SHACLObject]:
         """
         Find object by ID
 
@@ -1272,7 +1274,7 @@ class SHACLObjectSet(object):
             if match_subclass or exact:
                 yield o
 
-    def merge(self, *objectsets):
+    def merge(self, *objectsets) -> "SHACLObjectSet":
         """
         Merge object sets
 
@@ -1286,7 +1288,7 @@ class SHACLObjectSet(object):
 
         return SHACLObjectSet(new_objects, link=True)
 
-    def encode(self, encoder, force_list: bool = False, *, key=None):
+    def encode(self, encoder, force_list: bool = False, *, key=None) -> None:
         """
         Serialize a list of objects to a serialization encoder
 
@@ -1295,7 +1297,7 @@ class SHACLObjectSet(object):
         ref_counts: Dict[SHACLObject, int] = {}
         state = EncodeState()
 
-        def walk_callback(value: SHACLObject, path):
+        def walk_callback(value: SHACLObject, path) -> bool:
             nonlocal state
             nonlocal ref_counts
 

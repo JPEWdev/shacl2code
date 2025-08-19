@@ -590,15 +590,16 @@ class SHACLObject(object):
     IS_ABSTRACT: bool = True
     IS_DEPRECATED: bool = False
 
-    # These will be reinitialized during registration,
-    # defined here first to avoid reference errors
-    _OBJ_TYPE: Optional[str] = None
+    # These will be reinitialized during registration with @register decorator,
+    # defined here first to allow visibility at class level
+    _OBJ_TYPE: str = ""
     _OBJ_COMPACT_TYPE: Optional[str] = None
     _OBJ_PROPERTIES: Dict[str, Tuple] = {}
     _OBJ_IRIS: Dict[str, str] = {}
     _OBJ_DEPRECATED: Set[str] = set()
     _NEEDS_REG: bool = True
 
+    # Instance variables
     _id: Optional[str]
     _obj_data: Dict[str, Any]
     _obj_metadata: Dict[str, Any]
@@ -1246,12 +1247,8 @@ class SHACLObjectSet(object):
         if not isinstance(typ, str):
             if not isinstance(typ, type) or not issubclass(typ, SHACLObject):
                 raise TypeError(f"Type must be derived from SHACLObject, got {typ}")
-            obj_type = getattr(typ, "_OBJ_TYPE", None)
-            if obj_type is None:
-                raise AttributeError(f"Type {typ} does not have _OBJ_TYPE attribute")
-            typ = obj_type
-
-        typ = cast(str, typ)
+            typ = cast(SHACLObject, typ)
+            typ = typ._OBJ_TYPE
 
         if typ not in self.obj_by_type:
             return

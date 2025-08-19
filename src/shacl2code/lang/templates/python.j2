@@ -528,7 +528,7 @@ class NodeKind(Enum):
     BlankNodeOrIRI = 3
 
 
-def is_IRI(s) -> bool:
+def is_IRI(s: Any) -> bool:
     if not isinstance(s, str):
         return False
     if s.startswith("_:"):
@@ -538,7 +538,7 @@ def is_IRI(s) -> bool:
     return True
 
 
-def is_blank_node(s) -> bool:
+def is_blank_node(s: Any) -> bool:
     if not isinstance(s, str):
         return False
     if not s.startswith("_:"):
@@ -547,18 +547,22 @@ def is_blank_node(s) -> bool:
 
 
 def register(type_iri: str, *, compact_type: Optional[str] = None, abstract: bool = False):
-    def add_class(key, c):
+    def add_class(key: str, c: Type[SHACLObject]) -> None:
         assert (
             key not in SHACLObject.CLASSES
         ), f"{key} already registered to {SHACLObject.CLASSES[key].__name__}"
         SHACLObject.CLASSES[key] = c
 
-    def decorator(c):
+    def decorator(c: Type[SHACLObject]) -> Type[SHACLObject]:
+        """
+        Decorator to register a class as a SHACL object type.
+        The class must derive from SHACLObject.
+        """
         global NAMED_INDIVIDUALS
 
         assert issubclass(
             c, SHACLObject
-        ), f"{c.__name__} is not derived from SHACLObject"
+        ), f"{c} is not derived from SHACLObject"
 
         c._OBJ_TYPE = type_iri
         c.IS_ABSTRACT = abstract
@@ -635,12 +639,12 @@ class SHACLObject(object):
         return self.__class__.IS_ABSTRACT
 
     @classmethod
-    def _register_props(cls):
+    def _register_props(cls: Type[SHACLObject]) -> None:
         cls._add_property("_id", StringProp(), iri="@id")
 
     @classmethod
     def _add_property(
-        cls,
+        cls: Type[SHACLObject],
         pyname: Optional[str],
         prop: Property,
         iri: str,
@@ -648,7 +652,7 @@ class SHACLObject(object):
         max_count: Optional[int] = None,
         compact: Optional[str] = None,
         deprecated: bool = False,
-    ):
+    ) -> None:
         if pyname is None:
             raise ValueError("pyname must not be None")
         if pyname in cls._OBJ_IRIS:
@@ -667,7 +671,7 @@ class SHACLObject(object):
         if deprecated:
             cls._OBJ_DEPRECATED.add(iri)
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name: str, value) -> None:
         if name == self.ID_ALIAS:
             self["@id"] = value
             return
@@ -680,7 +684,7 @@ class SHACLObject(object):
                 f"'{name}' is not a valid property of {self.__class__.__name__}"
             )
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str):
         if name in self._OBJ_IRIS:
             return self.__dict__["_obj_data"][self._OBJ_IRIS[name]]
 
@@ -703,7 +707,7 @@ class SHACLObject(object):
             f"'{name}' is not a valid property of {self.__class__.__name__}"
         )
 
-    def __delattr__(self, name) -> None:
+    def __delattr__(self, name: str) -> None:
         if name == self.ID_ALIAS:
             del self["@id"]
             return
@@ -716,7 +720,7 @@ class SHACLObject(object):
                 f"'{name}' is not a valid property of {self.__class__.__name__}"
             )
 
-    def __get_prop(self, iri):
+    def __get_prop(self, iri: str) -> Tuple[Property, Optional[int], Optional[int], str, Optional[str]]:
         if iri not in self._OBJ_PROPERTIES:
             raise KeyError(
                 f"'{iri}' is not a valid property of {self.__class__.__name__}"
@@ -755,7 +759,7 @@ class SHACLObject(object):
             warnings.warn(f"{self.__class__.__name__}.{pyname} is deprecated", DeprecationWarning)
         self.__dict__["_obj_data"][iri] = prop.set(value)
 
-    def __delitem__(self, iri) -> None:
+    def __delitem__(self, iri: str) -> None:
         prop, _, _, _, _ = self.__get_prop(iri)
         self.__dict__["_obj_data"][iri] = prop.init()
 
@@ -845,7 +849,7 @@ class SHACLObject(object):
                 prop.encode(prop_s, value, state)
 
     @classmethod
-    def _make_object(cls, typ):
+    def _make_object(cls: Type["SHACLObject"], typ: str) -> "SHACLObject":
         if typ not in cls.CLASSES:
             raise TypeError(f"Unknown type {typ}")
 
@@ -865,10 +869,10 @@ class SHACLObject(object):
                     continue
 
                 _id = prop_d.read_iri()
-                if _id is None or not isinstance(_id, str):
+                if _id is None:
                     raise TypeError(f"Object key '{key}' is the wrong type")
 
-                obj._id = str(_id)
+                obj._id = _id
                 break
 
         if obj.NODE_KIND == NodeKind.IRI and not obj._id:
@@ -1191,7 +1195,7 @@ class SHACLObjectSet(object):
         new_objects: Set[SHACLObject] = set()
 
         for o in self.objects:
-            if o._id and isinstance(o._id, str):
+            if o._id:
                 o = cast(SHACLObject, self.find_by_id(o._id, o))
             o.link_helper(self, self.missing_ids, visited)
             new_objects.add(o)
@@ -1859,7 +1863,7 @@ class JSONLDEncoder(Encoder):
         s = self.__class__(None)
         yield s
         if s.data is not None:
-            self.data[compact or iri] = s.data  # type: ignore # within write_object() context, through _encode_properties(), it guarantees self.data is a dict (if not None)
+            self.data[compact or iri] = s.data  # type: ignore # within write_object() context, self.data is always dict or None
 
     @contextmanager
     def write_object(self, o, _id, needs_id):
@@ -1882,7 +1886,7 @@ class JSONLDEncoder(Encoder):
         s = self.__class__(None)
         yield s
         if s.data is not None:
-            self.data.append(s.data)  # type: ignore # within write_list() context, it guarantees self.data is a list (if not None)
+            self.data.append(s.data)  # type: ignore # within write_list() context, self.data is always list or None
 
 
 class JSONLDSerializer(object):

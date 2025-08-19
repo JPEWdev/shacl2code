@@ -37,9 +37,7 @@ from typing import (
 )
 
 
-def check_type(obj: Any, types: Union[Type[Any], Tuple[Type[Any], ...], List[Type[Any]]]) -> None:
-    if isinstance(types, list):
-        types = tuple(types) # convert list to tuple for isinstance()
+def check_type(obj: Any, types: Union[Type[Any], Tuple[Type[Any], ...]]) -> None:
     if not isinstance(obj, types):
         if isinstance(types, (list, tuple)):
             raise TypeError(
@@ -54,7 +52,7 @@ class Property(ABC):
     class
     """
 
-    VALID_TYPES: Union[List, Tuple, Type] = ()
+    VALID_TYPES: Union[Tuple, Type] = ()
 
     def __init__(self, *, pattern: Optional[str] = None):
         self.pattern = pattern
@@ -83,13 +81,13 @@ class Property(ABC):
     def elide(self, value) -> bool:
         return value is None
 
-    def walk(self, value, callback: Callable, path) -> None:
+    def walk(self, value, callback: Callable, path: List[str]) -> None:
         callback(value, path)
 
-    def iter_objects(self, value, recursive: bool, visited) -> Iterable[Any]:
+    def iter_objects(self, value, recursive: bool, visited: Set[SHACLObject]) -> Iterable[Any]:
         return []
 
-    def link_prop(self, value, objectset, missing, visited):
+    def link_prop(self, value, objectset, missing: Optional[Set[str]], visited: Set[SHACLObject]):
         return value
 
     def to_string(self, value) -> str:
@@ -293,7 +291,7 @@ class ObjectProp(IRIProp):
     def validate(self, value) -> None:
         check_type(value, (self.cls, str))
 
-    def walk(self, value, callback: Callable, path) -> None:
+    def walk(self, value, callback: Callable, path: List[str]) -> None:
         if value is None:
             return
 
@@ -465,7 +463,7 @@ class ListProp(Property):
         check_type(value, ListProxy)
         return len(value) == 0
 
-    def walk(self, value, callback: Callable, path) -> None:
+    def walk(self, value, callback: Callable, path: List[str]) -> None:
         callback(value, path)
         for idx, v in enumerate(value):
             self.prop.walk(v, callback, path + [f"[{idx}]"])
@@ -1285,7 +1283,7 @@ class SHACLObjectSet(object):
         ref_counts: Dict[SHACLObject, int] = {}
         state = EncodeState()
 
-        def walk_callback(value: SHACLObject, path) -> bool:
+        def walk_callback(value: SHACLObject, path: List[str]) -> bool:
             nonlocal state
             nonlocal ref_counts
 

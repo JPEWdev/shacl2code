@@ -645,7 +645,7 @@ class SHACLObject(object):
     @classmethod
     def _add_property(
         cls: Type[SHACLObject],
-        pyname: Optional[str],
+        pyname: str,
         prop: Property,
         iri: str,
         min_count: Optional[int] = None,
@@ -653,8 +653,6 @@ class SHACLObject(object):
         compact: Optional[str] = None,
         deprecated: bool = False,
     ) -> None:
-        if pyname is None:
-            raise ValueError("pyname must not be None")
         if pyname in cls._OBJ_IRIS:
             raise KeyError(f"'{pyname}' is already defined for '{cls.__name__}'")
         if iri in cls._OBJ_PROPERTIES:

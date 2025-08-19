@@ -1047,11 +1047,7 @@ class SHACLExtensibleObject(SHACLObject):
             if not is_IRI(iri):
                 raise KeyError(f"Key '{iri}' must be an IRI")
             obj_data = self.__dict__["_obj_data"]
-            if not isinstance(obj_data, dict):
-                raise TypeError(
-                    f"Object data must be a dictionary. Got {type(obj_data).__name__}"
-                )
-            obj_data[iri] = value
+            self.__dict__["_obj_data"][iri] = value
 
     def __delitem__(self, iri: str) -> None:
         try:
@@ -1133,9 +1129,6 @@ class SHACLObjectSet(object):
 
         if not obj._id:
             return
-
-        if not isinstance(obj._id, str):
-            raise TypeError(f"Object ID must be a string. Got {type(obj._id).__name__}")
 
         self.missing_ids.discard(obj._id)
 

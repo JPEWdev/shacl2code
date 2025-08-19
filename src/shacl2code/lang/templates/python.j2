@@ -1887,9 +1887,7 @@ class JSONLDEncoder(Encoder):
         s = self.__class__(None)
         yield s
         if s.data is not None:
-            if not isinstance(self.data, list):
-                self.data = []
-            self.data.append(s.data)
+            self.data.append(s.data)  # type: ignore # within write_list() context, it guarantees self.data is a list (if not None)
 
 
 class JSONLDSerializer(object):

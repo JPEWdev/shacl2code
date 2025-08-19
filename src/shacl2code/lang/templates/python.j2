@@ -1862,9 +1862,7 @@ class JSONLDEncoder(Encoder):
         s = self.__class__(None)
         yield s
         if s.data is not None:
-            if not isinstance(self.data, dict):
-                self.data = {}
-            self.data[compact or iri] = s.data
+            self.data[compact or iri] = s.data  # type: ignore # within write_object() context, through _encode_properties(), it guarantees self.data is a dict (if not None)
 
     @contextmanager
     def write_object(self, o, _id, needs_id):

@@ -1200,7 +1200,7 @@ class SHACLObjectSet(object):
         # Remove blank nodes
         obj_by_id: Dict[str, SHACLObject] = {}
         for _id, obj in self.obj_by_id.items():
-            if isinstance(_id, str) and _id.startswith("_:"):
+            if _id.startswith("_:"):
                 del obj._id
             else:
                 obj_by_id[_id] = obj

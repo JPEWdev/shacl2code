@@ -1291,7 +1291,7 @@ class SHACLObjectSet(object):
                 return True
 
             # Remove blank node ID for re-assignment
-            if value._id and isinstance(value._id, str) and value._id.startswith("_:"):
+            if value._id and value._id.startswith("_:"):
                 del value._id
 
             if value._id:

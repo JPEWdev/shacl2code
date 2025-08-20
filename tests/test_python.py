@@ -32,23 +32,36 @@ SPDX3_CONTEXT_URL = "https://spdx.github.io/spdx-3-model/context.json"
 TEST_TZ = timezone(timedelta(hours=-2), name="TST")
 
 
-@pytest.fixture(scope="module")
-def test_context(tmp_path_factory, model_server):
-    tmp_directory = tmp_path_factory.mktemp("pythontestcontext")
-    outfile = tmp_directory / "model.py"
-    subprocess.run(
+def shacl2code_generate(args, outfile):
+    return subprocess.run(
         [
             "shacl2code",
             "generate",
-            "--input",
-            TEST_MODEL,
-            "--context",
-            model_server + "/test-context.json",
+        ]
+        + args
+        + [
             "python",
             "--output",
             outfile,
         ],
         check=True,
+        stdout=subprocess.PIPE,
+        encoding="utf-8",
+    )
+
+
+@pytest.fixture(scope="module")
+def test_context(tmp_path_factory, model_server):
+    tmp_directory = tmp_path_factory.mktemp("pythontestcontext")
+    outfile = tmp_directory / "model.py"
+    shacl2code_generate(
+        [
+            "--input",
+            TEST_MODEL,
+            "--context",
+            model_server + "/test-context.json",
+        ],
+        outfile,
     )
     outfile.chmod(0o755)
     yield (tmp_directory, outfile)
@@ -92,19 +105,7 @@ class TestOutput:
         Checks that the output file is valid python syntax by executing it"
         """
         outfile = tmp_path / "output.py"
-        subprocess.run(
-            [
-                "shacl2code",
-                "generate",
-            ]
-            + args
-            + [
-                "python",
-                "--output",
-                outfile,
-            ],
-            check=True,
-        )
+        shacl2code_generate(args, outfile)
 
         subprocess.run([sys.executable, outfile, "--help"], check=True)
 
@@ -112,21 +113,7 @@ class TestOutput:
         """
         Tests that the generated file does not have trailing whitespace
         """
-        p = subprocess.run(
-            [
-                "shacl2code",
-                "generate",
-            ]
-            + args
-            + [
-                "python",
-                "--output",
-                "-",
-            ],
-            check=True,
-            stdout=subprocess.PIPE,
-            encoding="utf-8",
-        )
+        p = shacl2code_generate(args, "-")
 
         for num, line in enumerate(p.stdout.splitlines()):
             assert (
@@ -137,21 +124,7 @@ class TestOutput:
         """
         Tests that the output file doesn't contain tabs
         """
-        p = subprocess.run(
-            [
-                "shacl2code",
-                "generate",
-            ]
-            + args
-            + [
-                "python",
-                "--output",
-                "-",
-            ],
-            check=True,
-            stdout=subprocess.PIPE,
-            encoding="utf-8",
-        )
+        p = shacl2code_generate(args, "-")
 
         for num, line in enumerate(p.stdout.splitlines()):
             assert "\t" not in line, f"Line {num + 1} has tabs"
@@ -174,19 +147,7 @@ class TestCheckType:
         Mypy static type checking
         """
         outfile = tmp_path / "output.py"
-        subprocess.run(
-            [
-                "shacl2code",
-                "generate",
-            ]
-            + args
-            + [
-                "python",
-                "--output",
-                outfile,
-            ],
-            check=True,
-        )
+        shacl2code_generate(args, outfile)
         subprocess.run(
             ["mypy", outfile],
             encoding="utf-8",
@@ -198,19 +159,7 @@ class TestCheckType:
         Pyrefly static type checking
         """
         outfile = tmp_path / "output.py"
-        subprocess.run(
-            [
-                "shacl2code",
-                "generate",
-            ]
-            + args
-            + [
-                "python",
-                "--output",
-                outfile,
-            ],
-            check=True,
-        )
+        shacl2code_generate(args, outfile)
         subprocess.run(
             ["pyrefly", "check", outfile],
             encoding="utf-8",
@@ -222,19 +171,7 @@ class TestCheckType:
         Pyright static type checking
         """
         outfile = tmp_path / "output.py"
-        subprocess.run(
-            [
-                "shacl2code",
-                "generate",
-            ]
-            + args
-            + [
-                "python",
-                "--output",
-                outfile,
-            ],
-            check=True,
-        )
+        shacl2code_generate(args, outfile)
         subprocess.run(
             ["pyright", outfile],
             encoding="utf-8",

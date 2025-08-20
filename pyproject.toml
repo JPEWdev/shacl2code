@@ -62,3 +62,6 @@ pythonpath = [
 
 [tool.coverage.run]
 relative_files = true
+
+[tool.black]
+include = '(\.pyi?$)|(python\.j2$)'

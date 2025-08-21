@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import decimal
 import functools
 import hashlib
 import json
@@ -158,6 +159,8 @@ class DateTimeProp(Property):
         s = decoder.read_datetime()
         if s is None:
             return None
+        if isinstance(s, datetime):
+            return self._normalize(s)
         v = self.from_string(s)
         return self._normalize(v)
 
@@ -347,9 +350,10 @@ class ObjectProp(IRIProp):
         return value.encode(encoder, state)
 
     def decode(self, decoder, *, objectset: Optional[SHACLObjectSet] = None):
-        iri = decoder.read_iri()
-        if iri is None:
+        if decoder.is_object():
             return self.cls.decode(decoder, objectset=objectset)
+
+        iri = decoder.read_iri()
 
         iri = self.expand(iri) or iri
 
@@ -775,17 +779,17 @@ class SHACLObject(object):
             if self.NODE_KIND == NodeKind.BlankNode:
                 if not is_blank_node(value):
                     raise ValueError(
-                        f"{self.__class__.__name__} ({id(self)}) can only have local reference. Property '{iri}' cannot be set to '{value}' and must start with '_:'"
+                        f"{self.__class__.__name__} ({id(self)}) can only have local reference. Property '{iri}' cannot be set to {value!r} and must start with '_:'"
                     )
             elif self.NODE_KIND == NodeKind.IRI:
                 if not is_IRI(value):
                     raise ValueError(
-                        f"{self.__class__.__name__} ({id(self)}) can only have an IRI value. Property '{iri}' cannot be set to '{value}'"
+                        f"{self.__class__.__name__} ({id(self)}) can only have an IRI value. Property '{iri}' cannot be set to {value!r}"
                     )
             else:
                 if not is_blank_node(value) and not is_IRI(value):
                     raise ValueError(
-                        f"{self.__class__.__name__} ({id(self)}) Has invalid Property '{iri}' '{value}'. Must be a blank node or IRI"
+                        f"{self.__class__.__name__} ({id(self)}) Has invalid Property '{iri}' {value!r}. Must be a blank node or IRI"
                     )
 
         prop, _, _, pyname, _ = self.__get_prop(iri)
@@ -899,18 +903,9 @@ class SHACLObject(object):
             raise TypeError("Unable to determine type for object")
 
         obj = cls._make_object(typ)
-        _id = None
-        for key in (obj.ID_ALIAS, obj._OBJ_IRIS["_id"]):
-            with obj_d.read_property(key) as prop_d:
-                if prop_d is None:
-                    continue
-
-                _id = prop_d.read_iri()
-                if _id is None:
-                    raise TypeError(f"Object key '{key}' is the wrong type")
-
-                obj._id = _id
-                break
+        _id = obj_d.read_object_id(obj.ID_ALIAS)
+        if _id is not None:
+            obj._id = _id
 
         if obj.NODE_KIND == NodeKind.IRI and not obj._id:
             raise ValueError("Object is missing required IRI")
@@ -920,11 +915,10 @@ class SHACLObject(object):
                 v = objectset.find_by_id(obj._id)
                 if v is not None:
                     return v
+            objectset.add_index(obj)
 
         obj._decode_properties(obj_d, objectset=objectset)
 
-        if objectset is not None:
-            objectset.add_index(obj)
         return obj
 
     def _decode_properties(self, decoder, objectset: Optional[SHACLObjectSet] = None):
@@ -1317,6 +1311,49 @@ class SHACLObjectSet(object):
 
         return SHACLObjectSet(new_objects, link=True)
 
+    def inline_blank_nodes(self) -> None:
+        """
+        Removes (inlines) blank node objects from the root object set if they
+        are referenced in only one other location besides the root.
+
+        Deserializers that do not preserve the tree-like structure of the
+        objects (e.g. RDF) should call this to ensure that blank nodes are
+        inline correctly
+        """
+        ref_counts: Dict[SHACLObject, int] = {}
+
+        def walk_callback(value: SHACLObject, path: List[str]) -> bool:
+            nonlocal ref_counts
+
+            if not isinstance(value, SHACLObject):
+                return True
+
+            ref_counts.setdefault(value, 0)
+            ref_counts[value] += 1
+            if ref_counts[value] > 1:
+                return False
+
+            return True
+
+        for o in self.objects:
+            # Note that every object in the root object set gets at least one
+            # reference
+            o.walk(walk_callback)
+
+        new_objects = set()
+        for o in self.objects:
+            if is_IRI(o._id):
+                new_objects.add(o)
+            # If the object is a blank node and is only referenced by this
+            # root list and one other location, remove it from the root list
+            #
+            # A count of 1 means the object is only referenced by the root, and
+            # therefore must be kept
+            elif ref_counts[o] != 2:
+                new_objects.add(o)
+
+        self.objects = new_objects
+
     def encode(self, encoder, force_list: bool = False, *, key=None) -> None:
         """
         Serialize a list of objects to a serialization encoder
@@ -1334,7 +1371,7 @@ class SHACLObjectSet(object):
                 return True
 
             # Remove blank node ID for re-assignment
-            if value._id and value._id.startswith("_:"):
+            if is_blank_node(value._id):
                 del value._id
 
             if value._id:
@@ -1392,7 +1429,7 @@ class SHACLObjectSet(object):
         self.create_index()
 
         for obj_d in decoder.read_list():
-            o = SHACLObject.decode(obj_d, objectset=self)
+            o = SHACLExtensibleObject.decode(obj_d, objectset=self)
             self.objects.add(o)
 
         self._link()
@@ -1565,6 +1602,15 @@ class Decoder(ABC):
         raise NotImplementedError("Subclasses must implement read_property method")
 
     @abstractmethod
+    def is_object(self) -> bool:
+        """
+        Checks if the item is an object
+
+        Returns True if the item is an object, or False if is not
+        """
+        raise NotImplementedError("Subclasses must implement is_object method")
+
+    @abstractmethod
     def object_keys(self) -> Iterator[str]:
         """
         Read property keys from an object
@@ -1658,6 +1704,9 @@ class JSONLDDecoder(Decoder):
             yield self.__class__(v)
         else:
             yield None
+
+    def is_object(self) -> bool:
+        return isinstance(self.data, dict)
 
     def object_keys(self) -> Iterator[str]:
         for key in self.data.keys():
@@ -1765,7 +1814,7 @@ class Encoder(ABC):
 
     @abstractmethod
     @contextmanager
-    def write_object(self, o, _id, needs_id: bool):
+    def write_object(self, o: SHACLObject, _id: str, needs_id: bool):
         """
         Write object
 
@@ -1858,7 +1907,7 @@ class JSONLDEncoder(Encoder):
             self.data[compact or iri] = s.data  # type: ignore # within write_object() context, self.data is always dict or None
 
     @contextmanager
-    def write_object(self, o, _id, needs_id):
+    def write_object(self, o: SHACLObject, _id: str, needs_id: bool):
         self.data = {
             "{{ context.compact_iri('@type') }}": o.COMPACT_TYPE or o.TYPE,
         }
@@ -1892,7 +1941,7 @@ class JSONLDSerializer(object):
     ):
         h = JSONLDEncoder()
         objectset.encode(h, force_at_graph)
-        data: Dict[str, Union[str, List[str]]] = {}
+        data: Dict[str, Any] = {}
         if len(CONTEXT_URLS) == 1:
             data["@context"] = CONTEXT_URLS[0]
         elif CONTEXT_URLS:
@@ -1985,7 +2034,7 @@ class JSONLDInlineEncoder(Encoder):
         self.comma = True
 
     @contextmanager
-    def write_object(self, o, _id, needs_id):
+    def write_object(self, o: SHACLObject, _id: str, needs_id: bool):
         self._write_comma()
 
         self.write("{")
@@ -2051,6 +2100,249 @@ class JSONLDInlineSerializer(object):
         objectset.encode(h, True)
         h.write("}")
         return sha1.hexdigest()
+
+
+try:
+    import rdflib
+    import rdflib.term
+    from rdflib.namespace import RDF
+
+    class RDFDecoder(Decoder):
+        def __init__(
+            self,
+            graph: rdflib.Graph,
+            subject: Optional[rdflib.term.Node] = None,
+            predicate: Optional[rdflib.term.Node] = None,
+            value: Optional[rdflib.term.Node] = None,
+        ):
+            self.graph = graph
+            self.subject = subject
+            self.predicate = predicate
+            self.value = value
+
+        def __read_node(self):
+            if self.value is not None:
+                return self.value
+            if self.predicate is None:
+                return None
+            return self.graph.value(self.subject, self.predicate)
+
+        def read_value(self) -> Optional[Any]:
+            v = self.__read_node()
+            if isinstance(v, rdflib.term.Literal):
+                return v.toPython()
+            return None
+
+        def read_string(self) -> Optional[str]:
+            v = self.read_value()
+            if isinstance(v, str):
+                return v
+            return None
+
+        def read_datetime(self) -> Optional[str]:
+            return self.read_value()
+
+        def read_integer(self) -> Optional[int]:
+            v = self.read_value()
+            if isinstance(v, (int, decimal.Decimal)):
+                return int(v)
+            return None
+
+        def read_bool(self) -> Optional[bool]:
+            v = self.read_value()
+            if isinstance(v, bool):
+                return v
+            return None
+
+        def read_float(self) -> Optional[float]:
+            v = self.read_value()
+            if isinstance(v, (int, float, str, decimal.Decimal)):
+                return float(v)
+            return None
+
+        def read_iri(self) -> Optional[str]:
+            v = self.__read_node()
+            if isinstance(v, rdflib.term.URIRef):
+                return v.toPython()
+            elif isinstance(v, rdflib.term.Literal):
+                v = v.toPython()
+                if isinstance(v, str):
+                    return v
+            elif isinstance(v, rdflib.term.BNode):
+                return v.n3()
+            return None
+
+        def read_enum(self, e) -> Optional[str]:
+            v = self.__read_node()
+            if isinstance(v, rdflib.term.URIRef):
+                return v.toPython()
+            return None
+
+        def read_list(self) -> Iterator["RDFDecoder"]:
+            if not self.subject:
+                blank_nodes = set()
+                for s in self.graph.subjects(unique=True):
+                    # type: ignore # RDF.type is dynamic
+                    if (s, RDF.type, None) not in self.graph:
+                        continue
+
+                    if isinstance(s, rdflib.term.BNode):
+                        blank_nodes.add(s)
+                        continue
+                    yield self.__class__(self.graph, s)
+
+                for s in blank_nodes:
+                    yield self.__class__(self.graph, s)
+            else:
+                for o in self.graph.objects(self.subject, self.predicate):
+                    # type: ignore # RDF.type is dynamic
+                    if (o, RDF.type, None) in self.graph:
+                        yield self.__class__(self.graph, o)
+                    else:
+                        yield self.__class__(
+                            self.graph,
+                            self.subject,
+                            self.predicate,
+                            o,
+                        )
+
+        def is_list(self) -> bool:
+            if not self.subject:
+                return True
+            if self.value is not None:
+                return False
+            return len(list(self.graph.objects(self.subject, self.predicate))) > 1
+
+        @contextmanager
+        def read_property(self, key) -> Iterator[Optional["RDFDecoder"]]:
+            if key == "@id":
+                yield self.__class__(self.graph, value=self.subject)
+            else:
+                yield self.__class__(self.graph, self.subject, rdflib.term.URIRef(key))
+
+        def is_object(self) -> bool:
+            n = self.__read_node() or self.subject
+            # type: ignore # RDF.type is dynamic
+            return (n, RDF.type, None) in self.graph
+
+        def object_keys(self) -> Iterator[str]:
+            for p in self.graph.predicates(self.subject, unique=True):
+                # type: ignore # RDF.type is dynamic
+                if p == RDF.type:
+                    continue
+
+                if not isinstance(p, rdflib.term.IdentifiedNode):
+                    raise TypeError(f"Predicate is of unknown type {type(p)}")
+
+                yield p.toPython()
+
+        def read_object(self) -> Tuple[Any, "RDFDecoder"]:
+            s = self.__read_node()
+            if s is None:
+                s = self.subject
+
+            # type: ignore # RDF.type is dynamic
+            typ = self.graph.value(s, RDF.type)
+            if typ is None:
+                return None, self
+
+            if not isinstance(typ, rdflib.term.IdentifiedNode):
+                raise TypeError(f"Type value is of unknown type {type(typ)}")
+
+            return typ.toPython(), self.__class__(self.graph, s)
+
+        def read_object_id(self, alias=None) -> Optional[Any]:
+            if isinstance(self.subject, rdflib.term.BNode):
+                return self.subject.n3()
+            if not isinstance(self.subject, rdflib.term.IdentifiedNode):
+                raise TypeError(f"Subject is of unknown type {type(self.subject)}")
+            return self.subject.toPython()
+
+    class RDFDeserializer(object):
+        def read(self, graph: rdflib.Graph, objset: SHACLObjectSet) -> None:
+            d = RDFDecoder(graph)
+            objset.decode(d)
+            objset.inline_blank_nodes()
+
+    class RDFEncoder(Encoder):
+        def __init__(
+            self,
+            graph: rdflib.Graph,
+            subject: Optional[rdflib.term.Node] = None,
+            predicate: Optional[rdflib.term.Node] = None,
+        ):
+            self.graph = graph
+            self.subject = subject
+            self.predicate = predicate
+
+        def __add_literal(self, v):
+            if self.subject is None or self.predicate is None:
+                raise TypeError()
+            self.graph.add((self.subject, self.predicate, rdflib.Literal(v)))
+
+        def __add_uriref(self, v):
+            if self.subject is None or self.predicate is None:
+                raise TypeError()
+            self.graph.add((self.subject, self.predicate, rdflib.URIRef(v)))
+
+        def write_string(self, v):
+            self.__add_literal(v)
+
+        def write_datetime(self, v):
+            self.__add_literal(v)
+
+        def write_integer(self, v):
+            self.__add_literal(v)
+
+        def write_iri(self, v, compact=None):
+            self.__add_uriref(v)
+
+        def write_enum(self, v, e, compact=None):
+            self.__add_uriref(v)
+
+        def write_bool(self, v):
+            self.__add_literal(v)
+
+        def write_float(self, v):
+            self.__add_literal(v)
+
+        @contextmanager
+        def write_property(self, iri: str, compact: Optional[str] = None):
+            yield self.__class__(self.graph, self.subject, rdflib.URIRef(iri))
+
+        @contextmanager
+        def write_object(self, o, _id, needs_id: bool):
+            obj: rdflib.term.Node
+            if _id.startswith("_:"):
+                obj = rdflib.BNode(_id[2:])
+            else:
+                obj = rdflib.URIRef(_id)
+
+            if self.subject is not None:
+                if self.predicate is None:
+                    raise TypeError()
+                self.graph.add((self.subject, self.predicate, obj))
+            self.graph.add((obj, RDF.type, rdflib.URIRef(o.TYPE)))  # type: ignore # RDF.type is dynamic
+            yield self.__class__(self.graph, obj)
+
+        @contextmanager
+        def write_list(self):
+            yield self
+
+        @contextmanager
+        def write_list_item(self):
+            yield self
+
+    class RDFSerializer(object):
+        def write(self, objset: SHACLObjectSet, g: rdflib.Graph):
+            """
+            Write a SHACLObjectSet to an RDF graph
+            """
+            e = RDFEncoder(g)
+            objset.encode(e)
+
+except ImportError:
+    pass
 
 
 def print_tree(objects, all_fields: bool = False) -> None:

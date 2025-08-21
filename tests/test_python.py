@@ -179,23 +179,24 @@ class TestCheckType:
         )
 
 
+def check_file(p, expect, digest):
+    sha1 = hashlib.sha1()
+    with p.open("rb") as f:
+        while True:
+            d = f.read(4096)
+            if not d:
+                break
+            sha1.update(d)
+
+    assert sha1.hexdigest() == digest
+
+    with p.open("r") as f:
+        data = json.load(f)
+
+    assert data == expect
+
+
 def test_roundtrip(model, tmp_path, roundtrip):
-    def check_file(p, expect, digest):
-        sha1 = hashlib.sha1()
-        with p.open("rb") as f:
-            while True:
-                d = f.read(4096)
-                if not d:
-                    break
-                sha1.update(d)
-
-        assert sha1.hexdigest() == digest
-
-        with p.open("r") as f:
-            data = json.load(f)
-
-        assert data == expect
-
     doc = model.SHACLObjectSet()
     with roundtrip.open("r") as f:
         d = model.JSONLDDeserializer()
@@ -233,6 +234,51 @@ def test_script_roundtrip(test_script, tmp_path, roundtrip):
         data = json.load(f)
 
     assert data == expect_data
+
+
+def test_from_rdf_roundtrip(model, tmp_path, roundtrip):
+    with roundtrip.open("r") as f:
+        expect_data = json.load(f)
+
+    # Parse data using RDF
+    g = rdflib.Graph()
+    g.parse(roundtrip)
+
+    # Convert to SHACL objects
+    objset = model.SHACLObjectSet()
+    model.RDFDeserializer().read(g, objset)
+
+    # Write out
+    outfile = tmp_path / "out.json"
+    with outfile.open("wb") as f:
+        digest = model.JSONLDInlineSerializer().write(objset, f)
+
+    check_file(outfile, expect_data, digest)
+
+
+def test_to_rdf_roundtrip(model, tmp_path, roundtrip):
+    with roundtrip.open("r") as f:
+        expect_data = json.load(f)
+
+    # Read JSON data
+    objset = model.SHACLObjectSet()
+    with roundtrip.open("r") as f:
+        model.JSONLDDeserializer().read(f, objset)
+
+    # Convert to RDF
+    g = rdflib.Graph()
+    model.RDFSerializer().write(objset, g)
+
+    # Convert from RDF to new object set
+    objset = model.SHACLObjectSet()
+    model.RDFDeserializer().read(g, objset)
+
+    # Write out
+    outfile = tmp_path / "out.json"
+    with outfile.open("wb") as f:
+        digest = model.JSONLDInlineSerializer().write(objset, f)
+
+    check_file(outfile, expect_data, digest)
 
 
 def test_jsonschema_validation(roundtrip, test_jsonschema):

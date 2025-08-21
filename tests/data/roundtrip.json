@@ -6,7 +6,6 @@
             "link-class-link-prop": "http://serialize.example.com/link-derived-target",
             "link-class-link-prop-no-class": "http://serialize.example.com/link-derived-target",
             "link-class-link-list-prop": [
-                "http://serialize.example.com/link-derived-target",
                 "http://serialize.example.com/link-derived-target"
             ]
         },
@@ -59,8 +58,8 @@
             "test-class/class-prop": "http://serialize.example.com/test-derived",
             "test-class/class-prop-no-class": "http://serialize.example.com/test-derived",
             "test-class/class-list-prop": [
-                "http://serialize.example.com/test-derived",
-                "http://serialize.example.com/test"
+                "http://serialize.example.com/test",
+                "http://serialize.example.com/test-derived"
             ],
             "test-class/enum-prop": "foo",
             "test-class/enum-prop-no-class": "bar",

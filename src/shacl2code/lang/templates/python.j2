@@ -1049,25 +1049,6 @@ class SHACLExtensibleObject(SHACLObject):
                 self.__dict__["_obj_data"][key] = decode_value(prop_d)
 
     def _encode_properties(self, encoder, state):
-        def encode_value(encoder, v):
-            if isinstance(v, bool):
-                encoder.write_bool(v)
-            elif isinstance(v, str):
-                encoder.write_string(v)
-            elif isinstance(v, int):
-                encoder.write_integer(v)
-            elif isinstance(v, float):
-                encoder.write_float(v)
-            elif isinstance(v, list):
-                with encoder.write_list() as list_s:
-                    for i in v:
-                        with list_s.write_list_item() as item_s:
-                            encode_value(item_s, i)
-            else:
-                raise TypeError(
-                    f"Unsupported serialized type {type(v)} with value '{v}'"
-                )
-
         super()._encode_properties(encoder, state)
         if self.CLOSED:
             return
@@ -1077,7 +1058,25 @@ class SHACLExtensibleObject(SHACLObject):
                 continue
 
             with encoder.write_property(iri) as prop_s:
-                encode_value(prop_s, value)
+                if isinstance(value, list):
+                    v = value
+                else:
+                    v = [value]
+                with prop_s.write_list() as list_s:
+                    for i in v:
+                        with list_s.write_list_item() as item_s:
+                            if isinstance(i, bool):
+                                item_s.write_bool(i)
+                            elif isinstance(i, str):
+                                item_s.write_string(i)
+                            elif isinstance(i, int):
+                                item_s.write_integer(i)
+                            elif isinstance(i, float):
+                                item_s.write_float(i)
+                            else:
+                                raise TypeError(
+                                    f"Unsupported serialized type {type(i)} with value {i!r}"
+                                )
 
     def __setitem__(self, iri: str, value) -> None:
         try:

@@ -70,6 +70,12 @@ pytest
 In addition to the test results, a test coverage report will also be generated
 using [pytest-cov][pytest-cov]
 
+The test suite is quite extensive and can catch a lot of errors. When adding
+new features to the code generation, please add tests to ensure that these
+features continue to behave as expected.
+
+All changes to the code are expected to pass the test suite before they merge.
+
 ## Custom Annotations
 
 `shacl2code` supports a number of custom annotations that can be specified in a

@@ -1094,57 +1094,69 @@ def test_extensible_prop(model, test_context_url, prop, serkey, value, expect):
 
 
 @pytest.mark.parametrize(
-    "iri,value,expect,ser_expect",
+    "iri,value,expect,ser_data,ser_expect",
     [
         (
             "extensible_class_property",
             "foo",
             KeyError,
             None,
+            None,
         ),
         (
             "http://example.org/extensible-test-prop",
             "foo",
             SAME_AS_VALUE,
-            SAME_AS_VALUE,
+            ["foo"],
+            ["foo"],
         ),
         (
             "http://example.org/extensible-test-prop",
             1,
             SAME_AS_VALUE,
-            SAME_AS_VALUE,
+            [1],
+            [1],
         ),
         (
             "http://example.org/extensible-test-prop",
             1.123,
             SAME_AS_VALUE,
-            "1.123",
+            ["1.123"],
+            [1.123],
         ),
         (
             "http://example.org/extensible-test-prop",
             object(),
             SAME_AS_VALUE,
             TypeError,
+            None,
         ),
         (
             "http://example.org/extensible-test-prop",
             [1, "foo", 1.123],
             SAME_AS_VALUE,
             [1, "foo", "1.123"],
+            [1, "foo", 1.123],
         ),
         (
             "http://example.org/extensible-test-prop",
             [object()],
             SAME_AS_VALUE,
             TypeError,
+            None,
         ),
     ],
 )
-def test_extensible_iri(model, test_context_url, iri, value, expect, ser_expect):
+def test_extensible_iri(
+    model, test_context_url, iri, value, expect, ser_data, ser_expect
+):
     e = model.extensible_class(extensible_class_required="required")
 
     if expect is SAME_AS_VALUE:
         expect = value
+
+    if ser_data is SAME_AS_VALUE:
+        ser_data = value
 
     if ser_expect is SAME_AS_VALUE:
         ser_expect = value
@@ -1161,8 +1173,8 @@ def test_extensible_iri(model, test_context_url, iri, value, expect, ser_expect)
         objset = model.SHACLObjectSet()
         objset.add(e)
 
-        if isinstance(ser_expect, type) and issubclass(ser_expect, Exception):
-            with pytest.raises(ser_expect):
+        if isinstance(ser_data, type) and issubclass(ser_data, Exception):
+            with pytest.raises(ser_data):
                 data = s.serialize_data(objset)
         else:
             data = s.serialize_data(objset)
@@ -1170,7 +1182,7 @@ def test_extensible_iri(model, test_context_url, iri, value, expect, ser_expect)
                 "@context": test_context_url,
                 "@type": "extensible-class",
                 "extensible-class/required": "required",
-                iri: ser_expect,
+                iri: ser_data,
             }
 
             objset = model.SHACLObjectSet()
@@ -1178,7 +1190,7 @@ def test_extensible_iri(model, test_context_url, iri, value, expect, ser_expect)
             d.deserialize_data(data, objset)
 
             e = objset.objects.pop()
-            assert e[iri] == expect
+            assert e[iri] == ser_expect
 
         del e[iri]
         with pytest.raises(KeyError):

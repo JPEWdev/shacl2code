@@ -164,6 +164,8 @@ class DateTimeProp(Property):
     def _normalize(self, value: datetime) -> datetime:
         if value.utcoffset() is None:
             value = value.astimezone()
+
+        # Remove seconds from timezone offset
         offset = value.utcoffset()
         if offset is not None:
             seconds = offset % timedelta(
@@ -172,6 +174,12 @@ class DateTimeProp(Property):
             if seconds:
                 offset = offset - seconds
                 value = value.replace(tzinfo=timezone(offset))
+
+        # Convert 00:00 timezone offset to UTC
+        offset = value.utcoffset()
+        if offset is not None and offset.seconds == 0:
+            value = value.astimezone(timezone.utc)
+
         value = value.replace(microsecond=0)
         return value
 

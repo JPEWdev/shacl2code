@@ -541,10 +541,9 @@ class EnumProp(IRIProp):
     def validate(self, value) -> None:
         super().validate(value)
 
-        valid_values = self.iri_values()
-        if value not in valid_values:
+        if value not in self.iri_values():
             raise ValueError(
-                f"'{value}' is not a valid value. Choose one of {' '.join(valid_values)}"
+                f"'{value}' is not a valid value. Choose one of {' '.join(self.iri_values())}"
             )
 
     def encode(self, encoder, value, state) -> None:

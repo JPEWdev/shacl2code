@@ -862,7 +862,7 @@ class SHACLObject(object):
         ) as obj_s:
             self._encode_properties(obj_s, state)
 
-    def _encode_properties(self, encoder, state):
+    def _encode_properties(self, encoder, state) -> None:
         for iri, prop, min_count, max_count, pyname, compact in self.__iter_props():
             value = self.__dict__["_obj_data"][iri]
             if prop.elide(value):
@@ -922,7 +922,9 @@ class SHACLObject(object):
 
         return obj
 
-    def _decode_properties(self, decoder, objectset: Optional[SHACLObjectSet] = None):
+    def _decode_properties(
+        self, decoder, objectset: Optional[SHACLObjectSet] = None
+    ) -> None:
         for key in decoder.object_keys():
             if not self._decode_prop(decoder, key, objectset=objectset):
                 raise KeyError(f"Unknown property '{key}'")
@@ -1020,7 +1022,9 @@ class SHACLExtensibleObject(SHACLObject):
         obj = cls(typ)
         return obj
 
-    def _decode_properties(self, decoder, objectset: Optional[SHACLObjectSet] = None):
+    def _decode_properties(
+        self, decoder, objectset: Optional[SHACLObjectSet] = None
+    ) -> None:
         def decode_value(d):
             if not d.is_list():
                 return d.read_value()
@@ -1043,7 +1047,7 @@ class SHACLExtensibleObject(SHACLObject):
             with decoder.read_property(key) as prop_d:
                 self.__dict__["_obj_data"][key] = decode_value(prop_d)
 
-    def _encode_properties(self, encoder, state):
+    def _encode_properties(self, encoder, state) -> None:
         super()._encode_properties(encoder, state)
         if self.CLOSED:
             return

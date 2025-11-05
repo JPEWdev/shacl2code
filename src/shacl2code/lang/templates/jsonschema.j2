@@ -34,7 +34,7 @@
     "required": ["@context"],
     {%- endif %}
 
-    "oneOf": [
+    "anyOf": [
         {
             "type": "object",
             "properties": {
@@ -80,7 +80,7 @@
                                 { "not": { "const": "{{ context.compact_vocab(class._id) }}" } }
                             ]
                         {%- else %}
-                            "oneOf": [
+                            "anyOf": [
                                 {%- if class.is_extensible %}
                                 { "$ref": "#/$defs/IRI" },
                                 {%- endif %}
@@ -151,7 +151,7 @@
                         "{{ context.compact_vocab(prop.path) }}": {
                         {%- set prop_ref = "#/$defs/prop_" + varname(*class.clsname) + "_" + varname(prop.varname) %}
                         {%- if is_list %}
-                            "oneOf": [
+                            "anyOf": [
                                 {
                                     "type": "array",
                                     {%- if prop.max_count is not none %}
@@ -241,7 +241,7 @@
                 {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#boolean" %}
                     "type": "boolean"
                 {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#decimal" %}
-                    "oneOf": [
+                    "anyOf": [
                         {
                             "type": "number"
                         },
@@ -266,7 +266,7 @@
             "pattern": "^_:.+"
         },
         "BlankNodeOrIRI": {
-            "oneOf": [
+            "anyOf": [
                 { "$ref": "#/$defs/IRI" },
                 { "$ref": "#/$defs/BlankNode" }
             ]
@@ -278,7 +278,7 @@
             "type": "object",
             "properties": {
                 "{{ context.compact_iri("@type") }}": {
-                    "oneOf": [
+                    "anyOf": [
                         { "$ref": "#/$defs/IRI" },
                         {
                             "enum": [

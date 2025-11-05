@@ -34,24 +34,28 @@
     "required": ["@context"],
     {%- endif %}
 
-    "anyOf": [
-        {
-            "type": "object",
-            "properties": {
-                "@graph": {
-                    "description": "Top level container for JSON-LD objects",
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "$ref": "#/$defs/AnyClass",
-                        "unevaluatedProperties": false
-                    }
+    "if": {
+        "type": "object",
+        "required": ["@graph"]
+    },
+    "then": {
+        "type": "object",
+        "properties": {
+            "@graph": {
+                "description": "Top level container for JSON-LD objects",
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "$ref": "#/$defs/AnyClass",
+                    "unevaluatedProperties": false
                 }
-            },
-            "required": ["@graph"]
+            }
         },
-        { "$ref": "#/$defs/AnyClass" }
-    ],
+        "required": ["@graph"]
+    },
+    "else": {
+        "$ref": "#/$defs/AnyClass"
+    },
     "unevaluatedProperties": false,
 
     "$defs": {
@@ -61,39 +65,51 @@
         {#- @type tag #}
         {%- if not class.is_abstract or class.is_extensible %}
         "{{ varname(*class.clsname) }}": {
-            "allOf": [
-                {
-                    "type": "object",
-                    {%- if class.deprecated %}
-                    "deprecated": true,
+            "if": {
+                "type": "object",
+                "properties": {
+                    "{{ context.compact_iri("@type") }}": {
+                    {#- Abstract Extensible classes are weird; any type _except_ the specific class type is allowed #}
+                    {%- if class.is_abstract and class.is_extensible %}
+                        "allOf":  [
+                            { "$ref": "#/$defs/IRI" },
+                            { "not": { "const": "{{ context.compact_vocab(class._id) }}" } }
+                        ]
+                    {%- elif class.is_extensible %}
+                        "anyOf": [
+                            { "$ref": "#/$defs/IRI" },
+                            { "const": "{{ context.compact_vocab(class._id) }}" }
+                        ]
+                    {%- else %}
+                        "const": "{{ context.compact_vocab(class._id) }}"
                     {%- endif %}
-                    {%- if class.is_extensible %}
-                    "unevaluatedProperties": true,
-                    {%- endif %}
-                    "properties": {
-                        "{{ class.id_property or "@id" }}": { "$ref": "#/$defs/{{ class.node_kind.split("#")[-1] }}" },
-                        "{{ context.compact_iri("@type") }}": {
-                        {#- Abstract Extensible classes are weird; any type _except_ the specific class type is allowed #}
-                        {%- if class.is_abstract and class.is_extensible %}
-                            "allOf":  [
-                                { "$ref": "#/$defs/IRI" },
-                                { "not": { "const": "{{ context.compact_vocab(class._id) }}" } }
-                            ]
-                        {%- else %}
-                            "anyOf": [
-                                {%- if class.is_extensible %}
-                                { "$ref": "#/$defs/IRI" },
-                                {%- endif %}
-                                { "const": "{{ context.compact_vocab(class._id) }}" }
-                            ]
-                        {%- endif %}
-                        }
-                    }{%- if class.node_kind == SH.IRI %},
-                    "required": ["{{ class.id_property or "@id" }}"]
-                    {%- endif %}
+                    }
                 },
-                { "$ref": "#/$defs/{{ varname(*class.clsname) }}_props" }
-            ]
+                "required": ["{{ context.compact_iri("@type") }}"]
+            },
+            "then": {
+                "allOf": [
+                    {
+                        "type": "object",
+                        {%- if class.deprecated %}
+                        "deprecated": true,
+                        {%- endif %}
+                        {%- if class.is_extensible %}
+                        "unevaluatedProperties": true,
+                        {%- endif %}
+                        "properties": {
+                            "{{ class.id_property or "@id" }}": { "$ref": "#/$defs/{{ class.node_kind.split("#")[-1] }}" },
+                            "{{ context.compact_iri("@type") }}": { "type": "string" }
+                        }{%- if class.node_kind == SH.IRI %},
+                        "required": ["{{ class.id_property or "@id" }}"]
+                        {%- endif %}
+                    },
+                    { "$ref": "#/$defs/{{ varname(*class.clsname) }}_props" }
+                ]
+            },
+            "else": {
+                "const": "Not a {{ varname(*class.clsname) }}"
+            }
         },
         {%- endif %}
         "{{ varname(*class.clsname) }}_derived": {

@@ -33,7 +33,6 @@ from typing import (
     Set,
     Tuple,
     Type,
-    TypeVar,
     Union,
     cast,
 )
@@ -616,7 +615,6 @@ def register(
 
 register_lock = threading.Lock()
 NAMED_INDIVIDUALS: Set[str] = set()
-ForeachT = TypeVar("ForeachT", bound="SHACLObject")
 
 
 @functools.total_ordering
@@ -1280,8 +1278,8 @@ class SHACLObjectSet(object):
                 yield child
 
     def foreach_type(
-        self, typ: Union[str, type[ForeachT]], *, match_subclass: bool = True
-    ) -> Iterable[ForeachT]:
+        self, typ: Union[str, Type[SHACLObject]], *, match_subclass: bool = True
+    ) -> Iterable[SHACLObject]:
         """
         Iterate over each object of a specified type (or subclass there of)
 
@@ -1292,7 +1290,6 @@ class SHACLObjectSet(object):
         if not isinstance(typ, str):
             if not isinstance(typ, type) or not issubclass(typ, SHACLObject):
                 raise TypeError(f"Type must be derived from SHACLObject, got {typ}")
-            # This intermediate step is necessary for pyrefly...
             typ_class: Type[SHACLObject] = typ
             typ = typ_class._OBJ_TYPE
 
@@ -1301,7 +1298,7 @@ class SHACLObjectSet(object):
 
         for exact, o in self.obj_by_type[typ]:
             if match_subclass or exact:
-                yield cast(ForeachT, o)
+                yield o
 
     def merge(self, *objectsets) -> "SHACLObjectSet":
         """

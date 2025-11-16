@@ -1286,7 +1286,7 @@ class SHACLObjectSet(object):
     def foreach_type(self, typ: Type[T_SHACLObject], *, match_subclass: bool = True) -> Iterator[T_SHACLObject]: ...
 
     def foreach_type(
-        self, typ: Union[str, Type[T_SHACLObject], *, match_subclass: bool = True
+        self, typ: Union[str, Type[T_SHACLObject]], *, match_subclass: bool = True
     ) -> Iterable[SHACLObject]:
         """
         Iterate over each object of a specified type (or subclass there of)

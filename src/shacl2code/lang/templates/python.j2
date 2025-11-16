@@ -1281,9 +1281,13 @@ class SHACLObjectSet(object):
                 yield child
 
     @overload
-    def foreach_type(self, typ: str, *, match_subclass: bool = True) -> Iterator[SHACLObject]: ...
+    def foreach_type(
+        self, typ: str, *, match_subclass: bool = True
+    ) -> Iterator[SHACLObject]: ...
     @overload
-    def foreach_type(self, typ: Type[T_SHACLObject], *, match_subclass: bool = True) -> Iterator[T_SHACLObject]: ...
+    def foreach_type(
+        self, typ: Type[T_SHACLObject], *, match_subclass: bool = True
+    ) -> Iterator[T_SHACLObject]: ...
 
     def foreach_type(
         self, typ: Union[str, Type[T_SHACLObject]], *, match_subclass: bool = True

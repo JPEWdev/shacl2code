@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: MIT
 
 import typing
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from rdflib import URIRef
 from rdflib.namespace import RDF, RDFS, OWL, SH, XSD, DefinedNamespace, Namespace
@@ -68,7 +68,7 @@ class Property:
     comment: str = ""
     max_count: int = None
     min_count: int = None
-    enum_values: list = None
+    enum_values: list = field(default_factory=list)
     class_id: str = ""
     datatype: str = ""
     pattern: str = ""
@@ -206,24 +206,40 @@ class Model(object):
                             c.is_abstract = True
                     continue
 
-                p = Property(
-                    varname=self.model.value(
-                        obj_prop,
-                        SH.name,
-                        default=self.get_compact_id(
-                            prop,
-                            fallback=remove_common_prefix(prop, cls_iri).lstrip("/"),
-                        ),
+                varname = self.model.value(
+                    obj_prop,
+                    SH.name,
+                    default=self.get_compact_id(
+                        prop,
+                        fallback=remove_common_prefix(prop, cls_iri).lstrip("/"),
                     ),
-                    path=str(prop),
-                    comment=str(self.model.value(prop, RDFS.comment, default="")),
-                    max_count=int_val(self.model.value(obj_prop, SH.maxCount)),
-                    min_count=int_val(self.model.value(obj_prop, SH.minCount)),
-                    deprecated=(prop, RDF.type, OWL.DeprecatedProperty) in self.model,
                 )
 
+                for p in c.properties:
+                    if p.path == str(prop):
+                        break
+                else:
+                    p = Property(
+                        varname=varname,
+                        path=str(prop),
+                        comment=str(self.model.value(prop, RDFS.comment, default="")),
+                        deprecated=(prop, RDF.type, OWL.DeprecatedProperty)
+                        in self.model,
+                    )
+                    c.properties.append(p)
+
+                if varname < p.varname:
+                    p.varname = varname
+
+                if (v := int_val(self.model.value(obj_prop, SH.maxCount))) is not None:
+                    p.max_count = v
+
+                if (v := int_val(self.model.value(obj_prop, SH.minCount))) is not None:
+                    p.min_count = v
+
                 if in_list := self.model.value(obj_prop, SH["in"]):
-                    p.enum_values = sorted(tuple(self.model.items(in_list)))
+                    enum_values = set(p.enum_values) | set(self.model.items(in_list))
+                    p.enum_values = sorted(list(enum_values))
 
                 if range_id := self.model.value(obj_prop, SH["class"]):
                     if not set_prop_range(p, range_id):
@@ -251,8 +267,6 @@ class Model(object):
                             f"Property '{prop}' of type '{p.datatype}' cannot have a pattern. Must be one of type {' '.join(PATTERN_DATATYPES)}"
                         )
                     p.pattern = str(pattern)
-
-                c.properties.append(p)
 
             c.properties.sort(key=lambda p: p.path)
 

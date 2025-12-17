@@ -163,6 +163,15 @@
         sh:class <non-shape-class> ;
         sh:path <test-class/non-shape> ;
         sh:maxCount 1
+    ],
+    [
+        sh:path <test-class/split-string-prop> ;
+        sh:datatype xsd:string
+    ],
+    [
+        sh:path <test-class/split-string-prop> ;
+        sh:name "split" ;
+        sh:maxCount 1
     ]
     .
 
@@ -326,6 +335,11 @@
 
 <test-class/regex-list> a rdf:Property ;
     rdfs:comment "A regex validated string list" ;
+    rdfs:range xsd:string
+    .
+
+<test-class/split-string-prop> a rdf:Property ;
+    rdfs:comment "A split string property" ;
     rdfs:range xsd:string
     .
 

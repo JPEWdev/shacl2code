@@ -69,7 +69,8 @@
             "test-class/regex-list": ["foo2", "foo3"],
             "test-class/non-shape": "http://serialize.example.com/non-shape",
             "import": "foo",
-            "encode": "foo"
+            "encode": "foo",
+            "test-class/split-string-prop": "this is split"
         },
         {
             "@id": "http://serialize.example.com/test-derived",

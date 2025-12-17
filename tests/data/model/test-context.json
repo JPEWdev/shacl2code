@@ -145,6 +145,10 @@
       "@id": "test:test-class/regex-datetimestamp",
       "@type": "xsd:dateTimeStamp"
     },
+    "test-class/split-string-prop": {
+      "@id": "test:test-class/split-string-prop",
+      "@type": "xsd:string"
+    },
     "link-class-link-prop": {
       "@id": "test:link-class-link-prop",
       "@type": "@id"

@@ -3,9 +3,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+import pytest
 from pathlib import Path
-
-from .utils import parametrize
+from pytest import param
 
 THIS_FILE = Path(__file__)
 THIS_DIR = THIS_FILE.parent
@@ -32,25 +32,24 @@ BASE_OBJ = {
 def validation_tests():
     def node_kind_tests(name, blank, iri):
         return [
-            (
-                f"{name} no IRI",
+            param(
                 blank,
                 {
                     "@context": CONTEXT,
                     "@type": name,
                 },
+                id=f"{name} no IRI",
             ),
-            (
-                f"{name} blank node",
+            param(
                 blank,
                 {
                     "@context": CONTEXT,
                     "@type": name,
                     "@id": "_:blank",
                 },
+                id=f"{name} blank node",
             ),
-            (
-                f"nested {name} no IRI",
+            param(
                 blank,
                 {
                     "@context": CONTEXT,
@@ -59,9 +58,9 @@ def validation_tests():
                         "@type": name,
                     },
                 },
+                id=f"nested {name} no IRI",
             ),
-            (
-                f"nested {name} blank node",
+            param(
                 blank,
                 {
                     "@context": CONTEXT,
@@ -71,18 +70,18 @@ def validation_tests():
                         "@id": "_:blank",
                     },
                 },
+                id=f"nested {name} blank node",
             ),
-            (
-                f"{name} IRI",
+            param(
                 iri,
                 {
                     "@context": CONTEXT,
                     "@type": name,
                     "@id": "http://example.com/name",
                 },
+                id=f"{name} IRI",
             ),
-            (
-                f"nest {name} IRI",
+            param(
                 iri,
                 {
                     "@context": CONTEXT,
@@ -92,46 +91,46 @@ def validation_tests():
                         "@id": "http://example.com/name",
                     },
                 },
+                id=f"nest {name} IRI",
             ),
         ]
 
-    return parametrize(
+    return pytest.mark.parametrize(
         "passes,data",
         [
-            (
-                "Empty graph",
+            param(
                 True,
                 {
                     "@context": CONTEXT,
                     "@graph": [],
                 },
+                id="Empty graph",
             ),
-            (
-                "Missing context",
+            param(
                 False,
                 {
                     "@graph": [],
                 },
+                id="Missing context",
             ),
-            (
-                "Bad context",
+            param(
                 False,
                 {
                     "@context": "http://foo.com",
                     "@graph": [],
                 },
+                id="Bad context",
             ),
-            (
-                "Unknown root field",
+            param(
                 False,
                 {
                     "@context": CONTEXT,
                     "@graph": [],
                     "foo": "bar",
                 },
+                id="Unknown root field",
             ),
-            (
-                "Minimal with object",
+            param(
                 True,
                 {
                     "@context": CONTEXT,
@@ -141,17 +140,17 @@ def validation_tests():
                         }
                     ],
                 },
+                id="Minimal with object",
             ),
-            (
-                "Missing type",
+            param(
                 False,
                 {
                     "@context": CONTEXT,
                     "@graph": [{}],
                 },
+                id="Missing type",
             ),
-            (
-                "Unknown object field",
+            param(
                 False,
                 {
                     "@context": CONTEXT,
@@ -162,9 +161,9 @@ def validation_tests():
                         }
                     ],
                 },
+                id="Unknown object field",
             ),
-            (
-                "Nested base class",
+            param(
                 True,
                 {
                     "@context": CONTEXT,
@@ -177,9 +176,9 @@ def validation_tests():
                         }
                     ],
                 },
+                id="Nested base class",
             ),
-            (
-                "Nested derived class",
+            param(
                 True,
                 {
                     "@context": CONTEXT,
@@ -192,9 +191,9 @@ def validation_tests():
                         }
                     ],
                 },
+                id="Nested derived class",
             ),
-            (
-                "Derived class with nested base class",
+            param(
                 True,
                 {
                     "@context": CONTEXT,
@@ -207,9 +206,9 @@ def validation_tests():
                         }
                     ],
                 },
+                id="Derived class with nested base class",
             ),
-            (
-                "Derived class with nested derived class",
+            param(
                 True,
                 {
                     "@context": CONTEXT,
@@ -222,9 +221,9 @@ def validation_tests():
                         }
                     ],
                 },
+                id="Derived class with nested derived class",
             ),
-            (
-                "Link by string",
+            param(
                 True,
                 {
                     "@context": CONTEXT,
@@ -235,9 +234,9 @@ def validation_tests():
                         }
                     ],
                 },
+                id="Link by string",
             ),
-            (
-                "Bad nested class type",
+            param(
                 False,
                 {
                     "@context": CONTEXT,
@@ -250,9 +249,9 @@ def validation_tests():
                         }
                     ],
                 },
+                id="Bad nested class type",
             ),
-            (
-                "Pattern test",
+            param(
                 True,
                 {
                     "@context": CONTEXT,
@@ -264,9 +263,9 @@ def validation_tests():
                         }
                     ],
                 },
+                id="Pattern test",
             ),
-            (
-                "Bad pattern",
+            param(
                 False,
                 {
                     "@context": CONTEXT,
@@ -277,9 +276,9 @@ def validation_tests():
                         }
                     ],
                 },
+                id="Bad pattern",
             ),
-            (
-                "Bad pattern list",
+            param(
                 False,
                 {
                     "@context": CONTEXT,
@@ -290,9 +289,9 @@ def validation_tests():
                         }
                     ],
                 },
+                id="Bad pattern list",
             ),
-            (
-                "Empty list",
+            param(
                 True,
                 {
                     "@context": CONTEXT,
@@ -303,9 +302,9 @@ def validation_tests():
                         }
                     ],
                 },
+                id="Empty list",
             ),
-            (
-                "Required property",
+            param(
                 True,
                 {
                     "@context": CONTEXT,
@@ -317,9 +316,9 @@ def validation_tests():
                         }
                     ],
                 },
+                id="Required property",
             ),
-            (
-                "Missing required scalar",
+            param(
                 False,
                 {
                     "@context": CONTEXT,
@@ -330,9 +329,9 @@ def validation_tests():
                         }
                     ],
                 },
+                id="Missing required scalar",
             ),
-            (
-                "Missing required list",
+            param(
                 False,
                 {
                     "@context": CONTEXT,
@@ -343,9 +342,9 @@ def validation_tests():
                         }
                     ],
                 },
+                id="Missing required list",
             ),
-            (
-                "Short list",
+            param(
                 False,
                 {
                     "@context": CONTEXT,
@@ -357,9 +356,9 @@ def validation_tests():
                         }
                     ],
                 },
+                id="Short list",
             ),
-            (
-                "Long list",
+            param(
                 False,
                 {
                     "@context": CONTEXT,
@@ -375,96 +374,96 @@ def validation_tests():
                         }
                     ],
                 },
+                id="Long list",
             ),
-            (
-                "Root object",
+            param(
                 True,
                 {
                     "@context": CONTEXT,
                     "@type": "test-class",
                 },
+                id="Root object",
             ),
-            (
-                "Root object with unknown field",
+            param(
                 False,
                 {
                     "@context": CONTEXT,
                     "@type": "test-class",
                     "foo": "bar",
                 },
+                id="Root object with unknown field",
             ),
-            (
-                "Root object with missing context",
+            param(
                 False,
                 {
                     "@type": "test-class",
                 },
+                id="Root object with missing context",
             ),
-            (
-                "Root object with missing type",
+            param(
                 False,
                 {
                     "@context": CONTEXT,
                 },
+                id="Root object with missing type",
             ),
-            (
-                "Root object with bad context",
+            param(
                 False,
                 {
                     "@context": "http://foo.bar",
                     "@type": "test-class",
                 },
+                id="Root object with bad context",
             ),
-            (
-                "Root object with unknown type",
+            param(
                 False,
                 {
                     "@context": CONTEXT,
                     "@type": "foo",
                 },
+                id="Root object with unknown type",
             ),
             *node_kind_tests("node-kind-blank", True, False),
             *node_kind_tests("node-kind-iri", False, True),
             *node_kind_tests("node-kind-iri-or-blank", True, True),
             *node_kind_tests("derived-node-kind-iri", False, True),
-            (
-                "Alternate ID",
+            param(
                 True,
                 {
                     "@context": CONTEXT,
                     "@type": "id-prop-class",
                     "testid": "_:blank",
                 },
+                id="Alternate ID",
             ),
-            (
-                "@id not allowed for alternate ID classes",
+            param(
                 False,
                 {
                     "@context": CONTEXT,
                     "@type": "id-prop-class",
                     "@id": "_:blank",
                 },
+                id="@id not allowed for alternate ID classes",
             ),
-            (
-                "Alternate ID in inherited class",
+            param(
                 True,
                 {
                     "@context": CONTEXT,
                     "@type": "inherited-id-prop-class",
                     "testid": "_:blank",
                 },
+                id="Alternate ID in inherited class",
             ),
-            (
-                "@id not allowed for alternate ID classes",
+            param(
                 False,
                 {
                     "@context": CONTEXT,
                     "@type": "inherited-id-prop-class",
                     "@id": "_:blank",
                 },
+                id="@id not allowed for alternate ID classes",
             ),
-            (
-                "Extensible class",
+            param(
                 True,
                 {
                     "@context": CONTEXT,
@@ -474,9 +473,9 @@ def validation_tests():
                         "@type": "link-class",
                     },
                 },
+                id="Extensible class",
             ),
-            (
-                "Extensible class with custom type",
+            param(
                 True,
                 {
                     "@context": CONTEXT,
@@ -486,9 +485,9 @@ def validation_tests():
                         "@type": "link-class",
                     },
                 },
+                id="Extensible class with custom type",
             ),
-            (
-                "Extensible class with unknown property",
+            param(
                 True,
                 {
                     "@context": CONTEXT,
@@ -496,18 +495,18 @@ def validation_tests():
                     "extensible-class/required": "foo",
                     "unknown-prop": "foo",
                 },
+                id="Extensible class with unknown property",
             ),
-            (
-                "Extensible class with missing required property",
+            param(
                 False,
                 {
                     "@context": CONTEXT,
                     "@type": "http://example.com/extended",
                     "unknown-prop": "foo",
                 },
+                id="Extensible class with missing required property",
             ),
-            (
-                "Nested extensible class",
+            param(
                 True,
                 {
                     "@context": CONTEXT,
@@ -517,9 +516,9 @@ def validation_tests():
                         "extensible-class/required": "foo",
                     },
                 },
+                id="Nested extensible class",
             ),
-            (
-                "Nested extensible class with non-IRI type",
+            param(
                 False,
                 {
                     "@context": CONTEXT,
@@ -529,9 +528,9 @@ def validation_tests():
                         "extensible-class/required": "foo",
                     },
                 },
+                id="Nested extensible class with non-IRI type",
             ),
-            (
-                "Nested extensible class with custom type",
+            param(
                 True,
                 {
                     "@context": CONTEXT,
@@ -541,9 +540,9 @@ def validation_tests():
                         "extensible-class/required": "foo",
                     },
                 },
+                id="Nested extensible class with custom type",
             ),
-            (
-                "Nested extensible class with custom unknown property",
+            param(
                 True,
                 {
                     "@context": CONTEXT,
@@ -554,9 +553,9 @@ def validation_tests():
                         "unknown-prop": "foo",
                     },
                 },
+                id="Nested extensible class with custom unknown property",
             ),
-            (
-                "Nested extended class with missing required property",
+            param(
                 False,
                 {
                     "@context": CONTEXT,
@@ -565,67 +564,67 @@ def validation_tests():
                         "@type": "http://example.com/extended",
                     },
                 },
+                id="Nested extended class with missing required property",
             ),
-            (
-                "Abstract class",
+            param(
                 False,
                 {
                     "@context": CONTEXT,
                     "@type": "abstract-class",
                 },
+                id="Abstract class",
             ),
-            (
-                "Concrete class derived from abstract class",
+            param(
                 True,
                 {
                     "@context": CONTEXT,
                     "@type": "concrete-class",
                 },
+                id="Concrete class derived from abstract class",
             ),
-            (
-                "Abstract SPDX style class",
+            param(
                 False,
                 {
                     "@context": CONTEXT,
                     "@type": "abstract-spdx-class",
                 },
+                id="Abstract SPDX style class",
             ),
-            (
-                "Concrete SPDX style class",
+            param(
                 True,
                 {
                     "@context": CONTEXT,
                     "@type": "concrete-spdx-class",
                 },
+                id="Concrete SPDX style class",
             ),
-            (
-                "Abstract SH style class",
+            param(
                 False,
                 {
                     "@context": CONTEXT,
                     "@type": "abstract-sh-class",
                 },
+                id="Abstract SH style class",
             ),
-            (
-                "Concrete SH style class",
+            param(
                 True,
                 {
                     "@context": CONTEXT,
                     "@type": "concrete-sh-class",
                 },
+                id="Concrete SH style class",
             ),
-            (
-                "An extensible abstract class cannot be instantiated",
+            param(
                 False,
                 {
                     "@context": CONTEXT,
                     "@type": "extensible-abstract-class",
                 },
+                id="An extensible abstract class cannot be instantiated",
             ),
             # Any can type can be used where a extensible abstract class is
             # references, except... (SEE NEXT)"
-            (
-                "Any type for extensible",
+            param(
                 True,
                 {
                     "@context": CONTEXT,
@@ -634,11 +633,11 @@ def validation_tests():
                         "@type": "http://example.com/extended",
                     },
                 },
+                id="Any type for extensible",
             ),
             # ... the exact type of the extensible abstract class is specifically
             # not allowed
-            (
-                "No abstract extensible",
+            param(
                 False,
                 {
                     "@context": CONTEXT,
@@ -647,11 +646,12 @@ def validation_tests():
                         "@type": "extensible-abstract-class",
                     },
                 },
+                id="No abstract extensible",
             ),
-            (
-                "Base object",
+            param(
                 True,
                 BASE_OBJ,
+                id="Base object",
             ),
         ],
     )
@@ -662,7 +662,7 @@ def type_tests():
         def make_type_test(passes, val):
             data = BASE_OBJ.copy()
             data[name] = val
-            tests.append((f"{name} = {val!r}", passes, data))
+            tests.append(param(passes, data, id=f"{name} = {val!r}"))
 
         tests = []
         # None is never allowed
@@ -711,7 +711,7 @@ def type_tests():
 
         return tests
 
-    return parametrize(
+    return pytest.mark.parametrize(
         "passes,data",
         [
             *create_type_tests(
@@ -871,56 +871,56 @@ def type_tests():
 
 
 def link_tests():
-    return parametrize(
+    return pytest.mark.parametrize(
         "filename,name,expect_tag",
         [
-            (
-                "links to self",
+            param(
                 DATA_DIR / "links.json",
                 "http://serialize.example.com/self",
                 "self",
+                id="links to self",
             ),
-            (
-                "links to self from derived class",
+            param(
                 DATA_DIR / "links.json",
                 "http://serialize.example.com/self-derived",
                 "self-derived",
+                id="links to self from derived class",
             ),
-            (
-                "links to derived class from base class",
+            param(
                 DATA_DIR / "links.json",
                 "http://serialize.example.com/base-to-derived",
                 "self-derived",
+                id="links to derived class from base class",
             ),
-            (
-                "links to base class from derived class",
+            param(
                 DATA_DIR / "links.json",
                 "http://serialize.example.com/derived-to-base",
                 "self",
+                id="links to base class from derived class",
             ),
-            (
-                "links to blank node base",
+            param(
                 DATA_DIR / "links.json",
                 "http://serialize.example.com/base-to-blank-base",
                 "blank-base",
+                id="links to blank node base",
             ),
-            (
-                "links to blank node derived",
+            param(
                 DATA_DIR / "links.json",
                 "http://serialize.example.com/base-to-blank-derived",
                 "blank-derived",
+                id="links to blank node derived",
             ),
-            (
-                "links to blank node base from derived class",
+            param(
                 DATA_DIR / "links.json",
                 "http://serialize.example.com/derived-to-blank-base",
                 "blank-base",
+                id="links to blank node base from derived class",
             ),
-            (
-                "links to blank node derived from derived class",
+            param(
                 DATA_DIR / "links.json",
                 "http://serialize.example.com/derived-to-blank-derived",
                 "blank-derived",
+                id="links to blank node derived from derived class",
             ),
         ],
     )

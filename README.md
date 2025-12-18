@@ -16,10 +16,10 @@
 | src/shacl2code/lang/lang.py         |        8 |        0 |    100% |           |
 | src/shacl2code/lang/python.py       |       26 |       11 |     58% |14-25, 33-34, 49, 54 |
 | src/shacl2code/main.py              |       69 |       26 |     62% |24-29, 34, 38-40, 43-49, 53-55, 58-65, 68-69 |
-| src/shacl2code/model.py             |      170 |       36 |     79% |113, 124, 143-146, 164, 167, 204-207, 226, 238-239, 253-287 |
+| src/shacl2code/model.py             |      181 |       39 |     78% |113, 124, 143-146, 164, 167, 204-207, 219-220, 232, 241-242, 254-255, 269-301 |
 | src/shacl2code/urlcontext.py        |       13 |        1 |     92% |        23 |
 | src/shacl2code/version.py           |        1 |        0 |    100% |           |
-|                           **TOTAL** |  **780** |  **289** | **63%** |           |
+|                           **TOTAL** |  **791** |  **292** | **63%** |           |
 
 
 ## Setup coverage badge

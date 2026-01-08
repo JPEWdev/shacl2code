@@ -221,7 +221,7 @@ class EXPORT ValueEncoder : public ElementEncoder {
      * @brief Write IRI
      *
      * Encodes an IRI in the output. Note that the string will be either a
-     * fully qualified IRI or a blank node ID. If "compact` is provided and
+     * fully qualified IRI or a blank node ID. If `compact` is provided and
      * the serialization supports compacted IRIs, it should be preferred to
      * the full IRI
      */
@@ -232,7 +232,7 @@ class EXPORT ValueEncoder : public ElementEncoder {
      * @brief Write enum value IRI
      *
      * Encodes an enum value IRI in the output. Note that the string will be
-     * a fully qualified IRI. If "compact" is provided and the serialization
+     * a fully qualified IRI. If `compact` is provided and the serialization
      * supports compacted IRIs, it should be preferred to the full IRI.
      */
     virtual void writeEnum(std::string const& value,

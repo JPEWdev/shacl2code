@@ -45,11 +45,11 @@ class Context(object):
         contexts = []
 
         for v in self.__vocabs:
-            for name, value in foreach_context(self.contexts):
+            for _, value in foreach_context(self.contexts):
                 if (
                     isinstance(value, dict)
-                    and value["@type"] == "@vocab"
-                    and v == self.expand_iri(value["@id"])
+                    and value.get("@type", "") == "@vocab"
+                    and v == self.expand_iri(value.get("@id", ""))
                 ):
                     if "@context" in value:
                         contexts.insert(0, value["@context"])
@@ -93,7 +93,7 @@ class Context(object):
                     continue
 
                 if isinstance(value, dict):
-                    value = value["@id"]
+                    value = value.get("@id", "")
 
                 if term == self.expand_iri(value):
                     if exact and name not in possible:
@@ -248,7 +248,7 @@ class Context(object):
                     continue
 
                 if isinstance(value, dict):
-                    value = value["@id"]
+                    value = value.get("@id", "")
 
                 if term == name:
                     if exact:

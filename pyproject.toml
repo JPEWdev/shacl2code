@@ -62,6 +62,7 @@ pythonpath = [
 
 [tool.coverage.run]
 relative_files = true
+patch = ["subprocess"]
 
 [tool.black]
 include = '(\.pyi?$)|(python\.j2$)'

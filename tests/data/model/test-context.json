@@ -54,7 +54,6 @@
     },
     "test-class/required-string-list-prop": {
       "@id": "test:test-class/required-string-list-prop",
-      "@type": "xsd:string"
     },
     "test-class/named-property": {
       "@id": "test:test-class/named-property",

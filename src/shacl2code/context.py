@@ -249,6 +249,9 @@ class Context(object):
 
                 if isinstance(value, dict):
                     value = value.get("@id", "")
+ 
+                if not value:
+                    continue
 
                 if term == name:
                     if exact:

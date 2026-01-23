@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Coverage for src/shacl2code/lang/jsonschema.py: 65%</title>
+    <title>Coverage for src/shacl2code/lang/jsonschema.py: 100%</title>
     <link rel="icon" sizes="32x32" href="favicon_32_cb_58284776.png">
     <link rel="stylesheet" href="style_cb_6b508a39.css" type="text/css">
     <script src="coverage_html_cb_6fb7b396.js" defer></script>
@@ -12,7 +12,7 @@
     <div class="content">
         <h1>
             <span class="text">Coverage for </span><b>src/shacl2code/lang/jsonschema.py</b>:
-            <span class="pc_cov">65%</span>
+            <span class="pc_cov">100%</span>
         </h1>
         <aside id="help_panel_wrapper">
             <input id="help_panel_state" type="checkbox">
@@ -55,8 +55,8 @@
         </aside>
         <h2>
             <span class="text">26 statements &nbsp;</span>
-            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">17<span class="text"> run</span></button>
-            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">9<span class="text"> missing</span></button>
+            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">26<span class="text"> run</span></button>
+            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">0<span class="text"> missing</span></button>
             <button type="button" class="exc show_exc button_toggle_exc" value="exc" data-shortcut="x" title="Toggle lines excluded">0<span class="text"> excluded</span></button>
         </h2>
         <p class="text">
@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="z_41e47fe99de84bfa_lang_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.11.0">coverage.py v7.11.0</a>,
-            created at 2026-01-23 16:36 +0000
+            created at 2026-01-23 17:04 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -93,11 +93,11 @@
     <p class="pln"><span class="n"><a id="t11" href="#t11">11</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t12" href="#t12">12</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t13" href="#t13">13</a></span><span class="t"><span class="key">def</span> <span class="nam">varname</span><span class="op">(</span><span class="op">*</span><span class="nam">name</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t14" href="#t14">14</a></span><span class="t">    <span class="nam">name</span> <span class="op">=</span> <span class="nam">str</span><span class="op">(</span><span class="str">"_"</span><span class="op">.</span><span class="nam">join</span><span class="op">(</span><span class="nam">name</span><span class="op">)</span><span class="op">)</span><span class="op">.</span><span class="nam">replace</span><span class="op">(</span><span class="str">"@"</span><span class="op">,</span> <span class="str">"_"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t15" href="#t15">15</a></span><span class="t">    <span class="nam">name</span> <span class="op">=</span> <span class="nam">re</span><span class="op">.</span><span class="nam">sub</span><span class="op">(</span><span class="str">r"[^a-zA-Z0-9_]"</span><span class="op">,</span> <span class="str">""</span><span class="op">,</span> <span class="nam">name</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t16" href="#t16">16</a></span><span class="t">    <span class="key">while</span> <span class="nam">keyword</span><span class="op">.</span><span class="nam">iskeyword</span><span class="op">(</span><span class="nam">name</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t17" href="#t17">17</a></span><span class="t">        <span class="nam">name</span> <span class="op">=</span> <span class="nam">name</span> <span class="op">+</span> <span class="str">"_"</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t18" href="#t18">18</a></span><span class="t">    <span class="key">return</span> <span class="nam">name</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t14" href="#t14">14</a></span><span class="t">    <span class="nam">name</span> <span class="op">=</span> <span class="nam">str</span><span class="op">(</span><span class="str">"_"</span><span class="op">.</span><span class="nam">join</span><span class="op">(</span><span class="nam">name</span><span class="op">)</span><span class="op">)</span><span class="op">.</span><span class="nam">replace</span><span class="op">(</span><span class="str">"@"</span><span class="op">,</span> <span class="str">"_"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t15" href="#t15">15</a></span><span class="t">    <span class="nam">name</span> <span class="op">=</span> <span class="nam">re</span><span class="op">.</span><span class="nam">sub</span><span class="op">(</span><span class="str">r"[^a-zA-Z0-9_]"</span><span class="op">,</span> <span class="str">""</span><span class="op">,</span> <span class="nam">name</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t16" href="#t16">16</a></span><span class="t">    <span class="key">while</span> <span class="nam">keyword</span><span class="op">.</span><span class="nam">iskeyword</span><span class="op">(</span><span class="nam">name</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t17" href="#t17">17</a></span><span class="t">        <span class="nam">name</span> <span class="op">=</span> <span class="nam">name</span> <span class="op">+</span> <span class="str">"_"</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t18" href="#t18">18</a></span><span class="t">    <span class="key">return</span> <span class="nam">name</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t19" href="#t19">19</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t20" href="#t20">20</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t21" href="#t21">21</a></span><span class="t"><span class="op">@</span><span class="nam">language</span><span class="op">(</span><span class="str">"jsonschema"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
@@ -105,12 +105,12 @@
     <p class="run"><span class="n"><a id="t23" href="#t23">23</a></span><span class="t">    <span class="nam">HELP</span> <span class="op">=</span> <span class="str">"JSON Schema"</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t24" href="#t24">24</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t25" href="#t25">25</a></span><span class="t">    <span class="key">def</span> <span class="nam">__init__</span><span class="op">(</span><span class="nam">self</span><span class="op">,</span> <span class="nam">args</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t26" href="#t26">26</a></span><span class="t">        <span class="nam">super</span><span class="op">(</span><span class="op">)</span><span class="op">.</span><span class="nam">__init__</span><span class="op">(</span><span class="nam">args</span><span class="op">,</span> <span class="nam">TEMPLATE_DIR</span> <span class="op">/</span> <span class="str">"jsonschema.j2"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t27" href="#t27">27</a></span><span class="t">        <span class="nam">self</span><span class="op">.</span><span class="nam">__render_args</span> <span class="op">=</span> <span class="op">{</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis mis2 show_mis"><span class="n"><a id="t28" href="#t28">28</a></span><span class="t">            <span class="str">"schema_title"</span><span class="op">:</span> <span class="nam">args</span><span class="op">.</span><span class="nam">title</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis mis2 show_mis"><span class="n"><a id="t29" href="#t29">29</a></span><span class="t">            <span class="str">"schema_id"</span><span class="op">:</span> <span class="nam">args</span><span class="op">.</span><span class="nam">id</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis mis2 show_mis"><span class="n"><a id="t30" href="#t30">30</a></span><span class="t">            <span class="str">"allow_elided_lists"</span><span class="op">:</span> <span class="nam">args</span><span class="op">.</span><span class="nam">allow_elided_lists</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis mis2 show_mis"><span class="n"><a id="t31" href="#t31">31</a></span><span class="t">        <span class="op">}</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t26" href="#t26">26</a></span><span class="t">        <span class="nam">super</span><span class="op">(</span><span class="op">)</span><span class="op">.</span><span class="nam">__init__</span><span class="op">(</span><span class="nam">args</span><span class="op">,</span> <span class="nam">TEMPLATE_DIR</span> <span class="op">/</span> <span class="str">"jsonschema.j2"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t27" href="#t27">27</a></span><span class="t">        <span class="nam">self</span><span class="op">.</span><span class="nam">__render_args</span> <span class="op">=</span> <span class="op">{</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t28" href="#t28">28</a></span><span class="t">            <span class="str">"schema_title"</span><span class="op">:</span> <span class="nam">args</span><span class="op">.</span><span class="nam">title</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t29" href="#t29">29</a></span><span class="t">            <span class="str">"schema_id"</span><span class="op">:</span> <span class="nam">args</span><span class="op">.</span><span class="nam">id</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t30" href="#t30">30</a></span><span class="t">            <span class="str">"allow_elided_lists"</span><span class="op">:</span> <span class="nam">args</span><span class="op">.</span><span class="nam">allow_elided_lists</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t31" href="#t31">31</a></span><span class="t">        <span class="op">}</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t32" href="#t32">32</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t33" href="#t33">33</a></span><span class="t">    <span class="op">@</span><span class="nam">classmethod</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t34" href="#t34">34</a></span><span class="t">    <span class="key">def</span> <span class="nam">get_arguments</span><span class="op">(</span><span class="nam">cls</span><span class="op">,</span> <span class="nam">parser</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
@@ -125,12 +125,12 @@
     <p class="run run2"><span class="n"><a id="t43" href="#t43">43</a></span><span class="t">        <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t44" href="#t44">44</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t45" href="#t45">45</a></span><span class="t">    <span class="key">def</span> <span class="nam">get_extra_env</span><span class="op">(</span><span class="nam">self</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t46" href="#t46">46</a></span><span class="t">        <span class="key">return</span> <span class="op">{</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis mis2 show_mis"><span class="n"><a id="t47" href="#t47">47</a></span><span class="t">            <span class="str">"varname"</span><span class="op">:</span> <span class="nam">varname</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis mis2 show_mis"><span class="n"><a id="t48" href="#t48">48</a></span><span class="t">        <span class="op">}</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t46" href="#t46">46</a></span><span class="t">        <span class="key">return</span> <span class="op">{</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t47" href="#t47">47</a></span><span class="t">            <span class="str">"varname"</span><span class="op">:</span> <span class="nam">varname</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t48" href="#t48">48</a></span><span class="t">        <span class="op">}</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t49" href="#t49">49</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t50" href="#t50">50</a></span><span class="t">    <span class="key">def</span> <span class="nam">get_additional_render_args</span><span class="op">(</span><span class="nam">self</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t51" href="#t51">51</a></span><span class="t">        <span class="key">return</span> <span class="nam">self</span><span class="op">.</span><span class="nam">__render_args</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t51" href="#t51">51</a></span><span class="t">        <span class="key">return</span> <span class="nam">self</span><span class="op">.</span><span class="nam">__render_args</span>&nbsp;</span><span class="r"></span></p>
 </main>
 <footer>
     <div class="content">
@@ -140,7 +140,7 @@
             <a class="nav" href="z_41e47fe99de84bfa_lang_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.11.0">coverage.py v7.11.0</a>,
-            created at 2026-01-23 16:36 +0000
+            created at 2026-01-23 17:04 +0000
         </p>
     </div>
 </footer>

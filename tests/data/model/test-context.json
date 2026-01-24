@@ -53,7 +53,7 @@
       "@type": "xsd:string"
     },
     "test-class/required-string-list-prop": {
-      "@id": "test:test-class/required-string-list-prop",
+      "@id": "test:test-class/required-string-list-prop"
     },
     "test-class/named-property": {
       "@id": "test:test-class/named-property",
@@ -111,21 +111,21 @@
       "@id": "test:test-class/enum-prop",
       "@type": "@vocab",
       "@context": {
-          "@vocab": "test:enumType/"
+        "@vocab": "test:enumType/"
       }
     },
     "test-class/enum-list-prop": {
       "@id": "test:test-class/enum-list-prop",
       "@type": "@vocab",
       "@context": {
-          "@vocab": "test:enumType/"
+        "@vocab": "test:enumType/"
       }
     },
     "test-class/enum-prop-no-class": {
       "@id": "test:test-class/enum-prop-no-class",
       "@type": "@vocab",
       "@context": {
-          "@vocab": "test:enumType/"
+        "@vocab": "test:enumType/"
       }
     },
     "test-class/regex": {
@@ -161,12 +161,12 @@
       "@type": "@id"
     },
     "link-class-extensible": {
-        "@id": "test:link-class-extensible",
-        "@type": "@id"
+      "@id": "test:link-class-extensible",
+      "@type": "@id"
     },
     "link-class-tag": {
-        "@id": "test:link-class-tag",
-        "@type": "xsd:string"
+      "@id": "test:link-class-tag",
+      "@type": "xsd:string"
     },
     "link-class-derived-prop": {
       "@id": "test:link-class-derived-prop",

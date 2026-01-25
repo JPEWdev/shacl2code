@@ -7,15 +7,14 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version:
-          - "3.8"
-          - "3.9"
-          - "3.10"
-          - "3.11"
-          - "3.12"
+        os: [ubuntu-latest]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        include:
+          - os: macos-latest
+            python-version: "3.10"
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Setup Python ${{ matrix.python-version }}
@@ -31,7 +30,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install build
           npm install -g jsonld-cli
+      - name: Install Linux packages
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt update
           sudo apt install -y build-essential doxygen graphviz
+      - name: Install macOS packages
+        if: runner.os == 'macOS'
+        run: |
+          brew update
+          brew install doxygen gcc go graphviz
       - name: Build package
         run: |
           python -m build

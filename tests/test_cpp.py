@@ -3,15 +3,19 @@
 #
 # SPDX-License-Identifier: MIT
 
+from dataclasses import dataclass
+from enum import Enum
 import json
-import pytest
+import multiprocessing
+import os
+from pathlib import Path
 import re
+import shutil
 import subprocess
 import textwrap
-import multiprocessing
-from pathlib import Path
-from enum import Enum
-from dataclasses import dataclass
+
+import pytest
+
 from testfixtures import jsonvalidation
 
 THIS_FILE = Path(__file__)
@@ -24,6 +28,31 @@ TEST_MODEL = THIS_DIR / "data" / "model" / "test.ttl"
 TEST_CONTEXT = THIS_DIR / "data" / "model" / "test-context.json"
 
 SPDX3_CONTEXT_URL = "https://spdx.github.io/spdx-3-model/context.json"
+
+
+def get_cxx():
+    """
+    Get the command for C++ compiler.
+    Currently only supports g++.
+    On macOS, try to find the real GNU g++ from Homebrew
+    ("g++" is actually an alias to clang++).
+    """
+    cxx = os.environ.get("CXX")
+    if cxx:
+        return cxx
+
+    if os.uname().sysname == "Darwin":
+        versions = []
+        for version in range(20, 9, -1):
+            compiler = f"g++-{version}"
+            if shutil.which(compiler):
+                versions.append((version, compiler))
+
+        if versions:
+            versions.sort(reverse=True)
+            return versions[0][1]
+
+    return "g++"
 
 
 @dataclass
@@ -60,12 +89,16 @@ def build_lib(tmp_path_factory, model_server, tmpname, *, namespace=None):
         + extra_args,
         check=True,
     )
+    make_args = [
+        "make",
+        "-j" + str(multiprocessing.cpu_count()),
+        "CXXFLAGS=-Wall -Werror -g -save-temps",
+    ]
+    cxx = get_cxx()
+    make_args.append(f"CXX={cxx}")
+
     subprocess.run(
-        [
-            "make",
-            "-j" + str(multiprocessing.cpu_count()),
-            "CXXFLAGS=-Wall -Werror -g -save-temps",
-        ],
+        make_args,
         check=True,
         cwd=tmp_directory,
     )
@@ -79,7 +112,7 @@ def build_lib(tmp_path_factory, model_server, tmpname, *, namespace=None):
         textwrap.dedent(
             f"""\
             #! /bin/sh
-            export PKG_CONFIG_PATH="{ str(install_dir / 'lib' / 'pkgconfig') }"
+            export PKG_CONFIG_PATH="{str(install_dir / 'lib' / 'pkgconfig')}"
             exec pkg-config "$@"
             """
         )
@@ -155,8 +188,10 @@ def compile_test(test_lib, tmp_path):
 
         prog = tmp_path / "prog"
         pkg_config_cmd = f"$({test_lib.pkg_config} --cflags --libs {test_lib.basename})"
+
+        cxx = get_cxx()
         compile_cmd = [
-            "g++",
+            cxx,
             src,
             "-Wall",
             "-Werror",
@@ -166,18 +201,32 @@ def compile_test(test_lib, tmp_path):
         ]
 
         if static:
-            compile_cmd.extend(
-                [
-                    "-Wl,-Bstatic",
-                    pkg_config_cmd,
-                    "-Wl,-Bdynamic",
-                ]
-            )
+            # On macOS the linker doesn't support -Bstatic/-Bdynamic flags.
+            # Use the static archive directly when running on Darwin.
+            if os.uname().sysname == "Darwin":
+                static_lib = (
+                    test_lib.directory / "install" / "lib" / f"lib{test_lib.basename}.a"
+                )
+                pkg_cflags = f"$({test_lib.pkg_config} --cflags {test_lib.basename})"
+                compile_cmd.extend(
+                    [
+                        pkg_cflags,
+                        str(static_lib),
+                    ]
+                )
+            else:
+                compile_cmd.extend(
+                    [
+                        "-Wl,-Bstatic",
+                        pkg_config_cmd,
+                        "-Wl,-Bdynamic",
+                    ]
+                )
         else:
             compile_cmd.extend(
                 [
                     pkg_config_cmd,
-                    f"-Wl,-rpath={test_lib.rpath}",
+                    f"-Wl,-rpath,{test_lib.rpath}",
                 ]
             )
 
@@ -326,12 +375,16 @@ class TestOutput:
             check=True,
         )
 
+        make_args = [
+            "make",
+            "-j" + str(multiprocessing.cpu_count()),
+            "CXXFLAGS=-Wall -Werror -g -save-temps",
+        ]
+        cxx = get_cxx()
+        make_args.append(f"CXX={cxx}")
+
         subprocess.run(
-            [
-                "make",
-                "-j" + str(multiprocessing.cpu_count()),
-                "CXXFLAGS=-Wall -Werror -g -save-temps",
-            ],
+            make_args,
             check=True,
             cwd=tmp_path,
         )
@@ -365,8 +418,10 @@ def test_headers(test_lib, tmp_path):
 
         prog = tmp_path / "prog"
         pkg_config_cmd = f"$({test_lib.pkg_config} --cflags --libs {test_lib.basename})"
+
+        cxx = get_cxx()
         compile_cmd = [
-            "g++",
+            cxx,
             src,
             "-Wall",
             "-Werror",
@@ -374,7 +429,7 @@ def test_headers(test_lib, tmp_path):
             "-o",
             prog,
             pkg_config_cmd,
-            f"-Wl,-rpath={test_lib.rpath}",
+            f"-Wl,-rpath,{test_lib.rpath}",
         ]
 
         compile_script = tmp_path / "compile.sh"
@@ -1312,7 +1367,7 @@ def test_roundtrip(compile_test, tmp_path, roundtrip):
         SHACLObjectSet objs;
         {{
             std::ifstream infile;
-            infile.open("{ roundtrip }");
+            infile.open("{roundtrip}");
 
             JSONLDDeserializer d;
             d.read(infile, objs);
@@ -1320,7 +1375,7 @@ def test_roundtrip(compile_test, tmp_path, roundtrip):
         }}
         {{
             std::ofstream outfile;
-            outfile.open("{ out_file }");
+            outfile.open("{out_file}");
 
             JSONLDInlineSerializer s;
             s.write(outfile, objs);
@@ -1346,7 +1401,7 @@ def test_static(compile_test, tmp_path, roundtrip):
         SHACLObjectSet objs;
         {{
             std::ifstream infile;
-            infile.open("{ roundtrip }");
+            infile.open("{roundtrip}");
 
             JSONLDDeserializer d;
             d.read(infile, objs);
@@ -1354,7 +1409,7 @@ def test_static(compile_test, tmp_path, roundtrip):
         }}
         {{
             std::ofstream outfile;
-            outfile.open("{ out_file }");
+            outfile.open("{out_file}");
 
             JSONLDInlineSerializer s;
             s.write(outfile, objs);
@@ -1431,7 +1486,7 @@ def test_json_validation(passes, data, tmp_path, test_lib, test_context_url):
     data_file.write_text(json.dumps(data))
     p = subprocess.run(
         [
-            test_lib.bindir / f"{ test_lib.basename }-validate",
+            test_lib.bindir / f"{test_lib.basename}-validate",
             data_file,
         ]
     )
@@ -1450,7 +1505,7 @@ def test_json_types(passes, data, tmp_path, test_lib, test_context_url):
     data_file.write_text(json.dumps(data))
     p = subprocess.run(
         [
-            test_lib.bindir / f"{ test_lib.basename }-validate",
+            test_lib.bindir / f"{test_lib.basename}-validate",
             data_file,
         ]
     )

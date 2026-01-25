@@ -1,4 +1,21 @@
-CXX=g++
+# On macOS, g++ is often an alias to clang++, so try to find g++ from Homebrew
+# Users can still override by setting CXX environment variable
+ifeq ($(shell uname), Darwin)
+    CXX_DETECTED := $(shell \
+        for v in 20 19 18 17 16 15 14 13 12 11 10; do \
+            if which g++-$$v >/dev/null 2>&1; then \
+                echo g++-$$v; \
+                break; \
+            fi; \
+        done)
+    ifneq ($(CXX_DETECTED),)
+        CXX?=$(CXX_DETECTED)
+    else
+        CXX?=g++
+    endif
+else
+    CXX?=g++
+endif
 CPPFLAGS=
 CXXFLAGS=
 LDFLAGS=
@@ -22,33 +39,34 @@ clean:
 install: lib{{ basename }}.so lib{{ basename }}.a docs
 	# Library
 	$(INSTALL) -d $(DESTDIR)/$(PREFIX)/lib
-	$(INSTALL) -m 0755 lib{{ basename }}.so $(DESTDIR)/$(PREFIX)/lib/lib{{ basename }}.so.{{ lib_version }}
-	ln -s lib{{ basename }}.so.{{ lib_version }} $(DESTDIR)/$(PREFIX)/lib/lib{{ basename }}.so
-	ln -s lib{{ basename }}.so.{{ lib_version }} $(DESTDIR)/$(PREFIX)/lib/lib{{ basename }}.so.{{ lib_version.split(".")[0] }}
+	$(INSTALL) -m 0755 "lib{{ basename }}.so" "$(DESTDIR)/$(PREFIX)/lib/lib{{ basename }}.so.{{ lib_version }}"
+	ln -sf "lib{{ basename }}.so.{{ lib_version }}" "$(DESTDIR)/$(PREFIX)/lib/lib{{ basename }}.so"
+	ln -sf "lib{{ basename }}.so.{{ lib_version }}" "$(DESTDIR)/$(PREFIX)/lib/lib{{ basename }}.so.{{ lib_version.split(".")[0] }}"
 
-	$(INSTALL) -m 0644 lib{{ basename }}.a $(DESTDIR)/$(PREFIX)/lib/
+	$(INSTALL) -m 0644 "lib{{ basename }}.a" "$(DESTDIR)/$(PREFIX)/lib/"
 
 	# Package Config
 	$(INSTALL) -d $(DESTDIR)/$(PREFIX)/lib/pkgconfig
 
-	$(INSTALL) -m 0644 {{ basename }}.pc $(DESTDIR)/$(PREFIX)/lib/pkgconfig/
-	sed -i -e 's^@@PREFIX@@^$(PREFIX)^g' \
-		$(DESTDIR)/$(PREFIX)/lib/pkgconfig/{{ basename }}.pc
+	$(INSTALL) -m 0644 "{{ basename }}.pc" "$(DESTDIR)/$(PREFIX)/lib/pkgconfig/"
+	sed -i.bak -e 's^@@PREFIX@@^$(PREFIX)^g' \
+		"$(DESTDIR)/$(PREFIX)/lib/pkgconfig/{{ basename }}.pc"
+	rm -f "$(DESTDIR)/$(PREFIX)/lib/pkgconfig/{{ basename }}.pc.bak"
 
 	# Headers
-	$(INSTALL) -d $(DESTDIR)/$(PREFIX)/include/{{ basename }}
+	$(INSTALL) -d "$(DESTDIR)/$(PREFIX)/include/{{ basename }}"
 	{%- for h in headers %}
-	$(INSTALL) -m 0644 {{ h }} $(DESTDIR)/$(PREFIX)/include/{{ basename }}/
+	$(INSTALL) -m 0644 "{{ h }}" "$(DESTDIR)/$(PREFIX)/include/{{ basename }}/"
 	{%- endfor %}
 
 	# Binaries
 	$(INSTALL) -d $(DESTDIR)/$(PREFIX)/bin
 
-	$(INSTALL) -m 0755 {{ basename }}-validate $(DESTDIR)/$(PREFIX)/bin/
+	$(INSTALL) -m 0755 "{{ basename }}-validate" "$(DESTDIR)/$(PREFIX)/bin/"
 
 	# Documentation
-	$(INSTALL) -d $(DESTDIR)/$(PREFIX)/share/doc/lib{{ basename }}
-	$(COPY) -dR doc/ $(DESTDIR)/$(PREFIX)/share/doc/lib{{ basename }}/
+	$(INSTALL) -d "$(DESTDIR)/$(PREFIX)/share/doc/lib{{ basename }}"
+	$(COPY) -R doc/ "$(DESTDIR)/$(PREFIX)/share/doc/lib{{ basename }}/"
 
 %.o: %.cpp
 	@echo " [CC]  $<"
@@ -63,14 +81,20 @@ lib{{ basename }}.a: $(LIB_OBJS)
 	# Combine all object files into a single object file. This is required
 	# otherwise the linker may only include object files that were actually
 	# referenced and the initializers will not run
-	@echo " [LD]  lib{{ basename }}.static.o"
-	$(LD) -relocatable -o lib{{ basename }}.static.o $^
+	@echo " [CXX]  lib{{ basename }}.static.o"
+	$(CXX) -r -o "lib{{ basename }}.static.o" $^
 	@echo " [AR]  $@"
-	$(AR) rcs $@ lib{{ basename }}.static.o
+	$(AR) rcs $@ "lib{{ basename }}.static.o"
 
 lib{{ basename }}.so: $(LIB_OBJS)
 	@echo " [LD]  $@"
-	$(CXX) -shared -fPIC -Wl,-soname,lib{{ basename }}.so.{{ lib_version.split(".")[0] }} $(LDFLAGS) -o $@ $^
+	ifeq ($(shell uname), Darwin)
+		# macOS ld doesn't support -soname; avoid passing it and use -dynamiclib
+		# Set install_name to @rpath/... so client binaries can locate the library
+		$(CXX) -dynamiclib $(LDFLAGS) '-Wl,-install_name,@rpath/lib{{ basename }}.so' -o $@ $^
+	else
+		$(CXX) -shared -fPIC '-Wl,-soname,lib{{ basename }}.so.{{ lib_version.split(".")[0] }}' $(LDFLAGS) -o $@ $^
+	endif
 
 {{ basename }}-validate: $(VALIDATE_OBJS) lib{{ basename }}.a
 	@echo " [LD]  $@"

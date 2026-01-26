@@ -3,9 +3,11 @@
 #
 # SPDX-License-Identifier: MIT
 
-import pytest
 import json
 import subprocess
+
+import pytest
+
 from shacl2code.context import Context
 
 TEST_CONTEXTS = [

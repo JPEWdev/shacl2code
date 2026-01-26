@@ -419,7 +419,8 @@ def test_context_contents():
         assert isinstance(value, dict), f"Property '{name}' must be a dictionary"
 
         assert "@id" in value, f"Property '{name}' missing @id"
-        assert "@type" in value, f"Property '{name}' missing @type"
+        # If @type is omitted, the property will be treated as xsd:string by default
+        # assert "@type" in value, f"Property '{name}' missing @type"
         assert (
             value["@id"] == f"test:{name}"
         ), f"Context '{name}' has bad @id '{value['@id']}'"

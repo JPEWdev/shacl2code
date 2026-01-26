@@ -56,6 +56,12 @@ addopts = [
     "--import-mode=importlib",
     "--cov=shacl2code",
 ]
+# Suppress 3rd-party warnings to reduce log noise. Remove after libraries get updated.
+filterwarnings = [
+    "ignore:.*ConjunctiveGraph is deprecated.*:DeprecationWarning",         # From rdflib
+    "ignore:.*Dataset.default_context is deprecated.*:DeprecationWarning",  # From rdflib, pyshacl
+    "ignore:.*Dataset.contexts is deprecated.*:DeprecationWarning",         # From rdflib
+]
 pythonpath = [
     "testfixtures"
 ]

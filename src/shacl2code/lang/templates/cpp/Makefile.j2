@@ -88,13 +88,13 @@ lib{{ basename }}.a: $(LIB_OBJS)
 
 lib{{ basename }}.so: $(LIB_OBJS)
 	@echo " [LD]  $@"
-	ifeq ($(shell uname), Darwin)
-		# macOS ld doesn't support -soname; avoid passing it and use -dynamiclib
-		# Set install_name to @rpath/... so client binaries can locate the library
-		$(CXX) -dynamiclib $(LDFLAGS) '-Wl,-install_name,@rpath/lib{{ basename }}.so' -o $@ $^
-	else
-		$(CXX) -shared -fPIC '-Wl,-soname,lib{{ basename }}.so.{{ lib_version.split(".")[0] }}' $(LDFLAGS) -o $@ $^
-	endif
+ifeq ($(shell uname), Darwin)
+	# macOS ld doesn't support -soname; avoid passing it and use -dynamiclib
+	# Set install_name to @rpath/... so client binaries can locate the library
+	$(CXX) -dynamiclib $(LDFLAGS) '-Wl,-install_name,@rpath/lib{{ basename }}.so' -o $@ $^
+else
+	$(CXX) -shared -fPIC '-Wl,-soname,lib{{ basename }}.so.{{ lib_version.split(".")[0] }}' $(LDFLAGS) -o $@ $^
+endif
 
 {{ basename }}-validate: $(VALIDATE_OBJS) lib{{ basename }}.a
 	@echo " [LD]  $@"

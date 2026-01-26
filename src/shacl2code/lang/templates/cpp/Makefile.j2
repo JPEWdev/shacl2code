@@ -81,7 +81,7 @@ lib{{ basename }}.a: $(LIB_OBJS)
 	# Combine all object files into a single object file. This is required
 	# otherwise the linker may only include object files that were actually
 	# referenced and the initializers will not run
-	@echo " [CXX]  lib{{ basename }}.static.o"
+	@echo " [LD]  lib{{ basename }}.static.o"
 	$(CXX) -r -o "lib{{ basename }}.static.o" $^
 	@echo " [AR]  $@"
 	$(AR) rcs $@ "lib{{ basename }}.static.o"

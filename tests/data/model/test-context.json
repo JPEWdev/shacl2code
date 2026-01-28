@@ -207,6 +207,9 @@
     "required-abstract/abstract-class-prop": {
       "@id": "test:required-abstract/abstract-class-prop",
       "@type": "@id"
+    },
+    "no-id": {
+      "@type": "xsd:integer"
     }
   }
 }

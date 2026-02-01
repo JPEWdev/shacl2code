@@ -638,10 +638,18 @@ class SHACLObject(object):
     _OBJ_DEPRECATED: Set[str] = set()
     _NEEDS_REG: bool = True
 
+    # Creation count is a list to ensure that the dictionary entry of the class
+    # doesn't have to be updated on every increment (instead the member is
+    # updated in-place).
+    # Without this optimization incrementing the counter showed a slow down
+    # of approximately 40% in a serialize / deserialize cycle.
+    _creation_count = [0]
+
     # Instance variables
     _id: Optional[str]
     _obj_data: Dict[str, Any]
     _obj_metadata: Dict[str, Any]
+    _creation_id: int
 
     def __init__(self, **kwargs):
         if self._is_abstract():
@@ -656,6 +664,13 @@ class SHACLObject(object):
 
         with register_lock:
             cls = self.__class__
+
+            # Keep track of when this instance was born. This value is used to
+            # ensure deterministic ordering when generating blank node IDs
+            # during serialization.
+            self.__dict__["_creation_id"] = cls._creation_count[0]
+            cls._creation_count[0] += 1
+
             if cls._NEEDS_REG:
                 cls._OBJ_PROPERTIES = {}
                 cls._OBJ_IRIS = {}
@@ -989,7 +1004,7 @@ class SHACLObject(object):
                 obj._id or "",
                 obj.TYPE,
                 getattr(obj, "name", None) or "",
-                id(obj),
+                obj.__dict__["_creation_id"],
             )
 
         return sort_key(self) < sort_key(other)

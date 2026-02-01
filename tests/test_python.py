@@ -343,16 +343,16 @@ def test_node_kind_blank(model, test_context_url):
     c1._id = "http://example.com/c1"
     c2._id = "http://example.com/c2"
 
-    ref = model.node_kind_blank()
+    ref1 = model.node_kind_blank()
 
     with pytest.raises(ValueError):
-        ref._id = "http://example.com/name"
+        ref1._id = "http://example.com/name"
 
     # Blank node assignment is fine but not preserved when serializing
-    ref._id = "_:blank"
+    ref1._id = "_:blank"
 
     # No blank ID is written out for one reference (inline)
-    c1.link_class_link_prop = ref
+    c1.link_class_link_prop = ref1
     result = s.serialize_data(model.SHACLObjectSet([c1, c2]))
     assert result == {
         "@context": test_context_url,
@@ -372,7 +372,7 @@ def test_node_kind_blank(model, test_context_url):
     }
 
     # Blank node is written out for multiple references
-    c2.link_class_link_prop = ref
+    c2.link_class_link_prop = ref1
     result = s.serialize_data(model.SHACLObjectSet([c1, c2]))
     assert result == {
         "@context": test_context_url,
@@ -395,7 +395,7 @@ def test_node_kind_blank(model, test_context_url):
     }
 
     # Listing in the root graph requires a blank node be written
-    result = s.serialize_data(model.SHACLObjectSet([c1, ref]))
+    result = s.serialize_data(model.SHACLObjectSet([c1, ref1]))
     assert result == {
         "@context": test_context_url,
         "@graph": [
@@ -407,6 +407,35 @@ def test_node_kind_blank(model, test_context_url):
                 "@type": "link-class",
                 "@id": "http://example.com/c1",
                 "link-class-link-prop": "_:node_kind_blank0",
+            },
+        ],
+    }
+
+    # ID assignment to blank nodes is deterministic
+    ref2 = model.node_kind_blank()
+    c2.link_class_link_prop = ref2
+
+    result = s.serialize_data(model.SHACLObjectSet([c1, c2, ref1, ref2]))
+    assert result == {
+        "@context": test_context_url,
+        "@graph": [
+            {
+                "@type": "node-kind-blank",
+                "@id": "_:node_kind_blank0",
+            },
+            {
+                "@type": "node-kind-blank",
+                "@id": "_:node_kind_blank1",
+            },
+            {
+                "@type": "link-class",
+                "@id": "http://example.com/c1",
+                "link-class-link-prop": "_:node_kind_blank0",
+            },
+            {
+                "@type": "link-class",
+                "@id": "http://example.com/c2",
+                "link-class-link-prop": "_:node_kind_blank1",
             },
         ],
     }

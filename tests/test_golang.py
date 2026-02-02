@@ -84,8 +84,7 @@ def compile_test(test_lib, tmp_path):
         src = tmp_path / "test.go"
         import_str = "\n".join(f'    "{i}"' for i in imports)
         src.write_text(
-            textwrap.dedent(
-                f"""\
+            textwrap.dedent(f"""\
                 package main
 
                 import (
@@ -96,11 +95,9 @@ def compile_test(test_lib, tmp_path):
                 )
 
                 func test() error {{
-                """
-            )
+                """)
             + textwrap.dedent(code_fragment)
-            + textwrap.dedent(
-                """\
+            + textwrap.dedent("""\
                     return nil
                 }
 
@@ -129,8 +126,7 @@ def compile_test(test_lib, tmp_path):
                     }
                     os.Exit(1)
                 }
-                """
-            )
+                """)
         )
         subprocess.run(["go", "mod", "tidy"], cwd=tmp_path, check=True)
 
@@ -236,9 +232,7 @@ def validate_test(test_lib, tmp_path_factory):
     )
 
     src = tmp_path / "validate.go"
-    src.write_text(
-        textwrap.dedent(
-            """\
+    src.write_text(textwrap.dedent("""\
             package main
 
             import (
@@ -271,9 +265,7 @@ def validate_test(test_lib, tmp_path_factory):
                 }
                 os.Exit(0)
             }
-            """
-        )
-    )
+            """))
     subprocess.run(["go", "mod", "tidy"], cwd=tmp_path, check=True)
 
     prog = tmp_path / "validate"
@@ -313,9 +305,7 @@ def roundtrip_test(test_lib, tmp_path_factory):
     )
 
     src = tmp_path / "roundtrip.go"
-    src.write_text(
-        textwrap.dedent(
-            """\
+    src.write_text(textwrap.dedent("""\
             package main
 
             import (
@@ -355,9 +345,7 @@ def roundtrip_test(test_lib, tmp_path_factory):
                     os.Exit(1)
                 }
             }
-            """
-        )
-    )
+            """))
     subprocess.run(["go", "mod", "tidy"], cwd=tmp_path, check=True)
 
     prog = tmp_path / "roundtrip"
@@ -384,8 +372,7 @@ def link_test(test_lib, tmp_path_factory):
         test_lib,
         tmp_path_factory,
         "link",
-        textwrap.dedent(
-            """\
+        textwrap.dedent("""\
             package main
 
             import (
@@ -480,8 +467,7 @@ def link_test(test_lib, tmp_path_factory):
                 checkObject("LinkClassLinkListProp[0]", check.LinkClassLinkListProp().Get()[0])
                 checkObject("LinkClassLinkListProp[1]", check.LinkClassLinkListProp().Get()[1])
             }
-            """
-        ),
+            """),
     )
 
 

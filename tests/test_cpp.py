@@ -108,15 +108,11 @@ def build_lib(tmp_path_factory, model_server, tmpname, *, namespace=None):
         cwd=tmp_directory,
     )
     pkg_config = tmp_directory / "pkg-config"
-    pkg_config.write_text(
-        textwrap.dedent(
-            f"""\
+    pkg_config.write_text(textwrap.dedent(f"""\
             #! /bin/sh
             export PKG_CONFIG_PATH="{str(install_dir / 'lib' / 'pkgconfig')}"
             exec pkg-config "$@"
-            """
-        )
-    )
+            """))
     pkg_config.chmod(0o755)
 
     return Lib(
@@ -149,8 +145,7 @@ def compile_test(test_lib, tmp_path):
     def f(code_fragment, *, progress=Progress.RUNS, static=False):
         src = tmp_path / "test.cpp"
         src.write_text(
-            textwrap.dedent(
-                f"""\
+            textwrap.dedent(f"""\
                 #include "{test_lib.basename}/{test_lib.basename}.hpp"
                 #include "{test_lib.basename}/{test_lib.basename}-jsonld.hpp"
                 #include <iostream>
@@ -161,29 +156,24 @@ def compile_test(test_lib, tmp_path):
 
                 int main(int argc, char** argv) {{
                     try {{
-                """
-            )
+                """)
             + textwrap.dedent(code_fragment)
             + "".join(
-                textwrap.dedent(
-                    f"""\
+                textwrap.dedent(f"""\
                     }} catch ({exc}& e) {{
                         std::cout << " {enum.name} " << e.what() << std::endl;
                         return 1;
-                    """
-                )
+                    """)
                 for exc, enum in (
                     ("ValidationError", Progress.VALIDATION_FAILS),
                     ("std::bad_cast", Progress.CAST_FAILS),
                 )
             )
-            + textwrap.dedent(
-                """\
+            + textwrap.dedent("""\
                     }
                     return 0;
                 }
-                """
-            )
+                """)
         )
 
         prog = tmp_path / "prog"
@@ -231,14 +221,10 @@ def compile_test(test_lib, tmp_path):
             )
 
         compile_script = tmp_path / "compile.sh"
-        compile_script.write_text(
-            textwrap.dedent(
-                f"""\
+        compile_script.write_text(textwrap.dedent(f"""\
                 #! /bin/sh
                 exec {" ".join(str(s) for s in compile_cmd)}
-                """
-            )
-        )
+                """))
         compile_script.chmod(0o755)
 
         p = subprocess.run(
@@ -404,17 +390,13 @@ def test_compile(compile_test):
 def test_headers(test_lib, tmp_path):
     for h in test_lib.directory.glob("*.hpp"):
         src = tmp_path / (h.name + ".cpp")
-        src.write_text(
-            textwrap.dedent(
-                f"""\
+        src.write_text(textwrap.dedent(f"""\
                 #include <{test_lib.basename}/{h.name}>
 
                 int main(int argc, char** argv) {{
                     return 0;
                 }}
-                """
-            )
-        )
+                """))
 
         prog = tmp_path / "prog"
         pkg_config_cmd = f"$({test_lib.pkg_config} --cflags --libs {test_lib.basename})"
@@ -433,14 +415,10 @@ def test_headers(test_lib, tmp_path):
         ]
 
         compile_script = tmp_path / "compile.sh"
-        compile_script.write_text(
-            textwrap.dedent(
-                f"""\
+        compile_script.write_text(textwrap.dedent(f"""\
                 #! /bin/sh
                 exec {" ".join(str(s) for s in compile_cmd)}
-                """
-            )
-        )
+                """))
         compile_script.chmod(0o755)
 
         subprocess.run(
@@ -758,12 +736,10 @@ def test_class_prop_validation(compile_test, prop, value, expect):
 )
 def test_ref_implicit_cast(compile_test, A, B, progress):
     # Check types are valid
-    compile_test(
-        f"""\
+    compile_test(f"""\
         auto a = make_obj<{A}>();
         auto b = make_obj<{B}>();
-        """
-    )
+        """)
 
     output = compile_test(
         f"""\
@@ -796,32 +772,27 @@ def test_ref_implicit_cast(compile_test, A, B, progress):
         assert output.rstrip() == "_:foo"
 
     if progress == Progress.RUNS:
-        output = compile_test(
-            f"""\
+        output = compile_test(f"""\
             Ref<{A}> a("_:foo");
             Ref<{B}> b(a);
 
             std::cout << b.iri() << std::endl;
-            """
-        )
+            """)
         assert output.rstrip() == "_:foo"
 
-        output = compile_test(
-            f"""\
+        output = compile_test(f"""\
             Ref<{A}> a("_:foo");
             Ref<{B}> b("_:bar");
             b = a;
             a.isObj();
 
             std::cout << b.iri() << std::endl;
-            """
-        )
+            """)
         assert output.rstrip() == "_:foo"
 
 
 def test_ref_prop_assignment(compile_test):
-    output = compile_test(
-        """\
+    output = compile_test("""\
         auto c = make_obj<test_class>();
         c->_test_class_class_prop = make_obj<test_class>();
         c->_test_class_class_prop->_id = "_:foo";
@@ -830,32 +801,27 @@ def test_ref_prop_assignment(compile_test):
         d->_test_class_class_prop = c->_test_class_class_prop;
 
         std::cout << d->_test_class_class_prop->_id.get() << std::endl;
-        """
-    )
+        """)
 
     assert output.rstrip() == "_:foo"
 
 
 def test_ref_implicit_cast_to_abstract(compile_test):
-    output = compile_test(
-        """\
+    output = compile_test("""\
         auto r = make_obj<concrete_class>();
         r->_id = "_:foo";
         Ref<abstract_class> p(r);
 
         std::cout << p->_id.get() << std::endl;
-        """
-    )
+        """)
     assert output.rstrip() == "_:foo"
 
-    output = compile_test(
-        """\
+    output = compile_test("""\
         Ref<concrete_class> a("_:foo");
         Ref<abstract_class> b(a);
 
         std::cout << b.iri() << std::endl;
-        """
-    )
+        """)
     assert output.rstrip() == "_:foo"
 
 
@@ -872,12 +838,10 @@ def test_ref_implicit_cast_to_abstract(compile_test):
 )
 def test_ref_explicit_cast(compile_test, A, B, progress):
     # Check types are valid
-    compile_test(
-        f"""\
+    compile_test(f"""\
         auto a = make_obj<{A}>();
         auto b = make_obj<{B}>();
-        """
-    )
+        """)
 
     output = compile_test(
         f"""\
@@ -907,24 +871,20 @@ def test_ref_explicit_cast(compile_test, A, B, progress):
         assert output.rstrip() == "_:foo"
 
     if progress == Progress.RUNS:
-        output = compile_test(
-            f"""\
+        output = compile_test(f"""\
             Ref<{A}> a("_:foo");
             auto b = a.asTypeRef<{B}>();
             std::cout << b.iri() << std::endl;
-            """
-        )
+            """)
         assert output.rstrip() == "_:foo"
 
-        output = compile_test(
-            f"""\
+        output = compile_test(f"""\
             Ref<{A}> a("_:foo");
             Ref<{B}> b("bar");
             b = a.asTypeRef<{B}>();
 
             std::cout << b.iri() << std::endl;
-            """
-        )
+            """)
         assert output.rstrip() == "_:foo"
 
 
@@ -939,45 +899,37 @@ def test_ref_explicit_cast_to_derived(compile_test):
     )
 
     # Passes because it is a string reference
-    output = compile_test(
-        """\
+    output = compile_test("""\
         Ref<test_class> r("_:foo");
         auto p = r.asTypeRef<test_derived_class>();
         std::cout << p.iri() << std::endl;
-        """
-    )
+        """)
     assert output.rstrip() == "_:foo"
 
     # Passes because r is actually a test_derived_class
-    compile_test(
-        """\
+    compile_test("""\
         auto r = make_obj<test_derived_class>();
         auto i = r.asTypeRef<parent_class>();
         auto p = i.asTypeRef<test_derived_class>();
-        """
-    )
+        """)
 
-    output = compile_test(
-        """\
+    output = compile_test("""\
         Ref<test_derived_class> r("_:foo");
         auto i = r.asTypeRef<test_class>();
         auto p = i.asTypeRef<test_derived_class>();
         std::cout << p.iri() << std::endl;
-        """
-    )
+        """)
     assert output.rstrip() == "_:foo"
 
 
 def test_ref_explicit_cast_to_abstract(compile_test):
-    output = compile_test(
-        """\
+    output = compile_test("""\
         auto r = make_obj<concrete_class>();
         r->_id = "_:foo";
         auto p = r.asTypeRef<abstract_class>();
 
         std::cout << r->_id.get() << std::endl;
-        """
-    )
+        """)
     assert output.rstrip() == "_:foo"
 
 
@@ -994,21 +946,17 @@ def test_ref_explicit_cast_to_abstract(compile_test):
 )
 def test_DateTime_toString(compile_test, create_args, expect, tzoffset):
     args = ", ".join(repr(r) for r in create_args)
-    output = compile_test(
-        f"""\
+    output = compile_test(f"""\
         std::cout << DateTime({args}).toString() << std::endl;
-        """
-    )
+        """)
 
     assert (
         output.rstrip() == expect
     ), f"Bad string result for DateTime({args}).toString(). Expected {expect!r}. Got {output.rstrip()!r}"
 
-    output = compile_test(
-        f"""\
+    output = compile_test(f"""\
         std::cout << DateTime({args}).tzOffsetSeconds() << std::endl;
-        """
-    )
+        """)
 
     assert (
         int(output.rstrip()) == tzoffset
@@ -1042,8 +990,7 @@ def test_DateTime_toString(compile_test, create_args, expect, tzoffset):
     ],
 )
 def test_DateTime_fromString(compile_test, s, valid, time, tzoffset):
-    output = compile_test(
-        f"""
+    output = compile_test(f"""
         auto d = DateTime::fromString("{s}", true);
         if (d) {{
             auto dt = d.value();
@@ -1052,8 +999,7 @@ def test_DateTime_fromString(compile_test, s, valid, time, tzoffset):
         }} else {{
             std::cout << "INVALID" << std::endl;
         }}
-        """
-    )
+        """)
 
     if valid:
         expect = [str(time), str(tzoffset)]
@@ -1073,8 +1019,7 @@ def test_abstract_class(compile_test):
 
 
 def test_id_alias(compile_test):
-    output = compile_test(
-        """\
+    output = compile_test("""\
         {
             auto c = make_obj<inherited_id_prop_class>();
             std::cout << c->_id.getIRI() << std::endl;
@@ -1095,8 +1040,7 @@ def test_id_alias(compile_test):
             auto b = c.asTypeRef<SHACLObject>();
             std::cout << b->_id.getIRI() << std::endl;
         }
-        """
-    )
+        """)
     expected = ["testid"] * 3 + ["@id"] * 3
     assert (
         output.splitlines() == expected
@@ -1104,8 +1048,7 @@ def test_id_alias(compile_test):
 
 
 def test_mandatory_properties(compile_test, tmp_path):
-    CODE = textwrap.dedent(
-        """\
+    CODE = textwrap.dedent("""\
         auto c = make_obj<test_class_required>();
         c->_id = "_:blank";
         c->_test_class_required_string_scalar_prop = "foo";
@@ -1122,8 +1065,7 @@ def test_mandatory_properties(compile_test, tmp_path):
         JSONLDInlineSerializer s;
         s.write(outfile, o);
         outfile.close();
-        """
-    )
+        """)
 
     # Verify that the base code works
     compile_test(CODE.format(code="", fn=tmp_path / "pass.json"))
@@ -1165,8 +1107,7 @@ def test_mandatory_properties(compile_test, tmp_path):
 @pytest.fixture
 def iterator_test(compile_test):
     def f(code, expect):
-        output = compile_test(
-            f"""\
+        output = compile_test(f"""\
             auto c = make_obj<test_class>();
             auto& p = c->_test_class_string_list_prop;
             {textwrap.dedent(code)}
@@ -1174,8 +1115,7 @@ def iterator_test(compile_test):
             for (auto&& i : p) {{
                 std::cout << i << std::endl;
             }}
-            """
-        )
+            """)
         assert output.splitlines() == expect
 
     return f
@@ -1305,16 +1245,14 @@ class TestListIterators:
         )
 
     def test_std_find(self, compile_test):
-        output = compile_test(
-            """\
+        output = compile_test("""\
             auto c = make_obj<test_class>();
             auto& p = c->_test_class_string_list_prop;
 
             p.insert(p.begin(), {"A", "B", "C"});
             auto it = std::find(p.begin(), p.end(), "A");
             std::cout << *it << std::endl;
-            """
-        )
+            """)
         assert output.splitlines() + ["A"]
 
     def test_std_remove(self, iterator_test):
@@ -1362,8 +1300,7 @@ class TestListIterators:
 def test_roundtrip(compile_test, tmp_path, roundtrip):
     out_file = tmp_path / "out.json"
 
-    compile_test(
-        f"""\
+    compile_test(f"""\
         SHACLObjectSet objs;
         {{
             std::ifstream infile;
@@ -1381,8 +1318,7 @@ def test_roundtrip(compile_test, tmp_path, roundtrip):
             s.write(outfile, objs);
             outfile.close();
         }}
-        """
-    )
+        """)
 
     with roundtrip.open("r") as f:
         expect = json.load(f)
@@ -1421,22 +1357,19 @@ def test_static(compile_test, tmp_path, roundtrip):
 
 
 def test_set(compile_test):
-    output = compile_test(
-        """
+    output = compile_test("""
         auto c = make_obj<test_class>();
         c->set<&SHACLObject::_id>("_:foo").set<&test_class::_test_class_string_scalar_prop>("b");
 
         std::cout << c->_id.get() << std::endl;
         std::cout << c->_test_class_string_scalar_prop.get() << std::endl;
-        """
-    )
+        """)
 
     assert output.splitlines() == ["_:foo", "b"]
 
 
 def test_add(compile_test):
-    output = compile_test(
-        """
+    output = compile_test("""
         auto c = make_obj<test_class>();
         c->add<&test_class::_test_class_string_list_prop>("a").add<&test_class::_test_class_string_list_prop>("b");
 
@@ -1444,8 +1377,7 @@ def test_add(compile_test):
             std::cout << i << std::endl;
         }
 
-        """
-    )
+        """)
 
     assert output.splitlines() == ["a", "b"]
 

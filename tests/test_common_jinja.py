@@ -6,7 +6,6 @@
 import subprocess
 from pathlib import Path
 
-
 THIS_DIR = Path(__file__).parent
 
 TEST_MODEL = THIS_DIR / "data" / "model" / "test.ttl"

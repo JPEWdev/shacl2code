@@ -1,32 +1,37 @@
 {
-    "@context": "@CONTEXT_URL@",
+    "@context": [
+        "@CONTEXT_URL@",
+        {
+            "prefix": "http://serialize.example.com/"
+        }
+    ],
     "@graph": [
         {
             "@type": "link-class",
-            "link-class-link-prop": "http://serialize.example.com/link-derived-target",
-            "link-class-link-prop-no-class": "http://serialize.example.com/link-derived-target",
+            "link-class-link-prop": "prefix:link-derived-target",
+            "link-class-link-prop-no-class": "prefix:link-derived-target",
             "link-class-link-list-prop": [
-                "http://serialize.example.com/link-derived-target"
+                "prefix:link-derived-target"
             ]
         },
         {
             "@type": "concrete-class",
-            "@id": "http://serialize.example.com/concrete-class"
+            "@id": "prefix:concrete-class"
         },
         {
-            "@id": "http://serialize.example.com/link-derived-target",
+            "@id": "prefix:link-derived-target",
             "@type": "link-derived-class"
         },
         {
             "@type": "test-class",
-            "@id": "http://serialize.example.com/nested-parent",
+            "@id": "prefix:nested-parent",
             "test-class/class-prop": {
                 "@type": "test-class"
             }
         },
         {
             "@type": "test-class-required",
-            "@id": "http://serialize.example.com/required",
+            "@id": "prefix:required",
             "test-class/required-string-scalar-prop": "hello",
             "test-class/required-string-list-prop": [
                 "hello",
@@ -35,7 +40,7 @@
         },
         {
             "@type": "test-class",
-            "@id": "http://serialize.example.com/test",
+            "@id": "prefix:test",
             "test-class/string-list-prop": [
                 "hello",
                 "world"
@@ -55,11 +60,11 @@
             "test-class/integer-prop": -1,
             "test-class/boolean-prop": true,
             "test-class/float-prop": "0.1",
-            "test-class/class-prop": "http://serialize.example.com/test-derived",
-            "test-class/class-prop-no-class": "http://serialize.example.com/test-derived",
+            "test-class/class-prop": "prefix:test-derived",
+            "test-class/class-prop-no-class": "prefix:test-derived",
             "test-class/class-list-prop": [
-                "http://serialize.example.com/test",
-                "http://serialize.example.com/test-derived"
+                "prefix:test",
+                "prefix:test-derived"
             ],
             "test-class/enum-prop": "foo",
             "test-class/enum-prop-no-class": "bar",
@@ -67,30 +72,30 @@
             "test-class/regex-datetime": "2024-03-11T00:00:00+01:00",
             "test-class/regex-datetimestamp": "2024-03-11T00:00:00Z",
             "test-class/regex-list": ["foo2", "foo3"],
-            "test-class/non-shape": "http://serialize.example.com/non-shape",
+            "test-class/non-shape": "prefix:non-shape",
             "import": "foo",
             "encode": "foo",
             "test-class/split-string-prop": "this is split"
         },
         {
-            "@id": "http://serialize.example.com/test-derived",
+            "@id": "prefix:test-derived",
             "@type": "test-derived-class"
         },
         {
             "@type": "test-class",
-            "@id": "http://serialize.example.com/test-named-individual-reference",
+            "@id": "prefix:test-named-individual-reference",
             "test-class/class-prop": "named"
         },
         {
             "@type": "test-class",
-            "@id": "http://serialize.example.com/test-special-chars",
+            "@id": "prefix:test-special-chars",
             "test-class/string-scalar-prop": "special chars \"\n\r:{}[]"
         },
         {
             "@type": "uses-extensible-abstract-class",
-            "@id": "http://serialize.example.com/test-uses-extensible-abstract",
+            "@id": "prefix:test-uses-extensible-abstract",
             "uses-extensible-abstract-class/prop": {
-                "@type": "http://serialize.example.com/custom-extensible",
+                "@type": "prefix:custom-extensible",
                 "http://custom-list-prop": [
                     "abc",
                     "def"

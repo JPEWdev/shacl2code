@@ -61,19 +61,15 @@ func (self *SHACLObjectBase) Walk(path Path, visit Visit) {
 
 func (self *SHACLObjectBase) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
     if self.typeIRI != "" {
-        data["{{ context.compact_iri('@type') }}"] = self.typeIRI
+        data["{{ context.compact_iri('@type') }}"] = state.CompactIRI(self.typeIRI)
     } else {
-        data["{{ context.compact_iri('@type') }}"] = self.typ.GetCompactTypeIRI().GetDefault(self.typ.GetTypeIRI())
+        data["{{ context.compact_iri('@type') }}"] = self.typ.GetCompactTypeIRI().GetDefault(state.CompactIRI(self.typ.GetTypeIRI()))
     }
 
     id_prop := self.typ.GetIDAlias().GetDefault("@id")
 
     if self.id.IsSet() {
-        val, err := EncodeIRI(self.id.Get(), path.PushPath(id_prop), map[string]string{}, state)
-        if err != nil {
-            return err
-        }
-        data[id_prop] = val
+        data[id_prop] = state.CompactIRI(self.id.Get())
     }
 
     return nil
@@ -111,7 +107,7 @@ func EncodeSHACLObject(o SHACLObject, path Path, state *EncodeState) (any, error
     if state != nil {
         if state.Written[o] {
             if o.ID().IsSet() {
-                return o.ID().Get(), nil
+                return state.CompactIRI(o.ID().Get()), nil
             }
 
             return nil, &EncodeError{

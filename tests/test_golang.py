@@ -98,6 +98,7 @@ def compile_test(test_lib, tmp_path):
                 """)
             + textwrap.dedent(code_fragment)
             + textwrap.dedent("""\
+
                     return nil
                 }
 
@@ -1147,3 +1148,18 @@ def test_links(filename, name, expect_tag, tmp_path, test_context_url, link_test
     )
 
     link_test(data_file, name, expect_tag, check=True)
+
+
+@jsonvalidation.context_tests()
+def test_objset_context(compile_test, context, expanded, compacted):
+    program = ["objset := model.NewSHACLObjectSet()"]
+
+    for k, v in context.items():
+        program.append(f'objset.AddContext("{k}", "{v}")')
+
+    program.append(f'fmt.Println(objset.CompactIRI("{expanded}"))')
+    program.append(f'fmt.Println(objset.ExpandIRI("{compacted}"))')
+
+    output = compile_test("\n".join(program))
+
+    assert output.splitlines() == [compacted, expanded]

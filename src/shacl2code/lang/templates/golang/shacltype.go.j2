@@ -107,6 +107,22 @@ func (self SHACLTypeBase) IsSubClassOf(other SHACLType) bool {
 
 type EncodeState struct {
     Written map[SHACLObject]bool
+    objectSet SHACLObjectSet
+}
+
+func (self EncodeState) ExpandIRI(iri string) string {
+    if self.objectSet == nil {
+        return iri;
+    }
+
+    return self.objectSet.ExpandIRI(iri);
+}
+
+func (self EncodeState) CompactIRI(iri string) string {
+    if self.objectSet == nil {
+        return iri;
+    }
+    return self.objectSet.CompactIRI(iri);
 }
 
 func (self SHACLTypeBase) DecodeProperty(o SHACLObject, name string, value interface{}, path Path) (bool, error) {

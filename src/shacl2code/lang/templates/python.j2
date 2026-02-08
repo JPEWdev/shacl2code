@@ -103,11 +103,11 @@ class Property(ABC):
         return str(value)
 
     @abstractmethod
-    def encode(self, encoder, value, state) -> None:
+    def encode(self, encoder, value, state: EncodeState) -> None:
         raise NotImplementedError("Subclasses must implement encode method")
 
     @abstractmethod
-    def decode(self, decoder, *, objectset: Optional[SHACLObjectSet] = None) -> Any:
+    def decode(self, decoder, state: DecodeState) -> Any:
         raise NotImplementedError("Subclasses must implement decode method")
 
 
@@ -121,22 +121,18 @@ class StringProp(Property):
     def set(self, value) -> str:
         return str(value)
 
-    def encode(self, encoder, value, state) -> None:
+    def encode(self, encoder, value, state: EncodeState) -> None:
         encoder.write_string(value)
 
-    def decode(
-        self, decoder, *, objectset: Optional[SHACLObjectSet] = None
-    ) -> Optional[str]:
+    def decode(self, decoder, state: DecodeState) -> Optional[str]:
         return decoder.read_string()
 
 
 class AnyURIProp(StringProp):
-    def encode(self, encoder, value, state) -> None:
+    def encode(self, encoder, value, state: EncodeState) -> None:
         encoder.write_iri(value)
 
-    def decode(
-        self, decoder, *, objectset: Optional[SHACLObjectSet] = None
-    ) -> Optional[str]:
+    def decode(self, decoder, state: DecodeState) -> Optional[str]:
         return decoder.read_iri()
 
 
@@ -152,12 +148,10 @@ class DateTimeProp(Property):
     def set(self, value) -> datetime:
         return self._normalize(value)
 
-    def encode(self, encoder, value, state) -> None:
+    def encode(self, encoder, value, state: EncodeState) -> None:
         encoder.write_datetime(self.to_string(value))
 
-    def decode(
-        self, decoder, *, objectset: Optional[SHACLObjectSet] = None
-    ) -> Optional[datetime]:
+    def decode(self, decoder, state: DecodeState) -> Optional[datetime]:
         s = decoder.read_datetime()
         if s is None:
             return None
@@ -222,12 +216,10 @@ class IntegerProp(Property):
     def set(self, value) -> int:
         return int(value)
 
-    def encode(self, encoder, value, state) -> None:
+    def encode(self, encoder, value, state: EncodeState) -> None:
         encoder.write_integer(value)
 
-    def decode(
-        self, decoder, *, objectset: Optional[SHACLObjectSet] = None
-    ) -> Optional[int]:
+    def decode(self, decoder, state: DecodeState) -> Optional[int]:
         return decoder.read_integer()
 
 
@@ -251,12 +243,10 @@ class BooleanProp(Property):
     def set(self, value) -> bool:
         return bool(value)
 
-    def encode(self, encoder, value, state) -> None:
+    def encode(self, encoder, value, state: EncodeState) -> None:
         encoder.write_bool(value)
 
-    def decode(
-        self, decoder, *, objectset: Optional[SHACLObjectSet] = None
-    ) -> Optional[bool]:
+    def decode(self, decoder, state: DecodeState) -> Optional[bool]:
         return decoder.read_bool()
 
 
@@ -266,12 +256,10 @@ class FloatProp(Property):
     def set(self, value) -> float:
         return float(value)
 
-    def encode(self, encoder, value, state) -> None:
+    def encode(self, encoder, value, state: EncodeState) -> None:
         encoder.write_float(value)
 
-    def decode(
-        self, decoder, *, objectset: Optional[SHACLObjectSet] = None
-    ) -> Optional[float]:
+    def decode(self, decoder, state: DecodeState) -> Optional[float]:
         return decoder.read_float()
 
 
@@ -287,17 +275,17 @@ class IRIProp(Property):
         super().__init__(pattern=pattern)
         self.context = context
 
-    def compact(self, value) -> Optional[str]:
+    def compact(self, value, dflt=None) -> Optional[str]:
         for iri, compact in self.context:
             if value == iri:
                 return compact
-        return None
+        return dflt
 
-    def expand(self, value) -> Optional[str]:
+    def expand(self, value, dflt=None) -> Optional[str]:
         for iri, compact in self.context:
             if value == compact:
                 return iri
-        return None
+        return dflt
 
     def iri_values(self):
         return (iri for iri, _ in self.context)
@@ -341,28 +329,32 @@ class ObjectProp(IRIProp):
                 for c in value.iter_objects(recursive=True, visited=visited):
                     yield c
 
-    def encode(self, encoder, value, state) -> None:
+    def encode(self, encoder, value, state: EncodeState) -> None:
         if value is None:
             raise ValueError("Object cannot be None")
 
         if isinstance(value, str):
-            encoder.write_iri(value, self.compact(value))
+            encoder.write_iri(
+                value, self.compact(value, state.objectset.compact_iri(value))
+            )
             return
 
         return value.encode(encoder, state)
 
-    def decode(self, decoder, *, objectset: Optional[SHACLObjectSet] = None):
+    def decode(self, decoder, state: DecodeState):
         if decoder.is_object():
-            return self.cls.decode(decoder, objectset=objectset)
+            return self.cls.decode(decoder, state)
 
         iri = decoder.read_iri()
 
         iri = self.expand(iri) or iri
 
-        if objectset is None:
+        if state.objectset is None:
             return iri
 
-        obj = objectset.find_by_id(iri)
+        iri = state.objectset.expand_iri(iri)
+
+        obj = state.objectset.find_by_id(iri)
         if obj is None:
             return iri
 
@@ -513,7 +505,7 @@ class ListProp(Property):
 
         return ListProxy(self.prop, data=data)
 
-    def encode(self, encoder, value, state) -> None:
+    def encode(self, encoder, value, state: EncodeState) -> None:
         check_type(value, ListProxy)
 
         with encoder.write_list() as list_s:
@@ -521,12 +513,10 @@ class ListProp(Property):
                 with list_s.write_list_item() as item_s:
                     self.prop.encode(item_s, v, state)
 
-    def decode(
-        self, decoder, *, objectset: Optional[SHACLObjectSet] = None
-    ) -> ListProxy:
+    def decode(self, decoder, state: DecodeState) -> ListProxy:
         data = []
         for val_d in decoder.read_list():
-            v = self.prop.decode(val_d, objectset=objectset)
+            v = self.prop.decode(val_d, state)
             self.prop.validate(v)
             data.append(v)
 
@@ -550,7 +540,7 @@ class EnumProp(IRIProp):
     def encode(self, encoder, value, state) -> None:
         encoder.write_enum(value, self, self.compact(value))
 
-    def decode(self, decoder, *, objectset: Optional[SHACLObjectSet] = None) -> str:
+    def decode(self, decoder, state: DecodeState) -> str:
         v = decoder.read_enum(self)
         return self.expand(v) or v
 
@@ -843,22 +833,25 @@ class SHACLObject(object):
             ):
                 yield c
 
-    def encode(self, encoder, state) -> None:
+    def encode(self, encoder, state: EncodeState) -> None:
         idname = self.ID_ALIAS or self._OBJ_IRIS["_id"]
         if not self._id and self.NODE_KIND == NodeKind.IRI:
             raise ValueError(
                 f"{self.__class__.__name__} ({id(self)}) must have a IRI for property '{idname}'"
             )
 
+        iri = state.objectset.compact_iri(state.get_object_id(self))
+
         if state.is_written(self):
-            encoder.write_iri(state.get_object_id(self))
+            encoder.write_iri(iri)
             return
 
         state.add_written(self)
 
         with encoder.write_object(
             self,
-            state.get_object_id(self),
+            self.COMPACT_TYPE or state.objectset.compact_iri(self.TYPE),
+            iri,
             bool(self._id) or state.is_refed(self),
         ) as obj_s:
             self._encode_properties(obj_s, state)
@@ -899,38 +892,37 @@ class SHACLObject(object):
         return cls.CLASSES[typ]()
 
     @classmethod
-    def decode(cls, decoder, *, objectset: Optional[SHACLObjectSet] = None):
+    def decode(cls, decoder, state: DecodeState):
         typ, obj_d = decoder.read_object()
         if typ is None:
             raise TypeError("Unable to determine type for object")
+        typ = state.objectset.expand_iri(typ)
 
         obj = cls._make_object(typ)
         _id = obj_d.read_object_id(obj.ID_ALIAS)
         if _id is not None:
-            obj._id = _id
+            obj._id = state.objectset.expand_iri(_id)
 
         if obj.NODE_KIND == NodeKind.IRI and not obj._id:
             raise ValueError("Object is missing required IRI")
 
-        if objectset is not None:
+        if state.objectset is not None:
             if obj._id:
-                v = objectset.find_by_id(obj._id)
+                v = state.objectset.find_by_id(obj._id)
                 if v is not None:
                     return v
-            objectset.add_index(obj)
+            state.objectset.add_index(obj)
 
-        obj._decode_properties(obj_d, objectset=objectset)
+        obj._decode_properties(obj_d, state)
 
         return obj
 
-    def _decode_properties(
-        self, decoder, objectset: Optional[SHACLObjectSet] = None
-    ) -> None:
+    def _decode_properties(self, decoder, state: DecodeState) -> None:
         for key in decoder.object_keys():
-            if not self._decode_prop(decoder, key, objectset=objectset):
+            if not self._decode_prop(decoder, key, state):
                 raise KeyError(f"Unknown property '{key}'")
 
-    def _decode_prop(self, decoder, key, objectset: Optional[SHACLObjectSet] = None):
+    def _decode_prop(self, decoder, key, state: DecodeState):
         if key in (self._OBJ_IRIS["_id"], self.ID_ALIAS):
             return True
 
@@ -943,7 +935,7 @@ class SHACLObject(object):
                 continue
 
             with decoder.read_property(read_key) as prop_d:
-                v = prop.decode(prop_d, objectset=objectset)
+                v = prop.decode(prop_d, state)
                 prop.validate(v)
                 self.__dict__["_obj_data"][iri] = v
             return True
@@ -1023,9 +1015,7 @@ class SHACLExtensibleObject(SHACLObject):
         obj = cls(typ)
         return obj
 
-    def _decode_properties(
-        self, decoder, objectset: Optional[SHACLObjectSet] = None
-    ) -> None:
+    def _decode_properties(self, decoder, state: DecodeState) -> None:
         def decode_value(d):
             if not d.is_list():
                 return d.read_value()
@@ -1033,11 +1023,11 @@ class SHACLExtensibleObject(SHACLObject):
             return [decode_value(val_d) for val_d in d.read_list()]
 
         if self.CLOSED:
-            super()._decode_properties(decoder, objectset=objectset)
+            super()._decode_properties(decoder, state)
             return
 
         for key in decoder.object_keys():
-            if self._decode_prop(decoder, key, objectset=objectset):
+            if self._decode_prop(decoder, key, state):
                 continue
 
             if not is_IRI(key):
@@ -1129,6 +1119,7 @@ class SHACLObjectSet(object):
         self.obj_by_id: Dict[str, SHACLObject] = {}
         self.obj_by_type: Dict[str, Set[Tuple[bool, SHACLObject]]] = {}
         self.create_index()
+        self.context: Dict[str, str] = {}
         if link:
             self._link()
 
@@ -1370,14 +1361,15 @@ class SHACLObjectSet(object):
 
         self.objects = new_objects
 
-    def encode(self, encoder, force_list: bool = False, *, key=None) -> None:
+    def encode(
+        self, encoder, state: EncodeState, force_list: bool = False, *, key=None
+    ) -> None:
         """
         Serialize a list of objects to a serialization encoder
 
         If force_list is true, a list will always be written using the encoder.
         """
         ref_counts: Dict[SHACLObject, int] = {}
-        state = EncodeState()
 
         def walk_callback(value: SHACLObject, path: List[str]) -> bool:
             nonlocal state
@@ -1431,7 +1423,7 @@ class SHACLObjectSet(object):
             for o in objects:
                 state.written_objects.add(o)
 
-            with encoder.write_list() as list_s:
+            with encoder.write_object_list() as list_s:
                 for o in objects:
                     # Allow this specific object to be written now
                     state.written_objects.remove(o)
@@ -1441,21 +1433,37 @@ class SHACLObjectSet(object):
         elif objects:
             objects[0].encode(encoder, state)
 
-    def decode(self, decoder):
+    def decode(self, decoder, state: DecodeState):
         self.create_index()
-
         for obj_d in decoder.read_list():
-            o = SHACLExtensibleObject.decode(obj_d, objectset=self)
+            o = SHACLExtensibleObject.decode(obj_d, state)
             self.objects.add(o)
 
         self._link()
 
+    def expand_iri(self, iri):
+        for k, v in self.context.items():
+            if iri == k:
+                return self.expand_iri(v)
+            if iri.startswith(k + ":"):
+                return self.expand_iri(v + iri[len(k) + 1 :])
+        return iri
+
+    def compact_iri(self, iri):
+        for k, v in self.context.items():
+            if iri == v:
+                return self.compact_iri(k)
+            if iri.startswith(v):
+                return self.compact_iri(k + ":" + iri[len(v) :])
+        return iri
+
 
 class EncodeState(object):
-    def __init__(self):
-        self.ref_objects = set()
-        self.written_objects = set()
-        self.blank_objects = {}
+    def __init__(self, objectset: SHACLObjectSet):
+        self.ref_objects: set[SHACLObject] = set()
+        self.written_objects: set[SHACLObject] = set()
+        self.blank_objects: Dict[SHACLObject, str] = {}
+        self.objectset = objectset
 
     def get_object_id(self, o):
         if o._id:
@@ -1478,6 +1486,11 @@ class EncodeState(object):
 
     def add_written(self, o):
         self.written_objects.add(o)
+
+
+class DecodeState(object):
+    def __init__(self, objectset):
+        self.objectset = objectset
 
 
 class Decoder(ABC):
@@ -1745,12 +1758,15 @@ class JSONLDDecoder(Decoder):
 
 class JSONLDDeserializer(object):
     def deserialize_data(self, data, objectset: SHACLObjectSet) -> None:
-        if "@graph" in data:
-            h = JSONLDDecoder(data["@graph"], True)
-        else:
-            h = JSONLDDecoder(data, True)
+        h = JSONLDDecoder(data, True)
 
-        objectset.decode(h)
+        with h.read_property("@context") as context_prop:
+            if context_prop:
+                decode_context(context_prop, objectset)
+
+        state = DecodeState(objectset)
+        with h.read_property("@graph") as graph_prop:
+            objectset.decode(graph_prop if graph_prop else h, state)
 
     def read(self, f, objectset: SHACLObjectSet) -> None:
         data = json.load(f)
@@ -1830,7 +1846,7 @@ class Encoder(ABC):
 
     @abstractmethod
     @contextmanager
-    def write_object(self, o: SHACLObject, _id: str, needs_id: bool):
+    def write_object(self, o: SHACLObject, typ: str, _id: str, needs_id: bool):
         """
         Write object
 
@@ -1889,6 +1905,19 @@ class Encoder(ABC):
         """
         raise NotImplementedError("Subclasses must implement write_list_item method")
 
+    @abstractmethod
+    @contextmanager
+    def write_object_list(self):
+        """
+        Write top level object list
+
+        A context manager that yields an `Encoder` that encodes the top level
+        list of objects.
+
+        Each object in the list will be added using `write_list_item`
+        """
+        raise NotImplementedError("Subclasses must implement write_object_list method")
+
 
 class JSONLDEncoder(Encoder):
     def __init__(self, data=None):
@@ -1923,13 +1952,18 @@ class JSONLDEncoder(Encoder):
             self.data[compact or iri] = s.data  # type: ignore # within write_object() context, self.data is always dict or None
 
     @contextmanager
-    def write_object(self, o: SHACLObject, _id: str, needs_id: bool):
-        self.data = {
-            "{{ context.compact_iri('@type') }}": o.COMPACT_TYPE or o.TYPE,
-        }
-        if needs_id:
-            self.data[o.ID_ALIAS or "@id"] = _id
+    def write_dict(self):
+        if not self.data:
+            self.data = {}
         yield self
+
+    @contextmanager
+    def write_object(self, o: SHACLObject, typ: str, _id: str, needs_id: bool):
+        with self.write_dict() as obj_dict:
+            obj_dict.data["{{ context.compact_iri('@type') }}"] = typ  # type: ignore
+            if needs_id:
+                obj_dict.data[o.ID_ALIAS or "@id"] = _id  # type: ignore
+            yield obj_dict
 
     @contextmanager
     def write_list(self):
@@ -1945,6 +1979,12 @@ class JSONLDEncoder(Encoder):
         if s.data is not None:
             self.data.append(s.data)  # type: ignore # within write_list() context, self.data is always list or None
 
+    @contextmanager
+    def write_object_list(self):
+        with self.write_property("@graph") as graph_prop:
+            with graph_prop.write_list() as graph_list:
+                yield graph_list
+
 
 class JSONLDSerializer(object):
     def __init__(self, **args):
@@ -1956,22 +1996,11 @@ class JSONLDSerializer(object):
         force_at_graph: bool = False,
     ):
         h = JSONLDEncoder()
-        objectset.encode(h, force_at_graph)
-        data: Dict[str, Any] = {}
-        if len(CONTEXT_URLS) == 1:
-            data["@context"] = CONTEXT_URLS[0]
-        elif CONTEXT_URLS:
-            data["@context"] = CONTEXT_URLS
-
-        if isinstance(h.data, list):
-            data["@graph"] = h.data
-        elif isinstance(h.data, dict):
-            for k, v in h.data.items():
-                data[k] = v
-        # elif h.data is not None: # str, int, float, bool
-        #    data["value"] = h.data
-
-        return data
+        state = EncodeState(objectset)
+        with h.write_dict() as doc_s:
+            encode_context(doc_s, objectset)
+            objectset.encode(doc_s, state, force_at_graph)
+        return h.data
 
     def write(
         self,
@@ -2002,10 +2031,11 @@ class JSONLDSerializer(object):
 
 
 class JSONLDInlineEncoder(Encoder):
-    def __init__(self, f, sha1):
+    def __init__(self, f, sha1, in_dict=False):
         self.f = f
         self.comma = False
         self.sha1 = sha1
+        self.in_dict = in_dict
 
     def write(self, s):
         s = s.encode("utf-8")
@@ -2046,31 +2076,34 @@ class JSONLDInlineEncoder(Encoder):
         self._write_comma()
         self.write_string(compact or iri)
         self.write(":")
-        yield self
+        yield self.__class__(self.f, self.sha1)
         self.comma = True
 
     @contextmanager
-    def write_object(self, o: SHACLObject, _id: str, needs_id: bool):
+    def write_dict(self):
         self._write_comma()
+        if self.in_dict:
+            yield self
+            return
 
         self.write("{")
-        self.write_string("{{ context.compact_iri('@type') }}")
-        self.write(":")
-        self.write_string(o.COMPACT_TYPE or o.TYPE)
-        self.comma = True
-
-        if needs_id:
-            self._write_comma()
-            self.write_string(o.ID_ALIAS or "@id")
-            self.write(":")
-            self.write_string(_id)
-            self.comma = True
-
-        self.comma = True
-        yield self
-
+        yield self.__class__(self.f, self.sha1, True)
         self.write("}")
         self.comma = True
+
+    @contextmanager
+    def write_object(self, o: SHACLObject, typ: str, _id: str, needs_id: bool):
+        with self.write_dict() as obj_dict:
+            with obj_dict.write_property(
+                "{{ context.compact_iri('@type') }}"
+            ) as type_prop:
+                type_prop.write_string(typ)
+
+            if needs_id:
+                with obj_dict.write_property(o.ID_ALIAS or "@id") as id_prop:
+                    id_prop.write_string(_id)
+
+            yield obj_dict
 
     @contextmanager
     def write_list(self):
@@ -2085,6 +2118,12 @@ class JSONLDInlineEncoder(Encoder):
         self._write_comma()
         yield self.__class__(self.f, self.sha1)
         self.comma = True
+
+    @contextmanager
+    def write_object_list(self):
+        with self.write_property("@graph") as graph_prop:
+            with graph_prop.write_list() as graph_list:
+                yield graph_list
 
 
 class JSONLDInlineSerializer(object):
@@ -2102,20 +2141,58 @@ class JSONLDInlineSerializer(object):
         """
         sha1 = hashlib.sha1()
         h = JSONLDInlineEncoder(f, sha1)
-        h.write('{"@context":')
-        if len(CONTEXT_URLS) == 1:
-            h.write(f'"{CONTEXT_URLS[0]}"')
-        elif CONTEXT_URLS:
-            h.write('["')
-            h.write('","'.join(CONTEXT_URLS))
-            h.write('"]')
-        h.write(",")
+        state = EncodeState(objectset)
+        with h.write_dict() as doc_s:
+            encode_context(doc_s, objectset)
+            objectset.encode(doc_s, state, True)
 
-        h.write('"@graph":')
-
-        objectset.encode(h, True)
-        h.write("}")
         return sha1.hexdigest()
+
+
+def encode_context(encoder: Encoder, objectset: SHACLObjectSet):
+    context: List[Union[str, Dict[str, str]]] = list(CONTEXT_URLS)
+    if objectset.context:
+        context.append(objectset.context)
+
+    if not context:
+        return
+
+    def write_context(e, ctx):
+        if isinstance(ctx, str):
+            e.write_string(ctx)
+        else:
+            with e.write_dict() as dict_s:
+                for k, v in ctx.items():
+                    with dict_s.write_property(k) as ctx_prop:
+                        ctx_prop.write_string(v)
+
+    with encoder.write_property("@context") as context_prop:
+        if len(context) == 1:
+            write_context(context_prop, context[0])
+        else:
+            with context_prop.write_list() as context_list:
+                for ctx in context:
+                    with context_list.write_list_item() as context_list_item:
+                        write_context(context_list_item, ctx)
+
+
+def decode_context(decoder: Decoder, objectset: SHACLObjectSet):
+    def _decode_ctx(d: Decoder):
+        if not d.is_object():
+            return
+
+        for k in d.object_keys():
+            with d.read_property(k) as prop_d:
+                if prop_d:
+                    if s := prop_d.read_string():
+                        objectset.context[k] = s
+
+    if decoder.is_list():
+        for ctx_d in decoder.read_list():
+            _decode_ctx(ctx_d)
+            pass
+    else:
+        _decode_ctx(decoder)
 
 
 try:
@@ -2277,7 +2354,8 @@ try:
     class RDFDeserializer(object):
         def read(self, graph: rdflib.Graph, objset: SHACLObjectSet) -> None:
             d = RDFDecoder(graph)
-            objset.decode(d)
+            state = DecodeState(objset)
+            objset.decode(d, state)
             objset.inline_blank_nodes()
 
     class RDFEncoder(Encoder):
@@ -2327,7 +2405,7 @@ try:
             yield self.__class__(self.graph, self.subject, rdflib.URIRef(iri))
 
         @contextmanager
-        def write_object(self, o, _id, needs_id: bool):
+        def write_object(self, o, typ, _id, needs_id: bool):
             obj: rdflib.term.Node
             if _id.startswith("_:"):
                 obj = rdflib.BNode(_id[2:])
@@ -2349,13 +2427,18 @@ try:
         def write_list_item(self):
             yield self
 
+        @contextmanager
+        def write_object_list(self):
+            yield self
+
     class RDFSerializer(object):
         def write(self, objset: SHACLObjectSet, g: rdflib.Graph):
             """
             Write a SHACLObjectSet to an RDF graph
             """
             e = RDFEncoder(g)
-            objset.encode(e)
+            state = EncodeState(objset)
+            objset.encode(e, state)
 
 except ImportError:
     pass

@@ -249,6 +249,9 @@ def test_from_rdf_roundtrip(model, tmp_path, roundtrip):
     objset = model.SHACLObjectSet()
     model.RDFDeserializer().read(g, objset)
 
+    # Copy context from expected roundtrip file (RDF doesn't preserve context)
+    model.decode_context(model.JSONLDDecoder(expect_data["@context"]), objset)
+
     # Write out
     outfile = tmp_path / "out.json"
     with outfile.open("wb") as f:
@@ -273,6 +276,9 @@ def test_to_rdf_roundtrip(model, tmp_path, roundtrip):
     # Convert from RDF to new object set
     objset = model.SHACLObjectSet()
     model.RDFDeserializer().read(g, objset)
+
+    # Copy context from expected roundtrip file (RDF doesn't preserve context)
+    model.decode_context(model.JSONLDDecoder(expect_data["@context"]), objset)
 
     # Write out
     outfile = tmp_path / "out.json"
@@ -1666,3 +1672,12 @@ def test_deprecated_property(model):
 
     with pytest.deprecated_call():
         c.test_deprecated_class_deprecated_string_prop = "foo"
+
+
+@jsonvalidation.context_tests()
+def test_objset_context(model, context, expanded, compacted):
+    objset = model.SHACLObjectSet()
+    objset.context = context
+
+    assert objset.compact_iri(expanded) == compacted
+    assert expanded == objset.expand_iri(compacted)

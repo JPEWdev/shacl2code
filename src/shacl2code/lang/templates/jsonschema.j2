@@ -10,25 +10,26 @@
     "type": "object",
 
     "properties": {
-        {%- if context.urls %}
-        {%- if context.urls | length == 1 %}
         "@context": {
-            "const": "{{ context.urls[0] }}"
+            "anyOf": [
+                {
+                    "type": "array",
+                    "allOf": [
+                    {%- for url in context.urls %}
+                        {
+                            "contains": { "const": "{{ url }}" }
+                        },
+                    {%- endfor %}
+                        {
+                            "items": { "$ref": "#/$defs/Context" }
+                        }
+                    ]
+                },
+                {
+                    "$ref": "#/$defs/Context"
+                }
+            ]
         }
-        {%- else %}
-        "@context": {
-            "type": "array",
-            "prefixItems": {
-                {%- for url in context.urls %}
-                { "const": "{{ url }}" }{% if not loop.last %},{% endif %}
-                {%- endfor %}
-            },
-            "minContains": "{{ context.urls | length }}",
-            "maxContains": "{{ context.urls | length }}",
-            "items": false
-        }
-        {%- endif %}
-        {%- endif %}
     },
     {%- if context.urls %}
     "required": ["@context"],
@@ -313,6 +314,19 @@
                 {%- for class in concrete_classes %}
                 { "$ref": "#/$defs/{{ varname(*class.clsname) }}" }{% if not loop.last %},{% endif %}
                 {%- endfor %}
+            ]
+        },
+        "Context": {
+            "anyOf": [
+            {%- for url in context.urls %}
+                { "const": "{{ url }}" },
+            {%- endfor %}
+                {
+                    "type": "object",
+                    "patternProperties": {
+                        ".*": { "type": "string" }
+                    }
+                }
             ]
         }
     }

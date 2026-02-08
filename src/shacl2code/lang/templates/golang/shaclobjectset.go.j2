@@ -11,7 +11,9 @@ package {{ package }}
 import (
     "encoding/json"
     "fmt"
+    "reflect"
     "sort"
+    "strings"
 )
 
 type SHACLObjectSet interface {
@@ -23,11 +25,16 @@ type SHACLObjectSet interface {
     Validate(handler ErrorHandler) bool
     Link() (map[string]bool, error)
     GetMissingIDs() map[string]bool
+    CompactIRI(string) string
+    ExpandIRI(string) string
+    GetContext() map[string]string
+    AddContext(string, string)
 }
 
 type SHACLObjectSetObject struct {
     objects []SHACLObject
     missingIDs map[string]bool
+    context map[string]string
 }
 
 
@@ -82,6 +89,18 @@ func (self *SHACLObjectSetObject) AddObject(r SHACLObject) {
     self.objects = append(self.objects, r)
 }
 
+func (self *SHACLObjectSetObject) decodeContext(d map[string]interface{}, path Path) error {
+    for key, val := range d {
+        s, ok := val.(string)
+        if ! ok {
+            return &DecodeError{path, "Non-string value in context"}
+        }
+        self.AddContext(key, s)
+    }
+
+    return nil
+}
+
 
 func (self *SHACLObjectSetObject) Decode(decoder *json.Decoder) error {
     path := Path{}
@@ -91,19 +110,60 @@ func (self *SHACLObjectSetObject) Decode(decoder *json.Decoder) error {
         return err
     }
 
+    context_urls := []string{}
+
     {
+        sub_path := path.PushPath("@context")
         v, ok := data["@context"]
-        if ! ok {
-            return &DecodeError{path, "@context missing"}
+        if ok {
+            value, ok := v.(string)
+            if ok {
+                context_urls = append(context_urls, value)
+            } else {
+                value, ok := v.([]any)
+                if ok {
+                    for _, ctx := range value {
+                        s, ok := ctx.(string)
+                        if ok {
+                            context_urls = append(context_urls, s)
+                            continue
+                        }
+                        c, ok := ctx.(map[string]interface{})
+                        if ok {
+                            err := self.decodeContext(c, sub_path)
+                            if err != nil {
+                                return err
+                            }
+                            continue
+                        }
+
+                        return &DecodeError{sub_path, "Bad context"}
+                    }
+                } else {
+                    value, ok := v.(map[string]interface{})
+                    if ok {
+                        err := self.decodeContext(value, sub_path)
+                        if err != nil {
+                            return err
+                        }
+                    } else {
+                        return &DecodeError{sub_path, "Bad type for context"}
+                    }
+                }
+            }
         }
 
-        sub_path := path.PushPath("@context")
-        value, ok := v.(string)
-        if ! ok {
-            return &DecodeError{sub_path, "@context must be a string, or list of string"}
+        // Check context strings. Using maps.Equal() would be much better, but requires go >= 1.21
+        expected_context_urls := []string{
+        {%- for url in context.urls -%}
+            "{{ url }}",
+        {%- endfor %}
         }
-        if value != "{{ context.urls[0] }}" {
-            return &DecodeError{sub_path, "Wrong context URL '" + value + "'"}
+        sort.Sort(sort.StringSlice(expected_context_urls))
+        sort.Sort(sort.StringSlice(context_urls))
+
+        if ! reflect.DeepEqual(context_urls, expected_context_urls) {
+            return &DecodeError{sub_path, "Wrong context URL(s)"}
         }
     }
 
@@ -155,18 +215,33 @@ func (self *SHACLObjectSetObject) Decode(decoder *json.Decoder) error {
 
 func (self *SHACLObjectSetObject) Encode(encoder *json.Encoder) error {
     data := make(map[string]interface{})
-{%- if context.urls | length > 1 %}
-    data["@context"] = []string{
-    {%- for url in context.urls %}
-        "{{ url }}",
-    {%- endfor %}
+    num_context := {{ context.urls | length }}
+    if len(self.context) > 0 {
+        num_context += 1
     }
+
+    if num_context == 1 {
+{%- if context.urls | length %}
+        data["@context"] = "{{ context.urls[0] }}"
 {%- else %}
-    data["@context"] = "{{ context.urls[0] }}"
+        data["@context"] = self.context
 {%- endif %}
+    } else if num_context > 1 {
+        ctx := []interface{} {
+        {%- for url in context.urls %}
+             "{{ url }}",
+        {%- endfor %}
+        }
+        if len(self.context) > 0 {
+            ctx = append(ctx, self.context)
+        }
+        data["@context"] = ctx
+    }
+
     path := Path{}
     state := EncodeState{
         Written: make(map[SHACLObject]bool),
+        objectSet: self,
     }
 
     ref_counts := make(map[SHACLObject]int)
@@ -358,6 +433,40 @@ func (self *SHACLObjectSetObject) Link() (map[string]bool, error) {
 
 func (self *SHACLObjectSetObject) GetMissingIDs() map[string]bool {
     return self.missingIDs
+}
+
+func (self *SHACLObjectSetObject) CompactIRI(iri string) string {
+    for prefix, expanded := range self.context {
+        if iri == expanded {
+            return self.CompactIRI(prefix)
+        }
+        if strings.HasPrefix(iri, expanded) {
+            return self.CompactIRI(prefix + ":" + iri[len(expanded):])
+        }
+    }
+    return iri
+}
+func (self *SHACLObjectSetObject) ExpandIRI(iri string) string {
+    for prefix, expanded := range self.context {
+        if iri == prefix {
+            return self.ExpandIRI(expanded)
+        }
+        if strings.HasPrefix(iri, prefix + ":") {
+            return self.ExpandIRI(expanded + iri[len(prefix)+1:])
+        }
+    }
+    return iri
+}
+
+func (self *SHACLObjectSetObject) GetContext() map[string]string {
+    return self.context
+}
+
+func (self *SHACLObjectSetObject) AddContext(prefix string, expanded string) {
+    if self.context == nil {
+        self.context = map[string]string{}
+    }
+    self.context[prefix] = expanded
 }
 
 func NewSHACLObjectSet() SHACLObjectSet {

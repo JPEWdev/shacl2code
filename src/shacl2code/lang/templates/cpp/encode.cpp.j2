@@ -19,6 +19,7 @@ vim: ft=cpp
 
 #include "encode.hpp"
 #include "object.hpp"
+#include "objectset.hpp"
 
 /* {{ "*" + "/" }}
 {%- if namespace %}
@@ -31,7 +32,7 @@ namespace {{ n }} {
 using std::string_literals::operator""s;
 
 // EncoderState
-EncoderState::EncoderState() {}
+EncoderState::EncoderState(SHACLObjectSet* objectSet) : mObjectSet(objectSet) {}
 EncoderState::~EncoderState() {}
 
 std::string EncoderState::getObjectId(SHACLObject const& obj) {
@@ -76,6 +77,20 @@ void EncoderState::removeWritten(SHACLObject const& obj) {
 EncoderState::objectKey EncoderState::getObjectKey(
     SHACLObject const& obj) const {
     return reinterpret_cast<uintptr_t>(&obj);
+}
+
+std::string EncoderState::expandIRI(std::string const& iri) const {
+    if (!mObjectSet) {
+        return iri;
+    }
+    return mObjectSet->expandIRI(iri);
+}
+
+std::string EncoderState::compactIRI(std::string const& iri) const {
+    if (!mObjectSet) {
+        return iri;
+    }
+    return mObjectSet->compactIRI(iri);
 }
 
 // ElementEncoder

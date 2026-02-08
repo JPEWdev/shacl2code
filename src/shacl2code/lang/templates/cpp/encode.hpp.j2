@@ -24,6 +24,7 @@ vim: ft=cpp
 /* {{ ns_begin }} */
 
 class SHACLObject;
+class SHACLObjectSet;
 class ObjectEncoder;
 class ListEncoder;
 class DateTime;
@@ -43,7 +44,7 @@ class EXPORT EncoderState {
      *
      * Creates a new EncoderState
      */
-    EncoderState();
+    EncoderState(SHACLObjectSet* objectSet = nullptr);
 
     /**
      * @brief Destructor
@@ -123,6 +124,37 @@ class EXPORT EncoderState {
      */
     void removeWritten(SHACLObject const& obj);
 
+    /**
+     * @brief Get object set
+     *
+     * @returns The SHACLObjectSet being encoded
+     */
+    SHACLObjectSet* getObjectSet() const { return mObjectSet; }
+
+    /**
+     * @brief Expand IRI
+     *
+     * Expands an IRI if there is a SHACLObjectSet attached to the state,
+     * otherwise returns the original IRI.
+     *
+     * @param[in] iri   The IRI to expand
+     *
+     * @returns the expanded IRI
+     */
+    std::string expandIRI(std::string const& iri) const;
+
+    /**
+     * @brief Compact IRI
+     *
+     * Compacts an IRI if there is a SHACLOBjectSet attached to the state,
+     * otherwise returns the original IRI.
+     *
+     * @param[in] iri   The IRI to compact
+     *
+     * @returns the compacted IRI
+     */
+    std::string compactIRI(std::string const& iri) const;
+
    private:
     using objectKey = uintptr_t;
 
@@ -140,6 +172,7 @@ class EXPORT EncoderState {
     std::set<std::shared_ptr<SHACLObject>> mRefed;
     std::unordered_set<objectKey> mIsRefed;
     std::unordered_set<objectKey> mWritten;
+    SHACLObjectSet* mObjectSet;
 };
 
 /**
@@ -253,12 +286,26 @@ class EXPORT ValueEncoder : public ElementEncoder {
     virtual void writeFloat(double value) = 0;
 
     /**
+     * @brief Write dictionary
+     *
+     * Writes a dictionary in the output. The function @p f will be invoked
+     * with a new ObjectEncoder to encoder the contest pf the dictionary
+     *
+     * @param[in] f     Function called by the encoder to encoder the
+     * content of the dictionary
+     *
+     * @see ObjectEncoder
+     */
+    virtual void writeDict(std::function<void(ObjectEncoder&)> const& f) = 0;
+
+    /**
      * @brief Write object
      *
      * Writes an object in the output. The function @p f will be invoked
      * with a new ObjectEncoder to encode the contents of the object
      *
      * @param[in] o     The object to encode
+     * @param[in] type  The type IRI to use for the object
      * @param[in] id    The ID to use when encoding the object. This will
      *                  always be a valid ID (either an IRI or a blank
      * node), and should be used by the encoder instead of querying the
@@ -271,8 +318,8 @@ class EXPORT ValueEncoder : public ElementEncoder {
      *
      * @see ObjectEncoder
      */
-    virtual void writeObject(SHACLObject const& o, std::string const& id,
-                             bool needs_id,
+    virtual void writeObject(SHACLObject const& o, std::string const& type,
+                             std::string const& id, bool needs_id,
                              std::function<void(ObjectEncoder&)> const& f) = 0;
 
     /**

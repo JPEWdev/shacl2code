@@ -263,6 +263,41 @@ bool SHACLObjectSet::checkAll(ErrorHandler& errorHandler) const {
     return ret;
 }
 
+void SHACLObjectSet::addContext(std::string const& prefix,
+                                std::string const& expanded) {
+    mContext[prefix] = expanded;
+}
+
+std::string SHACLObjectSet::expandIRI(std::string const& iri) const {
+    for (auto const& [prefix, expanded] : mContext) {
+        if (iri == prefix) {
+            return expandIRI(expanded);
+        }
+
+        auto p = prefix + ":";
+        if (iri.rfind(p, 0) == 0) {
+            return expandIRI(expanded + iri.substr(p.length()));
+        }
+    }
+    return iri;
+}
+
+std::string SHACLObjectSet::compactIRI(std::string const& iri) const {
+    for (auto const& [prefix, expanded] : mContext) {
+        if (iri == expanded) {
+            return compactIRI(prefix);
+        }
+        if (iri.rfind(expanded, 0) == 0) {
+            return compactIRI(prefix + ":" + iri.substr(expanded.length()));
+        }
+    }
+    return iri;
+}
+
+SHACLObjectSet::Context const& SHACLObjectSet::context() const {
+    return mContext;
+}
+
 void SHACLObjectSet::addIndex(SHACLObjectSet::ptr const& obj) {
     if (!obj->_id.isSet() || obj->_id.get().empty()) {
         return;

@@ -40,7 +40,7 @@ PropertyContext::PropertyContext(PropertyContext::Context&& context)
 PropertyContext::~PropertyContext() {}
 
 std::optional<std::string> PropertyContext::compactValue(
-    std::string const& value) const {
+    std::string const& value, std::optional<std::string> const& dflt) const {
     for (auto const& v : mContext) {
         if (v.first == value) {
             return v.second;
@@ -51,11 +51,11 @@ std::optional<std::string> PropertyContext::compactValue(
         return named->getCompactIRI();
     }
 
-    return {};
+    return dflt;
 }
 
 std::optional<std::string> PropertyContext::expandValue(
-    std::string const& value) const {
+    std::string const& value, std::optional<std::string> const& dflt) const {
     for (auto const& v : mContext) {
         if (v.second == value) {
             return v.first;
@@ -67,7 +67,7 @@ std::optional<std::string> PropertyContext::expandValue(
         return named->getIRI();
     }
 
-    return {};
+    return dflt;
 }
 
 // RegexProperty

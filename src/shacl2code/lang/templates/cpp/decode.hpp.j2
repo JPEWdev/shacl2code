@@ -47,9 +47,33 @@ class EXPORT DecoderState {
     /**
      * @brief Get object set
      *
-     * @returns The SHACLObjectSet being encoded
+     * @returns The SHACLObjectSet being decoded
      */
     SHACLObjectSet* getObjectSet() const { return mObjectSet; }
+
+    /**
+     * @brief Expand IRI
+     *
+     * Expands an IRI if there is a SHACLObjectSet attached to the state,
+     * otherwise returns the original IRI.
+     *
+     * @param[in] iri   The IRI to expand
+     *
+     * @returns the expanded IRI
+     */
+    std::string expandIRI(std::string const& iri) const;
+
+    /**
+     * @brief Compact IRI
+     *
+     * Compacts an IRI if there is a SHACLOBjectSet attached to the state,
+     * otherwise returns the original IRI.
+     *
+     * @param[in] iri   The IRI to compact
+     *
+     * @returns the compacted IRI
+     */
+    std::string compactIRI(std::string const& iri) const;
 
    private:
     SHACLObjectSet* mObjectSet;

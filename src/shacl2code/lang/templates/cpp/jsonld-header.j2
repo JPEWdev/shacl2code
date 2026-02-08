@@ -36,6 +36,8 @@ namespace {{ n }} {
 #endif
 // clang-format on
 
+class SHACLObjectSet;
+
 // Encode
 /**
  * @brief JSONLD Encoder State
@@ -45,7 +47,8 @@ namespace {{ n }} {
 class EXPORT JSONLDEncoderState : public EncoderState {
    public:
     /// Constructor
-    JSONLDEncoderState(std::ostream& output);
+    JSONLDEncoderState(std::ostream& output,
+                       SHACLObjectSet* objectSet = nullptr);
 
     /// Destructor
     virtual ~JSONLDEncoderState();
@@ -112,8 +115,12 @@ class EXPORT JSONLDValueEncoder : public ValueEncoder {
     /// @copydoc {{ nsprefix }}::ValueEncoder::writeFloat()
     void writeFloat(double value) override;
 
+    /// @copydoc {{ nsprefix }}::ValueEncoder::writeDict()
+    void writeDict(std::function<void(ObjectEncoder&)> const& f) override;
+
     /// @copydoc {{ nsprefix }}::ValueEncoder::writeObject()
-    void writeObject(SHACLObject const& o, std::string const& id, bool needs_id,
+    void writeObject(SHACLObject const& o, std::string const& type,
+                     std::string const& id, bool needs_id,
                      std::function<void(ObjectEncoder&)> const& f) override;
 
     /// @copydoc {{ nsprefix }}::ValueEncoder::writeList()
@@ -256,8 +263,9 @@ class EXPORT JSONLDValueDecoder : public ValueDecoder {
 class EXPORT JSONLDObjectDecoder : public ObjectDecoder {
    public:
     /// Constructor
-    JSONLDObjectDecoder(DecoderState& state, JSONData const& data,
-                        std::unordered_set<std::string> const& ignoreProperties = {});
+    JSONLDObjectDecoder(
+        DecoderState& state, JSONData const& data,
+        std::unordered_set<std::string> const& ignoreProperties = {});
 
     /// Destructor
     virtual ~JSONLDObjectDecoder();

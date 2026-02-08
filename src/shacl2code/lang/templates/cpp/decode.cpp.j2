@@ -13,6 +13,7 @@ vim: ft=cpp
 #include <string>
 
 #include "decode.hpp"
+#include "objectset.hpp"
 
 /* {{ "*" + "/" }}
 {%- if namespace %}
@@ -27,6 +28,20 @@ using std::string_literals::operator""s;
 // DecoderState
 DecoderState::DecoderState(SHACLObjectSet* objectSet) : mObjectSet(objectSet) {}
 DecoderState::~DecoderState() {}
+
+std::string DecoderState::expandIRI(std::string const& iri) const {
+    if (!mObjectSet) {
+        return iri;
+    }
+    return mObjectSet->expandIRI(iri);
+}
+
+std::string DecoderState::compactIRI(std::string const& iri) const {
+    if (!mObjectSet) {
+        return iri;
+    }
+    return mObjectSet->compactIRI(iri);
+}
 
 // ElementDecoder
 ElementDecoder::ElementDecoder(DecoderState& state) : mState(state) {}

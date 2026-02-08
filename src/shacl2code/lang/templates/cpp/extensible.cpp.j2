@@ -43,6 +43,7 @@ std::vector<Variant>& SHACLExtensibleObjectBase::getExtProperty(
 void SHACLExtensibleObjectBase::encodeExtensibleProperties(
     ObjectEncoder& encoder, ErrorHandler& errorHandler,
     ObjectPath& path) const {
+    auto& state = encoder.getState();
     for (auto const& p : mExtendedProperties) {
         auto const& v = p.second;
         if (!v.size()) {
@@ -80,8 +81,9 @@ void SHACLExtensibleObjectBase::encodeExtensibleProperties(
                                                                 errorHandler,
                                                                 path);
                                         } else {
-                                            item_encoder.writeIRI(value.iri(),
-                                                                  {});
+                                            item_encoder.writeIRI(
+                                                state.compactIRI(value.iri()),
+                                                {});
                                         }
 
                                     } else {

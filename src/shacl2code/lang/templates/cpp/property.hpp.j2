@@ -48,23 +48,29 @@ class EXPORT PropertyContext {
      * @brief Compact value
      *
      * @param[in] value The fully qualified IRI to compact
+     * @param[in] dflt  The value to return if no compaction occurs
      *
      * @returns The compacted string for @p value based on the context. If
      * there is no compacted version of @p value, the optional will be empty
      */
-    std::optional<std::string> compactValue(std::string const& value) const;
+    std::optional<std::string> compactValue(
+        std::string const& value,
+        std::optional<std::string> const& dflt = {}) const;
 
     /**
      * @brief Expand value
      *
      * @param[in] value The compacted value to expand to a fully qualified
      *                  IRI
+     * @param[in] dflt  The value to return if no expansion occurs
      *
      * @returns The fully qualified IRI value for the compact string @p
      * value based on the context. If there is no expanded version of @p
      * value, the optional will be empty
      */
-    std::optional<std::string> expandValue(std::string const& value) const;
+    std::optional<std::string> expandValue(
+        std::string const& value,
+        std::optional<std::string> const& dflt = {}) const;
 
    private:
     std::vector<std::pair<std::string, std::string>> mContext;

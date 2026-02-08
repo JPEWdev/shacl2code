@@ -37,8 +37,9 @@ using json = nlohmann::json;
 using std::string_literals::operator""s;
 
 // EncoderState
-JSONLDEncoderState::JSONLDEncoderState(std::ostream& output)
-    : EncoderState(), mOutput(output) {}
+JSONLDEncoderState::JSONLDEncoderState(std::ostream& output,
+                                       SHACLObjectSet* objectSet)
+    : EncoderState(objectSet), mOutput(output) {}
 JSONLDEncoderState::~JSONLDEncoderState() {}
 
 void JSONLDEncoderState::writeComma() {
@@ -86,23 +87,10 @@ void JSONLDValueEncoder::writeFloat(double value) {
     writeString(ss.str());
 }
 
-void JSONLDValueEncoder::writeObject(
-    SHACLObject const& o, std::string const& id, bool needs_id,
+void JSONLDValueEncoder::writeDict(
     std::function<void(ObjectEncoder&)> const& f) {
     mState.writeComma();
     mState.output() << "{";
-    writeString("{{ context.compact_iri('@type') }}");
-    mState.output() << ":";
-    writeString(o.getCompactTypeIRI().value_or(o.getTypeIRI()));
-    mState.needsComma();
-
-    if (needs_id) {
-        mState.writeComma();
-        writeString(o._id.getCompactIRI().value_or(o._id.getIRI()));
-        mState.output() << ":";
-        writeString(id);
-        mState.needsComma();
-    }
 
     {
         JSONLDObjectEncoder e(mState);
@@ -110,6 +98,24 @@ void JSONLDValueEncoder::writeObject(
     }
     mState.output() << "}";
     mState.needsComma();
+}
+
+void JSONLDValueEncoder::writeObject(
+    SHACLObject const& o, std::string const& type, std::string const& id,
+    bool needs_id, std::function<void(ObjectEncoder&)> const& f) {
+    writeDict([&](ObjectEncoder& objEncoder) {
+        objEncoder.writeProperty(
+            "{{ context.compact_iri('@type') }}", {},
+            [&](ValueEncoder& value) { value.writeString(type); });
+
+        if (needs_id) {
+            objEncoder.writeProperty(
+                o._id.getCompactIRI().value_or(o._id.getIRI()), {},
+                [&](ValueEncoder& value) { value.writeString(id); });
+        }
+
+        f(objEncoder);
+    });
 }
 
 void JSONLDValueEncoder::writeList(std::function<void(ListEncoder&)> const& f) {
@@ -163,24 +169,44 @@ JSONLDInlineSerializer::~JSONLDInlineSerializer() {}
 void JSONLDInlineSerializer::write(std::ostream& output,
                                    SHACLObjectSet& objectSet,
                                    ErrorHandler& errorHandler) {
-    JSONLDEncoderState state(output);
+    JSONLDEncoderState state(output, &objectSet);
 
     output << "{";
     JSONLDObjectEncoder top(state);
 
-    top.writeProperty("@context", {}, [&](ValueEncoder& value) {
-        if (objectSet.ContextURLs.size() > 1) {
-            value.writeList([&](ListEncoder& list) {
-                for (auto const& url : objectSet.ContextURLs) {
-                    list.writeItem([&](ValueEncoder& list_value) {
-                        list_value.writeString(url);
-                    });
-                }
-            });
-        } else {
-            value.writeString(objectSet.ContextURLs[0]);
-        }
-    });
+    int const numContext =
+        objectSet.ContextURLs.size() + (objectSet.context().empty() ? 0 : 1);
+
+    auto writeContext = [&](ValueEncoder& v) {
+        v.writeDict([&](ObjectEncoder& d) {
+            for (auto const& it : objectSet.context()) {
+                d.writeProperty(it.first, {}, [&](ValueEncoder& val) {
+                    val.writeString(it.second);
+                });
+            }
+        });
+    };
+
+    if (numContext) {
+        top.writeProperty("@context", {}, [&](ValueEncoder& value) {
+            if (numContext > 1) {
+                value.writeList([&](ListEncoder& list) {
+                    for (auto const& url : objectSet.ContextURLs) {
+                        list.writeItem([&](ValueEncoder& list_value) {
+                            list_value.writeString(url);
+                        });
+                    }
+                    if (!objectSet.context().empty()) {
+                        list.writeItem(writeContext);
+                    }
+                });
+            } else if (objectSet.ContextURLs.size()) {
+                value.writeString(objectSet.ContextURLs[0]);
+            } else {
+                writeContext(value);
+            }
+        });
+    }
 
     top.writeProperty("@graph", {}, [&](ValueEncoder& value) {
         value.writeList(
@@ -413,46 +439,51 @@ void JSONLDDeserializer::read(std::istream& input, SHACLObjectSet& objectSet,
     ObjectPath path;
 
     DecoderState state(&objectSet);
-    if (!objectSet.ContextURLs.empty()) {
-        if (!d.contains("@context")) {
-            errorHandler.handleDeserializeError(
-                "@context missing when it is required", path);
-            return;
-        }
 
-        std::vector<std::string> contextURLs;
-        path.pushMember("@context", [&] {
-            if (d["@context"].is_array()) {
-                path.foreachItem(d["@context"], [&](auto const& u) {
-                    if (!u.is_string()) {
+    std::vector<std::string> contextURLs;
+    std::unordered_map<std::string, std::string> contextMap;
+
+    auto contextHandler = [&](auto const& u) {
+        if (u.is_string()) {
+            contextURLs.push_back(u);
+        } else if (u.is_object()) {
+            for (auto const& it : u.items()) {
+                path.pushMember(it.key(), [&] {
+                    if (!it.value().is_string()) {
                         errorHandler.handleDeserializeError(
-                            "Context must be a string", path);
+                            "Context value must be a string", path);
                         return;
                     }
-                    contextURLs.push_back(u);
+                    objectSet.addContext(it.key(), it.value());
                 });
-            } else if (!d["@context"].is_string()) {
-                errorHandler.handleDeserializeError("Context must be a string",
-                                                    path);
-                return;
-            } else {
-                contextURLs.push_back(d["@context"]);
             }
+        } else {
+            errorHandler.handleDeserializeError("Context value must be a string",
+                                                path);
+            return;
+        }
+    };
 
-            std::sort(contextURLs.begin(), contextURLs.end());
-
-            std::vector<std::string> sortedObjectSetContextURLs(
-                objectSet.ContextURLs);
-
-            std::sort(sortedObjectSetContextURLs.begin(),
-                      sortedObjectSetContextURLs.end());
-
-            if (contextURLs != sortedObjectSetContextURLs) {
-                errorHandler.handleDeserializeError("Invalid context URLs",
-                                                    path);
-                return;
+    if (d.contains("@context")) {
+        path.pushMember("@context", [&] {
+            if (d["@context"].is_array()) {
+                path.foreachItem(d["@context"], contextHandler);
+            } else {
+                contextHandler(d["@context"]);
             }
         });
+    }
+
+    std::sort(contextURLs.begin(), contextURLs.end());
+
+    std::vector<std::string> sortedObjectSetContextURLs(objectSet.ContextURLs);
+
+    std::sort(sortedObjectSetContextURLs.begin(),
+              sortedObjectSetContextURLs.end());
+
+    if (contextURLs != sortedObjectSetContextURLs) {
+        errorHandler.handleDeserializeError("Invalid context URLs", path);
+        return;
     }
 
     if (!d.contains("@graph")) {

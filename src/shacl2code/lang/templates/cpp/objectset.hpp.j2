@@ -42,6 +42,9 @@ class EXPORT SHACLObjectSet {
     /// Alias for the pointer type
     using ptr = std::shared_ptr<SHACLObject>;
 
+    /// Alias for the context type
+    using Context = std::unordered_map<std::string, std::string>;
+
     /// Constructor
     SHACLObjectSet();
 
@@ -186,6 +189,45 @@ class EXPORT SHACLObjectSet {
     bool checkAll(ErrorHandler& errorHandler) const;
 
     /**
+     * @brief Add context
+     *
+     * Adds a new context entry to the context for this ObjectSet
+     *
+     * @param prefix    The context prefix to add
+     * @param expanded  The expanded value that maps to the prefix
+     */
+    void addContext(std::string const& prefix, std::string const& expanded);
+
+    /**
+     * @brief Expand IRI
+     *
+     * Expands an IRI using the context of the ObjectSet
+     *
+     * @param iri   The IRI to expand
+     *
+     * @returns the expanded form of the IRI
+     */
+    std::string expandIRI(std::string const& iri) const;
+
+    /**
+     * @brief Compact IRI
+     *
+     * Compacts an IRI using the context of the ObjectSet
+     *
+     * @param iri   The IRI to compact
+     *
+     * @returns the compacted form of the IRI
+     */
+    std::string compactIRI(std::string const& iri) const;
+
+    /**
+     * @brief Get context
+     *
+     * @returns the context of the ObjectSet
+     */
+    Context const& context() const;
+
+    /**
      * @brief Context URLs
      *
      * The Context URLs used by this object set
@@ -208,6 +250,7 @@ class EXPORT SHACLObjectSet {
     std::unordered_map<std::string, std::set<ptr>> mObjByType;
     std::unordered_map<std::string, ptr> mObjById;
     std::set<std::string> mMissingIds;
+    Context mContext;
 
     /**
      * @brief Internal Link

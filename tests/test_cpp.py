@@ -1326,7 +1326,7 @@ def test_roundtrip(compile_test, tmp_path, roundtrip):
     with out_file.open("r") as f:
         actual = json.load(f)
 
-    assert expect == actual
+    assert actual == expect
 
 
 def test_static(compile_test, tmp_path, roundtrip):
@@ -1446,3 +1446,17 @@ def test_json_types(passes, data, tmp_path, test_lib, test_context_url):
         assert p.returncode == 0, "Validation failed when a pass was expected"
     else:
         assert p.returncode != 0, "Validation passed when failure was expected"
+
+
+@jsonvalidation.context_tests()
+def test_objset_context(compile_test, context, expanded, compacted):
+    program = ["SHACLObjectSet objset;"]
+    for k, v in context.items():
+        program.append(f'objset.addContext("{k}", "{v}");')
+
+    program.append(f'std::cout << objset.compactIRI("{expanded}") << std::endl;')
+    program.append(f'std::cout << objset.expandIRI("{compacted}") << std::endl;')
+
+    output = compile_test("\n".join(program))
+
+    assert output.splitlines() == [compacted, expanded]

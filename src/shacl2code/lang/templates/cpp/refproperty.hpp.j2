@@ -117,7 +117,10 @@ class RefProperty : public Property<Ref<C>>, private RefPropertyHelper {
         if (value.isObj()) {
             value.obj()->encode(encoder, errorHandler, path);
         } else {
-            encoder.writeIRI(value.iri(), this->compactValue(value.iri()));
+            encoder.writeIRI(
+                value.iri(),
+                this->compactValue(value.iri(),
+                                   encoder.getState().compactIRI(value.iri())));
         }
     }
 
@@ -127,7 +130,9 @@ class RefProperty : public Property<Ref<C>>, private RefPropertyHelper {
                                  ObjectPath& path) const override {
         auto iri = decoder.readIRI();
         if (iri) {
-            return Ref<C>(this->expandValue(iri.value()).value_or(iri.value()));
+            return Ref<C>(
+                this->expandValue(iri.value())
+                    .value_or(decoder.getState().expandIRI(iri.value())));
         }
 
         std::shared_ptr<SHACLObject> obj = nullptr;

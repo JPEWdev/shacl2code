@@ -118,7 +118,7 @@ std::optional<std::string> const& SHACLObject::getCompactTypeIRI() const {
 void SHACLObject::encode(ValueEncoder& encoder, ErrorHandler& errorHandler,
                          ObjectPath& path) const {
     auto& state = encoder.getState();
-    auto const objId = state.getObjectId(*this);
+    auto const objId = state.compactIRI(state.getObjectId(*this));
 
     // TODO: This is recursive, which means it will over-check
     if (!validate(errorHandler, path)) {
@@ -132,10 +132,12 @@ void SHACLObject::encode(ValueEncoder& encoder, ErrorHandler& errorHandler,
 
     state.addWritten(*this);
 
-    encoder.writeObject(*this, objId, _id.isSet() || state.objectIsRefed(*this),
-                        [&](ObjectEncoder& objectEncoder) {
-                            encodeProperties(objectEncoder, errorHandler, path);
-                        });
+    encoder.writeObject(
+        *this, getCompactTypeIRI().value_or(state.compactIRI(getTypeIRI())),
+        objId, _id.isSet() || state.objectIsRefed(*this),
+        [&](ObjectEncoder& objectEncoder) {
+            encodeProperties(objectEncoder, errorHandler, path);
+        });
 }
 
 void SHACLObject::encodeProperties(ObjectEncoder& encoder,
@@ -196,7 +198,7 @@ std::shared_ptr<SHACLObject> SHACLObject::decode(ObjectDecoder& decoder,
         return nullptr;
     }
 
-    auto const& obj_type_iri = t.value();
+    auto const& obj_type_iri = decoder.getState().expandIRI(t.value());
 
     std::shared_ptr<SHACLObject> obj = nullptr;
 

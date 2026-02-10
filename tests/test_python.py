@@ -1735,3 +1735,48 @@ def test_extensible_properties(model, model_context_url):
     # Ensure the context is preserved
     s = model.JSONLDSerializer()
     assert s.serialize_data(objset, True) == DATA
+
+
+def test_custom_objset_index(model, model_context_url):
+    # Creates a derived objectset that indexes objects based on a property
+    class ObjectSet(model.SHACLObjectSet):
+        def create_index(self):
+            self.obj_by_string_prop = {}
+            super().create_index()
+
+        def add_index(self, obj):
+            super().add_index(obj)
+            if isinstance(obj, model.test_class):
+                self.obj_by_string_prop[obj.test_class_string_scalar_prop] = obj
+
+    objset = ObjectSet()
+    d = model.JSONLDDeserializer()
+    d.deserialize_data(
+        {
+            "@context": model_context_url,
+            "@graph": [
+                {
+                    "@type": "test-class",
+                    "@id": "https://example.com/test-class-1",
+                    "test-class/string-scalar-prop": "first",
+                },
+                {
+                    "@type": "test-class",
+                    "@id": "https://example.com/test-class-2",
+                    "test-class/string-scalar-prop": "second",
+                },
+            ],
+        },
+        objset,
+    )
+
+    first = objset.find_by_id("https://example.com/test-class-1")
+    assert first
+
+    second = objset.find_by_id("https://example.com/test-class-2")
+    assert second
+
+    assert objset.obj_by_string_prop == {
+        "first": first,
+        "second": second,
+    }

@@ -924,3 +924,51 @@ def link_tests():
             ),
         ],
     )
+
+
+def context_tests():
+    return pytest.mark.parametrize(
+        "context,expanded,compacted",
+        [
+            param(
+                dict(),
+                "http://expanded",
+                "http://expanded",
+                id="No change with empty context",
+            ),
+            param(
+                {
+                    "prefix": "http://expanded/",
+                },
+                "http://expanded/foo",
+                "prefix:foo",
+                id="Single prefix from context",
+            ),
+            param(
+                {
+                    "prefixa": "prefixb:foo/",
+                    "prefixb": "http://expanded/",
+                },
+                "http://expanded/foo/bar",
+                "prefixa:bar",
+                id="Nested prefixes",
+            ),
+            param(
+                {
+                    "full": "http://expanded/foo",
+                },
+                "http://expanded/foo",
+                "full",
+                id="Full prefix match",
+            ),
+            param(
+                {
+                    "full": "prefix:foo",
+                    "prefix": "http://expanded/",
+                },
+                "http://expanded/foo",
+                "full",
+                id="Nested full match",
+            ),
+        ],
+    )

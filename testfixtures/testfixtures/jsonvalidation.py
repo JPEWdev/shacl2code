@@ -16,11 +16,20 @@ CONTEXT = object()
 
 
 def replace_context(d, url):
-    for k, v in d.items():
+    def replace(d, k, v):
         if v is CONTEXT:
             d[k] = url
         elif isinstance(v, dict):
             replace_context(v, url)
+        elif isinstance(v, list):
+            replace_context(v, url)
+
+    if isinstance(d, dict):
+        for k, v in d.items():
+            replace(d, k, v)
+    elif isinstance(d, list):
+        for idx, v in enumerate(d):
+            replace(d, idx, v)
 
 
 BASE_OBJ = {
@@ -120,6 +129,75 @@ def validation_tests():
                     "@graph": [],
                 },
                 id="Bad context",
+            ),
+            param(
+                True,
+                {
+                    "@context": [
+                        CONTEXT,
+                        {
+                            "foo": "http://example.com/",
+                            "bar": "http://bar.com/",
+                        },
+                    ],
+                    "@graph": [],
+                },
+                id="Extended context",
+            ),
+            param(
+                True,
+                {
+                    "@context": [
+                        {
+                            "foo": "http://example.com/",
+                            "bar": "http://bar.com/",
+                        },
+                        CONTEXT,
+                    ],
+                    "@graph": [],
+                },
+                id="Extended context (alternate order)",
+            ),
+            param(
+                True,
+                {
+                    "@context": [
+                        CONTEXT,
+                        {
+                            "foo": "http://example.com/",
+                        },
+                        {
+                            "bar": "http://bar.com/",
+                        },
+                    ],
+                    "@graph": [],
+                },
+                id="Multiple extended context",
+            ),
+            param(
+                False,
+                {
+                    "@context": [
+                        CONTEXT,
+                        "http://foo.com",
+                        {
+                            "foo": "http://example.com/",
+                        },
+                        {
+                            "bar": "http://bar.com/",
+                        },
+                    ],
+                    "@graph": [],
+                },
+                id="Multiple context with bad URL",
+            ),
+            param(
+                True,
+                {
+                    "@context": [CONTEXT],
+                    "@graph": [],
+                },
+                id="Single array context",
             ),
             param(
                 False,

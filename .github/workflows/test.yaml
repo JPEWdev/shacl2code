@@ -57,5 +57,5 @@ jobs:
         uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 # v4.7.1
         with:
           python-version: "3.11"
-      - uses: psf/black@8a737e727ac5ab2f1d4cf5876720ed276dc8dc4b # 25.1.0
+      - uses: psf/black@6305bf1ae645ab7541be4f5028a86239316178eb # 26.1.0
       - uses: py-actions/flake8@84ec6726560b6d5bd68f2a5bed83d62b52bb50ba # v2.3.0

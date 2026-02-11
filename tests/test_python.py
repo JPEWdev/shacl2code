@@ -1686,3 +1686,52 @@ def test_objset_context(model, context, expanded, compacted):
 
     assert objset.compact_iri(expanded) == compacted
     assert expanded == objset.expand_iri(compacted)
+
+
+def test_extensible_properties(model, model_context_url):
+
+    @model.register("http://example.org/extension")
+    class Extension(model.extensible_class):
+        @classmethod
+        def _register_props(cls):
+            super()._register_props()
+            cls._add_property(
+                "string_prop",
+                model.StringProp(),
+                "http://example.org/string-prop",
+                min_count=1,
+            )
+
+    DATA = {
+        "@context": [
+            model_context_url,
+            {
+                "prefix": "http://example.org/",
+            },
+        ],
+        "@graph": [
+            {
+                "@type": "prefix:extension",
+                "@id": "prefix:e",
+                "prefix:string-prop": "foo",
+                "extensible-class/required": "required",
+                "prefix:extra-data": ["bar"],
+            }
+        ],
+    }
+
+    objset = model.SHACLObjectSet()
+    d = model.JSONLDDeserializer()
+    d.deserialize_data(DATA, objset)
+
+    e = objset.find_by_id("http://example.org/e")
+    assert e
+    assert isinstance(e, Extension)
+    assert e.string_prop == "foo"
+    assert e["http://example.org/string-prop"] == "foo"
+    assert e._id == "http://example.org/e"
+    assert e["http://example.org/extra-data"] == ["bar"]
+
+    # Ensure the context is preserved
+    s = model.JSONLDSerializer()
+    assert s.serialize_data(objset, True) == DATA

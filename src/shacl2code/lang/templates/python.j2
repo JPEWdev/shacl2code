@@ -38,6 +38,7 @@ from typing import (
     cast,
     overload,
 )
+from dataclasses import dataclass
 
 
 def check_type(obj: Any, types: Union[Type[Any], Tuple[Type[Any], ...]]) -> None:
@@ -58,6 +59,8 @@ class Property(ABC):
     """
 
     VALID_TYPES: Union[Tuple, Type] = ()
+
+    __slots__ = ("pattern",)
 
     def __init__(self, *, pattern: Optional[str] = None):
         self.pattern = pattern
@@ -145,6 +148,8 @@ class DateTimeProp(Property):
     UTC_FORMAT_STR = "%Y-%m-%dT%H:%M:%SZ"
     REGEX = r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})?$"
 
+    __slots__ = ()
+
     def set(self, value) -> datetime:
         return self._normalize(value)
 
@@ -209,9 +214,13 @@ class DateTimeStampProp(DateTimeProp):
 
     REGEX = r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})$"
 
+    __slots__ = ()
+
 
 class IntegerProp(Property):
     VALID_TYPES = int
+
+    __slots__ = ()
 
     def set(self, value) -> int:
         return int(value)
@@ -224,6 +233,8 @@ class IntegerProp(Property):
 
 
 class PositiveIntegerProp(IntegerProp):
+    __slots__ = ()
+
     def validate(self, value) -> None:
         super().validate(value)
         if value < 1:
@@ -231,6 +242,8 @@ class PositiveIntegerProp(IntegerProp):
 
 
 class NonNegativeIntegerProp(IntegerProp):
+    __slots__ = ()
+
     def validate(self, value) -> None:
         super().validate(value)
         if value < 0:
@@ -239,6 +252,8 @@ class NonNegativeIntegerProp(IntegerProp):
 
 class BooleanProp(Property):
     VALID_TYPES = bool
+
+    __slots__ = ()
 
     def set(self, value) -> bool:
         return bool(value)
@@ -253,6 +268,8 @@ class BooleanProp(Property):
 class FloatProp(Property):
     VALID_TYPES = (float, int)
 
+    __slots__ = ()
+
     def set(self, value) -> float:
         return float(value)
 
@@ -264,14 +281,16 @@ class FloatProp(Property):
 
 
 class IRIProp(Property):
+    __slots__ = ("context",)
+
     def __init__(
         self,
-        context: Optional[List[Tuple[str, str]]] = None,
+        context: Optional[Tuple[Tuple[str, str], ...]] = None,
         *,
         pattern: Optional[str] = None,
     ):
         if context is None:
-            context = []
+            context = ()
         super().__init__(pattern=pattern)
         self.context = context
 
@@ -296,11 +315,14 @@ class ObjectProp(IRIProp):
     A scalar SHACL object property of a SHACL object
     """
 
+    __slots__ = ("cls", "required")
+
     def __init__(
-        self, cls, required: bool, context: Optional[List[Tuple[str, str]]] = None
+        self,
+        cls,
+        required: bool,
+        context: Optional[Tuple[Tuple[str, str], ...]] = None,
     ):
-        if context is None:
-            context = []
         super().__init__(context)
         self.cls = cls
         self.required = required
@@ -386,67 +408,69 @@ class ObjectProp(IRIProp):
 
 
 class ListProxy(object):
+    __slots__ = ("_data", "_prop")
+
     def __init__(self, prop: Property, data: Optional[List[Any]] = None):
         if data is None:
-            self.__data: List[Any] = []
+            self._data: List[Any] = []
         else:
-            self.__data = data
-        self.__prop = prop
+            self._data = data
+        self._prop = prop
 
     def append(self, value) -> None:
-        self.__prop.validate(value)
-        self.__data.append(self.__prop.set(value))
+        self._prop.validate(value)
+        self._data.append(self._prop.set(value))
 
     def insert(self, idx: int, value) -> None:
-        self.__prop.validate(value)
-        self.__data.insert(idx, self.__prop.set(value))
+        self._prop.validate(value)
+        self._data.insert(idx, self._prop.set(value))
 
     def extend(self, items: Iterable[Any]) -> None:
         for i in items:
             self.append(i)
 
     def sort(self, *args, **kwargs) -> None:
-        self.__data.sort(*args, **kwargs)
+        self._data.sort(*args, **kwargs)
 
     def __getitem__(self, key):
-        return self.__data[key]
+        return self._data[key]
 
     def __setitem__(self, key, value) -> None:
         if isinstance(key, slice):
             for v in value:
-                self.__prop.validate(v)
-            self.__data[key] = [self.__prop.set(v) for v in value]
+                self._prop.validate(v)
+            self._data[key] = [self._prop.set(v) for v in value]
         elif isinstance(key, int):
-            self.__prop.validate(value)
-            self.__data[key] = self.__prop.set(value)
+            self._prop.validate(value)
+            self._data[key] = self._prop.set(value)
         else:
             raise TypeError(
                 f"ListProxy indices must be integers or slices. Got {type(key).__name__}"
             )
 
     def __delitem__(self, key) -> None:
-        del self.__data[key]
+        del self._data[key]
 
     def __contains__(self, item):
-        return item in self.__data
+        return item in self._data
 
     def __iter__(self):
-        return iter(self.__data)
+        return iter(self._data)
 
     def __len__(self) -> int:
-        return len(self.__data)
+        return len(self._data)
 
     def __str__(self) -> str:
-        return str(self.__data)
+        return str(self._data)
 
     def __repr__(self):
-        return repr(self.__data)
+        return repr(self._data)
 
     def __eq__(self, other):
         if isinstance(other, ListProxy):
-            return self.__data == other.__data
+            return self._data == other._data
 
-        return self.__data == other
+        return self._data == other
 
 
 class ListProp(Property):
@@ -455,6 +479,8 @@ class ListProp(Property):
     """
 
     VALID_TYPES = (list, ListProxy)
+
+    __slots__ = ("prop",)
 
     def __init__(self, prop: Property):
         super().__init__()
@@ -526,6 +552,8 @@ class ListProp(Property):
 class EnumProp(IRIProp):
     VALID_TYPES = str
 
+    __slots__ = ()
+
     def __init__(self, values, *, pattern: Optional[str] = None):
         super().__init__(values, pattern=pattern)
 
@@ -569,40 +597,166 @@ def is_blank_node(s: Any) -> bool:
     return True
 
 
-def register(
-    type_iri: str, *, compact_type: Optional[str] = None, abstract: bool = False
-):
-    def add_class(key: str, c: Type[SHACLObject]) -> None:
+@dataclass()  # After Python 3.10, use slots=True to save a little space
+class ClassProp:
+    pyname: str
+    reg: Callable
+    iri: str
+    min_count: Optional[int] = None
+    max_count: Optional[int] = None
+    compact: Optional[str] = None
+    deprecated: bool = False
+    # For efficiency reasons this should be of type Property (only) but
+    # initialized to None
+    prop: Property = None  # type: ignore
+
+
+# fmt: off
+"""Format Guard{{ '"' }}{{ '"' }}{{ '"' }}
+_USE_SLOTS = {{ use_slots }}
+{{ '"' }}{{ '"' }}{{ '"' }}Format Guard"""
+# fmt: on
+
+
+class SHACLObjectMeta(type):
+    def __new__(cls, name, bases, attrs):
+        def check_base_prop(name):
+            return any(hasattr(b, name) or name in b._EXTRA_SLOTS for b in bases)
+
+        is_base = name == "SHACLObject"
+
+        attrs.setdefault("IS_ABSTRACT", False)
+        attrs.setdefault("IS_DEPRECATED", False)
+        attrs.setdefault("NAMED_INDIVIDUALS", {})
+        attrs.setdefault("NODE_KIND", NodeKind.BlankNodeOrIRI)
+        attrs.setdefault("_EXTRA_SLOTS", set())
+        attrs["_EXTRA_SLOTS"] = set(attrs["_EXTRA_SLOTS"])
+
+        py_properties = {}
+        iri_properties = {}
+        compact_properties = {}
+        for p in attrs.get("PROPERTIES", []):
+            if not is_base:
+                for b in bases:
+                    if p.pyname in b._OBJ_PY_PROPS or p.pyname in b._EXTRA_SLOTS:
+                        raise KeyError(
+                            f"'{p.pyname}' is already defined for '{b.__name__}'"
+                        )
+                    if p.iri in b._OBJ_IRI_PROPS:
+                        raise KeyError(
+                            f"'{p.iri}' is already defined for '{b.__name__}'"
+                        )
+                    if p.compact and p.compact in b._OBJ_COMPACT_PROPS:
+                        raise KeyError(
+                            f"'{p.compact}' is already defined for '{b.__name__}'"
+                        )
+
+            if p.pyname in py_properties:
+                raise KeyError(f"'{p.pyname}' is already defined for '{name}'")
+
+            if p.iri in iri_properties:
+                raise KeyError(f"'{p.iri}' is already defined for '{name}'")
+
+            if p.compact and p.compact in compact_properties:
+                raise KeyError(f"'{p.compact}' is already defined for '{name}'")
+
+            while (
+                p.pyname in attrs
+                or p.pyname in attrs["_EXTRA_SLOTS"]
+                or check_base_prop(p.pyname)
+            ):
+                p.pyname = p.pyname + "_"
+
+            if not isinstance(p.reg, Callable):
+                raise ValueError(
+                    f"Registration of {name}.{p.pyname} must be a callable to allow deferred class typing. Try: `lambda: ...`"
+                )
+
+            py_properties[p.pyname] = p
+            iri_properties[p.iri] = p
+
+            if p.compact:
+                p.compact = p.compact
+                compact_properties[p.compact] = p
+
+        if _USE_SLOTS:
+            # Assign slots. Note that __slots__ automatically inherits from the
+            # parent, so there is no need to merge in from the parent
+            attrs["__slots__"] = tuple(
+                sorted(
+                    set(py_properties.keys())
+                    | attrs["_EXTRA_SLOTS"]
+                    | set(attrs.get("__slots__", ()))
+                )
+            )
+
+        # Merge in the parent slots so that __setattr__ works properly
+        for b in bases:
+            attrs["_EXTRA_SLOTS"] |= b._EXTRA_SLOTS
+
+        if "PROPERTIES" in attrs:
+            del attrs["PROPERTIES"]
+
+        attrs["_OBJ_PY_PROPS"] = py_properties
+        attrs["_OBJ_IRI_PROPS"] = iri_properties
+        attrs["_OBJ_COMPACT_PROPS"] = compact_properties
+        if not is_base:
+            for b in bases:
+                for k, v in b._OBJ_PY_PROPS.items():
+                    attrs["_OBJ_PY_PROPS"][k] = v
+
+                for k, v in b._OBJ_IRI_PROPS.items():
+                    attrs["_OBJ_IRI_PROPS"][k] = v
+
+                for k, v in b._OBJ_COMPACT_PROPS.items():
+                    attrs["_OBJ_COMPACT_PROPS"][k] = v
+
+        attrs["_IRI"] = {p.pyname: p.iri for p in attrs["_OBJ_PY_PROPS"].values()}
+
+        global NAMED_INDIVIDUALS
+
+        auto_ni = True
+        if "AUTO_NAMED_INDIVIDUALS" in attrs:
+            auto_ni = attrs["AUTO_NAMED_INDIVIDUALS"]
+            del attrs["AUTO_NAMED_INDIVIDUALS"]
+
+        for k, v in attrs["NAMED_INDIVIDUALS"].items():
+            if auto_ni:
+                if (
+                    k in attrs
+                    or k in attrs["_EXTRA_SLOTS"]
+                    or check_base_prop(k)
+                    or k in py_properties
+                ):
+                    raise KeyError(
+                        f"Named Individual with name '{k}' conflicts with existing property"
+                    )
+                attrs[k] = v
+
+            NAMED_INDIVIDUALS.add(v)
+
+        attrs["_NEEDS_REG"] = True
+
+        if "TYPE" in attrs:
+            attrs["_TYPE"] = attrs["TYPE"]
+            del attrs["TYPE"]
+        else:
+            attrs["_TYPE"] = None
+
+        if "COMPACT_TYPE" in attrs:
+            attrs["_COMPACT_TYPE"] = attrs["COMPACT_TYPE"]
+            del attrs["COMPACT_TYPE"]
+        else:
+            attrs["_COMPACT_TYPE"] = None
+
+        return super().__new__(cls, name, bases, attrs)
+
+    @staticmethod
+    def _add_class(key: str, c: Type[SHACLObject]) -> None:
         assert (
             key not in SHACLObject.CLASSES
         ), f"{key} already registered to {SHACLObject.CLASSES[key].__name__}"
         SHACLObject.CLASSES[key] = c
-
-    def decorator(c: Type[SHACLObject]) -> Type[SHACLObject]:
-        """
-        Decorator to register a class as a SHACL object type.
-        The class must derive from SHACLObject.
-        """
-        global NAMED_INDIVIDUALS
-
-        assert issubclass(c, SHACLObject), f"{c} is not derived from SHACLObject"
-
-        c._OBJ_TYPE = type_iri
-        c.IS_ABSTRACT = abstract
-        add_class(type_iri, c)
-
-        c._OBJ_COMPACT_TYPE = compact_type
-        if compact_type:
-            add_class(compact_type, c)
-
-        NAMED_INDIVIDUALS |= set(c.NAMED_INDIVIDUALS.values())
-
-        # Registration is deferred until the first instance of class is created
-        # so that it has access to any other defined class
-        c._NEEDS_REG = True
-        return c
-
-    return decorator
 
 
 register_lock = threading.Lock()
@@ -611,27 +765,83 @@ T_SHACLObject = TypeVar("T_SHACLObject", bound="SHACLObject")
 
 
 @functools.total_ordering
-class SHACLObject(object):
+class SHACLObject(metaclass=SHACLObjectMeta):
     CLASSES: Dict[str, Type] = {}
+
+    # Class properties that can be set in derived classes:
+
+    # A dictionary of Named Individuals. The key is the python name of the
+    # individual and the value is the IRI of the individual (not inherited)
     NAMED_INDIVIDUALS: Dict[str, str] = {}
+
+    # If True, class member variables will be automatically created for the class
+    # from the NAMED_INDIVIDUALS dictionary
+    # NOTE: This variable is not present in the class
+    AUTO_NAMED_INDIVIDUALS: bool = True
+
+    # The type of ID the object is allowed to have (inherited from parent)
     NODE_KIND = NodeKind.BlankNodeOrIRI
+
+    # An alternate IRI for the ID property, besides "@id" (inherited from
+    # parent)
     ID_ALIAS: Optional[str] = None
+
+    # If True, this class is abstract and cannot be implemented (not inherited
+    # from parent)
     IS_ABSTRACT: bool = True
+
+    # If True, this class is deprecated and will raise a warning when created
+    # (not inherited from parent)
     IS_DEPRECATED: bool = False
 
-    # These will be reinitialized during registration with @register decorator,
-    # defined here first to allow visibility at class level
-    _OBJ_TYPE: str = ""
-    _OBJ_COMPACT_TYPE: Optional[str] = None
-    _OBJ_PROPERTIES: Dict[str, Tuple] = {}
-    _OBJ_IRIS: Dict[str, str] = {}
-    _OBJ_DEPRECATED: Set[str] = set()
+    # The fully qualified Type IRI for the object. Required
+    # NOTE: This variable is not present in the class. Use get_type() instead
+    TYPE: str = ""
+
+    # The compacted Type IRI of the object. Must match how the TYPE property
+    # would be compacted by the context. Not inherited from parent
+    # NOTE: This variable is not present in the class. Use get_compact_type()
+    # instead
+    COMPACT_TYPE: Optional[str] = None
+
+    # A list of properties for this object. Each entry must be a ClassProp
+    # object. Properties are automatically inherited from parent classes and do
+    # not need to be re-listed here.
+    # NOTE: The variable is not present in the class
+    PROPERTIES = [
+        ClassProp("_id", lambda: StringProp(), "@id"),
+    ]
+
+    # Internal variables
+    _EXTRA_SLOTS: Union[Set[str], Tuple[str, ...]] = (
+        "_extensible",
+        "_metadata",
+    )
+    _OBJ_PY_PROPS: Dict[str, ClassProp] = {}
+    _OBJ_IRI_PROPS: Dict[str, ClassProp] = {}
+    _OBJ_COMPACT_PROPS: Dict[str, ClassProp] = {}
     _NEEDS_REG: bool = True
+    _TYPE: str
+    _COMPACT_TYPE: Optional[str]
+    _extensible: Dict[str, Any]
 
     # Instance variables
     _id: Optional[str]
-    _obj_data: Dict[str, Any]
-    _obj_metadata: Dict[str, Any]
+    _metadata: Dict[str, Any]
+
+    def __init_subclass__(cls, **kwargs):
+        def add_class(key: str, c: Type[SHACLObject]) -> None:
+            assert (
+                key not in SHACLObject.CLASSES
+            ), f"{key} already registered to {SHACLObject.CLASSES[key].__name__}"
+            SHACLObject.CLASSES[key] = c
+
+        super().__init_subclass__(**kwargs)
+        if cls._TYPE:
+            add_class(cls._TYPE, cls)
+
+        if cls._COMPACT_TYPE:
+            add_class(cls._COMPACT_TYPE, cls)
 
     def __init__(self, **kwargs):
         if self._is_abstract():
@@ -647,157 +857,108 @@ class SHACLObject(object):
         with register_lock:
             cls = self.__class__
             if cls._NEEDS_REG:
-                cls._OBJ_PROPERTIES = {}
-                cls._OBJ_IRIS = {}
-                cls._OBJ_DEPRECATED = set()
-                cls._register_props()
+                for p in cls._OBJ_PY_PROPS.values():
+                    # Note that since classes share their ClassProp objects
+                    # with their parents, the property might have already been
+                    # initialized.
+                    if p.prop is None and p.reg is not None:
+                        p.prop = p.reg()
+                        p.reg = None
                 cls._NEEDS_REG = False
 
-        self.__dict__["_obj_data"] = {}
-        self.__dict__["_obj_metadata"] = {}
+        self._metadata = {}
 
-        for iri, prop, _, _, _, _ in self.__iter_props():
-            self.__dict__["_obj_data"][iri] = prop.init()
+        for p in self._OBJ_PY_PROPS.values():
+            object.__setattr__(self, p.pyname, p.prop.init())
 
         for k, v in kwargs.items():
             setattr(self, k, v)
 
+    def get_type(self) -> str:
+        return self._TYPE
+
+    def get_compact_type(self) -> Optional[str]:
+        return self._COMPACT_TYPE
+
     def _is_abstract(self) -> bool:
         return self.__class__.IS_ABSTRACT
 
-    @classmethod
-    def _register_props(cls: Type[SHACLObject]) -> None:
-        cls._add_property("_id", StringProp(), iri="@id")
+    def __set(self, p: ClassProp, value):
+        if p.iri == "@id":
+            if self.NODE_KIND == NodeKind.BlankNode:
+                if not is_blank_node(value):
+                    raise ValueError(
+                        f"{self.__class__.__name__} ({id(self)}) can only have local reference. Property '{p.iri}' cannot be set to {value!r} and must start with '_:'"
+                    )
+            elif self.NODE_KIND == NodeKind.IRI:
+                if not is_IRI(value):
+                    raise ValueError(
+                        f"{self.__class__.__name__} ({id(self)}) can only have an IRI value. Property '{p.iri}' cannot be set to {value!r}"
+                    )
+            else:
+                if not is_blank_node(value) and not is_IRI(value):
+                    raise ValueError(
+                        f"{self.__class__.__name__} ({id(self)}) Has invalid Property '{p.iri}' {value!r}. Must be a blank node or IRI"
+                    )
 
-    @classmethod
-    def _add_property(
-        cls: Type[SHACLObject],
-        pyname: str,
-        prop: Property,
-        iri: str,
-        min_count: Optional[int] = None,
-        max_count: Optional[int] = None,
-        compact: Optional[str] = None,
-        deprecated: bool = False,
-    ) -> None:
-        if pyname in cls._OBJ_IRIS:
-            raise KeyError(f"'{pyname}' is already defined for '{cls.__name__}'")
-        if iri in cls._OBJ_PROPERTIES:
-            raise KeyError(f"'{iri}' is already defined for '{cls.__name__}'")
+        p.prop.validate(value)
+        if p.deprecated:
+            warnings.warn(
+                f"{self.__class__.__name__}.{p.pyname} is deprecated",
+                DeprecationWarning,
+            )
+        object.__setattr__(self, p.pyname, p.prop.set(value))
 
-        while hasattr(cls, pyname):
-            pyname = pyname + "_"
+    def __del(self, p: ClassProp):
+        object.__setattr__(self, p.pyname, p.prop.init())
 
-        pyname = sys.intern(pyname)
-        iri = sys.intern(iri)
-
-        cls._OBJ_IRIS[pyname] = iri
-        cls._OBJ_PROPERTIES[iri] = (prop, min_count, max_count, pyname, compact)
-        if deprecated:
-            cls._OBJ_DEPRECATED.add(iri)
-
-    def __setattr__(self, name: str, value) -> None:
+    def __get_attr(self, name):
         if name == self.ID_ALIAS:
-            self["@id"] = value
-            return
+            name = "_id"
 
         try:
-            iri = self._OBJ_IRIS[name]
-            self[iri] = value
+            return self._OBJ_PY_PROPS[name]
         except KeyError:
             raise AttributeError(
                 f"'{name}' is not a valid property of {self.__class__.__name__}"
             )
 
+    def __setattr__(self, name: str, value) -> None:
+        if name in self._EXTRA_SLOTS:
+            object.__setattr__(self, name, value)
+            return
+
+        self.__set(self.__get_attr(name), value)
+
     def __getattr__(self, name: str):
-        if name in self._OBJ_IRIS:
-            return self.__dict__["_obj_data"][self._OBJ_IRIS[name]]
-
         if name == self.ID_ALIAS:
-            return self.__dict__["_obj_data"]["@id"]
-
-        if name == "_metadata":
-            return self.__dict__["_obj_metadata"]
-
-        if name == "_IRI":
-            return self._OBJ_IRIS
-
-        if name == "TYPE":
-            return self.__class__._OBJ_TYPE
-
-        if name == "COMPACT_TYPE":
-            return self.__class__._OBJ_COMPACT_TYPE
+            return self._id
 
         raise AttributeError(
             f"'{name}' is not a valid property of {self.__class__.__name__}"
         )
 
     def __delattr__(self, name: str) -> None:
-        if name == self.ID_ALIAS:
-            del self["@id"]
+        if name in self._EXTRA_SLOTS:
+            object.__delattr__(self, name)
             return
 
-        try:
-            iri = self._OBJ_IRIS[name]
-            del self[iri]
-        except KeyError:
-            raise AttributeError(
-                f"'{name}' is not a valid property of {self.__class__.__name__}"
-            )
+        self.__del(self.__get_attr(name))
 
-    def __get_prop(
-        self, iri: str
-    ) -> Tuple[Property, Optional[int], Optional[int], str, Optional[str]]:
-        if iri not in self._OBJ_PROPERTIES:
-            raise KeyError(
-                f"'{iri}' is not a valid property of {self.__class__.__name__}"
-            )
-
-        return self._OBJ_PROPERTIES[iri]
-
-    def __iter_props(
-        self,
-    ) -> Iterator[
-        Tuple[str, Property, Optional[int], Optional[int], str, Optional[str]]
-    ]:
-        for iri, v in self._OBJ_PROPERTIES.items():
-            yield iri, *v
+    def __get_key(self, iri: str):
+        return self._OBJ_IRI_PROPS[iri]
 
     def __getitem__(self, iri: str) -> Any:
-        return self.__dict__["_obj_data"][iri]
+        return getattr(self, self.__get_key(iri).pyname)
 
     def __setitem__(self, iri: str, value) -> None:
-        if iri == "@id":
-            if self.NODE_KIND == NodeKind.BlankNode:
-                if not is_blank_node(value):
-                    raise ValueError(
-                        f"{self.__class__.__name__} ({id(self)}) can only have local reference. Property '{iri}' cannot be set to {value!r} and must start with '_:'"
-                    )
-            elif self.NODE_KIND == NodeKind.IRI:
-                if not is_IRI(value):
-                    raise ValueError(
-                        f"{self.__class__.__name__} ({id(self)}) can only have an IRI value. Property '{iri}' cannot be set to {value!r}"
-                    )
-            else:
-                if not is_blank_node(value) and not is_IRI(value):
-                    raise ValueError(
-                        f"{self.__class__.__name__} ({id(self)}) Has invalid Property '{iri}' {value!r}. Must be a blank node or IRI"
-                    )
-
-        prop, _, _, pyname, _ = self.__get_prop(iri)
-        prop.validate(value)
-        if iri in self._OBJ_DEPRECATED:
-            warnings.warn(
-                f"{self.__class__.__name__}.{pyname} is deprecated", DeprecationWarning
-            )
-        self.__dict__["_obj_data"][iri] = prop.set(value)
+        self.__set(self.__get_key(iri), value)
 
     def __delitem__(self, iri: str) -> None:
-        prop, _, _, _, _ = self.__get_prop(iri)
-        self.__dict__["_obj_data"][iri] = prop.init()
+        self.__del(self.__get_key(iri))
 
     def __iter__(self) -> Iterator[str]:
-        return iter(self._OBJ_PROPERTIES.keys())
+        return iter(self._OBJ_IRI_PROPS.keys())
 
     def walk(self, callback: Callable, path: Optional[List[str]] = None) -> None:
         """
@@ -811,14 +972,16 @@ class SHACLObject(object):
             path = ["."]
 
         if callback(self, path):
-            for iri, prop, _, _, _, _ in self.__iter_props():
-                prop.walk(self.__dict__["_obj_data"][iri], callback, path + [f".{iri}"])
+            for p in self._OBJ_PY_PROPS.values():
+                p.prop.walk(getattr(self, p.pyname), callback, path + [f".{p.iri}"])
 
     def property_keys(self) -> Iterator[Tuple[Optional[str], str, Optional[str]]]:
-        for iri, _, _, _, pyname, compact in self.__iter_props():
-            if iri == "@id":
+        for p in self._OBJ_PY_PROPS.values():
+            if p.iri == "@id":
                 compact = self.ID_ALIAS
-            yield pyname, iri, compact
+            else:
+                compact = p.compact
+            yield p.pyname, p.iri, compact
 
     def iter_objects(self, *, recursive: bool = False, visited=None):
         """
@@ -827,14 +990,14 @@ class SHACLObject(object):
         if visited is None:
             visited = set()
 
-        for iri, prop, _, _, _, _ in self.__iter_props():
-            for c in prop.iter_objects(
-                self.__dict__["_obj_data"][iri], recursive=recursive, visited=visited
+        for p in self._OBJ_PY_PROPS.values():
+            for c in p.prop.iter_objects(
+                getattr(self, p.pyname), recursive=recursive, visited=visited
             ):
                 yield c
 
     def encode(self, encoder, state: EncodeState) -> None:
-        idname = self.ID_ALIAS or self._OBJ_IRIS["_id"]
+        idname = self.ID_ALIAS or "@id"
         if not self._id and self.NODE_KIND == NodeKind.IRI:
             raise ValueError(
                 f"{self.__class__.__name__} ({id(self)}) must have a IRI for property '{idname}'"
@@ -850,41 +1013,41 @@ class SHACLObject(object):
 
         with encoder.write_object(
             self,
-            self.COMPACT_TYPE or state.objectset.compact_iri(self.TYPE),
+            self.get_compact_type() or state.objectset.compact_iri(self.get_type()),
             iri,
             bool(self._id) or state.is_refed(self),
         ) as obj_s:
             self._encode_properties(obj_s, state)
 
     def _encode_properties(self, encoder, state) -> None:
-        for iri, prop, min_count, max_count, pyname, compact in self.__iter_props():
-            value = self.__dict__["_obj_data"][iri]
-            if prop.elide(value):
-                if min_count:
+        for p in self._OBJ_PY_PROPS.values():
+            value = getattr(self, p.pyname)
+            if p.prop.elide(value):
+                if p.min_count:
                     raise ValueError(
-                        f"Property '{pyname}' in {self.__class__.__name__} ({id(self)}) is required (currently {value!r})"
+                        f"Property '{p.pyname}' in {self.__class__.__name__} ({id(self)}) is required (currently {value!r})"
                     )
                 continue
 
-            if min_count is not None:
-                if not prop.check_min_count(value, min_count):
+            if p.min_count is not None:
+                if not p.prop.check_min_count(value, p.min_count):
                     raise ValueError(
-                        f"Property '{pyname}' in {self.__class__.__name__} ({id(self)}) requires a minimum of {min_count} elements"
+                        f"Property '{p.pyname}' in {self.__class__.__name__} ({id(self)}) requires a minimum of {p.min_count} elements"
                     )
 
-            if max_count is not None:
-                if not prop.check_max_count(value, max_count):
+            if p.max_count is not None:
+                if not p.prop.check_max_count(value, p.max_count):
                     raise ValueError(
-                        f"Property '{pyname}' in {self.__class__.__name__} ({id(self)}) requires a maximum of {max_count} elements"
+                        f"Property '{p.pyname}' in {self.__class__.__name__} ({id(self)}) requires a maximum of {p.max_count} elements"
                     )
 
-            if iri == self._OBJ_IRIS["_id"]:
+            if p.iri == "@id":
                 continue
 
             with encoder.write_property(
-                state.objectset.compact_iri(iri), compact
+                state.objectset.compact_iri(p.iri), p.compact
             ) as prop_s:
-                prop.encode(prop_s, value, state)
+                p.prop.encode(prop_s, value, state)
 
     @classmethod
     def _make_object(cls: Type["SHACLObject"], typ: str) -> "SHACLObject":
@@ -926,22 +1089,23 @@ class SHACLObject(object):
                 raise KeyError(f"Unknown property '{key}'")
 
     def _decode_prop(self, decoder, key, state: DecodeState):
-        if key in (self._OBJ_IRIS["_id"], self.ID_ALIAS):
+        if key in ("@id", self.ID_ALIAS):
             return True
 
         expanded_key = state.objectset.expand_iri(key)
+        if expanded_key in self._OBJ_IRI_PROPS:
+            p = self._OBJ_IRI_PROPS[expanded_key]
+        elif key in self._OBJ_IRI_PROPS:
+            p = self._OBJ_IRI_PROPS[key]
+        elif key in self._OBJ_COMPACT_PROPS:
+            p = self._OBJ_COMPACT_PROPS[key]
+        else:
+            return False
 
-        for iri, prop, _, _, _, compact in self.__iter_props():
-            if key not in (compact, iri) and not expanded_key == iri:
-                continue
-
-            with decoder.read_property(key) as prop_d:
-                v = prop.decode(prop_d, state)
-                prop.validate(v)
-                self.__dict__["_obj_data"][iri] = v
-            return True
-
-        return False
+        with decoder.read_property(key) as prop_d:
+            v = p.prop.decode(prop_d, state)
+            self.__set(p, v)
+        return True
 
     def link_helper(
         self, objectset: Optional[SHACLObjectSet], missing, visited
@@ -951,12 +1115,16 @@ class SHACLObject(object):
 
         visited.add(self)
 
-        for iri, prop, _, _, _, _ in self.__iter_props():
-            self.__dict__["_obj_data"][iri] = prop.link_prop(
-                self.__dict__["_obj_data"][iri],
-                objectset,
-                missing,
-                visited,
+        for p in self._OBJ_PY_PROPS.values():
+            object.__setattr__(
+                self,
+                p.pyname,
+                p.prop.link_prop(
+                    getattr(self, p.pyname),
+                    objectset,
+                    missing,
+                    visited,
+                ),
             )
 
     def __str__(self):
@@ -980,7 +1148,7 @@ class SHACLObject(object):
                 return (obj, "", "", "")
             return (
                 obj._id or "",
-                obj.TYPE,
+                obj.get_type(),
                 getattr(obj, "name", None) or "",
                 id(obj),
             )
@@ -992,20 +1160,32 @@ class SHACLExtensibleObject(SHACLObject):
     CLOSED = False
 
     def __init__(self, typ=None, **kwargs):
-        if typ:
-            self.__dict__["_obj_TYPE"] = (typ, None)
-        else:
-            self.__dict__["_obj_TYPE"] = (self._OBJ_TYPE, self._OBJ_COMPACT_TYPE)
+        self._extensible = {
+            "type": typ if typ else self._TYPE,
+            "compact_type": None if typ else self._COMPACT_TYPE,
+            "data": {},
+        }
+
         super().__init__(**kwargs)
+
+    def get_type(self) -> str:
+        return self._extensible["type"]
+
+    def get_compact_type(self) -> Optional[str]:
+        return self._extensible["compact_type"]
 
     def _is_abstract(self) -> bool:
         # Unknown classes are assumed to not be abstract so that they can be
         # deserialized
-        typ = self.__dict__["_obj_TYPE"][0]
-        if typ in self.__class__.CLASSES:
-            return self.__class__.CLASSES[typ].IS_ABSTRACT
+        typ = self.get_type()
+        if typ in SHACLObject.CLASSES:
+            return SHACLObject.CLASSES[typ].IS_ABSTRACT
 
         return False
+
+    @property
+    def _ext_data(self) -> Dict[str, str]:
+        return self._extensible["data"]
 
     @classmethod
     def _make_object(cls, typ):
@@ -1039,15 +1219,15 @@ class SHACLExtensibleObject(SHACLObject):
                 )
 
             with decoder.read_property(key) as prop_d:
-                self.__dict__["_obj_data"][expanded_key] = decode_value(prop_d)
+                self._ext_data[expanded_key] = decode_value(prop_d)
 
     def _encode_properties(self, encoder, state) -> None:
         super()._encode_properties(encoder, state)
         if self.CLOSED:
             return
 
-        for iri, value in self.__dict__["_obj_data"].items():
-            if iri in self._OBJ_PROPERTIES:
+        for iri, value in self._ext_data.items():
+            if iri in self._OBJ_IRI_PROPS:
                 continue
 
             with encoder.write_property(state.objectset.compact_iri(iri)) as prop_s:
@@ -1071,6 +1251,17 @@ class SHACLExtensibleObject(SHACLObject):
                                     f"Unsupported serialized type {type(i)} with value {i!r}"
                                 )
 
+    def __getitem__(self, iri: str):
+        try:
+            return super().__getitem__(iri)
+        except KeyError:
+            if self.CLOSED:
+                raise
+
+        if not is_IRI(iri):
+            raise KeyError(f"Key '{iri}' must be an IRI")
+        return self._ext_data[iri]
+
     def __setitem__(self, iri: str, value) -> None:
         try:
             super().__setitem__(iri, value)
@@ -1078,10 +1269,9 @@ class SHACLExtensibleObject(SHACLObject):
             if self.CLOSED:
                 raise
 
-            if not is_IRI(iri):
-                raise KeyError(f"Key '{iri}' must be an IRI")
-            obj_data = self.__dict__["_obj_data"]
-            self.__dict__["_obj_data"][iri] = value
+        if not is_IRI(iri):
+            raise KeyError(f"Key '{iri}' must be an IRI")
+        self._ext_data[iri] = value
 
     def __delitem__(self, iri: str) -> None:
         try:
@@ -1090,16 +1280,9 @@ class SHACLExtensibleObject(SHACLObject):
             if self.CLOSED:
                 raise
 
-            if not is_IRI(iri):
-                raise KeyError(f"Key '{iri}' must be an IRI")
-            del self.__dict__["_obj_data"][iri]
-
-    def __getattr__(self, name):
-        if name == "TYPE":
-            return self.__dict__["_obj_TYPE"][0]
-        if name == "COMPACT_TYPE":
-            return self.__dict__["_obj_TYPE"][1]
-        return super().__getattr__(name)
+        if not is_IRI(iri):
+            raise KeyError(f"Key '{iri}' must be an IRI")
+        del self._ext_data[iri]
 
     def property_keys(self) -> Iterator[Tuple[Optional[str], str, Optional[str]]]:
         iris: Set[str] = set()
@@ -1110,7 +1293,7 @@ class SHACLExtensibleObject(SHACLObject):
         if self.CLOSED:
             return
 
-        for iri in self.__dict__["_obj_data"].keys():
+        for iri in self._ext_data.keys():
             if iri not in iris:
                 yield None, iri, None
 
@@ -1155,12 +1338,10 @@ class SHACLObjectSet(object):
 
         for typ in SHACLObject.CLASSES.values():
             if isinstance(obj, typ):
-                reg_type(
-                    typ._OBJ_TYPE, typ._OBJ_COMPACT_TYPE, obj, obj.__class__ is typ
-                )
+                reg_type(typ._TYPE, typ._COMPACT_TYPE, obj, obj.__class__ is typ)
 
         # This covers custom extensions
-        reg_type(obj.TYPE, obj.COMPACT_TYPE, obj, True)
+        reg_type(obj.get_type(), obj.get_compact_type(), obj, True)
 
         if not obj._id:
             return
@@ -1298,7 +1479,7 @@ class SHACLObjectSet(object):
                 raise TypeError(f"Type must be derived from SHACLObject, got {typ}")
             # This intermediate step is necessary for pyrefly...
             typ_class: Type[SHACLObject] = typ
-            typ = typ_class._OBJ_TYPE
+            typ = typ_class._TYPE
 
         if typ not in self.obj_by_type:
             return
@@ -1492,7 +1673,7 @@ class EncodeState(object):
 
 
 class DecodeState(object):
-    def __init__(self, objectset):
+    def __init__(self, objectset: SHACLObjectSet):
         self.objectset = objectset
         self.read_objs: Dict[str, SHACLObject] = {}
 
@@ -2420,7 +2601,7 @@ try:
                 if self.predicate is None:
                     raise TypeError()
                 self.graph.add((self.subject, self.predicate, obj))
-            self.graph.add((obj, RDF.type, rdflib.URIRef(o.TYPE)))  # type: ignore # RDF.type is dynamic
+            self.graph.add((obj, RDF.type, rdflib.URIRef(o.get_type())))  # type: ignore # RDF.type is dynamic
             yield self.__class__(self.graph, obj)
 
         @contextmanager
@@ -2514,50 +2695,58 @@ CONTEXT_URLS: List[str] = [
 #{{ (" " + l).rstrip() }}
 {%- endfor %}
 {%- endif %}
-@register("{{ class._id }}"{%- if context.compact_iri(class._id) != class._id %}, compact_type="{{ context.compact_iri(class._id) }}"{%- endif %}, abstract={{ class.is_abstract }})
 class {{ varname(*class.clsname) }}(
-{%- if class.is_extensible -%}
-    SHACLExtensibleObject{{", "}}
-{%- endif %}
 {%- if class.parent_ids %}
-    {%- for id in class.parent_ids %}
-        {{- varname(*classes.get(id).clsname) }}{% if not loop.last %}, {% endif %}
-    {%- endfor %}
+    {%- for id in class.parent_ids -%}
+        {{- varname(*classes.get(id).clsname) }}{%- if not loop.last or class.is_extensible -%}, {% endif -%}
+    {%- endfor -%}
+    {%- if class.is_extensible -%}
+        SHACLExtensibleObject
+    {%- endif -%}
+{%- elif class.is_extensible -%}
+    SHACLExtensibleObject
 {%- else -%}
     SHACLObject
 {%- endif -%}):
+    TYPE = "{{ class._id }}"
+    {%- if context.compact_iri(class._id) != class._id %}
+    COMPACT_TYPE = "{{ context.compact_iri(class._id) }}"
+    {%- endif %}
     NODE_KIND = NodeKind.{{ class.node_kind.split("#")[-1] }}
     {%- if class.id_property %}
     ID_ALIAS = "{{ class.id_property }}"
     {%- endif %}
-    IS_DEPRECATED = {{ class.deprecated }}
+    {%- if class.is_abstract %}
+    IS_ABSTRACT = True
+    {%- endif %}
+    {%- if class.deprecated %}
+    IS_DEPRECATED = True
+    {%- endif %}
+    {%- if class.named_individuals %}
     NAMED_INDIVIDUALS: Dict[str, str] = {
         {%- for member in class.named_individuals %}
+        {%- if member.comment %}
+        {%- for l in member.comment.split("\n") %}
+        #{{ (" " + l).rstrip() }}
+        {%- endfor %}
+        {%- endif %}
         "{{ varname(member.varname) }}": "{{ member._id }}",
         {%- endfor %}
     }
-    {%- for member in class.named_individuals %}
-    {%- if member.comment %}
-    {%- for l in member.comment.split("\n") %}
-    #{{ (" " + l).rstrip() }}
-    {%- endfor %}
     {%- endif %}
-    {{ varname(member.varname) }} = "{{ member._id }}"
-    {%- endfor %}
-    {%- if class.properties %}
 
-    @classmethod
-    def _register_props(cls):
-        super()._register_props()
-        {%- for prop in class.properties %}
+    {%- if class.properties %}
+    PROPERTIES = [
+    {%- for prop in class.properties %}
         {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
         {%- if prop.comment %}
         {%- for l in prop.comment.split("\n") %}
         #{{ (" " + l).rstrip() }}
         {%- endfor %}
         {%- endif %}
-        cls._add_property(
+        ClassProp(
             "{{ varname(prop.varname) }}",
+            lambda:
             {% if is_list -%}ListProp({% endif %}
             {%- if prop.enum_values -%}
                 EnumProp([
@@ -2572,11 +2761,11 @@ class {{ varname(*class.clsname) }}(
                         {{- ctx.append((value, context.compact_vocab(value, prop.path))) or "" }}
                     {%- endif %}
                 {%- endfor -%}
-                ObjectProp({{ varname(*classes.get(prop.class_id).clsname) }}, {% if prop.min_count and not is_list %}True{% else %}False{% endif %}{% if ctx %}, context=[
+                ObjectProp({{ varname(*classes.get(prop.class_id).clsname) }}, {% if prop.min_count and not is_list %}True{% else %}False{% endif %}{% if ctx %}, context=(
                 {%- for value, compact in ctx %}
                     ("{{ value }}", "{{ compact }}"),
                 {%- endfor %}
-                ],
+                ),
                 {%- endif -%}
                 )
             {%- else -%}
@@ -2596,8 +2785,9 @@ class {{ varname(*class.clsname) }}(
             compact="{{ context.compact_vocab(prop.path) }}",
             {%- endif %}
             deprecated={{ prop.deprecated }}
-        )
-        {%- endfor %}
+        ),
+    {%- endfor %}
+    ]
     {%- endif %}
 
 {% endfor %}

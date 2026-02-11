@@ -47,5 +47,5 @@ class JsonSchemaRender(BasicJinjaRender):
             "varname": varname,
         }
 
-    def get_additional_render_args(self):
+    def get_additional_render_args(self, model):
         return self.__render_args

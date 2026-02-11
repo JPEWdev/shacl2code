@@ -51,7 +51,12 @@ def shacl2code_generate(args, outfile):
 
 
 @pytest.fixture(scope="module")
-def test_context(tmp_path_factory, model_server):
+def model_context_url(model_server):
+    yield model_server + "/test-context.json"
+
+
+@pytest.fixture(scope="module")
+def python_model(tmp_path_factory, model_context_url):
     tmp_directory = tmp_path_factory.mktemp("pythontestcontext")
     outfile = tmp_directory / "model.py"
     shacl2code_generate(
@@ -59,7 +64,7 @@ def test_context(tmp_path_factory, model_server):
             "--input",
             TEST_MODEL,
             "--context",
-            model_server + "/test-context.json",
+            model_context_url,
         ],
         outfile,
     )
@@ -68,14 +73,14 @@ def test_context(tmp_path_factory, model_server):
 
 
 @pytest.fixture(scope="module")
-def test_script(test_context):
-    _, script = test_context
+def model_script(python_model):
+    _, script = python_model
     yield script
 
 
 @pytest.fixture(scope="function")
-def model(test_context):
-    tmp_directory, _ = test_context
+def model(python_model):
+    tmp_directory, _ = python_model
 
     old_path = sys.path[:]
     sys.path.append(str(tmp_directory))
@@ -220,11 +225,11 @@ def test_roundtrip(model, tmp_path, roundtrip):
     check_file(outfile, expect_data, digest)
 
 
-def test_script_roundtrip(test_script, tmp_path, roundtrip):
+def test_script_roundtrip(model_script, tmp_path, roundtrip):
     outpath = tmp_path / "out.json"
 
     subprocess.run(
-        [test_script, roundtrip, "--outfile", outpath],
+        [model_script, roundtrip, "--outfile", outpath],
         check=True,
     )
 

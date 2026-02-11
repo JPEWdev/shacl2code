@@ -881,7 +881,9 @@ class SHACLObject(object):
             if iri == self._OBJ_IRIS["_id"]:
                 continue
 
-            with encoder.write_property(iri, compact) as prop_s:
+            with encoder.write_property(
+                state.objectset.compact_iri(iri), compact
+            ) as prop_s:
                 prop.encode(prop_s, value, state)
 
     @classmethod
@@ -926,15 +928,13 @@ class SHACLObject(object):
         if key in (self._OBJ_IRIS["_id"], self.ID_ALIAS):
             return True
 
+        expanded_key = state.objectset.expand_iri(key)
+
         for iri, prop, _, _, _, compact in self.__iter_props():
-            if compact == key:
-                read_key = compact
-            elif iri == key:
-                read_key = iri
-            else:
+            if key not in (compact, iri) and not expanded_key == iri:
                 continue
 
-            with decoder.read_property(read_key) as prop_d:
+            with decoder.read_property(key) as prop_d:
                 v = prop.decode(prop_d, state)
                 prop.validate(v)
                 self.__dict__["_obj_data"][iri] = v
@@ -1030,13 +1030,15 @@ class SHACLExtensibleObject(SHACLObject):
             if self._decode_prop(decoder, key, state):
                 continue
 
-            if not is_IRI(key):
+            expanded_key = state.objectset.expand_iri(key)
+
+            if not is_IRI(expanded_key):
                 raise KeyError(
-                    f"Extensible object properties must be IRIs. Got '{key}'"
+                    f"Extensible object properties must be IRIs. Got '{key}' (expanded to '{expanded_key}')"
                 )
 
             with decoder.read_property(key) as prop_d:
-                self.__dict__["_obj_data"][key] = decode_value(prop_d)
+                self.__dict__["_obj_data"][expanded_key] = decode_value(prop_d)
 
     def _encode_properties(self, encoder, state) -> None:
         super()._encode_properties(encoder, state)
@@ -1047,7 +1049,7 @@ class SHACLExtensibleObject(SHACLObject):
             if iri in self._OBJ_PROPERTIES:
                 continue
 
-            with encoder.write_property(iri) as prop_s:
+            with encoder.write_property(state.objectset.compact_iri(iri)) as prop_s:
                 if isinstance(value, list):
                     v = value
                 else:

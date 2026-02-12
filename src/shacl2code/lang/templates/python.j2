@@ -808,11 +808,13 @@ class SHACLObject(metaclass=SHACLObjectMeta):
     _EXTRA_SLOTS: Union[Set[str], Tuple[str, ...]] = (
         "_extensible",
         "_metadata",
+        "_birth_index",
     )
     _OBJ_PY_PROPS: Dict[str, ClassProp] = {}
     _OBJ_IRI_PROPS: Dict[str, ClassProp] = {}
     _OBJ_COMPACT_PROPS: Dict[str, ClassProp] = {}
     _NEEDS_REG: bool = True
+    _next_birth_index: int = 0
     _TYPE: str
     _COMPACT_TYPE: Optional[str]
     _extensible: Dict[str, Any]
@@ -859,6 +861,8 @@ class SHACLObject(metaclass=SHACLObjectMeta):
                 cls._NEEDS_REG = False
 
         self._metadata = {}
+        self._birth_index = SHACLObject._next_birth_index
+        SHACLObject._next_birth_index += 1
 
         for p in self._OBJ_PY_PROPS.values():
             object.__setattr__(self, p.pyname, p.prop.init())
@@ -1142,7 +1146,7 @@ class SHACLObject(metaclass=SHACLObjectMeta):
                 obj._id or "",
                 obj.get_type(),
                 getattr(obj, "name", None) or "",
-                id(obj),
+                self._birth_index,
             )
 
         return sort_key(self) < sort_key(other)

@@ -1194,6 +1194,19 @@ class SHACLObjectSet(object):
             self.add_index(obj)
         return obj
 
+    def remove(self, obj: SHACLObject) -> None:
+        """
+        Remove object from object set
+
+        Remove a SHACLObject from the object set and rebuild index.
+        """
+        if not isinstance(obj, SHACLObject):
+            raise TypeError("Object is not of type SHACLObject")
+
+        if obj in self.objects:
+            self.objects.remove(obj)
+            self.create_index()
+
     def update(self, *others) -> None:
         """
         Update object set adding all objects in each other iterable

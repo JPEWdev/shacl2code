@@ -1800,3 +1800,44 @@ def test_metadata(model):
         "foo2": "bar2",
         "baz2": "bat2",
     }
+
+
+def test_object_iter(model):
+    o = model.test_class()
+    o._id = "http://example.com/link-class"
+    o.test_class_string_scalar_prop = "foo"
+    o.test_class_string_list_prop = ["a", "b"]
+    o.test_class_boolean_prop = True
+
+    data = {k: o[k] for k in o}
+
+    assert data == {
+        "@id": "http://example.com/link-class",
+        "http://example.org/encode": None,
+        "http://example.org/import": None,
+        "http://example.org/test-class/anyuri-prop": None,
+        "http://example.org/test-class/boolean-prop": True,
+        "http://example.org/test-class/class-list-prop": [],
+        "http://example.org/test-class/class-prop": None,
+        "http://example.org/test-class/class-prop-no-class": None,
+        "http://example.org/test-class/datetime-list-prop": [],
+        "http://example.org/test-class/datetime-scalar-prop": None,
+        "http://example.org/test-class/datetimestamp-scalar-prop": None,
+        "http://example.org/test-class/enum-list-prop": [],
+        "http://example.org/test-class/enum-prop": None,
+        "http://example.org/test-class/enum-prop-no-class": None,
+        "http://example.org/test-class/float-prop": None,
+        "http://example.org/test-class/integer-prop": None,
+        "http://example.org/test-class/named-property": None,
+        "http://example.org/test-class/non-shape": None,
+        "http://example.org/test-class/nonnegative-integer-prop": None,
+        "http://example.org/test-class/positive-integer-prop": None,
+        "http://example.org/test-class/regex": None,
+        "http://example.org/test-class/regex-datetime": None,
+        "http://example.org/test-class/regex-datetimestamp": None,
+        "http://example.org/test-class/regex-list": [],
+        "http://example.org/test-class/split-string-prop": None,
+        "http://example.org/test-class/string-list-no-datatype": [],
+        "http://example.org/test-class/string-list-prop": ["a", "b"],
+        "http://example.org/test-class/string-scalar-prop": "foo",
+    }

@@ -356,9 +356,7 @@ class ObjectProp(IRIProp):
             raise ValueError("Object cannot be None")
 
         if isinstance(value, str):
-            encoder.write_iri(
-                value, self.compact(value, state.objectset.compact_iri(value))
-            )
+            encoder.write_iri(value, self.compact(value) or state.compact_iri(value))
             return
 
         return value.encode(encoder, state)
@@ -369,12 +367,10 @@ class ObjectProp(IRIProp):
 
         iri = decoder.read_iri()
 
-        iri = self.expand(iri) or iri
+        iri = self.expand(iri) or state.expand_iri(iri) or iri
 
         if state.objectset is None:
             return iri
-
-        iri = state.objectset.expand_iri(iri)
 
         obj = state.objectset.find_by_id(iri)
         if obj is None:
@@ -995,18 +991,18 @@ class SHACLObject(metaclass=SHACLObjectMeta):
                 f"{self.__class__.__name__} ({id(self)}) must have a IRI for property '{idname}'"
             )
 
-        iri = state.objectset.compact_iri(state.get_object_id(self))
+        _id = state.get_object_id(self)
 
         if state.is_written(self):
-            encoder.write_iri(iri)
+            encoder.write_iri(_id, state.compact_iri(_id))
             return
 
         state.add_written(self)
 
         with encoder.write_object(
             self,
-            self.get_compact_type() or state.objectset.compact_iri(self.get_type()),
-            iri,
+            self.get_compact_type() or state.compact_iri(self.get_type()),
+            state.compact_iri(_id, _id),
             bool(self._id) or state.is_refed(self),
         ) as obj_s:
             self._encode_properties(obj_s, state)
@@ -1037,7 +1033,7 @@ class SHACLObject(metaclass=SHACLObjectMeta):
                 continue
 
             with encoder.write_property(
-                state.objectset.compact_iri(p.iri), p.compact
+                p.iri, p.compact or state.compact_iri(p.iri)
             ) as prop_s:
                 p.prop.encode(prop_s, value, state)
 
@@ -1053,12 +1049,12 @@ class SHACLObject(metaclass=SHACLObjectMeta):
         typ, obj_d = decoder.read_object()
         if typ is None:
             raise TypeError("Unable to determine type for object")
-        typ = state.objectset.expand_iri(typ)
+        typ = state.objectset.expand_iri(typ) or typ
 
         obj = cls._make_object(typ)
         _id = obj_d.read_object_id(obj.ID_ALIAS)
         if _id is not None:
-            obj._id = state.objectset.expand_iri(_id)
+            obj._id = state.expand_iri(_id) or _id
 
         if obj.NODE_KIND == NodeKind.IRI and not obj._id:
             raise ValueError("Object is missing required IRI")
@@ -1084,8 +1080,8 @@ class SHACLObject(metaclass=SHACLObjectMeta):
         if key in ("@id", self.ID_ALIAS):
             return True
 
-        expanded_key = state.objectset.expand_iri(key)
-        if expanded_key in self._OBJ_IRI_PROPS:
+        expanded_key = state.expand_iri(key)
+        if expanded_key and expanded_key in self._OBJ_IRI_PROPS:
             p = self._OBJ_IRI_PROPS[expanded_key]
         elif key in self._OBJ_IRI_PROPS:
             p = self._OBJ_IRI_PROPS[key]
@@ -1203,7 +1199,7 @@ class SHACLExtensibleObject(SHACLObject):
             if self._decode_prop(decoder, key, state):
                 continue
 
-            expanded_key = state.objectset.expand_iri(key)
+            expanded_key = state.expand_iri(key) or key
 
             if not is_IRI(expanded_key):
                 raise KeyError(
@@ -1222,7 +1218,7 @@ class SHACLExtensibleObject(SHACLObject):
             if iri in self._OBJ_IRI_PROPS:
                 continue
 
-            with encoder.write_property(state.objectset.compact_iri(iri)) as prop_s:
+            with encoder.write_property(iri, state.compact_iri(iri)) as prop_s:
                 if isinstance(value, list):
                     v = value
                 else:
@@ -1617,21 +1613,23 @@ class SHACLObjectSet(object):
 
         self._link()
 
-    def expand_iri(self, iri):
+    def expand_iri(self, iri: str, default: Optional[str] = None) -> Optional[str]:
         for k, v in self.context.items():
             if iri == k:
-                return self.expand_iri(v)
+                return self.expand_iri(v, v)
             if iri.startswith(k + ":"):
-                return self.expand_iri(v + iri[len(k) + 1 :])
-        return iri
+                new_iri = v + iri[len(k) + 1 :]
+                return self.expand_iri(new_iri, new_iri)
+        return default
 
-    def compact_iri(self, iri):
+    def compact_iri(self, iri: str, default: Optional[str] = None) -> Optional[str]:
         for k, v in self.context.items():
             if iri == v:
-                return self.compact_iri(k)
+                return self.compact_iri(k, k)
             if iri.startswith(v):
-                return self.compact_iri(k + ":" + iri[len(v) :])
-        return iri
+                new_iri = k + ":" + iri[len(v) :]
+                return self.compact_iri(new_iri, new_iri)
+        return default
 
 
 class EncodeState(object):
@@ -1663,11 +1661,31 @@ class EncodeState(object):
     def add_written(self, o):
         self.written_objects.add(o)
 
+    def expand_iri(self, iri: str, default: Optional[str] = None) -> Optional[str]:
+        if self.objectset:
+            return self.objectset.expand_iri(iri, default)
+        return default
+
+    def compact_iri(self, iri: str, default: Optional[str] = None) -> Optional[str]:
+        if self.objectset:
+            return self.objectset.compact_iri(iri, default)
+        return default
+
 
 class DecodeState(object):
     def __init__(self, objectset: SHACLObjectSet):
         self.objectset = objectset
         self.read_objs: Dict[str, SHACLObject] = {}
+
+    def expand_iri(self, iri: str, default: Optional[str] = None) -> Optional[str]:
+        if self.objectset:
+            return self.objectset.expand_iri(iri, default)
+        return default
+
+    def compact_iri(self, iri: str, default: Optional[str] = None) -> Optional[str]:
+        if self.objectset:
+            return self.objectset.compact_iri(iri, default)
+        return default
 
 
 class Decoder(ABC):

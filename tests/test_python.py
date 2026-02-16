@@ -1681,8 +1681,8 @@ def test_objset_context(model, context, expanded, compacted):
     objset = model.SHACLObjectSet()
     objset.context = context
 
-    assert objset.compact_iri(expanded) == compacted
-    assert expanded == objset.expand_iri(compacted)
+    assert objset.compact_iri(expanded, expanded) == compacted
+    assert expanded == objset.expand_iri(compacted, compacted)
 
 
 def test_slots(model):

@@ -1004,9 +1004,11 @@ class SHACLObject(metaclass=SHACLObjectMeta):
         state.add_written(self)
 
         with encoder.write_object(
-            self,
+            self.get_type(),
             self.get_compact_type() or state.compact_iri(self.get_type()),
-            state.compact_iri(_id, _id),
+            self.ID_ALIAS,
+            _id,
+            state.compact_iri(_id),
             bool(self._id) or state.is_refed(self),
         ) as obj_s:
             self._encode_properties(obj_s, state)
@@ -2045,7 +2047,15 @@ class Encoder(ABC):
 
     @abstractmethod
     @contextmanager
-    def write_object(self, o: SHACLObject, typ: str, _id: str, needs_id: bool):
+    def write_object(
+        self,
+        typ: str,
+        compact_type: Optional[str],
+        id_alias: Optional[str],
+        _id: str,
+        compact_id: Optional[str],
+        needs_id: bool,
+    ):
         """
         Write object
 
@@ -2157,11 +2167,19 @@ class JSONLDEncoder(Encoder):
         yield self
 
     @contextmanager
-    def write_object(self, o: SHACLObject, typ: str, _id: str, needs_id: bool):
+    def write_object(
+        self,
+        typ: str,
+        compact_type: Optional[str],
+        id_alias: Optional[str],
+        _id: str,
+        compact_id: Optional[str],
+        needs_id: bool,
+    ):
         with self.write_dict() as obj_dict:
-            obj_dict.data["{{ context.compact_iri('@type') }}"] = typ  # type: ignore
+            obj_dict.data["{{ context.compact_iri('@type') }}"] = compact_type or typ  # type: ignore
             if needs_id:
-                obj_dict.data[o.ID_ALIAS or "@id"] = _id  # type: ignore
+                obj_dict.data[id_alias or "@id"] = compact_id or _id  # type: ignore
             yield obj_dict
 
     @contextmanager
@@ -2291,16 +2309,24 @@ class JSONLDInlineEncoder(Encoder):
         self.comma = True
 
     @contextmanager
-    def write_object(self, o: SHACLObject, typ: str, _id: str, needs_id: bool):
+    def write_object(
+        self,
+        typ: str,
+        compact_type: Optional[str],
+        id_alias: Optional[str],
+        _id: str,
+        compact_id: Optional[str],
+        needs_id: bool,
+    ):
         with self.write_dict() as obj_dict:
             with obj_dict.write_property(
                 "{{ context.compact_iri('@type') }}"
             ) as type_prop:
-                type_prop.write_string(typ)
+                type_prop.write_string(compact_type or typ)
 
             if needs_id:
-                with obj_dict.write_property(o.ID_ALIAS or "@id") as id_prop:
-                    id_prop.write_string(_id)
+                with obj_dict.write_property(id_alias or "@id") as id_prop:
+                    id_prop.write_string(compact_id or _id)
 
             yield obj_dict
 
@@ -2604,7 +2630,15 @@ try:
             yield self.__class__(self.graph, self.subject, rdflib.URIRef(iri))
 
         @contextmanager
-        def write_object(self, o, typ, _id, needs_id: bool):
+        def write_object(
+            self,
+            typ: str,
+            compact_type: Optional[str],
+            id_alias: Optional[str],
+            _id: str,
+            compact_id: Optional[str],
+            needs_id: bool,
+        ):
             obj: rdflib.term.Node
             if _id.startswith("_:"):
                 obj = rdflib.BNode(_id[2:])
@@ -2615,7 +2649,7 @@ try:
                 if self.predicate is None:
                     raise TypeError()
                 self.graph.add((self.subject, self.predicate, obj))
-            self.graph.add((obj, RDF.type, rdflib.URIRef(o.get_type())))  # type: ignore # RDF.type is dynamic
+            self.graph.add((obj, RDF.type, rdflib.URIRef(typ)))  # type: ignore # RDF.type is dynamic
             yield self.__class__(self.graph, obj)
 
         @contextmanager

@@ -44,6 +44,7 @@ from typing import (
 # reduce the use of Any in the type hints.
 T_PropValue = TypeVar("T_PropValue")
 
+
 def check_type(obj: Any, types: Union[Type[Any], Tuple[Type[Any], ...]]) -> None:
     if not isinstance(obj, types):
         if isinstance(types, (list, tuple)):
@@ -90,7 +91,12 @@ class Property(ABC, Generic[T_PropValue]):
     def elide(self, value: T_PropValue) -> bool:
         return value is None
 
-    def walk(self, value: T_PropValue, callback: Callable[[Any, List[str]], bool], path: List[str]) -> None:
+    def walk(
+        self,
+        value: T_PropValue,
+        callback: Callable[[Any, List[str]], bool],
+        path: List[str],
+    ) -> None:
         callback(value, path)
 
     def iter_objects(
@@ -99,7 +105,11 @@ class Property(ABC, Generic[T_PropValue]):
         return []
 
     def link_prop(
-        self, value: T_PropValue, objectset: SHACLObjectSet, missing: Optional[Set[str]], visited: Set[SHACLObject]
+        self,
+        value: T_PropValue,
+        objectset: SHACLObjectSet,
+        missing: Optional[Set[str]],
+        visited: Set[SHACLObject],
     ) -> Any:
         return value
 
@@ -307,7 +317,10 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
     """
 
     def __init__(
-        self, cls: Type[SHACLObject], required: bool, context: Optional[List[Tuple[str, str]]] = None
+        self,
+        cls: Type[SHACLObject],
+        required: bool,
+        context: Optional[List[Tuple[str, str]]] = None,
     ):
         if context is None:
             context = []
@@ -323,7 +336,9 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
             return value
         return str(value)
 
-    def walk(self, value: Any, callback: Callable[[Any, List[str]], bool], path: List[str]) -> None:
+    def walk(
+        self, value: Any, callback: Callable[[Any, List[str]], bool], path: List[str]
+    ) -> None:
         if value is None:
             return
 
@@ -332,7 +347,9 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
         else:
             callback(value, path)
 
-    def iter_objects(self, value: Any, recursive: bool, visited: Set["SHACLObject"]) -> Iterable["SHACLObject"]:
+    def iter_objects(
+        self, value: Any, recursive: bool, visited: Set["SHACLObject"]
+    ) -> Iterable["SHACLObject"]:
         if value is None or isinstance(value, str):
             return
 
@@ -344,7 +361,9 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
                 for c in value.iter_objects(recursive=True, visited=visited):
                     yield c
 
-    def encode(self, encoder: Encoder, value: Union[str, SHACLObject], state: EncodeState) -> None:
+    def encode(
+        self, encoder: Encoder, value: Union[str, SHACLObject], state: EncodeState
+    ) -> None:
         if value is None:
             raise ValueError("Object cannot be None")
 
@@ -378,7 +397,13 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
         self.validate(obj)
         return obj
 
-    def link_prop(self, value: Any, objectset: SHACLObjectSet, missing: Optional[Set[str]], visited: Set[SHACLObject]) -> Any:
+    def link_prop(
+        self,
+        value: Any,
+        objectset: SHACLObjectSet,
+        missing: Optional[Set[str]],
+        visited: Set[SHACLObject],
+    ) -> Any:
         if value is None:
             return value
 
@@ -402,82 +427,102 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
         return value
 
 
-class ListProxy(object):
-    def __init__(self, prop: Property, data: Optional[List[Any]] = None) -> None:
+class ListProxy(Generic[T_PropValue]):
+    def __init__(
+        self, prop: Property[T_PropValue], data: Optional[List[T_PropValue]] = None
+    ) -> None:
         if data is None:
-            self.__data: List[Any] = []
+            self.__data: List[T_PropValue] = []
         else:
             self.__data = data
         self.__prop = prop
 
-    def append(self, value: Any) -> None:
+    def append(self, value: T_PropValue) -> None:
         self.__prop.validate(value)
         self.__data.append(self.__prop.set(value))
 
-    def insert(self, idx: int, value: Any) -> None:
+    def insert(self, idx: int, value: T_PropValue) -> None:
         self.__prop.validate(value)
         self.__data.insert(idx, self.__prop.set(value))
 
-    def extend(self, items: Iterable[Any]) -> None:
+    def extend(self, items: Iterable[T_PropValue]) -> None:
         for i in items:
             self.append(i)
 
     def sort(self, *args: Any, **kwargs: Any) -> None:
         self.__data.sort(*args, **kwargs)
 
-    def __getitem__(self, key):
+    @overload
+    def __getitem__(self, key: int) -> T_PropValue: ...
+
+    @overload
+    def __getitem__(self, key: slice) -> List[T_PropValue]: ...
+
+    def __getitem__(
+        self, key: Union[int, slice]
+    ) -> Union[T_PropValue, List[T_PropValue]]:
         return self.__data[key]
 
-    def __setitem__(self, key, value):
+    @overload
+    def __setitem__(self, key: int, value: T_PropValue) -> None: ...
+
+    @overload
+    def __setitem__(self, key: slice, value: Iterable[T_PropValue]) -> None: ...
+
+    def __setitem__(
+        self, key: Union[int, slice], value: Union[T_PropValue, Iterable[T_PropValue]]
+    ) -> None:
         if isinstance(key, slice):
-            for v in value:
+            value_list = cast(Iterable[T_PropValue], value)
+            for v in value_list:
                 self.__prop.validate(v)
-            self.__data[key] = [self.__prop.set(v) for v in value]
+            self.__data[key] = [self.__prop.set(v) for v in value_list]
         elif isinstance(key, int):
-            self.__prop.validate(value)
-            self.__data[key] = self.__prop.set(value)
+            value_int = cast(T_PropValue, value)
+            self.__prop.validate(value_int)
+            self.__data[key] = self.__prop.set(value_int)
         else:
             raise TypeError(
                 f"ListProxy indices must be integers or slices. Got {type(key).__name__}"
             )
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: Union[int, slice]) -> None:
         del self.__data[key]
 
-    def __contains__(self, item):
+    def __contains__(self, item: Any) -> bool:
         return item in self.__data
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[T_PropValue]:
         return iter(self.__data)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.__data)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.__data)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(self.__data)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, ListProxy):
             return self.__data == other.__data
 
         return self.__data == other
 
 
-class ListProp(Property[ListProxy]):
+class ListProp(Property[ListProxy[T_PropValue]]):
     """
     A list of SHACL properties
     """
 
     VALID_TYPES = (list, ListProxy)
 
-    def __init__(self, prop: Property) -> None:
+    def __init__(self, prop: Property[T_PropValue]) -> None:
         super().__init__()
         self.prop = prop
 
-    def init(self) -> ListProxy:
+    def init(self) -> ListProxy[T_PropValue]:
         return ListProxy(self.prop)
 
     def validate(self, value: Any) -> None:
@@ -486,35 +531,50 @@ class ListProp(Property[ListProxy]):
         for i in value:
             self.prop.validate(i)
 
-    def set(self, value: Union[ListProxy, Iterable[Any]]) -> ListProxy:
+    def set(
+        self, value: Union[ListProxy[T_PropValue], Iterable[T_PropValue]]
+    ) -> ListProxy[T_PropValue]:
         if isinstance(value, ListProxy):
             return value
 
         return ListProxy(self.prop, [self.prop.set(d) for d in value])
 
-    def check_min_count(self, value: ListProxy, min_count: int) -> bool:
+    def check_min_count(self, value: ListProxy[T_PropValue], min_count: int) -> bool:
         check_type(value, ListProxy)
         return len(value) >= min_count
 
-    def check_max_count(self, value: ListProxy, max_count: int) -> bool:
+    def check_max_count(self, value: ListProxy[T_PropValue], max_count: int) -> bool:
         check_type(value, ListProxy)
         return len(value) <= max_count
 
-    def elide(self, value: ListProxy) -> bool:
+    def elide(self, value: ListProxy[T_PropValue]) -> bool:
         check_type(value, ListProxy)
         return len(value) == 0
 
-    def walk(self, value: ListProxy, callback: Callable[[Any, List[str]], bool], path: List[str]) -> None:
+    def walk(
+        self,
+        value: ListProxy[T_PropValue],
+        callback: Callable[[Any, List[str]], bool],
+        path: List[str],
+    ) -> None:
         callback(value, path)
         for idx, v in enumerate(value):
             self.prop.walk(v, callback, path + [f"[{idx}]"])
 
-    def iter_objects(self, value: ListProxy, recursive: bool, visited: Set[SHACLObject]) -> Iterable[Any]:
+    def iter_objects(
+        self, value: ListProxy[T_PropValue], recursive: bool, visited: Set[SHACLObject]
+    ) -> Iterable[Any]:
         for v in value:
             for c in self.prop.iter_objects(v, recursive, visited):
                 yield c
 
-    def link_prop(self, value: ListProxy, objectset: SHACLObjectSet, missing: Optional[Set[str]], visited: Set[SHACLObject]) -> ListProxy:
+    def link_prop(
+        self,
+        value: ListProxy[T_PropValue],
+        objectset: SHACLObjectSet,
+        missing: Optional[Set[str]],
+        visited: Set[SHACLObject],
+    ) -> ListProxy[T_PropValue]:
         if isinstance(value, ListProxy):
             data = [self.prop.link_prop(v, objectset, missing, visited) for v in value]
         else:
@@ -522,7 +582,9 @@ class ListProp(Property[ListProxy]):
 
         return ListProxy(self.prop, data=data)
 
-    def encode(self, encoder: Encoder, value: ListProxy, state: EncodeState) -> None:
+    def encode(
+        self, encoder: Encoder, value: ListProxy[T_PropValue], state: EncodeState
+    ) -> None:
         check_type(value, ListProxy)
 
         with encoder.write_list() as list_s:
@@ -530,12 +592,13 @@ class ListProp(Property[ListProxy]):
                 with list_s.write_list_item() as item_s:
                     self.prop.encode(item_s, v, state)
 
-    def decode(self, decoder: Decoder, state: DecodeState) -> ListProxy:
+    def decode(self, decoder: Decoder, state: DecodeState) -> ListProxy[T_PropValue]:
         data = []
         for val_d in decoder.read_list():
             v = self.prop.decode(val_d, state)
-            self.prop.validate(v)
-            data.append(v)
+            if v is not None:
+                self.prop.validate(v)
+                data.append(v)
 
         return ListProxy(self.prop, data=data)
 
@@ -543,7 +606,9 @@ class ListProp(Property[ListProxy]):
 class EnumProp(IRIProp[str]):
     VALID_TYPES = str
 
-    def __init__(self, values: List[Tuple[str, str]], *, pattern: Optional[str] = None) -> None:
+    def __init__(
+        self, values: List[Tuple[str, str]], *, pattern: Optional[str] = None
+    ) -> None:
         super().__init__(values, pattern=pattern)
 
     def validate(self, value: str) -> None:
@@ -816,7 +881,11 @@ class SHACLObject(object):
     def __iter__(self):
         return iter(self._OBJ_PROPERTIES.keys())
 
-    def walk(self, callback: Callable[[Any, List[str]], bool], path: Optional[List[str]] = None) -> None:
+    def walk(
+        self,
+        callback: Callable[[Any, List[str]], bool],
+        path: Optional[List[str]] = None,
+    ) -> None:
         """
         Walk object tree, invoking the callback for each item
 
@@ -841,7 +910,9 @@ class SHACLObject(object):
                 compact = self.ID_ALIAS
             yield pyname, iri, compact
 
-    def iter_objects(self, *, recursive: bool = False, visited: Optional[Set["SHACLObject"]] = None) -> Iterable[Any]:
+    def iter_objects(
+        self, *, recursive: bool = False, visited: Optional[Set["SHACLObject"]] = None
+    ) -> Iterable[Any]:
         """
         Iterate over all objects that are a child of this one
         """
@@ -871,7 +942,11 @@ class SHACLObject(object):
 
         with encoder.write_object(
             self,
-            str(self.COMPACT_TYPE) if self.COMPACT_TYPE else str(state.objectset.compact_iri(str(self.TYPE))),
+            (
+                str(self.COMPACT_TYPE)
+                if self.COMPACT_TYPE
+                else str(state.objectset.compact_iri(str(self.TYPE)))
+            ),
             iri,
             bool(self._id) or state.is_refed(self),
         ) as obj_s:
@@ -915,7 +990,9 @@ class SHACLObject(object):
         return cls.CLASSES[typ]()
 
     @classmethod
-    def decode(cls: Type[T_SHACLObject], decoder: Decoder, state: DecodeState) -> "SHACLObject":
+    def decode(
+        cls: Type[T_SHACLObject], decoder: Decoder, state: DecodeState
+    ) -> "SHACLObject":
         typ, obj_d = decoder.read_object()
         if typ is None:
             raise TypeError("Unable to determine type for object")
@@ -965,7 +1042,10 @@ class SHACLObject(object):
         return False
 
     def link_helper(
-        self, objectset: SHACLObjectSet, missing: Optional[Set[str]], visited: Set[SHACLObject]
+        self,
+        objectset: SHACLObjectSet,
+        missing: Optional[Set[str]],
+        visited: Set[SHACLObject],
     ) -> None:
         if self in visited:
             return
@@ -1102,7 +1182,6 @@ class SHACLExtensibleObject(SHACLObject):
 
             if not is_IRI(iri):
                 raise KeyError(f"Key '{iri}' must be an IRI")
-            obj_data = self.__dict__["_obj_data"]
             self.__dict__["_obj_data"][iri] = value
 
     def __delitem__(self, iri):
@@ -1138,7 +1217,9 @@ class SHACLExtensibleObject(SHACLObject):
 
 
 class SHACLObjectSet(object):
-    def __init__(self, objects: Collection[SHACLObject] = [], *, link: bool = False) -> None:
+    def __init__(
+        self, objects: Collection[SHACLObject] = [], *, link: bool = False
+    ) -> None:
         self.objects: Set[SHACLObject] = set(objects)
         self.missing_ids: Set[str] = set()
         self.obj_by_id: Dict[str, SHACLObject] = {}
@@ -1167,7 +1248,9 @@ class SHACLObjectSet(object):
         Adds the object to all appropriate indices
         """
 
-        def reg_type(typ: str, compact: Optional[str], o: SHACLObject, exact: bool) -> None:
+        def reg_type(
+            typ: str, compact: Optional[str], o: SHACLObject, exact: bool
+        ) -> None:
             self.obj_by_type.setdefault(typ, set()).add((exact, o))
             if compact:
                 self.obj_by_type.setdefault(compact, set()).add((exact, o))
@@ -1182,7 +1265,12 @@ class SHACLObjectSet(object):
                 )
 
         # This covers custom extensions
-        reg_type(str(obj.TYPE), str(obj.COMPACT_TYPE) if obj.COMPACT_TYPE else None, obj, True)
+        reg_type(
+            str(obj.TYPE),
+            str(obj.COMPACT_TYPE) if obj.COMPACT_TYPE else None,
+            obj,
+            True,
+        )
 
         if not obj._id:
             return
@@ -1241,8 +1329,6 @@ class SHACLObjectSet(object):
         return self._link()
 
     def _link(self) -> Set[str]:
-        global NAMED_INDIVIDUALS
-
         self.missing_ids = set()
         visited: Set[SHACLObject] = set()
 
@@ -1300,6 +1386,7 @@ class SHACLObjectSet(object):
     def foreach_type(
         self, typ: str, *, match_subclass: bool = True
     ) -> Iterator[SHACLObject]: ...
+
     @overload
     def foreach_type(
         self, typ: Type[T_SHACLObject], *, match_subclass: bool = True
@@ -1355,8 +1442,6 @@ class SHACLObjectSet(object):
         ref_counts: Dict[SHACLObject, int] = {}
 
         def walk_callback(value: Any, path: List[str]) -> bool:
-            nonlocal ref_counts
-
             if not isinstance(value, SHACLObject):
                 return True
 
@@ -1387,7 +1472,12 @@ class SHACLObjectSet(object):
         self.objects = new_objects
 
     def encode(
-        self, encoder: Encoder, state: EncodeState, force_list: bool = False, *, key: Optional[Callable[[SHACLObject], Any]] = None
+        self,
+        encoder: Encoder,
+        state: EncodeState,
+        force_list: bool = False,
+        *,
+        key: Optional[Callable[[SHACLObject], Any]] = None,
     ) -> None:
         """
         Serialize a list of objects to a serialization encoder
@@ -1397,9 +1487,6 @@ class SHACLObjectSet(object):
         ref_counts: Dict[SHACLObject, int] = {}
 
         def walk_callback(value: Any, path: List[str]) -> bool:
-            nonlocal state
-            nonlocal ref_counts
-
             if not isinstance(value, SHACLObject):
                 return True
 
@@ -1877,7 +1964,9 @@ class Encoder(ABC):
 
     @abstractmethod
     @contextmanager
-    def write_object(self, o: SHACLObject, typ: str, _id: str, needs_id: bool) -> Iterator["Encoder"]:
+    def write_object(
+        self, o: SHACLObject, typ: str, _id: str, needs_id: bool
+    ) -> Iterator["Encoder"]:
         """
         Write object
 
@@ -1899,7 +1988,9 @@ class Encoder(ABC):
 
     @abstractmethod
     @contextmanager
-    def write_property(self, iri: str, compact: Optional[str] = None) -> Iterator["Encoder"]:
+    def write_property(
+        self, iri: str, compact: Optional[str] = None
+    ) -> Iterator["Encoder"]:
         """
         Write object property
 
@@ -1987,7 +2078,9 @@ class JSONLDEncoder(Encoder):
         self.data = str(v)
 
     @contextmanager
-    def write_property(self, iri: str, compact: Optional[str] = None) -> Iterator["JSONLDEncoder"]:
+    def write_property(
+        self, iri: str, compact: Optional[str] = None
+    ) -> Iterator["JSONLDEncoder"]:
         s = self.__class__(None)
         yield s
         if s.data is not None:
@@ -2000,7 +2093,9 @@ class JSONLDEncoder(Encoder):
         yield self
 
     @contextmanager
-    def write_object(self, o: SHACLObject, typ: str, _id: str, needs_id: bool) -> Iterator["JSONLDEncoder"]:
+    def write_object(
+        self, o: SHACLObject, typ: str, _id: str, needs_id: bool
+    ) -> Iterator["JSONLDEncoder"]:
         with self.write_dict() as obj_dict:
             obj_dict.data["{{ context.compact_iri('@type') }}"] = typ  # type: ignore
             if needs_id:
@@ -2114,7 +2209,9 @@ class JSONLDInlineEncoder(Encoder):
         self.write(json.dumps(str(v)))
 
     @contextmanager
-    def write_property(self, iri: str, compact: Optional[str] = None) -> Iterator["JSONLDInlineEncoder"]:
+    def write_property(
+        self, iri: str, compact: Optional[str] = None
+    ) -> Iterator["JSONLDInlineEncoder"]:
         self._write_comma()
         self.write_string(compact or iri)
         self.write(":")
@@ -2134,11 +2231,11 @@ class JSONLDInlineEncoder(Encoder):
         self.comma = True
 
     @contextmanager
-    def write_object(self, o: SHACLObject, typ: str, _id: str, needs_id: bool) -> Iterator["JSONLDInlineEncoder"]:
+    def write_object(
+        self, o: SHACLObject, typ: str, _id: str, needs_id: bool
+    ) -> Iterator["JSONLDInlineEncoder"]:
         with self.write_dict() as obj_dict:
-            with obj_dict.write_property(
-                "{{ context.compact_iri('@type') }}"
-            ) as type_prop:
+            with obj_dict.write_property("{{ context.compact_iri('@type') }}") as type_prop:
                 type_prop.write_string(typ)
 
             if needs_id:
@@ -2433,7 +2530,9 @@ try:
         def write_iri(self, v: str, compact: Optional[str] = None) -> None:
             self.__add_uriref(v)
 
-        def write_enum(self, v: str, e: Property, compact: Optional[str] = None) -> None:
+        def write_enum(
+            self, v: str, e: Property, compact: Optional[str] = None
+        ) -> None:
             self.__add_uriref(v)
 
         def write_bool(self, v: bool) -> None:
@@ -2443,7 +2542,9 @@ try:
             self.__add_literal(v)
 
         @contextmanager
-        def write_property(self, iri: str, compact: Optional[str] = None) -> Iterator["RDFEncoder"]:
+        def write_property(
+            self, iri: str, compact: Optional[str] = None
+        ) -> Iterator["RDFEncoder"]:
             yield self.__class__(self.graph, self.subject, rdflib.URIRef(iri))
 
         @contextmanager
@@ -2451,7 +2552,9 @@ try:
             yield self
 
         @contextmanager
-        def write_object(self, o: SHACLObject, typ: str, _id: str, needs_id: bool) -> Iterator["RDFEncoder"]:
+        def write_object(
+            self, o: SHACLObject, typ: str, _id: str, needs_id: bool
+        ) -> Iterator["RDFEncoder"]:
             obj: rdflib.term.Node
             if _id.startswith("_:"):
                 obj = rdflib.BNode(_id[2:])
@@ -2497,8 +2600,6 @@ def print_tree(objects: Iterable[SHACLObject], all_fields: bool = False) -> None
     seen = set()
 
     def callback(value: Any, path: List[str]) -> bool:
-        nonlocal seen
-
         s = ("  " * (len(path) - 1)) + f"{path[-1]}"
         if isinstance(value, SHACLObject):
             s += f" {value} ({id(value)})"
@@ -2540,7 +2641,39 @@ DATATYPE_CLASSES = {
     "http://www.w3.org/2001/XMLSchema#dateTime": "DateTimeProp",
     "http://www.w3.org/2001/XMLSchema#dateTimeStamp": "DateTimeStampProp",
 }
-%}
+-%}
+{% set
+DATATYPE_PYTHON_ALIASES = {
+    "http://www.w3.org/2001/XMLSchema#string": "str",
+    "http://www.w3.org/2001/XMLSchema#anyURI": "str",
+    "http://www.w3.org/2001/XMLSchema#integer": "int",
+    "http://www.w3.org/2001/XMLSchema#positiveInteger": "int",
+    "http://www.w3.org/2001/XMLSchema#nonNegativeInteger": "int",
+    "http://www.w3.org/2001/XMLSchema#boolean": "bool",
+    "http://www.w3.org/2001/XMLSchema#decimal": "float",
+    "http://www.w3.org/2001/XMLSchema#dateTime": "datetime",
+    "http://www.w3.org/2001/XMLSchema#dateTimeStamp": "datetime",
+}
+-%}
+
+__all__ = [
+    "SHACLObject",
+    "SHACLExtensibleObject",
+    "SHACLObjectSet",
+    "NodeKind",
+    "ListProxy",
+    "Decoder",
+    "Encoder",
+    "JSONLDDecoder",
+    "JSONLDDeserializer",
+    "JSONLDEncoder",
+    "JSONLDSerializer",
+    "JSONLDInlineEncoder",
+    "JSONLDInlineSerializer",
+{%- for class in classes %}
+    "{{ varname(*class.clsname) }}",
+{%- endfor %}
+]
 
 CONTEXT_URLS: List[str] = [
 {%- for url in context.urls %}
@@ -2569,15 +2702,41 @@ class {{ varname(*class.clsname) }}(
     SHACLObject
 {%- endif -%}):
     NODE_KIND = NodeKind.{{ class.node_kind.split("#")[-1] }}
+    {%- if class.properties %}
+    {%- for prop in class.properties %}
+    {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
+    {%- if prop.enum_values -%}
+        {%- set ptype = "str" -%}
+    {%- elif prop.class_id -%}
+        {%- set ptype = 'Union[str, "' ~ varname(*classes.get(prop.class_id).clsname) ~ '"]' -%}
+    {%- else -%}
+        {%- set ptype = DATATYPE_PYTHON_ALIASES[prop.datatype] -%}
+    {%- endif -%}
+    {%- if is_list -%}
+        {%- set ptype = "ListProxy[" ~ ptype ~ "]" -%}
+    {%- elif prop.min_count is none or prop.min_count == 0 -%}
+        {%- set ptype = "Optional[" ~ ptype ~ "]" -%}
+    {%- endif %}
+    {%- if varname(prop.varname) == "encode" %}
+    {{ varname(prop.varname) }}: {{ ptype }}  # type: ignore
+    {%- else %}
+    {{ varname(prop.varname) }}: {{ ptype }}
+    {%- endif %}
+    {%- endfor %}
+    {%- endif %}
     {%- if class.id_property %}
     ID_ALIAS = "{{ class.id_property }}"
     {%- endif %}
     IS_DEPRECATED = {{ class.deprecated }}
+    {%- if class.named_individuals %}
     NAMED_INDIVIDUALS: Dict[str, str] = {
         {%- for member in class.named_individuals %}
         "{{ varname(member.varname) }}": "{{ member._id }}",
         {%- endfor %}
     }
+    {%- else %}
+    NAMED_INDIVIDUALS: Dict[str, str] = {}
+    {%- endif %}
     {%- for member in class.named_individuals %}
     {%- if member.comment %}
     {%- for l in member.comment.split("\n") %}
@@ -2625,7 +2784,7 @@ class {{ varname(*class.clsname) }}(
                 {% if not prop.datatype in DATATYPE_CLASSES -%}
                     {{ abort("Unknown data type " + prop.datatype) -}}
                 {% endif -%}
-                {{ DATATYPE_CLASSES[prop.datatype] }}({%- if prop.pattern %}pattern=r"{{ prop.pattern }}",{%- endif %})
+                {{ DATATYPE_CLASSES[prop.datatype] }}({%- if prop.pattern %}pattern=r"{{ prop.pattern }}"{%- endif %})
             {%- endif %}{% if is_list %}){% endif %},
             iri="{{ prop.path }}",
             {%- if is_list and not prop.max_count is none %}
@@ -2637,7 +2796,7 @@ class {{ varname(*class.clsname) }}(
             {%- if context.compact_vocab(prop.path) != prop.path %}
             compact="{{ context.compact_vocab(prop.path) }}",
             {%- endif %}
-            deprecated={{ prop.deprecated }}
+            deprecated={{ prop.deprecated }},
         )
         {%- endfor %}
     {%- endif %}

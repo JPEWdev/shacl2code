@@ -1018,7 +1018,7 @@ class SHACLObject(object):
 
         return obj
 
-    def _decode_properties(self, decoder, state: DecodeState) -> None:
+    def _decode_properties(self, decoder: Decoder, state: DecodeState) -> None:
         for key in decoder.object_keys():
             if not self._decode_prop(decoder, key, state):
                 raise KeyError(f"Unknown property '{key}'")

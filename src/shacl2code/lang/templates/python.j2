@@ -2237,7 +2237,9 @@ class JSONLDInlineEncoder(Encoder):
         self, o: SHACLObject, typ: str, _id: str, needs_id: bool
     ) -> Iterator["JSONLDInlineEncoder"]:
         with self.write_dict() as obj_dict:
-            with obj_dict.write_property("{{ context.compact_iri('@type') }}") as type_prop:
+            with obj_dict.write_property(
+                "{{ context.compact_iri('@type') }}"
+            ) as type_prop:
                 type_prop.write_string(typ)
 
             if needs_id:

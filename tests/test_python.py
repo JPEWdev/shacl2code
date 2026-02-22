@@ -1366,12 +1366,12 @@ def test_enum_named_individuals(model):
 
 def test_object_prop_set_coercion(model):
     """
-    Tests that ObjectProp.set() inherently respects and retains both 
-    raw string IRIs and actual SHACLObject instances securely without 
+    Tests that ObjectProp.set() inherently respects and retains both
+    raw string IRIs and actual SHACLObject instances securely without
     coercing the object prematurely into a string representation.
     """
     c = model.test_class()
-    
+
     # Assigning string should remain string
     c.test_class_class_prop = "http://example.org/assigned-iri"
     assert isinstance(c.test_class_class_prop, str)

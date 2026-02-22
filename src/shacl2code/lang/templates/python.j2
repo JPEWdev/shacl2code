@@ -1006,14 +1006,15 @@ class SHACLObject(object):
         if obj.NODE_KIND == NodeKind.IRI and not obj._id:
             raise ValueError("Object is missing required IRI")
 
-        if state.objectset is not None:
-            if obj._id:
-                v = state.objectset.find_by_id(obj._id)
-                if v is not None:
-                    return v
-            state.objectset.add_index(obj)
+        if obj._id:
+            if obj._id in state.read_objs:
+                return state.read_objs[obj._id]
+            state.read_objs[obj._id] = obj
 
         obj._decode_properties(obj_d, state)
+
+        if state.objectset is not None:
+            state.objectset.add_index(obj)
 
         return obj
 
@@ -1609,6 +1610,7 @@ class EncodeState(object):
 class DecodeState(object):
     def __init__(self, objectset: SHACLObjectSet):
         self.objectset = objectset
+        self.read_objs: Dict[str, SHACLObject] = {}
 
 
 class Decoder(ABC):

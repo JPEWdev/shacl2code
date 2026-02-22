@@ -1364,6 +1364,26 @@ def test_enum_named_individuals(model):
         assert getattr(model.enumType, name) == value
 
 
+def test_object_prop_set_coercion(model):
+    """
+    Tests that ObjectProp.set() inherently respects and retains both 
+    raw string IRIs and actual SHACLObject instances securely without 
+    coercing the object prematurely into a string representation.
+    """
+    c = model.test_class()
+    
+    # Assigning string should remain string
+    c.test_class_class_prop = "http://example.org/assigned-iri"
+    assert isinstance(c.test_class_class_prop, str)
+    assert c.test_class_class_prop == "http://example.org/assigned-iri"
+
+    # Assigning an object should preserve the object instance without str() coercion
+    embedded_obj = model.test_class(_id="http://example.org/embedded-obj")
+    c.test_class_class_prop = embedded_obj
+    assert isinstance(c.test_class_class_prop, model.test_class)  # check if same class
+    assert c.test_class_class_prop is embedded_obj  # check if same object
+
+
 def test_mandatory_properties(model, tmp_path):
     """
     Tests that property cardinality (e.g. min count & max count) is checked when

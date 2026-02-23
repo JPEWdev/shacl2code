@@ -1799,3 +1799,25 @@ def test_custom_objset_index(model, model_context_url):
         "first": first,
         "second": second,
     }
+
+
+def test_introspection(model):
+    """
+    Tests that the __dir__ override correctly exposes SHACL properties
+    to Python's introspection (e.g. for IDE autocompletion).
+    """
+    c = model.test_class()
+    attributes = dir(c)
+
+    # Standard SHACLObject attributes
+    assert "ID_ALIAS" in attributes
+    assert "NODE_KIND" in attributes
+
+    # Added properties
+    assert "test_class_boolean_prop" in attributes
+    assert "test_class_class_prop" in attributes
+    assert "test_class_integer_prop" in attributes
+    assert "test_class_string_scalar_prop" in attributes
+
+    # Inherited properties
+    assert "test_class_string_list_prop" in attributes

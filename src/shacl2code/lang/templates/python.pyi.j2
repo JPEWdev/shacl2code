@@ -1,0 +1,168 @@
+#! /usr/bin/env python3
+#
+# Generated Python binding stub from a SHACL model
+#
+# {{ disclaimer }}
+#
+# SPDX-License-Identifier: {{ spdx_license }}
+
+from datetime import datetime
+from enum import Enum
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    TypeVar,
+    Union,
+    overload,
+)
+
+T_PropValue = TypeVar("T_PropValue")
+
+class NodeKind(Enum):
+    BlankNode = ...
+    IRI = ...
+    BlankNodeOrIRI = ...
+
+class Property(Generic[T_PropValue]): ...
+class StringProp(Property[str]): ...
+class AnyURIProp(StringProp): ...
+class DateTimeProp(Property[datetime]): ...
+class DateTimeStampProp(DateTimeProp): ...
+class IntegerProp(Property[int]): ...
+class PositiveIntegerProp(IntegerProp): ...
+class NonNegativeIntegerProp(IntegerProp): ...
+class BooleanProp(Property[bool]): ...
+class FloatProp(Property[float]): ...
+class ObjectProp(Property[T_PropValue]): ...
+class ListProp(Property[List[T_PropValue]]): ...
+class EnumProp(Property[str]): ...
+
+class ListProxy(Generic[T_PropValue]):
+    def __init__(self, obj: 'SHACLObject', prop: Property[T_PropValue]) -> None: ...
+    @overload
+    def __getitem__(self, index: int) -> T_PropValue: ...
+    @overload
+    def __getitem__(self, index: slice) -> List[T_PropValue]: ...
+    def __setitem__(self, index: int, value: T_PropValue) -> None: ...
+    def __iter__(self) -> Iterator[T_PropValue]: ...
+    def __len__(self) -> int: ...
+    def __contains__(self, item: Any) -> bool: ...
+    def append(self, value: T_PropValue) -> None: ...
+    def extend(self, values: Iterable[T_PropValue]) -> None: ...
+    def remove(self, value: T_PropValue) -> None: ...
+
+
+class SHACLObject:
+    ID_ALIAS: Optional[str] = ...
+    NODE_KIND: NodeKind = ...
+    NAMED_INDIVIDUALS: Dict[str, str] = ...
+    IS_ABSTRACT: bool = ...
+    IS_DEPRECATED: bool = ...
+    def __init__(self, **kwargs: Any) -> None: ...
+    def __getattr__(self, name: str) -> Any: ...
+    def __dir__(self) -> Iterable[str]: ...
+    def __setattr__(self, name: str, value: Any) -> None: ...
+    def encode(self, encoder: Any, state: Any) -> None: ...
+
+
+class SHACLExtensibleObject(SHACLObject):
+    def __getitem__(self, key: str) -> Any: ...
+    def __setitem__(self, key: str, value: Any) -> None: ...
+    def __contains__(self, key: str) -> bool: ...
+
+{%- set DATATYPE_PYTHON_ALIASES = {
+    "http://www.w3.org/2001/XMLSchema#string": "str",
+    "http://www.w3.org/2001/XMLSchema#anyURI": "str",
+    "http://www.w3.org/2001/XMLSchema#integer": "int",
+    "http://www.w3.org/2001/XMLSchema#positiveInteger": "int",
+    "http://www.w3.org/2001/XMLSchema#nonNegativeInteger": "int",
+    "http://www.w3.org/2001/XMLSchema#boolean": "bool",
+    "http://www.w3.org/2001/XMLSchema#decimal": "float",
+    "http://www.w3.org/2001/XMLSchema#dateTime": "datetime",
+    "http://www.w3.org/2001/XMLSchema#dateTimeStamp": "datetime",
+} -%}
+
+{%- set class_used_names = {
+    "SHACLObject": [
+        "ID_ALIAS",
+        "IS_DEPRECATED",
+        "NAMED_INDIVIDUALS",
+        "NODE_KIND",
+        "encode",
+        "walk",
+    ],
+} -%}
+
+
+{%- for class in classes %}
+{%- set used_names = class_used_names.get(class.parent_ids[0], [])[:] if class.parent_ids else class_used_names.get("SHACLObject", [])[:] %}
+{%- for p_id in class.parent_ids %}
+    {%- if p_id in class_used_names %}
+        {%- for n in class_used_names[p_id] %}
+            {%- if n not in used_names %}
+                {%- set _ = used_names.append(n) %}
+            {%- endif %}
+        {%- endfor %}
+    {%- endif %}
+{%- endfor %}
+{%- for member in class.named_individuals %}
+    {%- if varname(member.varname) not in used_names %}
+        {%- set _ = used_names.append(varname(member.varname)) %}
+    {%- endif %}
+{%- endfor %}
+
+class {{ varname(*class.clsname) }}(
+{%- if class.is_extensible -%}
+    SHACLExtensibleObject{{", "}}
+{%- endif %}
+{%- if class.parent_ids %}
+    {%- for id in class.parent_ids %}
+        {{- varname(*classes.get(id).clsname) }}{% if not loop.last %}, {% endif %}
+    {%- endfor %}
+{%- else -%}
+    SHACLObject
+{%- endif -%}):
+    NODE_KIND: NodeKind = ...
+    ID_ALIAS: Optional[str] = ...
+    IS_DEPRECATED: bool = ...
+    NAMED_INDIVIDUALS: Dict[str, str] = ...
+    {%- if class.properties %}
+        {%- for prop in class.properties %}
+            {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
+            {%- if prop.enum_values -%}
+                {%- set ptype = "str" -%}
+            {%- elif prop.class_id -%}
+                {%- set ptype = 'Union[str, "' ~ varname(*classes.get(prop.class_id).clsname) ~ '"]' -%}
+            {%- else -%}
+                {%- set ptype = DATATYPE_PYTHON_ALIASES[prop.datatype] -%}
+            {%- endif -%}
+
+            {%- if is_list -%}
+                {%- set ptype = "ListProxy[" ~ ptype ~ "]" -%}
+            {%- elif prop.min_count is none or prop.min_count == 0 -%}
+                {%- set ptype = "Optional[" ~ ptype ~ "]" -%}
+            {%- endif %}
+
+            {%- set ns = namespace(pyname=varname(prop.varname), done=false) %}
+            {%- for _ in range(100) %}
+                {%- if not ns.done %}
+                    {%- if ns.pyname in used_names %}
+                        {%- set ns.pyname = ns.pyname ~ "_" %}
+                    {%- else %}
+                        {%- set ns.done = true %}
+                    {%- endif %}
+                {%- endif %}
+            {%- endfor %}
+            {%- set _ = used_names.append(ns.pyname) %}
+    {{ ns.pyname }}: {{ ptype }}
+        {%- endfor %}
+    {%- else %}
+    pass
+    {%- endif %}
+    {%- set _ = class_used_names.update({class._id: used_names}) %}
+{%- endfor %}

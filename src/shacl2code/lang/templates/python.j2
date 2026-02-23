@@ -696,7 +696,7 @@ T_SHACLObject = TypeVar("T_SHACLObject", bound="SHACLObject")
 class SHACLObject(object):
     CLASSES: Dict[str, Type[Any]] = {}
     NAMED_INDIVIDUALS: Dict[str, str] = {}
-    NODE_KIND = NodeKind.BlankNodeOrIRI
+    NODE_KIND: NodeKind = NodeKind.BlankNodeOrIRI
     ID_ALIAS: Optional[str] = None
     IS_ABSTRACT: bool = True
     IS_DEPRECATED: bool = False
@@ -813,6 +813,11 @@ class SHACLObject(object):
         raise AttributeError(
             f"'{name}' is not a valid property of {self.__class__.__name__}"
         )
+
+    def __dir__(self) -> Iterable[str]:
+        keys: Set[str] = set(super().__dir__())
+        keys.update(self._OBJ_IRIS.keys())
+        return sorted(list(keys))
 
     def __delattr__(self, name: str) -> None:
         if name == self.ID_ALIAS:
@@ -2650,19 +2655,7 @@ DATATYPE_CLASSES = {
     "http://www.w3.org/2001/XMLSchema#dateTimeStamp": "DateTimeStampProp",
 }
 -%}
-{% set
-DATATYPE_PYTHON_ALIASES = {
-    "http://www.w3.org/2001/XMLSchema#string": "str",
-    "http://www.w3.org/2001/XMLSchema#anyURI": "str",
-    "http://www.w3.org/2001/XMLSchema#integer": "int",
-    "http://www.w3.org/2001/XMLSchema#positiveInteger": "int",
-    "http://www.w3.org/2001/XMLSchema#nonNegativeInteger": "int",
-    "http://www.w3.org/2001/XMLSchema#boolean": "bool",
-    "http://www.w3.org/2001/XMLSchema#decimal": "float",
-    "http://www.w3.org/2001/XMLSchema#dateTime": "datetime",
-    "http://www.w3.org/2001/XMLSchema#dateTimeStamp": "datetime",
-}
--%}
+
 
 __all__ = [
     "SHACLObject",
@@ -2691,93 +2684,12 @@ CONTEXT_URLS: List[str] = [
 
 
 # CLASSES
-{%- set class_used_names = {} %}
-{%- set RESERVED_NAMES = [
-    "CLASSES",
-    "CLOSED",
-    "COMPACT_TYPE",
-    "ID_ALIAS",
-    "IS_ABSTRACT",
-    "IS_DEPRECATED",
-    "NAMED_INDIVIDUALS",
-    "NODE_KIND",
-    "TYPE",
-    "_NEEDS_REG",
-    "_OBJ_COMPACT_TYPE",
-    "_OBJ_DEPRECATED",
-    "_OBJ_IRIS",
-    "_OBJ_PROPERTIES",
-    "_OBJ_TYPE",
-    "__class__",
-    "__contains__",
-    "__delattr__",
-    "__delitem__",
-    "__dict__",
-    "__dir__",
-    "__doc__",
-    "__eq__",
-    "__format__",
-    "__ge__",
-    "__getattr__",
-    "__getattribute__",
-    "__getitem__",
-    "__gt__",
-    "__hash__",
-    "__init__",
-    "__init_subclass__",
-    "__iter__",
-    "__iter_props__",
-    "__le__",
-    "__lt__",
-    "__module__",
-    "__ne__",
-    "__new__",
-    "__reduce__",
-    "__reduce_ex__",
-    "__repr__",
-    "__setattr__",
-    "__setitem__",
-    "__sizeof__",
-    "__str__",
-    "__subclasshook__",
-    "__weakref__",
-    "_add_property",
-    "_decode_prop",
-    "_decode_properties",
-    "_encode_properties",
-    "_id",
-    "_is_abstract",
-    "_make_object",
-    "_obj_data",
-    "_obj_metadata",
-    "_register_props",
-    "decode",
-    "encode",
-    "iter_objects",
-    "link_helper",
-    "walk",
-] %}
 {%- for class in classes %}
 {%- if class.comment %}
 {%- for l in class.comment.split("\n") %}
 #{{ (" " + l).rstrip() }}
 {%- endfor %}
 {%- endif %}
-{%- set used_names = RESERVED_NAMES[:] %}
-{%- for p_id in class.parent_ids %}
-    {%- if p_id in class_used_names %}
-        {%- for n in class_used_names[p_id] %}
-            {%- if n not in used_names %}
-                {%- set _ = used_names.append(n) %}
-            {%- endif %}
-        {%- endfor %}
-    {%- endif %}
-{%- endfor %}
-{%- for member in class.named_individuals %}
-    {%- if varname(member.varname) not in used_names %}
-        {%- set _ = used_names.append(varname(member.varname)) %}
-    {%- endif %}
-{%- endfor %}
 @register("{{ class._id }}"{%- if context.compact_iri(class._id) != class._id %}, compact_type="{{ context.compact_iri(class._id) }}"{%- endif %}, abstract={{ class.is_abstract }})
 class {{ varname(*class.clsname) }}(
 {%- if class.is_extensible -%}
@@ -2790,43 +2702,12 @@ class {{ varname(*class.clsname) }}(
 {%- else -%}
     SHACLObject
 {%- endif -%}):
-    NODE_KIND = NodeKind.{{ class.node_kind.split("#")[-1] }}
-    {%- if class.properties %}
-        {%- for prop in class.properties %}
-            {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
-            {%- if prop.enum_values -%}
-                {%- set ptype = "str" -%}
-            {%- elif prop.class_id -%}
-                {%- set ptype = 'Union[str, "' ~ varname(*classes.get(prop.class_id).clsname) ~ '"]' -%}
-            {%- else -%}
-                {%- set ptype = DATATYPE_PYTHON_ALIASES[prop.datatype] -%}
-            {%- endif -%}
+    NODE_KIND: NodeKind = NodeKind.{{ class.node_kind.split("#")[-1] }}
 
-            {%- if is_list -%}
-                {%- set ptype = "ListProxy[" ~ ptype ~ "]" -%}
-            {%- elif prop.min_count is none or prop.min_count == 0 -%}
-                {%- set ptype = "Optional[" ~ ptype ~ "]" -%}
-            {%- endif %}
-
-            {%- set ns = namespace(pyname=varname(prop.varname), done=false) %}
-            {%- for _ in range(100) %}
-                {%- if not ns.done %}
-                    {%- if ns.pyname in used_names %}
-                        {%- set ns.pyname = ns.pyname ~ "_" %}
-                    {%- else %}
-                        {%- set ns.done = true %}
-                    {%- endif %}
-                {%- endif %}
-            {%- endfor %}
-            {%- set _ = used_names.append(ns.pyname) %}
-    {{ ns.pyname }}: {{ ptype }}
-        {%- endfor %}
-    {%- endif %}
-    {%- set _ = class_used_names.update({class._id: used_names}) %}
     {%- if class.id_property %}
-    ID_ALIAS = "{{ class.id_property }}"
+    ID_ALIAS: Optional[str] = "{{ class.id_property }}"
     {%- endif %}
-    IS_DEPRECATED = {{ class.deprecated }}
+    IS_DEPRECATED: bool = {{ class.deprecated }}
     {%- if class.named_individuals %}
     NAMED_INDIVIDUALS: Dict[str, str] = {
         {%- for member in class.named_individuals %}

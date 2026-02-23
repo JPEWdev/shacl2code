@@ -3,14 +3,17 @@
 #
 # SPDX-License-Identifier: MIT
 
-import sys
+import argparse
 import os
-from pathlib import Path
+import sys
 from contextlib import contextmanager
+from pathlib import Path
+
 import jinja2
 from jinja2 import Environment, FileSystemLoader, TemplateRuntimeError
 from markupsafe import Markup
 from rdflib.namespace import SH
+
 from ..model import SHACL2CODE
 from ..version import VERSION
 
@@ -37,7 +40,7 @@ def include_file(ctx, name):
 
 
 class JinjaTemplateRender(object):
-    def __init__(self, args):
+    def __init__(self, args: "argparse.Namespace"):
         self.spdx_license = args.license
 
     def get_additional_render_args(self):
@@ -45,6 +48,9 @@ class JinjaTemplateRender(object):
 
     def get_extra_env(self):
         return {}
+
+    def get_outputs(self):
+        yield from ()
 
     def render(self, template, output, *, extra_env={}, render_args={}):
         def abort_helper(msg):
@@ -156,7 +162,7 @@ class BasicJinjaRender(JinjaTemplateRender):
                 super().__init__(args, PATH / TO / TEMPLATE)
     """
 
-    def __init__(self, args, template):
+    def __init__(self, args: "argparse.Namespace", template: Path):
         super().__init__(args)
         self.__output = args.output
         self.__template = template

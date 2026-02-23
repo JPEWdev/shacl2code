@@ -2,3 +2,8 @@
 # E501 line too long - Handled by black
 # E203 whitespace before ':' - Handled by black
 extend-ignore = E501,E203
+
+# E302: Expected 2 blank lines - Stubs are intentionally compact
+# E701: Multiple statements on one line - Stubs are intentionally compact
+per-file-ignores =
+    *.pyi: E302,E701

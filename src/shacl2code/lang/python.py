@@ -3,11 +3,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .common import BasicJinjaRender
-from .lang import language, TEMPLATE_DIR
-
-import re
+import argparse
 import keyword
+import re
+from pathlib import Path
+
+from .common import BasicJinjaRender, OutputFile
+from .lang import language, TEMPLATE_DIR
 
 
 def varname(*name):
@@ -29,11 +31,20 @@ def varname(*name):
 class PythonRender(BasicJinjaRender):
     HELP = "Python Language Bindings"
 
-    def __init__(self, args):
+    def __init__(self, args: argparse.Namespace):
         super().__init__(args, TEMPLATE_DIR / "python.j2")
+        self.output_file = args.output
         self.__render_args = {
             "elide_lists": args.elide_lists,
         }
+
+    def get_outputs(self):
+        yield self.output_file, TEMPLATE_DIR / "python.j2", {}
+
+        if self.output_file.path != "-":
+            path = Path(self.output_file.path)
+            stub_path = path.with_suffix(".pyi")
+            yield OutputFile(stub_path), TEMPLATE_DIR / "python.pyi.j2", {}
 
     @classmethod
     def get_arguments(cls, parser):

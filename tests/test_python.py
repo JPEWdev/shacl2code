@@ -159,7 +159,6 @@ class TestCheckType:
             check=True,
         )
 
-    @pytest.mark.xfail(reason="pyrefly is ignoring type annotations from rdflib")
     def test_pyrefly(self, tmp_path, args):
         """
         Pyrefly static type checking

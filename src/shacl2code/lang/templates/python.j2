@@ -34,6 +34,7 @@ from typing import (
     Set,
     Tuple,
     Type,
+    TYPE_CHECKING,
     TypeVar,
     Union,
     cast,
@@ -2790,6 +2791,7 @@ class {{ varname(*class.clsname) }}(
 {%- endif -%}):
     NODE_KIND = NodeKind.{{ class.node_kind.split("#")[-1] }}
     {%- if class.properties %}
+    if TYPE_CHECKING:
         {%- for prop in class.properties %}
             {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
             {%- if prop.enum_values -%}
@@ -2817,7 +2819,7 @@ class {{ varname(*class.clsname) }}(
                 {%- endif %}
             {%- endfor %}
             {%- set _ = used_names.append(ns.pyname) %}
-    {{ ns.pyname }}: {{ ptype }}
+        {{ ns.pyname }}: {{ ptype }}
         {%- endfor %}
     {%- endif %}
     {%- set _ = class_used_names.update({class._id: used_names}) %}

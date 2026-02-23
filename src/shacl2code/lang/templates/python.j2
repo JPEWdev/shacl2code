@@ -80,7 +80,7 @@ class Property(ABC, Generic[T_PropValue]):
             )
 
     def set(self, value: Any) -> T_PropValue:
-        return value
+        return cast(T_PropValue, value)
 
     def check_min_count(self, value: T_PropValue, min_count: int) -> bool:
         return min_count == 1
@@ -293,13 +293,13 @@ class IRIProp(Property[T_PropValue]):
         for iri, compact in self.context:
             if value == iri:
                 return compact
-        return dflt
+        return cast(Optional[str], dflt)
 
     def expand(self, value: str, dflt: Any = None) -> Optional[str]:
         for iri, compact in self.context:
             if value == compact:
                 return iri
-        return dflt
+        return cast(Optional[str], dflt)
 
     def iri_values(self) -> Iterator[str]:
         return (iri for iri, _ in self.context)
@@ -506,9 +506,9 @@ class ListProxy(Generic[T_PropValue]):
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, ListProxy):
-            return self.__data == other.__data
+            return bool(self.__data == other.__data)
 
-        return self.__data == other
+        return bool(self.__data == other)
 
 
 class ListProp(Property[ListProxy[T_PropValue]]):
@@ -694,7 +694,7 @@ T_SHACLObject = TypeVar("T_SHACLObject", bound="SHACLObject")
 
 @functools.total_ordering
 class SHACLObject(object):
-    CLASSES: Dict[str, Type] = {}
+    CLASSES: Dict[str, Type[Any]] = {}
     NAMED_INDIVIDUALS: Dict[str, str] = {}
     NODE_KIND = NodeKind.BlankNodeOrIRI
     ID_ALIAS: Optional[str] = None
@@ -705,7 +705,7 @@ class SHACLObject(object):
     # defined here first to allow visibility at class level
     _OBJ_TYPE: str = ""
     _OBJ_COMPACT_TYPE: Optional[str] = None
-    _OBJ_PROPERTIES: Dict[str, Tuple] = {}
+    _OBJ_PROPERTIES: Dict[str, Tuple[Any, ...]] = {}
     _OBJ_IRIS: Dict[str, str] = {}
     _OBJ_DEPRECATED: Set[str] = set()
     _NEEDS_REG: bool = True
@@ -753,9 +753,9 @@ class SHACLObject(object):
 
     @classmethod
     def _add_property(
-        cls: Type[SHACLObject],
+        cls: Type["SHACLObject"],
         pyname: str,
-        prop: Property,
+        prop: Property[Any],
         iri: str,
         min_count: Optional[int] = None,
         max_count: Optional[int] = None,
@@ -778,7 +778,7 @@ class SHACLObject(object):
         if deprecated:
             cls._OBJ_DEPRECATED.add(iri)
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name: str, value: Any) -> None:
         if name == self.ID_ALIAS:
             self["@id"] = value
             return
@@ -791,7 +791,7 @@ class SHACLObject(object):
                 f"'{name}' is not a valid property of {self.__class__.__name__}"
             )
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         if name in self._OBJ_IRIS:
             return self.__dict__["_obj_data"][self._OBJ_IRIS[name]]
 
@@ -814,7 +814,7 @@ class SHACLObject(object):
             f"'{name}' is not a valid property of {self.__class__.__name__}"
         )
 
-    def __delattr__(self, name):
+    def __delattr__(self, name: str) -> None:
         if name == self.ID_ALIAS:
             del self["@id"]
             return
@@ -829,7 +829,7 @@ class SHACLObject(object):
 
     def __get_prop(
         self, iri: str
-    ) -> Tuple[Property, Optional[int], Optional[int], str, Optional[str]]:
+    ) -> Tuple[Property[Any], Optional[int], Optional[int], str, Optional[str]]:
         if iri not in self._OBJ_PROPERTIES:
             raise KeyError(
                 f"'{iri}' is not a valid property of {self.__class__.__name__}"
@@ -840,15 +840,15 @@ class SHACLObject(object):
     def __iter_props(
         self,
     ) -> Iterator[
-        Tuple[str, Property, Optional[int], Optional[int], str, Optional[str]]
+        Tuple[str, Property[Any], Optional[int], Optional[int], str, Optional[str]]
     ]:
         for iri, v in self._OBJ_PROPERTIES.items():
             yield iri, *v
 
-    def __getitem__(self, iri):
+    def __getitem__(self, iri: str) -> Any:
         return self.__dict__["_obj_data"][iri]
 
-    def __setitem__(self, iri, value):
+    def __setitem__(self, iri: str, value: Any) -> None:
         if iri == "@id":
             if self.NODE_KIND == NodeKind.BlankNode:
                 if not is_blank_node(value):
@@ -874,11 +874,11 @@ class SHACLObject(object):
             )
         self.__dict__["_obj_data"][iri] = prop.set(value)
 
-    def __delitem__(self, iri):
+    def __delitem__(self, iri: str) -> None:
         prop, _, _, _, _ = self.__get_prop(iri)
         self.__dict__["_obj_data"][iri] = prop.init()
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         return iter(self._OBJ_PROPERTIES.keys())
 
     def walk(
@@ -987,12 +987,12 @@ class SHACLObject(object):
         if typ not in cls.CLASSES:
             raise TypeError(f"Unknown type {typ}")
 
-        return cls.CLASSES[typ]()
+        return cast("SHACLObject", cls.CLASSES[typ]())
 
     @classmethod
     def decode(
         cls: Type[T_SHACLObject], decoder: Decoder, state: DecodeState
-    ) -> "SHACLObject":
+    ) -> SHACLObject:
         typ, obj_d = decoder.read_object()
         if typ is None:
             raise TypeError("Unable to determine type for object")
@@ -1061,7 +1061,7 @@ class SHACLObject(object):
                 visited,
             )
 
-    def __str__(self):
+    def __str__(self) -> str:
         parts = [
             f"{self.__class__.__name__}(",
         ]
@@ -1070,24 +1070,24 @@ class SHACLObject(object):
         parts.append(")")
         return "".join(parts)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return super().__hash__()
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         return super().__eq__(other)
 
-    def __lt__(self, other):
+    def __lt__(self, other: Any) -> bool:
         def sort_key(obj: Any) -> Any:
             if isinstance(obj, str):
                 return (obj, "", "", "")
             return (
-                obj._id or "",
+                getattr(obj, "_id", None) or "",
                 obj.TYPE,
                 getattr(obj, "name", None) or "",
                 id(obj),
             )
 
-        return sort_key(self) < sort_key(other)
+        return bool(sort_key(self) < sort_key(other))
 
 
 class SHACLExtensibleObject(SHACLObject):
@@ -1105,7 +1105,7 @@ class SHACLExtensibleObject(SHACLObject):
         # deserialized
         typ = self.__dict__["_obj_TYPE"][0]
         if typ in self.__class__.CLASSES:
-            return self.__class__.CLASSES[typ].IS_ABSTRACT
+            return bool(self.__class__.CLASSES[typ].IS_ABSTRACT)
 
         return False
 
@@ -1113,7 +1113,7 @@ class SHACLExtensibleObject(SHACLObject):
     def _make_object(cls: Type["SHACLExtensibleObject"], typ: str) -> "SHACLObject":
         # Check for a known type, and if so, deserialize as that instead
         if typ in cls.CLASSES:
-            return cls.CLASSES[typ]()
+            return cast("SHACLObject", cls.CLASSES[typ]())
 
         obj = cls(typ)
         return obj
@@ -1174,7 +1174,7 @@ class SHACLExtensibleObject(SHACLObject):
                                     f"Unsupported serialized type {type(i)} with value {i!r}"
                                 )
 
-    def __setitem__(self, iri, value):
+    def __setitem__(self, iri: str, value: Any) -> None:
         try:
             super().__setitem__(iri, value)
         except KeyError:
@@ -1185,7 +1185,7 @@ class SHACLExtensibleObject(SHACLObject):
                 raise KeyError(f"Key '{iri}' must be an IRI")
             self.__dict__["_obj_data"][iri] = value
 
-    def __delitem__(self, iri):
+    def __delitem__(self, iri: str) -> None:
         try:
             super().__delitem__(iri)
         except KeyError:
@@ -1196,7 +1196,7 @@ class SHACLExtensibleObject(SHACLObject):
                 raise KeyError(f"Key '{iri}' must be an IRI")
             del self.__dict__["_obj_data"][iri]
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         if name == "TYPE":
             return self.__dict__["_obj_TYPE"][0]
         if name == "COMPACT_TYPE":
@@ -1307,7 +1307,7 @@ class SHACLObjectSet(object):
             for obj in o:
                 self.add(obj)
 
-    def __contains__(self, item: SHACLObject):
+    def __contains__(self, item: SHACLObject) -> bool:
         """
         Returns True if the item is in the object set
         """
@@ -1671,7 +1671,7 @@ class Decoder(ABC):
         raise NotImplementedError("Subclasses must implement read_iri method")
 
     @abstractmethod
-    def read_enum(self, e: Property) -> Optional[str]:
+    def read_enum(self, e: Property[Any]) -> Optional[str]:
         """
         Consumes the next item as an Enum value string
 
@@ -1825,7 +1825,7 @@ class JSONLDDecoder(Decoder):
             return self.data
         return None
 
-    def read_enum(self, e: Property) -> Optional[str]:
+    def read_enum(self, e: Property[Any]) -> Optional[str]:
         if isinstance(self.data, str):
             return self.data
         return None
@@ -1936,7 +1936,9 @@ class Encoder(ABC):
         raise NotImplementedError("Subclasses must implement write_iri method")
 
     @abstractmethod
-    def write_enum(self, v: str, e: Property, compact: Optional[str] = None) -> None:
+    def write_enum(
+        self, v: str, e: Property[Any], compact: Optional[str] = None
+    ) -> None:
         """
         Write enum value IRI
 
@@ -2070,7 +2072,9 @@ class JSONLDEncoder(Encoder):
     def write_iri(self, v: str, compact: Optional[str] = None) -> None:
         self.write_string(compact or v)
 
-    def write_enum(self, v: str, e: Property, compact: Optional[str] = None) -> None:
+    def write_enum(
+        self, v: str, e: Property[Any], compact: Optional[str] = None
+    ) -> None:
         self.write_string(compact or v)
 
     def write_bool(self, v: bool) -> None:
@@ -2086,7 +2090,8 @@ class JSONLDEncoder(Encoder):
         s = self.__class__(None)
         yield s
         if s.data is not None:
-            self.data[compact or iri] = s.data  # type: ignore # within write_object() context, self.data is always dict or None
+            if isinstance(self.data, dict):
+                self.data[compact or iri] = s.data
 
     @contextmanager
     def write_dict(self) -> Iterator["JSONLDEncoder"]:
@@ -2099,9 +2104,10 @@ class JSONLDEncoder(Encoder):
         self, o: SHACLObject, typ: str, _id: str, needs_id: bool
     ) -> Iterator["JSONLDEncoder"]:
         with self.write_dict() as obj_dict:
-            obj_dict.data["{{ context.compact_iri('@type') }}"] = typ  # type: ignore
-            if needs_id:
-                obj_dict.data[o.ID_ALIAS or "@id"] = _id  # type: ignore
+            if isinstance(obj_dict.data, dict):
+                obj_dict.data["{{ context.compact_iri('@type') }}"] = typ
+                if needs_id:
+                    obj_dict.data[o.ID_ALIAS or "@id"] = _id
             yield obj_dict
 
     @contextmanager
@@ -2116,7 +2122,8 @@ class JSONLDEncoder(Encoder):
         s = self.__class__(None)
         yield s
         if s.data is not None:
-            self.data.append(s.data)  # type: ignore # within write_list() context, self.data is always list or None
+            if isinstance(self.data, list):
+                self.data.append(s.data)
 
     @contextmanager
     def write_object_list(self) -> Iterator["JSONLDEncoder"]:
@@ -2133,7 +2140,7 @@ class JSONLDSerializer(object):
         self,
         objectset: SHACLObjectSet,
         force_at_graph: bool = False,
-    ):
+    ) -> Any:
         h = JSONLDEncoder()
         state = EncodeState(objectset)
         with h.write_dict() as doc_s:
@@ -2144,10 +2151,10 @@ class JSONLDSerializer(object):
     def write(
         self,
         objectset: SHACLObjectSet,
-        f,
+        f: Any,
         force_at_graph: bool = False,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> str:
         """
         Write a SHACLObjectSet to a JSON LD file
 
@@ -2198,7 +2205,9 @@ class JSONLDInlineEncoder(Encoder):
     def write_iri(self, v: str, compact: Optional[str] = None) -> None:
         self.write_string(compact or v)
 
-    def write_enum(self, v: str, e: Property, compact: Optional[str] = None) -> None:
+    def write_enum(
+        self, v: str, e: Property[Any], compact: Optional[str] = None
+    ) -> None:
         self.write_iri(v, compact)
 
     def write_bool(self, v: bool) -> None:
@@ -2237,9 +2246,7 @@ class JSONLDInlineEncoder(Encoder):
         self, o: SHACLObject, typ: str, _id: str, needs_id: bool
     ) -> Iterator["JSONLDInlineEncoder"]:
         with self.write_dict() as obj_dict:
-            with obj_dict.write_property(
-                "{{ context.compact_iri('@type') }}"
-            ) as type_prop:
+            with obj_dict.write_property("{{ context.compact_iri('@type') }}") as type_prop:
                 type_prop.write_string(typ)
 
             if needs_id:
@@ -2273,9 +2280,9 @@ class JSONLDInlineSerializer(object):
     def write(
         self,
         objectset: SHACLObjectSet,
-        f,
+        f: Any,
         force_at_graph: bool = False,
-    ):
+    ) -> str:
         """
         Write a SHACLObjectSet to a JSON LD file
 
@@ -2408,7 +2415,7 @@ try:
                 return v.n3()
             return None
 
-        def read_enum(self, e: Property) -> Optional[str]:
+        def read_enum(self, e: Property[Any]) -> Optional[str]:
             v = self.__read_node()
             if isinstance(v, rdflib.term.URIRef):
                 return v.toPython()
@@ -2418,7 +2425,6 @@ try:
             if not self.subject:
                 blank_nodes = set()
                 for s in self.graph.subjects(unique=True):
-                    # type: ignore # RDF.type is dynamic
                     if (s, RDF.type, None) not in self.graph:
                         continue
 
@@ -2431,7 +2437,6 @@ try:
                     yield self.__class__(self.graph, s)
             else:
                 for o in self.graph.objects(self.subject, self.predicate):
-                    # type: ignore # RDF.type is dynamic
                     if (o, RDF.type, None) in self.graph:
                         yield self.__class__(self.graph, o)
                     else:
@@ -2458,12 +2463,10 @@ try:
 
         def is_object(self) -> bool:
             n = self.__read_node() or self.subject
-            # type: ignore # RDF.type is dynamic
             return (n, RDF.type, None) in self.graph
 
         def object_keys(self) -> Iterator[str]:
             for p in self.graph.predicates(self.subject, unique=True):
-                # type: ignore # RDF.type is dynamic
                 if p == RDF.type:
                     continue
 
@@ -2477,7 +2480,6 @@ try:
             if s is None:
                 s = self.subject
 
-            # type: ignore # RDF.type is dynamic
             typ = self.graph.value(s, RDF.type)
             if typ is None:
                 return None, self
@@ -2535,7 +2537,7 @@ try:
             self.__add_uriref(v)
 
         def write_enum(
-            self, v: str, e: Property, compact: Optional[str] = None
+            self, v: str, e: Property[Any], compact: Optional[str] = None
         ) -> None:
             self.__add_uriref(v)
 
@@ -2569,7 +2571,7 @@ try:
                 if self.predicate is None:
                     raise TypeError()
                 self.graph.add((self.subject, self.predicate, obj))
-            self.graph.add((obj, RDF.type, rdflib.URIRef(o.TYPE)))  # type: ignore # RDF.type is dynamic
+            self.graph.add((obj, RDF.type, rdflib.URIRef(o.TYPE)))
             yield self.__class__(self.graph, obj)
 
         @contextmanager
@@ -2687,12 +2689,93 @@ CONTEXT_URLS: List[str] = [
 
 
 # CLASSES
+{%- set class_used_names = {} %}
+{%- set RESERVED_NAMES = [
+    "CLASSES",
+    "CLOSED",
+    "COMPACT_TYPE",
+    "ID_ALIAS",
+    "IS_ABSTRACT",
+    "IS_DEPRECATED",
+    "NAMED_INDIVIDUALS",
+    "NODE_KIND",
+    "TYPE",
+    "_NEEDS_REG",
+    "_OBJ_COMPACT_TYPE",
+    "_OBJ_DEPRECATED",
+    "_OBJ_IRIS",
+    "_OBJ_PROPERTIES",
+    "_OBJ_TYPE",
+    "__class__",
+    "__contains__",
+    "__delattr__",
+    "__delitem__",
+    "__dict__",
+    "__dir__",
+    "__doc__",
+    "__eq__",
+    "__format__",
+    "__ge__",
+    "__getattr__",
+    "__getattribute__",
+    "__getitem__",
+    "__gt__",
+    "__hash__",
+    "__init__",
+    "__init_subclass__",
+    "__iter__",
+    "__iter_props__",
+    "__le__",
+    "__lt__",
+    "__module__",
+    "__ne__",
+    "__new__",
+    "__reduce__",
+    "__reduce_ex__",
+    "__repr__",
+    "__setattr__",
+    "__setitem__",
+    "__sizeof__",
+    "__str__",
+    "__subclasshook__",
+    "__weakref__",
+    "_add_property",
+    "_decode_prop",
+    "_decode_properties",
+    "_encode_properties",
+    "_id",
+    "_is_abstract",
+    "_make_object",
+    "_obj_data",
+    "_obj_metadata",
+    "_register_props",
+    "decode",
+    "encode",
+    "iter_objects",
+    "link_helper",
+    "walk",
+] %}
 {%- for class in classes %}
 {%- if class.comment %}
 {%- for l in class.comment.split("\n") %}
 #{{ (" " + l).rstrip() }}
 {%- endfor %}
 {%- endif %}
+{%- set used_names = RESERVED_NAMES[:] %}
+{%- for p_id in class.parent_ids %}
+    {%- if p_id in class_used_names %}
+        {%- for n in class_used_names[p_id] %}
+            {%- if n not in used_names %}
+                {%- set _ = used_names.append(n) %}
+            {%- endif %}
+        {%- endfor %}
+    {%- endif %}
+{%- endfor %}
+{%- for member in class.named_individuals %}
+    {%- if varname(member.varname) not in used_names %}
+        {%- set _ = used_names.append(varname(member.varname)) %}
+    {%- endif %}
+{%- endfor %}
 @register("{{ class._id }}"{%- if context.compact_iri(class._id) != class._id %}, compact_type="{{ context.compact_iri(class._id) }}"{%- endif %}, abstract={{ class.is_abstract }})
 class {{ varname(*class.clsname) }}(
 {%- if class.is_extensible -%}
@@ -2707,27 +2790,37 @@ class {{ varname(*class.clsname) }}(
 {%- endif -%}):
     NODE_KIND = NodeKind.{{ class.node_kind.split("#")[-1] }}
     {%- if class.properties %}
-    {%- for prop in class.properties %}
-    {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
-    {%- if prop.enum_values -%}
-        {%- set ptype = "str" -%}
-    {%- elif prop.class_id -%}
-        {%- set ptype = 'Union[str, "' ~ varname(*classes.get(prop.class_id).clsname) ~ '"]' -%}
-    {%- else -%}
-        {%- set ptype = DATATYPE_PYTHON_ALIASES[prop.datatype] -%}
-    {%- endif -%}
-    {%- if is_list -%}
-        {%- set ptype = "ListProxy[" ~ ptype ~ "]" -%}
-    {%- elif prop.min_count is none or prop.min_count == 0 -%}
-        {%- set ptype = "Optional[" ~ ptype ~ "]" -%}
+        {%- for prop in class.properties %}
+            {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
+            {%- if prop.enum_values -%}
+                {%- set ptype = "str" -%}
+            {%- elif prop.class_id -%}
+                {%- set ptype = 'Union[str, "' ~ varname(*classes.get(prop.class_id).clsname) ~ '"]' -%}
+            {%- else -%}
+                {%- set ptype = DATATYPE_PYTHON_ALIASES[prop.datatype] -%}
+            {%- endif -%}
+
+            {%- if is_list -%}
+                {%- set ptype = "ListProxy[" ~ ptype ~ "]" -%}
+            {%- elif prop.min_count is none or prop.min_count == 0 -%}
+                {%- set ptype = "Optional[" ~ ptype ~ "]" -%}
+            {%- endif %}
+
+            {%- set ns = namespace(pyname=varname(prop.varname), done=false) %}
+            {%- for _ in range(100) %}
+                {%- if not ns.done %}
+                    {%- if ns.pyname in used_names %}
+                        {%- set ns.pyname = ns.pyname ~ "_" %}
+                    {%- else %}
+                        {%- set ns.done = true %}
+                    {%- endif %}
+                {%- endif %}
+            {%- endfor %}
+            {%- set _ = used_names.append(ns.pyname) %}
+    {{ ns.pyname }}: {{ ptype }}
+        {%- endfor %}
     {%- endif %}
-    {%- if varname(prop.varname) == "encode" %}
-    {{ varname(prop.varname) }}: {{ ptype }}  # type: ignore
-    {%- else %}
-    {{ varname(prop.varname) }}: {{ ptype }}
-    {%- endif %}
-    {%- endfor %}
-    {%- endif %}
+    {%- set _ = class_used_names.update({class._id: used_names}) %}
     {%- if class.id_property %}
     ID_ALIAS = "{{ class.id_property }}"
     {%- endif %}

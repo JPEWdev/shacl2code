@@ -24,30 +24,28 @@ class ObjectPath;
  * implementation
  */
 class EXPORT ErrorHandler {
-   public:
-    /**
-     * @brief Handle Validation Error
-     *
-     * If a property or object does not pass validation, this will be called to
-     * report the error
-     *
-     * @param[in] message   The error message
-     * @param[in] path      The ObjectPath of the item that caused the error
-     */
-    virtual void handleValidationError(std::string const& message,
-                                       ObjectPath const& path) = 0;
+public:
+  /**
+   * @brief Handle Validation Error
+   *
+   * If a property or object does not pass validation, this will be called to
+   * report the error
+   *
+   * @param[in] message   The error message
+   * @param[in] path      The ObjectPath of the item that caused the error
+   */
+  virtual void handleValidationError(std::string const &message, ObjectPath const &path) = 0;
 
-    /**
-     * @brief Handle Deserialize Error
-     *
-     * If an error is encountered while deserializing, this will be called to
-     * report it
-     *
-     * @param[in] message   The error message
-     * @param[in] path      The ObjectPath of the item that caused the error
-     */
-    virtual void handleDeserializeError(std::string const& message,
-                                        ObjectPath const& path) = 0;
+  /**
+   * @brief Handle Deserialize Error
+   *
+   * If an error is encountered while deserializing, this will be called to
+   * report it
+   *
+   * @param[in] message   The error message
+   * @param[in] path      The ObjectPath of the item that caused the error
+   */
+  virtual void handleDeserializeError(std::string const &message, ObjectPath const &path) = 0;
 };
 
 /**
@@ -56,40 +54,38 @@ class EXPORT ErrorHandler {
  * The default handler for errors if no other handler is defined
  */
 class EXPORT DefaultErrorHandler : public ErrorHandler {
-   public:
-    /// Constructor
-    DefaultErrorHandler();
+public:
+  /// Constructor
+  DefaultErrorHandler();
 
-    /// Destructor
-    virtual ~DefaultErrorHandler();
+  /// Destructor
+  virtual ~DefaultErrorHandler();
 
-    DefaultErrorHandler(DefaultErrorHandler const&) = delete;
-    DefaultErrorHandler(DefaultErrorHandler&&) = delete;
-    DefaultErrorHandler& operator=(DefaultErrorHandler const&) = delete;
-    DefaultErrorHandler& operator=(DefaultErrorHandler&&) = delete;
+  DefaultErrorHandler(DefaultErrorHandler const &) = delete;
+  DefaultErrorHandler(DefaultErrorHandler &&) = delete;
+  DefaultErrorHandler &operator=(DefaultErrorHandler const &) = delete;
+  DefaultErrorHandler &operator=(DefaultErrorHandler &&) = delete;
 
-    /**
-     * @copydoc {{ nsprefix }}::ErrorHandler::handleValidationError
-     *
-     * @throws ValidationError to report the error
-     */
-    void handleValidationError(std::string const& message,
-                               ObjectPath const& path) override;
+  /**
+   * @copydoc {{ nsprefix }}::ErrorHandler::handleValidationError
+   *
+   * @throws ValidationError to report the error
+   */
+  void handleValidationError(std::string const &message, ObjectPath const &path) override;
 
-    /**
-     * @copydoc {{ nsprefix }}::ErrorHandler::handleDeserializeError
-     *
-     * @throws DeserializeError to report the error
-     */
-    void handleDeserializeError(std::string const& message,
-                                ObjectPath const& path) override;
+  /**
+   * @copydoc {{ nsprefix }}::ErrorHandler::handleDeserializeError
+   *
+   * @throws DeserializeError to report the error
+   */
+  void handleDeserializeError(std::string const &message, ObjectPath const &path) override;
 
-    /**
-     * @brief Default Handler
-     *
-     * The default handler that throws an exception on any errors
-     */
-    static DefaultErrorHandler handler;
+  /**
+   * @brief Default Handler
+   *
+   * The default handler that throws an exception on any errors
+   */
+  static DefaultErrorHandler handler;
 };
 
 /**
@@ -98,40 +94,38 @@ class EXPORT DefaultErrorHandler : public ErrorHandler {
  * An error handler that does nothing
  */
 class EXPORT NoopErrorHandler : public ErrorHandler {
-   public:
-    /// Constructor
-    NoopErrorHandler();
+public:
+  /// Constructor
+  NoopErrorHandler();
 
-    /// Destructor
-    virtual ~NoopErrorHandler();
+  /// Destructor
+  virtual ~NoopErrorHandler();
 
-    NoopErrorHandler(NoopErrorHandler const&) = delete;
-    NoopErrorHandler(NoopErrorHandler&&) = delete;
-    NoopErrorHandler& operator=(NoopErrorHandler const&) = delete;
-    NoopErrorHandler& operator=(NoopErrorHandler&&) = delete;
+  NoopErrorHandler(NoopErrorHandler const &) = delete;
+  NoopErrorHandler(NoopErrorHandler &&) = delete;
+  NoopErrorHandler &operator=(NoopErrorHandler const &) = delete;
+  NoopErrorHandler &operator=(NoopErrorHandler &&) = delete;
 
-    /**
-     * @copydoc {{ nsprefix }}::ErrorHandler::handleValidationError
-     *
-     * @throws ValidationError to report the error
-     */
-    void handleValidationError(std::string const& message,
-                               ObjectPath const& path) override;
+  /**
+   * @copydoc {{ nsprefix }}::ErrorHandler::handleValidationError
+   *
+   * @throws ValidationError to report the error
+   */
+  void handleValidationError(std::string const &message, ObjectPath const &path) override;
 
-    /**
-     * @copydoc {{ nsprefix }}::ErrorHandler::handleDeserializeError
-     *
-     * @throws DeserializeError to report the error
-     */
-    void handleDeserializeError(std::string const& message,
-                                ObjectPath const& path) override;
+  /**
+   * @copydoc {{ nsprefix }}::ErrorHandler::handleDeserializeError
+   *
+   * @throws DeserializeError to report the error
+   */
+  void handleDeserializeError(std::string const &message, ObjectPath const &path) override;
 
-    /**
-     * @brief Default Handler
-     *
-     * The default handler that throws an exception on any errors
-     */
-    static NoopErrorHandler handler;
+  /**
+   * @brief Default Handler
+   *
+   * The default handler that throws an exception on any errors
+   */
+  static NoopErrorHandler handler;
 };
 
 /* {{ api_def_end }} */

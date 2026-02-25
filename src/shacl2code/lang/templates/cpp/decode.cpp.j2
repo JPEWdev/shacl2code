@@ -26,37 +26,37 @@ namespace {{ n }} {
 using std::string_literals::operator""s;
 
 // DecoderState
-DecoderState::DecoderState(SHACLObjectSet* objectSet) : mObjectSet(objectSet) {}
+DecoderState::DecoderState(SHACLObjectSet *objectSet) : mObjectSet(objectSet) {}
 DecoderState::~DecoderState() {}
 
-std::string DecoderState::expandIRI(std::string const& iri) const {
-    if (!mObjectSet) {
-        return iri;
-    }
-    return mObjectSet->expandIRI(iri);
+std::string DecoderState::expandIRI(std::string const &iri) const {
+  if (!mObjectSet) {
+    return iri;
+  }
+  return mObjectSet->expandIRI(iri);
 }
 
-std::string DecoderState::compactIRI(std::string const& iri) const {
-    if (!mObjectSet) {
-        return iri;
-    }
-    return mObjectSet->compactIRI(iri);
+std::string DecoderState::compactIRI(std::string const &iri) const {
+  if (!mObjectSet) {
+    return iri;
+  }
+  return mObjectSet->compactIRI(iri);
 }
 
 // ElementDecoder
-ElementDecoder::ElementDecoder(DecoderState& state) : mState(state) {}
+ElementDecoder::ElementDecoder(DecoderState &state) : mState(state) {}
 ElementDecoder::~ElementDecoder() {}
 
 // ValueDecoder
-ValueDecoder::ValueDecoder(DecoderState& state) : ElementDecoder(state) {}
+ValueDecoder::ValueDecoder(DecoderState &state) : ElementDecoder(state) {}
 ValueDecoder::~ValueDecoder() {}
 
 // ObjectDecoder
-ObjectDecoder::ObjectDecoder(DecoderState& state) : ElementDecoder(state) {}
+ObjectDecoder::ObjectDecoder(DecoderState &state) : ElementDecoder(state) {}
 ObjectDecoder::~ObjectDecoder() {}
 
 // ListDecoder
-ListDecoder::ListDecoder(DecoderState& state) : ElementDecoder(state) {}
+ListDecoder::ListDecoder(DecoderState &state) : ElementDecoder(state) {}
 ListDecoder::~ListDecoder() {}
 
 /* {{ "*" + "/" }}
@@ -66,4 +66,3 @@ ListDecoder::~ListDecoder() {}
 {%- endfor %}
 {%- endif %}
 {{ "/" + "*" }} */
-

@@ -32,81 +32,76 @@ namespace {{ n }} {
 using std::string_literals::operator""s;
 
 // EncoderState
-EncoderState::EncoderState(SHACLObjectSet* objectSet) : mObjectSet(objectSet) {}
+EncoderState::EncoderState(SHACLObjectSet *objectSet) : mObjectSet(objectSet) {}
 EncoderState::~EncoderState() {}
 
-std::string EncoderState::getObjectId(SHACLObject const& obj) {
-    if (obj._id.isSet()) {
-        return obj._id.get();
-    }
+std::string EncoderState::getObjectId(SHACLObject const &obj) {
+  if (obj._id.isSet()) {
+    return obj._id.get();
+  }
 
-    auto const key = getObjectKey(obj);
-    auto it = mIdMap.find(key);
-    if (it != mIdMap.end()) {
-        return it->second;
-    }
+  auto const key = getObjectKey(obj);
+  auto it = mIdMap.find(key);
+  if (it != mIdMap.end()) {
+    return it->second;
+  }
 
-    auto const id = "_:"s + std::to_string(mIdMap.size());
-    mIdMap.insert({key, id});
-    return id;
+  auto const id = "_:"s + std::to_string(mIdMap.size());
+  mIdMap.insert({key, id});
+  return id;
 }
 
-bool EncoderState::objectIsRefed(SHACLObject const& obj) const {
-    auto it = mIsRefed.find(getObjectKey(obj));
-    return it != mIsRefed.end();
+bool EncoderState::objectIsRefed(SHACLObject const &obj) const {
+  auto it = mIsRefed.find(getObjectKey(obj));
+  return it != mIsRefed.end();
 }
 
 void EncoderState::addRefed(std::shared_ptr<SHACLObject> obj) {
-    mRefed.insert(obj);
-    mIsRefed.insert(getObjectKey(*obj.get()));
+  mRefed.insert(obj);
+  mIsRefed.insert(getObjectKey(*obj.get()));
 }
 
-bool EncoderState::objectIsWritten(SHACLObject const& obj) const {
-    auto it = mWritten.find(getObjectKey(obj));
-    return it != mWritten.end();
+bool EncoderState::objectIsWritten(SHACLObject const &obj) const {
+  auto it = mWritten.find(getObjectKey(obj));
+  return it != mWritten.end();
 }
 
-void EncoderState::addWritten(SHACLObject const& obj) {
-    mWritten.insert(getObjectKey(obj));
+void EncoderState::addWritten(SHACLObject const &obj) { mWritten.insert(getObjectKey(obj)); }
+
+void EncoderState::removeWritten(SHACLObject const &obj) { mWritten.erase(getObjectKey(obj)); }
+
+EncoderState::objectKey EncoderState::getObjectKey(SHACLObject const &obj) const {
+  return reinterpret_cast<uintptr_t>(&obj);
 }
 
-void EncoderState::removeWritten(SHACLObject const& obj) {
-    mWritten.erase(getObjectKey(obj));
+std::string EncoderState::expandIRI(std::string const &iri) const {
+  if (!mObjectSet) {
+    return iri;
+  }
+  return mObjectSet->expandIRI(iri);
 }
 
-EncoderState::objectKey EncoderState::getObjectKey(
-    SHACLObject const& obj) const {
-    return reinterpret_cast<uintptr_t>(&obj);
-}
-
-std::string EncoderState::expandIRI(std::string const& iri) const {
-    if (!mObjectSet) {
-        return iri;
-    }
-    return mObjectSet->expandIRI(iri);
-}
-
-std::string EncoderState::compactIRI(std::string const& iri) const {
-    if (!mObjectSet) {
-        return iri;
-    }
-    return mObjectSet->compactIRI(iri);
+std::string EncoderState::compactIRI(std::string const &iri) const {
+  if (!mObjectSet) {
+    return iri;
+  }
+  return mObjectSet->compactIRI(iri);
 }
 
 // ElementEncoder
-ElementEncoder::ElementEncoder(EncoderState& state) : mState(state) {}
+ElementEncoder::ElementEncoder(EncoderState &state) : mState(state) {}
 ElementEncoder::~ElementEncoder() {}
 
 // ValueEncoder
-ValueEncoder::ValueEncoder(EncoderState& state) : ElementEncoder(state) {}
+ValueEncoder::ValueEncoder(EncoderState &state) : ElementEncoder(state) {}
 ValueEncoder::~ValueEncoder() {}
 
 // ObjectEncoder
-ObjectEncoder::ObjectEncoder(EncoderState& state) : ElementEncoder(state) {}
+ObjectEncoder::ObjectEncoder(EncoderState &state) : ElementEncoder(state) {}
 ObjectEncoder::~ObjectEncoder() {}
 
 // ListEncoder
-ListEncoder::ListEncoder(EncoderState& state) : ElementEncoder(state) {}
+ListEncoder::ListEncoder(EncoderState &state) : ElementEncoder(state) {}
 ListEncoder::~ListEncoder() {}
 
 /* {{ "*" + "/" }}
@@ -116,4 +111,3 @@ ListEncoder::~ListEncoder() {}
 {%- endfor %}
 {%- endif %}
 {{ "/" + "*" }} */
-

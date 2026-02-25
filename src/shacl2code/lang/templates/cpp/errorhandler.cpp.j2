@@ -29,14 +29,14 @@ using std::string_literals::operator""s;
 DefaultErrorHandler::DefaultErrorHandler() {}
 DefaultErrorHandler::~DefaultErrorHandler() {}
 
-void DefaultErrorHandler::handleValidationError(std::string const& message,
-                                                ObjectPath const& path) {
-    throw ValidationError(message, path.getPathString());
+void DefaultErrorHandler::handleValidationError(std::string const &message,
+                                                ObjectPath const &path) {
+  throw ValidationError(message, path.getPathString());
 }
 
-void DefaultErrorHandler::handleDeserializeError(std::string const& message,
-                                                 ObjectPath const& path) {
-    throw DeserializeError(message, path.getPathString());
+void DefaultErrorHandler::handleDeserializeError(std::string const &message,
+                                                 ObjectPath const &path) {
+  throw DeserializeError(message, path.getPathString());
 }
 
 DefaultErrorHandler DefaultErrorHandler::handler;
@@ -45,11 +45,9 @@ DefaultErrorHandler DefaultErrorHandler::handler;
 NoopErrorHandler::NoopErrorHandler() {}
 NoopErrorHandler::~NoopErrorHandler() {}
 
-void NoopErrorHandler::handleValidationError(std::string const& message,
-                                             ObjectPath const& path) {}
+void NoopErrorHandler::handleValidationError(std::string const &message, ObjectPath const &path) {}
 
-void NoopErrorHandler::handleDeserializeError(std::string const& message,
-                                              ObjectPath const& path) {}
+void NoopErrorHandler::handleDeserializeError(std::string const &message, ObjectPath const &path) {}
 
 NoopErrorHandler NoopErrorHandler::handler;
 

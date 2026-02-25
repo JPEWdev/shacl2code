@@ -28,12 +28,11 @@ namespace {{ n }} {
 using std::string_literals::operator""s;
 
 // LinkState
-LinkState::LinkState(SHACLObjectSet* o, std::set<std::string>* m)
-    : objectSet(o), missing(m) {}
+LinkState::LinkState(SHACLObjectSet *o, std::set<std::string> *m) : objectSet(o), missing(m) {}
 
-std::shared_ptr<SHACLObject> LinkState::findObjById(
-    std::string const& id, std::shared_ptr<SHACLObject> const& dflt) const {
-    return objectSet->findById(id, dflt);
+std::shared_ptr<SHACLObject>
+LinkState::findObjById(std::string const &id, std::shared_ptr<SHACLObject> const &dflt) const {
+  return objectSet->findById(id, dflt);
 }
 
 /* {{ "*" + "/" }}
@@ -43,4 +42,3 @@ std::shared_ptr<SHACLObject> LinkState::findObjById(
 {%- endfor %}
 {%- endif %}
 {{ "/" + "*" }} */
-

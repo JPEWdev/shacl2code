@@ -1,0 +1,8 @@
+BasedOnStyle: LLVM
+ 
+# Breaking string literals when combined with a column limit can result in some
+# really terribly-formatted source where there are many lines in a row that each
+# consist of string literals that only contain one or two characters each.
+BreakStringLiterals: false
+ 
+ColumnLimit: 100

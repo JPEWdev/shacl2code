@@ -21,42 +21,41 @@ namespace {{ n }} {
 using std::string_literals::operator""s;
 
 // NamedIndividual
-NamedIndividual::NamedIndividual(TypeBase const* type, std::string&& iri,
-                                 std::optional<std::string>&& compact)
+NamedIndividual::NamedIndividual(TypeBase const *type, std::string &&iri,
+                                 std::optional<std::string> &&compact)
     : mType(type), mIRI(std::move(iri)), mCompactIRI(std::move(compact)) {
-    getIRIMap().insert({mIRI, this});
-    if (mCompactIRI.has_value()) {
-        getCompactMap().insert({mCompactIRI.value(), this});
-    }
+  getIRIMap().insert({mIRI, this});
+  if (mCompactIRI.has_value()) {
+    getCompactMap().insert({mCompactIRI.value(), this});
+  }
 }
 NamedIndividual::~NamedIndividual() {}
 
-NamedIndividual const* NamedIndividual::getFromMap(
-    NamedIndividual::Map const& map, std::string const& key) {
-    auto it = map.find(key);
-    if (it == map.end()) {
-        return nullptr;
-    }
-    return it->second;
+NamedIndividual const *NamedIndividual::getFromMap(NamedIndividual::Map const &map,
+                                                   std::string const &key) {
+  auto it = map.find(key);
+  if (it == map.end()) {
+    return nullptr;
+  }
+  return it->second;
 }
 
-NamedIndividual const* NamedIndividual::getFromCompact(
-    std::string const& compact) {
-    return getFromMap(getCompactMap(), compact);
+NamedIndividual const *NamedIndividual::getFromCompact(std::string const &compact) {
+  return getFromMap(getCompactMap(), compact);
 }
 
-NamedIndividual const* NamedIndividual::getFromIRI(std::string const& iri) {
-    return getFromMap(getIRIMap(), iri);
+NamedIndividual const *NamedIndividual::getFromIRI(std::string const &iri) {
+  return getFromMap(getIRIMap(), iri);
 }
 
-NamedIndividual::Map& NamedIndividual::getCompactMap() {
-    static NamedIndividual::Map CompactMap;
-    return CompactMap;
+NamedIndividual::Map &NamedIndividual::getCompactMap() {
+  static NamedIndividual::Map CompactMap;
+  return CompactMap;
 }
 
-NamedIndividual::Map& NamedIndividual::getIRIMap() {
-    static NamedIndividual::Map IRIMap;
-    return IRIMap;
+NamedIndividual::Map &NamedIndividual::getIRIMap() {
+  static NamedIndividual::Map IRIMap;
+  return IRIMap;
 }
 
 /* {{ "*" + "/" }}
@@ -66,4 +65,3 @@ NamedIndividual::Map& NamedIndividual::getIRIMap() {
 {%- endfor %}
 {%- endif %}
 {{ "/" + "*" }} */
-

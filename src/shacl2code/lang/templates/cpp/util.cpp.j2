@@ -22,18 +22,18 @@ namespace {{ n }} {
 
 using std::string_literals::operator""s;
 
-bool isBlankNode(std::string const& id) { return id.rfind("_:", 0) == 0; }
+bool isBlankNode(std::string const &id) { return id.rfind("_:", 0) == 0; }
 
-bool isIRI(std::string const& id) {
-    if (isBlankNode(id)) {
-        return false;
-    }
+bool isIRI(std::string const &id) {
+  if (isBlankNode(id)) {
+    return false;
+  }
 
-    if (id.find(":") == std::string::npos) {
-        return false;
-    }
+  if (id.find(":") == std::string::npos) {
+    return false;
+  }
 
-    return true;
+  return true;
 }
 
 /* {{ "*" + "/" }}
@@ -43,4 +43,3 @@ bool isIRI(std::string const& id) {
 {%- endfor %}
 {%- endif %}
 {{ "/" + "*" }} */
-

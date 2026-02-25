@@ -25,16 +25,16 @@ namespace {{ n }} {
 
 using std::string_literals::operator""s;
 
-void RefPropertyHelper::walkSHACLObject(SHACLObject const* object,
-                                        WalkCallback const& callback,
-                                        ObjectPath& path) {
-    object->walk(callback, path);
+void RefPropertyHelper::walkSHACLObject(SHACLObject const *object, WalkCallback const &callback,
+                                        ObjectPath &path) {
+  object->walk(callback, path);
 }
 
-std::shared_ptr<SHACLObject> RefPropertyHelper::decodeSHACLObject(
-    ObjectDecoder& decoder, TypeBase const* type, ErrorHandler& errorHandler,
-    ObjectPath& path) {
-    return SHACLObject::decode(decoder, type, errorHandler, path);
+std::shared_ptr<SHACLObject> RefPropertyHelper::decodeSHACLObject(ObjectDecoder &decoder,
+                                                                  TypeBase const *type,
+                                                                  ErrorHandler &errorHandler,
+                                                                  ObjectPath &path) {
+  return SHACLObject::decode(decoder, type, errorHandler, path);
 }
 
 /* {{ "*" + "/" }}
@@ -44,4 +44,3 @@ std::shared_ptr<SHACLObject> RefPropertyHelper::decodeSHACLObject(
 {%- endfor %}
 {%- endif %}
 {{ "/" + "*" }} */
-

@@ -133,8 +133,7 @@ using DateTimeStamp = PropertyValue <{{ nsprefix }}::DateTime, DateTimeStampProp
  * @see {{ nsprefix }}::Prop
  * @see {{ nsprefix }}::Ref
  */
-template <class C>
-using Ref = RefPropertyValue<C>;
+template <class C> using Ref = RefPropertyValue<C>;
 
 /**
  * @brief Enum list property
@@ -222,12 +221,10 @@ using DateTimeStampList = ListPropertyValue<{{ nsprefix }}::DateTime, DateTimeSt
  * @see {{ nsprefix }}::Prop
  * @see {{ nsprefix }}::Ref
  */
-template <class C>
-using RefList = RefListPropertyValue<C>;
+template <class C> using RefList = RefListPropertyValue<C>;
 // clang-format on
-}  // namespace Prop
+} // namespace Prop
 
 /* {{ api_def_end }} */
 /* {{ ns_end }} */
 /* {{ guard_end }} */
-

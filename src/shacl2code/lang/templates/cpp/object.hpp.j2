@@ -55,6 +55,10 @@ class EXPORT SHACLObject {
                     ErrorHandler& errorHandler,
                     ObjectPath& path) const override;
 
+        std::optional<std::string> decode(ValueDecoder& decoder,
+                                          ErrorHandler& errorHandler,
+                                          ObjectPath& path) const override;
+
        private:
         SHACLObject const* mOwner;
     };

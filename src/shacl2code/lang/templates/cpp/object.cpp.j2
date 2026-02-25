@@ -70,6 +70,15 @@ void SHACLObject::IDPropConfig::encode(ValueEncoder& encoder,
     throw std::runtime_error("ID should not be directly encoded");
 }
 
+std::optional<std::string> SHACLObject::IDPropConfig::decode(
+    ValueDecoder& decoder, ErrorHandler& errorHandler, ObjectPath& path) const {
+    auto value = StringProperty::decode(decoder, errorHandler, path);
+    if (!value) {
+        return value;
+    }
+    return decoder.getState().expandIRI(value.value());
+}
+
 // SHACLObject
 SHACLObject::SHACLObject(TypeBase const* type, TypeIRIs const& typeIRIs)
     // NOTE: _id is manually referenced since it has special exceptions, so the

@@ -739,11 +739,7 @@ class SHACLObjectMeta(type):
 
         attrs["_TYPE"] = attrs.pop("TYPE", None)
 
-        if "COMPACT_TYPE" in attrs:
-            attrs["_COMPACT_TYPE"] = attrs["COMPACT_TYPE"]
-            del attrs["COMPACT_TYPE"]
-        else:
-            attrs["_COMPACT_TYPE"] = None
+        attrs["_COMPACT_TYPE"] = attrs.pop("COMPACT_TYPE", None)
 
         return super().__new__(cls, name, bases, attrs)
 

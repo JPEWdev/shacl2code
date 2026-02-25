@@ -275,5 +275,5 @@ class GoLangRender(JinjaTemplateRender):
             "prop_encode_func": prop_encode_func,
         }
 
-    def get_additional_render_args(self):
+    def get_additional_render_args(self, model):
         return self.__render_args

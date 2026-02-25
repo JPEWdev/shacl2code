@@ -43,7 +43,7 @@ class JinjaTemplateRender(object):
     def __init__(self, args: "argparse.Namespace"):
         self.spdx_license = args.license
 
-    def get_additional_render_args(self):
+    def get_additional_render_args(self, model):
         return {}
 
     def get_extra_env(self):
@@ -127,7 +127,7 @@ class JinjaTemplateRender(object):
             "abstract_classes": abstract_classes,
             "enums": enums,
             "context": model.context,
-            **self.get_additional_render_args(),
+            **self.get_additional_render_args(model),
         }
 
         env = {

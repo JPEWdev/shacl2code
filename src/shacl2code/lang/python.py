@@ -33,7 +33,7 @@ class PythonRender(BasicJinjaRender):
 
     def __init__(self, args: argparse.Namespace):
         super().__init__(args, TEMPLATE_DIR / "python.j2")
-        self.output_file = args.output
+        self.__use_slots = args.use_slots
         self.__render_args = {
             "elide_lists": args.elide_lists,
         }
@@ -55,11 +55,26 @@ class PythonRender(BasicJinjaRender):
             action="store_true",
             help="Elide lists when writing documents if they only contain a single item",
         )
+        parser.add_argument(
+            "--use-slots",
+            choices=("auto", "yes", "no"),
+            default="auto",
+            help="Use __slot__ to reduce memory usage. Slots prevents multiple inheritance. Default is %(default)s",
+        )
 
     def get_extra_env(self):
         return {
             "varname": varname,
         }
 
-    def get_additional_render_args(self):
-        return self.__render_args
+    def get_additional_render_args(self, model):
+        if self.__use_slots == "auto":
+            use_slots = all(len(cls.parent_ids) <= 1 for cls in model.classes)
+        elif self.__use_slots == "yes":
+            use_slots = True
+        else:
+            use_slots = False
+        return {
+            "use_slots": use_slots,
+            **self.__render_args,
+        }

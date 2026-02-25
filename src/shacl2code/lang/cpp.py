@@ -202,7 +202,7 @@ class CppRender(JinjaTemplateRender):
             "ns_end": comment_wrap("\n".join("}" for n in self.namespace.split("::"))),
         }
 
-    def get_additional_render_args(self):
+    def get_additional_render_args(self, model):
         return {
             "basename": self.basename.name,
             "namespace": self.namespace,

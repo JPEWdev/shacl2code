@@ -1268,13 +1268,12 @@ def test_extensible_deserialize(model, test_context_url):
         )
         return objset
 
-    @model.register("http://example.org/closed-class")
     class ClosedExtension(model.extensible_class):
         CLOSED = True
+        TYPE = "http://example.org/closed-class"
 
-    @model.register("http://example.org/open-class")
     class OpenExtension(model.extensible_class):
-        pass
+        TYPE = "http://example.org/open-class"
 
     TEST_TYPE = "http://example.org/test-extensible"
     TEST_IRI = "http://example.org/test-key"
@@ -1293,8 +1292,8 @@ def test_extensible_deserialize(model, test_context_url):
 
     assert (None, TEST_IRI, None) in obj.property_keys()
     assert obj[TEST_IRI] == "foo"
-    assert obj.TYPE == TEST_TYPE
-    assert obj.COMPACT_TYPE is None
+    assert obj.get_type() == TEST_TYPE
+    assert obj.get_compact_type() is None
 
     with pytest.raises(KeyError):
         deserialize_extension(
@@ -1323,8 +1322,8 @@ def test_extensible_deserialize(model, test_context_url):
     obj = objset.find_by_id(TEST_ID)
     assert obj is not None
     assert isinstance(obj, ClosedExtension)
-    assert obj.TYPE == "http://example.org/closed-class"
-    assert obj.COMPACT_TYPE is None
+    assert obj.get_type() == "http://example.org/closed-class"
+    assert obj.get_compact_type() is None
 
     # Derived object is closed and cannot have arbitrary IRI assignment
     with pytest.raises(KeyError):
@@ -1339,8 +1338,8 @@ def test_extensible_deserialize(model, test_context_url):
     obj = objset.find_by_id(TEST_ID)
     assert obj is not None
     assert isinstance(obj, OpenExtension)
-    assert obj.TYPE == "http://example.org/open-class"
-    assert obj.COMPACT_TYPE is None
+    assert obj.get_type() == "http://example.org/open-class"
+    assert obj.get_compact_type() is None
 
     # Derived object is open and can have arbitrary assignments
     obj[TEST_IRI] = "foo"
@@ -1504,9 +1503,8 @@ def test_objset_foreach_type(model, roundtrip):
 
     EXTENSION_ID = "http://example.org/custom-extension"
 
-    @model.register("http://example.org/custom-extension-class")
     class Extension(model.extensible_class):
-        pass
+        TYPE = "http://example.org/custom-extension-class"
 
     with roundtrip.open("r") as f:
         model.JSONLDDeserializer().read(f, objset)
@@ -1646,9 +1644,8 @@ def test_required_abstract_class_property(model, tmp_path):
 
 
 def test_extensible_abstract_class(model):
-    @model.register("http://example.org/custom-extension-class")
     class Extension(model.extensible_abstract_class):
-        pass
+        TYPE = "http://example.org/custom-extension-class"
 
     # Test that an extensible abstract class cannot be created
     with pytest.raises(NotImplementedError):
@@ -1707,19 +1704,22 @@ def test_objset_context(model, context, expanded, compacted):
     assert expanded == objset.expand_iri(compacted)
 
 
+def test_slots(model):
+    assert model._USE_SLOTS
+
+
 def test_extensible_properties(model, model_context_url):
 
-    @model.register("http://example.org/extension")
     class Extension(model.extensible_class):
-        @classmethod
-        def _register_props(cls):
-            super()._register_props()
-            cls._add_property(
+        TYPE = "http://example.org/extension"
+        PROPERTIES = [
+            model.ClassProp(
                 "string_prop",
-                model.StringProp(),
+                lambda: model.StringProp(),
                 "http://example.org/string-prop",
                 min_count=1,
-            )
+            ),
+        ]
 
     DATA = {
         "@context": [
@@ -1798,6 +1798,26 @@ def test_custom_objset_index(model, model_context_url):
     assert objset.obj_by_string_prop == {
         "first": first,
         "second": second,
+    }
+
+
+def test_metadata(model):
+    c = model.test_class()
+    c._metadata["foo"] = "bar"
+    c._metadata["baz"] = "bat"
+    assert c._metadata == {
+        "foo": "bar",
+        "baz": "bat",
+    }
+
+    c._metadata = {
+        "foo2": "bar2",
+        "baz2": "bat2",
+    }
+
+    assert c._metadata == {
+        "foo2": "bar2",
+        "baz2": "bat2",
     }
 
 

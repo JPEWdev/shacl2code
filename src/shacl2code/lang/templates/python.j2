@@ -106,11 +106,11 @@ class Property(ABC):
         return str(value)
 
     @abstractmethod
-    def encode(self, encoder, value, state: EncodeState) -> None:
+    def encode(self, encoder: Encoder, value, state: EncodeState) -> None:
         raise NotImplementedError("Subclasses must implement encode method")
 
     @abstractmethod
-    def decode(self, decoder, state: DecodeState) -> Any:
+    def decode(self, decoder: Decoder, state: DecodeState) -> Any:
         raise NotImplementedError("Subclasses must implement decode method")
 
 
@@ -124,18 +124,18 @@ class StringProp(Property):
     def set(self, value) -> str:
         return str(value)
 
-    def encode(self, encoder, value, state: EncodeState) -> None:
+    def encode(self, encoder: Encoder, value, state: EncodeState) -> None:
         encoder.write_string(value)
 
-    def decode(self, decoder, state: DecodeState) -> Optional[str]:
+    def decode(self, decoder: Decoder, state: DecodeState) -> Optional[str]:
         return decoder.read_string()
 
 
 class AnyURIProp(StringProp):
-    def encode(self, encoder, value, state: EncodeState) -> None:
+    def encode(self, encoder: Encoder, value, state: EncodeState) -> None:
         encoder.write_iri(value)
 
-    def decode(self, decoder, state: DecodeState) -> Optional[str]:
+    def decode(self, decoder: Decoder, state: DecodeState) -> Optional[str]:
         return decoder.read_iri()
 
 
@@ -153,10 +153,10 @@ class DateTimeProp(Property):
     def set(self, value) -> datetime:
         return self._normalize(value)
 
-    def encode(self, encoder, value, state: EncodeState) -> None:
+    def encode(self, encoder: Encoder, value, state: EncodeState) -> None:
         encoder.write_datetime(self.to_string(value))
 
-    def decode(self, decoder, state: DecodeState) -> Optional[datetime]:
+    def decode(self, decoder: Decoder, state: DecodeState) -> Optional[datetime]:
         s = decoder.read_datetime()
         if s is None:
             return None
@@ -225,10 +225,10 @@ class IntegerProp(Property):
     def set(self, value) -> int:
         return int(value)
 
-    def encode(self, encoder, value, state: EncodeState) -> None:
+    def encode(self, encoder: Encoder, value, state: EncodeState) -> None:
         encoder.write_integer(value)
 
-    def decode(self, decoder, state: DecodeState) -> Optional[int]:
+    def decode(self, decoder: Decoder, state: DecodeState) -> Optional[int]:
         return decoder.read_integer()
 
 
@@ -258,10 +258,10 @@ class BooleanProp(Property):
     def set(self, value) -> bool:
         return bool(value)
 
-    def encode(self, encoder, value, state: EncodeState) -> None:
+    def encode(self, encoder: Encoder, value, state: EncodeState) -> None:
         encoder.write_bool(value)
 
-    def decode(self, decoder, state: DecodeState) -> Optional[bool]:
+    def decode(self, decoder: Decoder, state: DecodeState) -> Optional[bool]:
         return decoder.read_bool()
 
 
@@ -273,10 +273,10 @@ class FloatProp(Property):
     def set(self, value) -> float:
         return float(value)
 
-    def encode(self, encoder, value, state: EncodeState) -> None:
+    def encode(self, encoder: Encoder, value, state: EncodeState) -> None:
         encoder.write_float(value)
 
-    def decode(self, decoder, state: DecodeState) -> Optional[float]:
+    def decode(self, decoder: Decoder, state: DecodeState) -> Optional[float]:
         return decoder.read_float()
 
 
@@ -351,7 +351,7 @@ class ObjectProp(IRIProp):
                 for c in value.iter_objects(recursive=True, visited=visited):
                     yield c
 
-    def encode(self, encoder, value, state: EncodeState) -> None:
+    def encode(self, encoder: Encoder, value, state: EncodeState) -> None:
         if value is None:
             raise ValueError("Object cannot be None")
 
@@ -363,7 +363,7 @@ class ObjectProp(IRIProp):
 
         return value.encode(encoder, state)
 
-    def decode(self, decoder, state: DecodeState):
+    def decode(self, decoder: Decoder, state: DecodeState):
         if decoder.is_object():
             return self.cls.decode(decoder, state)
 
@@ -531,7 +531,7 @@ class ListProp(Property):
 
         return ListProxy(self.prop, data=data)
 
-    def encode(self, encoder, value, state: EncodeState) -> None:
+    def encode(self, encoder: Encoder, value, state: EncodeState) -> None:
         check_type(value, ListProxy)
 
         with encoder.write_list() as list_s:
@@ -539,7 +539,7 @@ class ListProp(Property):
                 with list_s.write_list_item() as item_s:
                     self.prop.encode(item_s, v, state)
 
-    def decode(self, decoder, state: DecodeState) -> ListProxy:
+    def decode(self, decoder: Decoder, state: DecodeState) -> ListProxy:
         data = []
         for val_d in decoder.read_list():
             v = self.prop.decode(val_d, state)
@@ -565,10 +565,10 @@ class EnumProp(IRIProp):
                 f"'{value}' is not a valid value. Choose one of {' '.join(self.iri_values())}"
             )
 
-    def encode(self, encoder, value, state) -> None:
+    def encode(self, encoder: Encoder, value, state: EncodeState) -> None:
         encoder.write_enum(value, self, self.compact(value))
 
-    def decode(self, decoder, state: DecodeState) -> str:
+    def decode(self, decoder: Decoder, state: DecodeState) -> str:
         v = decoder.read_enum(self)
         return self.expand(v) or v
 
@@ -992,7 +992,7 @@ class SHACLObject(metaclass=SHACLObjectMeta):
             ):
                 yield c
 
-    def encode(self, encoder, state: EncodeState) -> None:
+    def encode(self, encoder: Encoder, state: EncodeState) -> None:
         idname = self.ID_ALIAS or "@id"
         if not self._id and self.NODE_KIND == NodeKind.IRI:
             raise ValueError(
@@ -1015,7 +1015,7 @@ class SHACLObject(metaclass=SHACLObjectMeta):
         ) as obj_s:
             self._encode_properties(obj_s, state)
 
-    def _encode_properties(self, encoder, state) -> None:
+    def _encode_properties(self, encoder: Encoder, state: EncodeState) -> None:
         for p in self._OBJ_PY_PROPS.values():
             value = getattr(self, p.pyname)
             if p.prop.elide(value):
@@ -1053,7 +1053,7 @@ class SHACLObject(metaclass=SHACLObjectMeta):
         return cls.CLASSES[typ]()
 
     @classmethod
-    def decode(cls, decoder, state: DecodeState):
+    def decode(cls, decoder: Decoder, state: DecodeState):
         typ, obj_d = decoder.read_object()
         if typ is None:
             raise TypeError("Unable to determine type for object")
@@ -1079,12 +1079,12 @@ class SHACLObject(metaclass=SHACLObjectMeta):
 
         return obj
 
-    def _decode_properties(self, decoder, state: DecodeState) -> None:
+    def _decode_properties(self, decoder: Decoder, state: DecodeState) -> None:
         for key in decoder.object_keys():
             if not self._decode_prop(decoder, key, state):
                 raise KeyError(f"Unknown property '{key}'")
 
-    def _decode_prop(self, decoder, key, state: DecodeState):
+    def _decode_prop(self, decoder: Decoder, key, state: DecodeState):
         if key in ("@id", self.ID_ALIAS):
             return True
 
@@ -1192,7 +1192,7 @@ class SHACLExtensibleObject(SHACLObject):
         obj = cls(typ)
         return obj
 
-    def _decode_properties(self, decoder, state: DecodeState) -> None:
+    def _decode_properties(self, decoder: Decoder, state: DecodeState) -> None:
         def decode_value(d):
             if not d.is_list():
                 return d.read_value()
@@ -1217,7 +1217,7 @@ class SHACLExtensibleObject(SHACLObject):
             with decoder.read_property(key) as prop_d:
                 self._ext_data[expanded_key] = decode_value(prop_d)
 
-    def _encode_properties(self, encoder, state) -> None:
+    def _encode_properties(self, encoder: Encoder, state: EncodeState) -> None:
         super()._encode_properties(encoder, state)
         if self.CLOSED:
             return
@@ -1542,7 +1542,7 @@ class SHACLObjectSet(object):
         self.objects = new_objects
 
     def encode(
-        self, encoder, state: EncodeState, force_list: bool = False, *, key=None
+        self, encoder: Encoder, state: EncodeState, force_list: bool = False, *, key=None
     ) -> None:
         """
         Serialize a list of objects to a serialization encoder
@@ -1613,7 +1613,7 @@ class SHACLObjectSet(object):
         elif objects:
             objects[0].encode(encoder, state)
 
-    def decode(self, decoder, state: DecodeState):
+    def decode(self, decoder: Decoder, state: DecodeState):
         self.create_index()
         for obj_d in decoder.read_list():
             o = SHACLExtensibleObject.decode(obj_d, state)
@@ -1640,8 +1640,8 @@ class SHACLObjectSet(object):
 
 class EncodeState(object):
     def __init__(self, objectset: SHACLObjectSet):
-        self.ref_objects: set[SHACLObject] = set()
-        self.written_objects: set[SHACLObject] = set()
+        self.ref_objects: Set[SHACLObject] = set()
+        self.written_objects: Set[SHACLObject] = set()
         self.blank_objects: Dict[SHACLObject, str] = {}
         self.objectset = objectset
 

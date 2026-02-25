@@ -737,11 +737,7 @@ class SHACLObjectMeta(type):
 
         attrs["_NEEDS_REG"] = True
 
-        if "TYPE" in attrs:
-            attrs["_TYPE"] = attrs["TYPE"]
-            del attrs["TYPE"]
-        else:
-            attrs["_TYPE"] = None
+        attrs["_TYPE"] = attrs.pop("TYPE", None)
 
         if "COMPACT_TYPE" in attrs:
             attrs["_COMPACT_TYPE"] = attrs["COMPACT_TYPE"]

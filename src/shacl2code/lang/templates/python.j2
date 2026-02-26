@@ -1102,8 +1102,8 @@ class SHACLObject(metaclass=SHACLObjectMeta):
         if key is None:
             return False
 
-        expanded_key = state.objectset.expand_iri(key)
-        if expanded_key in self._OBJ_IRI_PROPS:
+        expanded_key = state.expand_iri(key)
+        if expanded_key and expanded_key in self._OBJ_IRI_PROPS:
             p = self._OBJ_IRI_PROPS[expanded_key]
         elif key in self._OBJ_IRI_PROPS:
             p = self._OBJ_IRI_PROPS[key]

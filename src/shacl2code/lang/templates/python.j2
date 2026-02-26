@@ -1092,12 +1092,9 @@ class SHACLObject(metaclass=SHACLObjectMeta):
             if not self._decode_prop(decoder, key, state):
                 raise KeyError(f"Unknown property '{key}'")
 
-    def _decode_prop(self, decoder: Decoder, key: Optional[str], state: DecodeState) -> bool:
+    def _decode_prop(self, decoder: Decoder, key: str, state: DecodeState) -> bool:
         if key in ("@id", self.ID_ALIAS):
             return True
-
-        if key is None:
-            return False
 
         expanded_key = state.expand_iri(key)
         if expanded_key and expanded_key in self._OBJ_IRI_PROPS:

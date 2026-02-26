@@ -158,9 +158,9 @@ def prop_decode_func(cls, prop, classes):
         raise Exception("Unknown data type " + prop.datatype)  # pragma: no cover
 
     if prop_is_list(prop):
-        return f"DecodeList[{prop_go_type(prop, classes)}](value, path, {prop_ctx_name(cls, prop)}, {func}, obj.{varname(prop.varname)}())"
+        return f"DecodeList[{prop_go_type(prop, classes)}](value, path, {prop_ctx_name(cls, prop)}, {func}, obj.{varname(prop.varname)}(), state)"
 
-    return f"{func}(value, path, {prop_ctx_name(cls, prop)}, obj.{varname(prop.varname)}())"
+    return f"{func}(value, path, {prop_ctx_name(cls, prop)}, obj.{varname(prop.varname)}(), state)"
 
 
 def prop_encode_func(cls, prop, classes):

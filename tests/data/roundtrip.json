@@ -2,7 +2,8 @@
     "@context": [
         "@CONTEXT_URL@",
         {
-            "prefix": "http://serialize.example.com/"
+            "prefix": "http://serialize.example.com/",
+            "custom-prop-prefix": "http://custom-prop.example.com/"
         }
     ],
     "@graph": [
@@ -100,7 +101,8 @@
                     "abc",
                     "def"
                 ],
-                "http://custom-scalar-prop": ["abc"]
+                "http://custom-scalar-prop": ["abc"],
+                "custom-prop-prefix:prop": ["custom-prop"]
             }
         }
     ]

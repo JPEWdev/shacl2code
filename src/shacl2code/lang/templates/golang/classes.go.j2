@@ -70,11 +70,11 @@ var {{ prop_ctx_name(class, prop) }} = map[string]string{
 }
 {%- endfor %}
 
-func Decode{{ interface_name(class) }} (data any, path Path, context map[string]string, check DecodeCheckType) (Ref[{{ interface_name(class) }}], error) {
-    return DecodeRef[{{ interface_name(class) }}](data, path, context, {{ class_type_var(class) }}, check)
+func Decode{{ interface_name(class) }} (data any, path Path, context map[string]string, check DecodeCheckType, state *DecodeState) (Ref[{{ interface_name(class) }}], error) {
+    return DecodeRef[{{ interface_name(class) }}](data, path, context, {{ class_type_var(class) }}, check, state)
 }
 
-func (self {{ struct_name(class) }}Type) DecodeProperty(o SHACLObject, name string, value interface{}, path Path) (bool, error) {
+func (self {{ struct_name(class) }}Type) DecodeProperty(o SHACLObject, name string, value interface{}, path Path, state *DecodeState) (bool, error) {
     obj := o.({{ interface_name(class) }})
     _ = obj
     switch name {
@@ -91,7 +91,7 @@ func (self {{ struct_name(class) }}Type) DecodeProperty(o SHACLObject, name stri
         return true, nil
 {%- endfor %}
     default:
-        found, err := self.SHACLTypeBase.DecodeProperty(o, name, value, path)
+        found, err := self.SHACLTypeBase.DecodeProperty(o, name, value, path, state)
         if err != nil || found {
             return found, err
         }
@@ -149,6 +149,9 @@ type {{ interface_name(class) }} interface {
 {%- endfor %}
 {%- else %}
     SHACLObject
+{%- endif %}
+{%- if class.is_extensible %}
+    SHACLExtensibleObject
 {%- endif %}
 {%- for prop in class.properties %}
     {{ varname(prop.varname) }}() {% if not prop.enum_values and prop.class_id -%}
@@ -312,7 +315,7 @@ func (self *{{ struct_name(class) }}) EncodeProperties(data map[string]interface
     }
 {%- endfor %}
 {%- if class.is_extensible %}
-    self.SHACLExtensibleBase.EncodeExtProperties(data, path)
+    self.SHACLExtensibleBase.EncodeExtProperties(data, path, state)
 {%- endif %}
     return nil
 }

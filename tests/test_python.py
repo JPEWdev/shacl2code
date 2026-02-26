@@ -1841,3 +1841,23 @@ def test_object_iter(model):
         "http://example.org/test-class/string-list-prop": ["a", "b"],
         "http://example.org/test-class/string-scalar-prop": "foo",
     }
+
+
+def test_extensible_context(model, roundtrip):
+    # Test that extensible object IDs and properties account for the context
+    objset = model.SHACLObjectSet()
+    d = model.JSONLDDeserializer()
+    with open(roundtrip, "r") as f:
+        d.read(f, objset)
+
+    o = objset.find_by_id("http://serialize.example.com/test-uses-extensible-abstract")
+    assert o is not None, "Unable to find object"
+
+    p = o.uses_extensible_abstract_class_prop
+    assert p is not None, "Object does not have expected property"
+
+    assert (
+        p.get_type() == "http://serialize.example.com/custom-extensible"
+    ), "Property does not have expected type"
+
+    assert p["http://custom-prop.example.com/prop"], "Unable to find property value"

@@ -30,26 +30,26 @@ func doCheck(data any, path Path, check DecodeCheckType) error {
     return check.DecodeCheck(data, path)
 }
 
-func DecodeAny(data any, path Path, context map[string]string, check DecodeCheckType) (any, error) {
+func DecodeAny(data any, path Path, context map[string]string, check DecodeCheckType, state *DecodeState) (any, error) {
     switch data.(type) {
     case map[string]interface{}:
-        return DecodeRef[SHACLObject](data, path, context, nil, check)
+        return DecodeRef[SHACLObject](data, path, context, nil, check, state)
     case string:
-        return DecodeString(data, path, context, check)
+        return DecodeString(data, path, context, check, state)
     case int:
-        return DecodeInteger(data, path, context, check)
+        return DecodeInteger(data, path, context, check, state)
     case float64:
-        return DecodeFloat(data, path, context, check)
+        return DecodeFloat(data, path, context, check, state)
     case bool:
-        return DecodeBoolean(data, path, context, check)
+        return DecodeBoolean(data, path, context, check, state)
     case []interface{}:
-        return DecodeList[any](data, path, context, DecodeAny, check)
+        return DecodeList[any](data, path, context, DecodeAny, check, state)
     default:
         return nil, &DecodeError{path, "Unknown type "+ reflect.TypeOf(data).Name()}
     }
 }
 
-func DecodeSHACLObject[T SHACLObject](data any, path Path, context map[string]string, targetType SHACLType) (T, error) {
+func DecodeSHACLObject[T SHACLObject](data any, path Path, context map[string]string, targetType SHACLType, state *DecodeState) (T, error) {
     dict, ok := data.(map[string]interface{})
     if ! ok {
         return *new(T), &DecodeError{path, "Expected dictionary or string. Got " + reflect.TypeOf(data).Name()}
@@ -71,6 +71,7 @@ func DecodeSHACLObject[T SHACLObject](data any, path Path, context map[string]st
     if ! ok {
         return *new(T), &DecodeError{path, "Wrong type for @type. Got " + reflect.TypeOf(v).Name()}
     }
+    type_iri = state.ExpandIRI(type_iri)
 
     iri_typ, ok := objectTypes[type_iri]
     if ok {
@@ -121,7 +122,7 @@ func DecodeSHACLObject[T SHACLObject](data any, path Path, context map[string]st
 
             for _, t := range(possible) {
                 // Ignore errors
-                o, err := DecodeSHACLObject[T](data, path, context, t)
+                o, err := DecodeSHACLObject[T](data, path, context, t, state)
                 if err == nil {
                     o.setTypeIRI(type_iri)
                     return o, nil
@@ -146,7 +147,7 @@ func DecodeSHACLObject[T SHACLObject](data any, path Path, context map[string]st
         }
 
         sub_path := path.PushPath(k)
-        found, err := create_type.DecodeProperty(obj, k, v, sub_path)
+        found, err := create_type.DecodeProperty(obj, k, v, sub_path, state)
         if err != nil {
             return *new(T), err
         }
@@ -158,21 +159,21 @@ func DecodeSHACLObject[T SHACLObject](data any, path Path, context map[string]st
     return obj, nil
 }
 
-func DecodeRef[T SHACLObject](data any, path Path, context map[string]string, typ SHACLType, check DecodeCheckType) (Ref[T], error) {
+func DecodeRef[T SHACLObject](data any, path Path, context map[string]string, typ SHACLType, check DecodeCheckType, state *DecodeState) (Ref[T], error) {
     if err := doCheck(data, path, check); err != nil {
         return nil, err
     }
 
     switch data.(type) {
     case string:
-        s, err := DecodeIRI(data, path, context, check)
+        s, err := DecodeIRI(data, path, context, check, state)
         if err != nil {
             return nil, err
         }
         return MakeIRIRef[T](s), nil
     }
 
-    obj, err := DecodeSHACLObject[T](data, path, context, typ)
+    obj, err := DecodeSHACLObject[T](data, path, context, typ, state)
     if err != nil {
         return nil, err
     }
@@ -180,7 +181,7 @@ func DecodeRef[T SHACLObject](data any, path Path, context map[string]string, ty
     return MakeObjectRef[T](obj), nil
 }
 
-func DecodeString(data any, path Path, context map[string]string, check DecodeCheckType) (string, error) {
+func DecodeString(data any, path Path, context map[string]string, check DecodeCheckType, state *DecodeState) (string, error) {
     if err := doCheck(data, path, check); err != nil {
         return "", err
     }
@@ -192,8 +193,8 @@ func DecodeString(data any, path Path, context map[string]string, check DecodeCh
     return v, nil
 }
 
-func DecodeIRI(data any, path Path, context map[string]string, check DecodeCheckType) (string, error) {
-    s, err := DecodeString(data, path, context, check)
+func DecodeIRI(data any, path Path, context map[string]string, check DecodeCheckType, state *DecodeState) (string, error) {
+    s, err := DecodeString(data, path, context, check, state)
     if err != nil {
         return s, err
     }
@@ -212,7 +213,7 @@ func DecodeIRI(data any, path Path, context map[string]string, check DecodeCheck
     return s, nil
 }
 
-func DecodeBoolean(data any, path Path, context map[string]string, check DecodeCheckType) (bool, error) {
+func DecodeBoolean(data any, path Path, context map[string]string, check DecodeCheckType, state *DecodeState) (bool, error) {
     if err := doCheck(data, path, check); err != nil {
         return false, err
     }
@@ -224,7 +225,7 @@ func DecodeBoolean(data any, path Path, context map[string]string, check DecodeC
     return v, nil
 }
 
-func DecodeInteger(data any, path Path, context map[string]string, check DecodeCheckType) (int, error) {
+func DecodeInteger(data any, path Path, context map[string]string, check DecodeCheckType, state *DecodeState) (int, error) {
     if err := doCheck(data, path, check); err != nil {
         return 0, err
     }
@@ -243,7 +244,7 @@ func DecodeInteger(data any, path Path, context map[string]string, check DecodeC
     }
 }
 
-func DecodeFloat(data any, path Path, context map[string]string, check DecodeCheckType) (float64, error) {
+func DecodeFloat(data any, path Path, context map[string]string, check DecodeCheckType, state *DecodeState) (float64, error) {
     if err := doCheck(data, path, check); err != nil {
         return 0, err
     }
@@ -308,16 +309,16 @@ func decodeDateTimeString(data any, path Path, re *regexp.Regexp, check DecodeCh
 }
 
 var dateTimeRegex = regexp.MustCompile(`^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(Z|[+-]\d{2}:\d{2})?$`)
-func DecodeDateTime(data any, path Path, context map[string]string, check DecodeCheckType) (time.Time, error) {
+func DecodeDateTime(data any, path Path, context map[string]string, check DecodeCheckType, state *DecodeState) (time.Time, error) {
     return decodeDateTimeString(data, path, dateTimeRegex, check)
 }
 
 var dateTimeStampRegex = regexp.MustCompile(`^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(Z|[+-]\d{2}:\d{2})$`)
-func DecodeDateTimeStamp(data any, path Path, context map[string]string, check DecodeCheckType) (time.Time, error) {
+func DecodeDateTimeStamp(data any, path Path, context map[string]string, check DecodeCheckType, state *DecodeState) (time.Time, error) {
     return decodeDateTimeString(data, path, dateTimeStampRegex, check)
 }
 
-func DecodeList[T any](data any, path Path, context map[string]string, f func (any, Path, map[string]string, DecodeCheckType)(T, error), check DecodeCheckType) ([]T, error) {
+func DecodeList[T any](data any, path Path, context map[string]string, f func (any, Path, map[string]string, DecodeCheckType, *DecodeState)(T, error), check DecodeCheckType, state *DecodeState) ([]T, error) {
     lst, ok := data.([]interface{})
     if ! ok {
         return nil, &DecodeError{path, "Must be a list"}
@@ -325,7 +326,7 @@ func DecodeList[T any](data any, path Path, context map[string]string, f func (a
 
     var result []T
     for idx, v := range lst {
-        item, err := f(v, path.PushIndex(idx), context, check)
+        item, err := f(v, path.PushIndex(idx), context, check, state)
         if err != nil {
             return nil, err
         }

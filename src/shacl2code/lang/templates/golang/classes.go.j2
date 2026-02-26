@@ -1,17 +1,18 @@
-//{#
+/*{#
 vim: ft=go
+*/                 // This line keeps gofmt happy
+package shacl2code /*
 #}
-//
-// {{ disclaimer }}
-//
-// SPDX-License-Identifier: {{ spdx_license }}
+{{ disclaimer }}
 
-package {{ package }}
+SPDX-License-Identifier: {{ spdx_license }}
+{{ go_package }} */
 
 import (
-    "time"
+	"time"
 )
 
+/*{{ '*' }}{{ '/' }}
 {% for class in classes %}
 {%- for l in class.comment.splitlines() %}
 {{ ("// " + l).rstrip() }}
@@ -348,4 +349,4 @@ func init() {
     RegisterType({{ class_type_var(class) }})
 {%- endfor %}
 }
-
+{{ '/' }}{{ '*' }}*/

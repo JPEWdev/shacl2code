@@ -1,49 +1,49 @@
-//{#
+/*{#
 vim: ft=go
+*/                 // This line keeps gofmt happy
+package shacl2code /*
 #}
-//
-// {{ disclaimer }}
-//
-// SPDX-License-Identifier: {{ spdx_license }}
+{{ disclaimer }}
 
-package {{ package }}
+SPDX-License-Identifier: {{ spdx_license }}
+{{ go_package }} */
 
 type SHACLExtensibleBase struct {
-    properties map[string][]any
+	properties map[string][]any
 }
 
 func (self *SHACLExtensibleBase) GetExtProperty(name string) []any {
-    return self.properties[name]
+	return self.properties[name]
 }
 
 func (self *SHACLExtensibleBase) SetExtProperty(name string, value []any) {
-    if self.properties == nil {
-        self.properties = make(map[string][]any)
-    }
-    self.properties[name] = value
+	if self.properties == nil {
+		self.properties = make(map[string][]any)
+	}
+	self.properties[name] = value
 }
 
 func (self *SHACLExtensibleBase) DeleteExtProperty(name string) {
-    delete(self.properties, name)
+	delete(self.properties, name)
 }
 
-func (self *SHACLExtensibleBase) EncodeExtProperties(data map[string]any, path Path, state* EncodeState) error {
-    for k, values := range self.properties {
-        if len(values) == 0 {
-            continue
-        }
+func (self *SHACLExtensibleBase) EncodeExtProperties(data map[string]any, path Path, state *EncodeState) error {
+	for k, values := range self.properties {
+		if len(values) == 0 {
+			continue
+		}
 
-        lst := []any{}
-        for _, v := range values {
-            lst = append(lst, v)
-        }
-        data[state.CompactIRI(k)] = lst
-    }
-    return nil
+		lst := []any{}
+		for _, v := range values {
+			lst = append(lst, v)
+		}
+		data[state.CompactIRI(k)] = lst
+	}
+	return nil
 }
 
 type SHACLExtensibleObject interface {
-    GetExtProperty(string) []any
-    SetExtProperty(string, []any)
-    DeleteExtProperty(string)
+	GetExtProperty(string) []any
+	SetExtProperty(string, []any)
+	DeleteExtProperty(string)
 }

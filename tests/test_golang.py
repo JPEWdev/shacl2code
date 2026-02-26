@@ -506,32 +506,6 @@ class TestOutput:
                             re.search(r"\s+$", line) is None
                         ), f"{fn}: Line {num + 1} has trailing whitespace: {line!r}"
 
-    def test_tabs(self, tmp_path, args):
-        """
-        Tests that the output file doesn't contain tabs
-        """
-        subprocess.run(
-            [
-                "shacl2code",
-                "generate",
-            ]
-            + args
-            + [
-                "golang",
-                "--output",
-                tmp_path,
-            ],
-            check=True,
-        )
-
-        for dirpath, dirnames, filenames in os.walk(tmp_path):
-            for fn in filenames:
-                with open(os.path.join(dirpath, fn)) as f:
-                    for num, line in enumerate(f.read().splitlines()):
-                        assert (
-                            "\t" not in line
-                        ), f"{fn}: Line {num + 1} has tabs: {line!r}"
-
     def test_output_compile(self, tmp_path, args):
         subprocess.run(
             [

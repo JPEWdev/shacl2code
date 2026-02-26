@@ -9,6 +9,7 @@ from .lang import language, TEMPLATE_DIR
 from pathlib import Path
 
 import re
+import textwrap
 
 GO_KEYWORDS = (
     "break",
@@ -236,7 +237,14 @@ class GoLangRender(JinjaTemplateRender):
         super().__init__(args)
         self.__output = args.output
         self.__render_args = {
-            "package": args.package,
+            # This variable adds as many lines are get commented out in jinja,
+            # to keep the line numbers in the generated code the same as the
+            # template
+            "go_package": textwrap.dedent(f"""
+                */
+
+                package {args.package}
+                /*"""),
         }
 
     @classmethod

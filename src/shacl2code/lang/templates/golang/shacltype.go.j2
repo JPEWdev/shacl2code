@@ -1,215 +1,213 @@
-//{#
+/*{#
 vim: ft=go
+*/                 // This line keeps gofmt happy
+package shacl2code /*
 #}
-//
-// {{ disclaimer }}
-//
-// SPDX-License-Identifier: {{ spdx_license }}
+{{ disclaimer }}
 
-package {{ package }}
+SPDX-License-Identifier: {{ spdx_license }}
+{{ go_package }} */
 
 const NodeKindBlankNode = 0
 const NodeKindIRI = 1
 const NodeKindBlankNodeOrIRI = 2
 
 type SHACLType interface {
-    GetTypeIRI() string
-    GetCompactTypeIRI() Optional[string]
-    GetNodeKind() int
-    GetIDAlias() Optional[string]
-    DecodeProperty(SHACLObject, string, interface{}, Path, *DecodeState) (bool, error)
-    Create() SHACLObject
-    IsAbstract() bool
-    IsExtensible() bool
-    IsSubClassOf(SHACLType) bool
+	GetTypeIRI() string
+	GetCompactTypeIRI() Optional[string]
+	GetNodeKind() int
+	GetIDAlias() Optional[string]
+	DecodeProperty(SHACLObject, string, interface{}, Path, *DecodeState) (bool, error)
+	Create() SHACLObject
+	IsAbstract() bool
+	IsExtensible() bool
+	IsSubClassOf(SHACLType) bool
 }
 
 type SHACLTypeBase struct {
-    typeIRI string
-    compactTypeIRI Optional[string]
-    idAlias Optional[string]
-    isExtensible Optional[bool]
-    isAbstract bool
-    parentIRIs []string
-    nodeKind Optional[int]
+	typeIRI        string
+	compactTypeIRI Optional[string]
+	idAlias        Optional[string]
+	isExtensible   Optional[bool]
+	isAbstract     bool
+	parentIRIs     []string
+	nodeKind       Optional[int]
 }
 
 func (self SHACLTypeBase) GetTypeIRI() string {
-    return self.typeIRI
+	return self.typeIRI
 }
 
 func (self SHACLTypeBase) GetCompactTypeIRI() Optional[string] {
-    return self.compactTypeIRI
+	return self.compactTypeIRI
 }
 
 func (self SHACLTypeBase) GetNodeKind() int {
-    if self.nodeKind.IsSet() {
-        return self.nodeKind.Get()
-    }
+	if self.nodeKind.IsSet() {
+		return self.nodeKind.Get()
+	}
 
-    for _, parent_id := range(self.parentIRIs) {
-        p := objectTypes[parent_id]
-        return p.GetNodeKind()
-    }
+	for _, parent_id := range self.parentIRIs {
+		p := objectTypes[parent_id]
+		return p.GetNodeKind()
+	}
 
-    return NodeKindBlankNodeOrIRI
+	return NodeKindBlankNodeOrIRI
 }
 
 func (self SHACLTypeBase) GetIDAlias() Optional[string] {
-    if self.idAlias.IsSet() {
-        return self.idAlias
-    }
+	if self.idAlias.IsSet() {
+		return self.idAlias
+	}
 
-    for _, parent_id := range(self.parentIRIs) {
-        p := objectTypes[parent_id]
-        a := p.GetIDAlias()
-        if a.IsSet() {
-            return a
-        }
-    }
+	for _, parent_id := range self.parentIRIs {
+		p := objectTypes[parent_id]
+		a := p.GetIDAlias()
+		if a.IsSet() {
+			return a
+		}
+	}
 
-    return self.idAlias
+	return self.idAlias
 }
 
 func (self SHACLTypeBase) IsAbstract() bool {
-    return self.isAbstract
+	return self.isAbstract
 }
 
 func (self SHACLTypeBase) IsExtensible() bool {
-    if self.isExtensible.IsSet() {
-        return self.isExtensible.Get()
-    }
+	if self.isExtensible.IsSet() {
+		return self.isExtensible.Get()
+	}
 
-    for _, parent_id := range(self.parentIRIs) {
-        p := objectTypes[parent_id]
-        if p.IsExtensible() {
-            return true
-        }
-    }
+	for _, parent_id := range self.parentIRIs {
+		p := objectTypes[parent_id]
+		if p.IsExtensible() {
+			return true
+		}
+	}
 
-    return false
+	return false
 }
 
 func (self SHACLTypeBase) IsSubClassOf(other SHACLType) bool {
-    if other.GetTypeIRI() == self.typeIRI {
-        return true
-    }
+	if other.GetTypeIRI() == self.typeIRI {
+		return true
+	}
 
-    for _, parent_id := range(self.parentIRIs) {
-        p := objectTypes[parent_id]
-        if p.IsSubClassOf(other) {
-            return true
-        }
-    }
+	for _, parent_id := range self.parentIRIs {
+		p := objectTypes[parent_id]
+		if p.IsSubClassOf(other) {
+			return true
+		}
+	}
 
-    return false
+	return false
 }
 
 type EncodeState struct {
-    Written map[SHACLObject]bool
-    objectSet SHACLObjectSet
+	Written   map[SHACLObject]bool
+	objectSet SHACLObjectSet
 }
 
 func (self EncodeState) ExpandIRI(iri string) string {
-    if self.objectSet == nil {
-        return iri;
-    }
+	if self.objectSet == nil {
+		return iri
+	}
 
-    return self.objectSet.ExpandIRI(iri);
+	return self.objectSet.ExpandIRI(iri)
 }
 
 func (self EncodeState) CompactIRI(iri string) string {
-    if self.objectSet == nil {
-        return iri;
-    }
-    return self.objectSet.CompactIRI(iri);
+	if self.objectSet == nil {
+		return iri
+	}
+	return self.objectSet.CompactIRI(iri)
 }
 
 type DecodeState struct {
-    objectSet SHACLObjectSet
+	objectSet SHACLObjectSet
 }
 
 func (self DecodeState) ExpandIRI(iri string) string {
-    if self.objectSet == nil {
-        return iri;
-    }
+	if self.objectSet == nil {
+		return iri
+	}
 
-    return self.objectSet.ExpandIRI(iri);
+	return self.objectSet.ExpandIRI(iri)
 }
 
 func (self DecodeState) CompactIRI(iri string) string {
-    if self.objectSet == nil {
-        return iri;
-    }
-    return self.objectSet.CompactIRI(iri);
+	if self.objectSet == nil {
+		return iri
+	}
+	return self.objectSet.CompactIRI(iri)
 }
 
 func (self SHACLTypeBase) DecodeProperty(o SHACLObject, name string, value interface{}, path Path, state *DecodeState) (bool, error) {
-    id_alias := self.GetIDAlias()
-    if id_alias.IsSet() {
-        switch name {
-        case id_alias.Get():
-            val, err := DecodeString(value, path.PushPath(name), map[string]string{}, o.ID(), state)
-            if err != nil {
-                return false, err
-            }
-            err = o.ID().Set(state.ExpandIRI(val))
-            if err != nil {
-                return false, err
-            }
-            return true, nil
-        case "@id":
-            return true, &DecodeError{
-                path.PushPath(name),
-                "'@id' is not allowed for " + self.GetTypeIRI() + " which has an ID alias",
-            }
-        }
-    } else if name == "@id" {
-        val, err := DecodeString(value, path.PushPath(name), map[string]string{}, o.ID(), state)
-        if err != nil {
-            return false, err
-        }
-        err = o.ID().Set(state.ExpandIRI(val))
-        if err != nil {
-            return false, err
-        }
-        return true, nil
-    }
+	id_alias := self.GetIDAlias()
+	if id_alias.IsSet() {
+		switch name {
+		case id_alias.Get():
+			val, err := DecodeString(value, path.PushPath(name), map[string]string{}, o.ID(), state)
+			if err != nil {
+				return false, err
+			}
+			err = o.ID().Set(state.ExpandIRI(val))
+			if err != nil {
+				return false, err
+			}
+			return true, nil
+		case "@id":
+			return true, &DecodeError{
+				path.PushPath(name),
+				"'@id' is not allowed for " + self.GetTypeIRI() + " which has an ID alias",
+			}
+		}
+	} else if name == "@id" {
+		val, err := DecodeString(value, path.PushPath(name), map[string]string{}, o.ID(), state)
+		if err != nil {
+			return false, err
+		}
+		err = o.ID().Set(state.ExpandIRI(val))
+		if err != nil {
+			return false, err
+		}
+		return true, nil
+	}
 
-    for _, parent_id := range(self.parentIRIs) {
-        p := objectTypes[parent_id]
-        found, err := p.DecodeProperty(o, name, value, path, state)
-        if err != nil || found {
-            return found, err
-        }
-    }
+	for _, parent_id := range self.parentIRIs {
+		p := objectTypes[parent_id]
+		found, err := p.DecodeProperty(o, name, value, path, state)
+		if err != nil || found {
+			return found, err
+		}
+	}
 
-    if self.isExtensible.GetDefault(false) {
-        obj := o.(SHACLExtensibleObject)
-        v, err := DecodeAny(value, path, map[string]string{}, nil, state)
-        if err != nil {
-            return false, err
-        }
+	if self.isExtensible.GetDefault(false) {
+		obj := o.(SHACLExtensibleObject)
+		v, err := DecodeAny(value, path, map[string]string{}, nil, state)
+		if err != nil {
+			return false, err
+		}
 
-        lst, is_list := v.([]interface{})
-        if is_list {
-            obj.SetExtProperty(state.ExpandIRI(name), lst)
-        } else {
-            obj.SetExtProperty(state.ExpandIRI(name), []interface{}{v})
-        }
-        return true, nil
-    }
-    return false, nil
+		lst, is_list := v.([]interface{})
+		if is_list {
+			obj.SetExtProperty(state.ExpandIRI(name), lst)
+		} else {
+			obj.SetExtProperty(state.ExpandIRI(name), []interface{}{v})
+		}
+		return true, nil
+	}
+	return false, nil
 }
 
-
-var objectTypes map[string] SHACLType
+var objectTypes map[string]SHACLType
 
 func RegisterType(typ SHACLType) {
-    objectTypes[typ.GetTypeIRI()] = typ
-    compact := typ.GetCompactTypeIRI()
-    if compact.IsSet() {
-        objectTypes[compact.Get()] = typ
-    }
+	objectTypes[typ.GetTypeIRI()] = typ
+	compact := typ.GetCompactTypeIRI()
+	if compact.IsSet() {
+		objectTypes[compact.Get()] = typ
+	}
 }
-

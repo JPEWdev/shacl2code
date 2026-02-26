@@ -1,14 +1,13 @@
-//{#
+/*{#
 vim: ft=go
+*/                 // This line keeps gofmt happy
+package shacl2code /*
 #}
-//
-// {{ disclaimer }}
-//
-// SPDX-License-Identifier: {{ spdx_license }}
+{{ disclaimer }}
 
-package {{ package }}
+SPDX-License-Identifier: {{ spdx_license }}
+{{ go_package }} */
 
 type ErrorHandler interface {
-    HandleError(error, Path)
+	HandleError(error, Path)
 }
-

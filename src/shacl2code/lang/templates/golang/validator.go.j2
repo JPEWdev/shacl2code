@@ -1,110 +1,107 @@
-//{#
+/*{#
 vim: ft=go
+*/                 // This line keeps gofmt happy
+package shacl2code /*
 #}
-//
-// {{ disclaimer }}
-//
-// SPDX-License-Identifier: {{ spdx_license }}
+{{ disclaimer }}
 
-package {{ package }}
+SPDX-License-Identifier: {{ spdx_license }}
+{{ go_package }} */
 
 import (
-    "reflect"
-    "regexp"
-    "strconv"
-    "time"
+	"reflect"
+	"regexp"
+	"strconv"
+	"time"
 
-    "github.com/ncruces/go-strftime"
+	"github.com/ncruces/go-strftime"
 )
 
 type Validator[T any] interface {
-    Check(T, string) error
+	Check(T, string) error
 }
 
 func ValueToString(val any, name string) (string, error) {
-    switch val.(type) {
-    case string:
-        return val.(string), nil
-    case int:
-        return strconv.Itoa(val.(int)), nil
-    case time.Time:
-        t := val.(time.Time)
-        if t.Location() == time.UTC {
-            return strftime.Format(UtcFormatStr, t), nil
-        }
-        return strftime.Format(TzFormatStr, t), nil
-    }
-    return "", &ValidationError{name, "Value is of unsupported type " + reflect.TypeOf(val).Name()}
+	switch val.(type) {
+	case string:
+		return val.(string), nil
+	case int:
+		return strconv.Itoa(val.(int)), nil
+	case time.Time:
+		t := val.(time.Time)
+		if t.Location() == time.UTC {
+			return strftime.Format(UtcFormatStr, t), nil
+		}
+		return strftime.Format(TzFormatStr, t), nil
+	}
+	return "", &ValidationError{name, "Value is of unsupported type " + reflect.TypeOf(val).Name()}
 }
-
 
 // ID Validator
-type IDValidator struct {}
+type IDValidator struct{}
 
 func (self IDValidator) Check(val string, name string) error {
-    if ! IsIRI(val) && ! IsBlankNode(val) {
-        return &ValidationError{name, "Must be an IRI or a Blank Node"}
-    }
-    return nil
+	if !IsIRI(val) && !IsBlankNode(val) {
+		return &ValidationError{name, "Must be an IRI or a Blank Node"}
+	}
+	return nil
 }
-
 
 // Regex Validator
 type RegexValidator[T any] struct {
-    Regex string
+	Regex string
 }
 
 func (self RegexValidator[T]) Check(val T, name string) error {
-    s, err := ValueToString(val, name)
-    if err != nil {
-        return err
-    }
+	s, err := ValueToString(val, name)
+	if err != nil {
+		return err
+	}
 
-    m, err := regexp.MatchString(self.Regex, s)
-    if err != nil {
-        return err
-    }
-    if ! m {
-        return &ValidationError{name, "Value '" + s + "' does not match pattern"}
-    }
-    return nil
+	m, err := regexp.MatchString(self.Regex, s)
+	if err != nil {
+		return err
+	}
+	if !m {
+		return &ValidationError{name, "Value '" + s + "' does not match pattern"}
+	}
+	return nil
 }
 
 // Integer Min Validator
 type IntegerMinValidator struct {
-    Min int
+	Min int
 }
 
 func (self IntegerMinValidator) Check(val int, name string) error {
-    if val < self.Min {
-        return &ValidationError{name, "Value " + strconv.Itoa(val) + " is less than minimum " + strconv.Itoa(self.Min)}
-    }
-    return nil
+	if val < self.Min {
+		return &ValidationError{name, "Value " + strconv.Itoa(val) + " is less than minimum " + strconv.Itoa(self.Min)}
+	}
+	return nil
 }
 
 // Integer Max Validator
 type IntegerMaxValidator struct {
-    Max int
+	Max int
 }
 
 func (self IntegerMaxValidator) Check(val int, name string) error {
-    if val > self.Max {
-        return &ValidationError{name, "Value " + strconv.Itoa(val) + " is greater than maximum" + strconv.Itoa(self.Max)}
-    }
-    return nil
+	if val > self.Max {
+		return &ValidationError{name, "Value " + strconv.Itoa(val) + " is greater than maximum" + strconv.Itoa(self.Max)}
+	}
+	return nil
 }
 
 // Enum Validator
 type EnumValidator struct {
-    Values []string
+	Values []string
 }
 
 func (self EnumValidator) Check(val string, name string) error {
-    for _, v := range self.Values {
-        if val == v {
-            return nil
-        }
-    }
-    return &ValidationError{name, "Value '" + val + "' is not a valid enumerated value" }
+	for _, v := range self.Values {
+		if val == v {
+			return nil
+		}
+	}
+	return &ValidationError{name, "Value '" + val + "' is not a valid enumerated value"}
 }
-

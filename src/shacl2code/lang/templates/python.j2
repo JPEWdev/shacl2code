@@ -124,7 +124,7 @@ class StringProp(Property):
     def set(self, value) -> str:
         return str(value)
 
-    def encode(self, encoder: Encoder, value, state: EncodeState) -> None:
+    def encode(self, encoder: Encoder, value: str, state: EncodeState) -> None:
         encoder.write_string(value)
 
     def decode(self, decoder: Decoder, state: DecodeState) -> Optional[str]:
@@ -132,7 +132,7 @@ class StringProp(Property):
 
 
 class AnyURIProp(StringProp):
-    def encode(self, encoder: Encoder, value, state: EncodeState) -> None:
+    def encode(self, encoder: Encoder, value: str, state: EncodeState) -> None:
         encoder.write_iri(value)
 
     def decode(self, decoder: Decoder, state: DecodeState) -> Optional[str]:
@@ -150,10 +150,10 @@ class DateTimeProp(Property):
 
     __slots__ = ()
 
-    def set(self, value) -> datetime:
+    def set(self, value: datetime) -> datetime:
         return self._normalize(value)
 
-    def encode(self, encoder: Encoder, value, state: EncodeState) -> None:
+    def encode(self, encoder: Encoder, value: datetime, state: EncodeState) -> None:
         encoder.write_datetime(self.to_string(value))
 
     def decode(self, decoder: Decoder, state: DecodeState) -> Optional[datetime]:
@@ -557,7 +557,7 @@ class EnumProp(IRIProp):
     def __init__(self, values, *, pattern: Optional[str] = None):
         super().__init__(values, pattern=pattern)
 
-    def validate(self, value) -> None:
+    def validate(self, value: str) -> None:
         super().validate(value)
 
         if value not in self.iri_values():
@@ -565,10 +565,10 @@ class EnumProp(IRIProp):
                 f"'{value}' is not a valid value. Choose one of {' '.join(self.iri_values())}"
             )
 
-    def encode(self, encoder: Encoder, value, state: EncodeState) -> None:
+    def encode(self, encoder: Encoder, value: str, state: EncodeState) -> None:
         encoder.write_enum(value, self, self.compact(value))
 
-    def decode(self, decoder: Decoder, state: DecodeState) -> str:
+    def decode(self, decoder: Decoder, state: DecodeState) -> Optional[str]:
         v = decoder.read_enum(self)
         return self.expand(v) or v
 
@@ -1099,6 +1099,8 @@ class SHACLObject(metaclass=SHACLObjectMeta):
             return False
 
         with decoder.read_property(key) as prop_d:
+            if prop_d is None:
+                raise TypeError(f"Property decoder for key '{key}' is None")
             v = p.prop.decode(prop_d, state)
             self.__set(p, v)
         return True

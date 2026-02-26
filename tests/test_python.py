@@ -32,15 +32,16 @@ SPDX3_CONTEXT_URL = "https://spdx.github.io/spdx-3-model/context.json"
 TEST_TZ = timezone(timedelta(hours=-2), name="TST")
 
 
-def shacl2code_generate(args, outfile):
+def shacl2code_generate(args, python_args, outfile):
     return subprocess.run(
         [
             "shacl2code",
             "generate",
         ]
         + args
+        + ["python"]
+        + python_args
         + [
-            "python",
             "--output",
             outfile,
         ],
@@ -66,6 +67,7 @@ def python_model(tmp_path_factory, model_context_url):
             "--context",
             model_context_url,
         ],
+        [],
         outfile,
     )
     outfile.chmod(0o755)
@@ -110,7 +112,7 @@ class TestOutput:
         Checks that the output file is valid python syntax by executing it"
         """
         outfile = tmp_path / "output.py"
-        shacl2code_generate(args, outfile)
+        shacl2code_generate(args, [], outfile)
 
         subprocess.run([sys.executable, outfile, "--help"], check=True)
 
@@ -118,7 +120,7 @@ class TestOutput:
         """
         Tests that the generated file does not have trailing whitespace
         """
-        p = shacl2code_generate(args, "-")
+        p = shacl2code_generate(args, [], "-")
 
         for num, line in enumerate(p.stdout.splitlines()):
             assert (
@@ -129,7 +131,7 @@ class TestOutput:
         """
         Tests that the output file doesn't contain tabs
         """
-        p = shacl2code_generate(args, "-")
+        p = shacl2code_generate(args, [], "-")
 
         for num, line in enumerate(p.stdout.splitlines()):
             assert "\t" not in line, f"Line {num + 1} has tabs"
@@ -152,7 +154,7 @@ class TestCheckType:
         Mypy static type checking
         """
         outfile = tmp_path / "output.py"
-        shacl2code_generate(args, outfile)
+        shacl2code_generate(args, [], outfile)
         subprocess.run(
             ["mypy", outfile],
             encoding="utf-8",
@@ -165,7 +167,7 @@ class TestCheckType:
         Pyrefly static type checking
         """
         outfile = tmp_path / "output.py"
-        shacl2code_generate(args, outfile)
+        shacl2code_generate(args, [], outfile)
         subprocess.run(
             ["pyrefly", "check", outfile],
             encoding="utf-8",
@@ -177,7 +179,7 @@ class TestCheckType:
         Pyright static type checking
         """
         outfile = tmp_path / "output.py"
-        shacl2code_generate(args, outfile)
+        shacl2code_generate(args, [], outfile)
         subprocess.run(
             ["pyright", outfile],
             encoding="utf-8",
@@ -1687,6 +1689,13 @@ def test_objset_context(model, context, expanded, compacted):
 
 def test_slots(model):
     assert model._USE_SLOTS
+
+
+def test_slots_yes(tmp_path):
+    outfile = tmp_path / "output.py"
+    shacl2code_generate(["--input", TEST_MODEL], ["--use-slots", "yes"], outfile)
+    text = outfile.read_text()
+    assert "_USE_SLOTS = True" in text
 
 
 def test_extensible_properties(model, model_context_url):

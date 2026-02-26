@@ -1,490 +1,488 @@
-//{#
+/*{#
 vim: ft=go
+*/                 // This line keeps gofmt happy
+package shacl2code /*
 #}
-//
-// {{ disclaimer }}
-//
-// SPDX-License-Identifier: {{ spdx_license }}
+{{ disclaimer }}
 
-package {{ package }}
+SPDX-License-Identifier: {{ spdx_license }}
+{{ go_package }} */
 
 import (
-    "encoding/json"
-    "fmt"
-    "reflect"
-    "sort"
-    "strings"
+	"encoding/json"
+	"fmt"
+	"reflect"
+	"sort"
+	"strings"
 )
 
 type SHACLObjectSet interface {
-    Objects(yield func(SHACLObject) bool)
-    GetObjectByID(id string) SHACLObject
-    AddObject(r SHACLObject)
-    Decode(decoder *json.Decoder) error
-    Encode(encoder *json.Encoder) error
-    Walk(visit Visit)
-    Validate(handler ErrorHandler) bool
-    Link() (map[string]bool, error)
-    GetMissingIDs() map[string]bool
-    CompactIRI(string) string
-    ExpandIRI(string) string
-    GetContext() map[string]string
-    AddContext(string, string)
+	Objects(yield func(SHACLObject) bool)
+	GetObjectByID(id string) SHACLObject
+	AddObject(r SHACLObject)
+	Decode(decoder *json.Decoder) error
+	Encode(encoder *json.Encoder) error
+	Walk(visit Visit)
+	Validate(handler ErrorHandler) bool
+	Link() (map[string]bool, error)
+	GetMissingIDs() map[string]bool
+	CompactIRI(string) string
+	ExpandIRI(string) string
+	GetContext() map[string]string
+	AddContext(string, string)
 }
 
 type SHACLObjectSetObject struct {
-    objects []SHACLObject
-    objectsById map[string]SHACLObject
-    missingIDs map[string]bool
-    context map[string]string
+	objects     []SHACLObject
+	objectsById map[string]SHACLObject
+	missingIDs  map[string]bool
+	context     map[string]string
 }
 
-
 type shaclObjectList struct {
-    v []SHACLObject
-    idx map[SHACLObject]int
+	v   []SHACLObject
+	idx map[SHACLObject]int
+}
+
+var CONTEXT_URLS = []string{
+	/*{{ '*' }}{{ '/' }}
+	  {%- for url in context.urls | sort -%}
+	  "{{ url }}",
+	  {%- endfor %}
+	  {{ '/' }}{{ '*' }}*/
 }
 
 func makeshaclObjectList(lst []SHACLObject) shaclObjectList {
-    idx := make(map[SHACLObject]int)
-    for i, o := range lst {
-        idx[o] = i
-    }
+	idx := make(map[SHACLObject]int)
+	for i, o := range lst {
+		idx[o] = i
+	}
 
-    return shaclObjectList{lst, idx}
+	return shaclObjectList{lst, idx}
 }
 
 func (v shaclObjectList) Len() int {
-    return len(v.v)
+	return len(v.v)
 }
 
 func (v shaclObjectList) Swap(i, j int) {
-    v.v[i], v.v[j] = v.v[j], v.v[i]
+	v.v[i], v.v[j] = v.v[j], v.v[i]
 }
 
 func (v shaclObjectList) Less(i, j int) bool {
-    if v.v[i].ID().IsSet() {
-        if v.v[j].ID().IsSet() {
-            return v.v[i].ID().Get() < v.v[j].ID().Get()
-        } else {
-            return false;
-        }
-    } else {
-        if v.v[j].ID().IsSet() {
-            return true
-        } else {
-            // Neither has an ID. Preserve original insertion order
-            return v.idx[v.v[i]] < v.idx[v.v[j]]
-        }
-    }
+	if v.v[i].ID().IsSet() {
+		if v.v[j].ID().IsSet() {
+			return v.v[i].ID().Get() < v.v[j].ID().Get()
+		} else {
+			return false
+		}
+	} else {
+		if v.v[j].ID().IsSet() {
+			return true
+		} else {
+			// Neither has an ID. Preserve original insertion order
+			return v.idx[v.v[i]] < v.idx[v.v[j]]
+		}
+	}
 }
 
 func (self *SHACLObjectSetObject) Objects(yield func(SHACLObject) bool) {
-    for _, o := range self.objects {
-        if !yield(o) {
-            return
-        }
-    }
+	for _, o := range self.objects {
+		if !yield(o) {
+			return
+		}
+	}
 }
 
 func (self *SHACLObjectSetObject) GetObjectByID(id string) SHACLObject {
-    return self.objectsById[id]
+	return self.objectsById[id]
 }
 
 func (self *SHACLObjectSetObject) AddObject(r SHACLObject) {
-    self.objects = append(self.objects, r)
-    if r.ID().IsSet() {
-        if self.objectsById == nil {
-            self.objectsById = make(map[string]SHACLObject)
-        }
-        self.objectsById[r.ID().Get()] = r
-    }
+	self.objects = append(self.objects, r)
+	if r.ID().IsSet() {
+		if self.objectsById == nil {
+			self.objectsById = make(map[string]SHACLObject)
+		}
+		self.objectsById[r.ID().Get()] = r
+	}
 }
 
 func (self *SHACLObjectSetObject) decodeContext(d map[string]interface{}, path Path) error {
-    for key, val := range d {
-        s, ok := val.(string)
-        if ! ok {
-            return &DecodeError{path, "Non-string value in context"}
-        }
-        self.AddContext(key, s)
-    }
+	for key, val := range d {
+		s, ok := val.(string)
+		if !ok {
+			return &DecodeError{path, "Non-string value in context"}
+		}
+		self.AddContext(key, s)
+	}
 
-    return nil
+	return nil
 }
 
-
 func (self *SHACLObjectSetObject) Decode(decoder *json.Decoder) error {
-    path := Path{}
-    state := DecodeState{self}
+	path := Path{}
+	state := DecodeState{self}
 
-    var data map[string]interface{}
-    if err := decoder.Decode(&data); err != nil {
-        return err
-    }
+	var data map[string]interface{}
+	if err := decoder.Decode(&data); err != nil {
+		return err
+	}
 
-    context_urls := []string{}
+	context_urls := []string{}
 
-    {
-        sub_path := path.PushPath("@context")
-        v, ok := data["@context"]
-        if ok {
-            value, ok := v.(string)
-            if ok {
-                context_urls = append(context_urls, value)
-            } else {
-                value, ok := v.([]any)
-                if ok {
-                    for _, ctx := range value {
-                        s, ok := ctx.(string)
-                        if ok {
-                            context_urls = append(context_urls, s)
-                            continue
-                        }
-                        c, ok := ctx.(map[string]interface{})
-                        if ok {
-                            err := self.decodeContext(c, sub_path)
-                            if err != nil {
-                                return err
-                            }
-                            continue
-                        }
+	{
+		sub_path := path.PushPath("@context")
+		v, ok := data["@context"]
+		if ok {
+			value, ok := v.(string)
+			if ok {
+				context_urls = append(context_urls, value)
+			} else {
+				value, ok := v.([]any)
+				if ok {
+					for _, ctx := range value {
+						s, ok := ctx.(string)
+						if ok {
+							context_urls = append(context_urls, s)
+							continue
+						}
+						c, ok := ctx.(map[string]interface{})
+						if ok {
+							err := self.decodeContext(c, sub_path)
+							if err != nil {
+								return err
+							}
+							continue
+						}
 
-                        return &DecodeError{sub_path, "Bad context"}
-                    }
-                } else {
-                    value, ok := v.(map[string]interface{})
-                    if ok {
-                        err := self.decodeContext(value, sub_path)
-                        if err != nil {
-                            return err
-                        }
-                    } else {
-                        return &DecodeError{sub_path, "Bad type for context"}
-                    }
-                }
-            }
-        }
+						return &DecodeError{sub_path, "Bad context"}
+					}
+				} else {
+					value, ok := v.(map[string]interface{})
+					if ok {
+						err := self.decodeContext(value, sub_path)
+						if err != nil {
+							return err
+						}
+					} else {
+						return &DecodeError{sub_path, "Bad type for context"}
+					}
+				}
+			}
+		}
 
-        // Check context strings. Using maps.Equal() would be much better, but requires go >= 1.21
-        expected_context_urls := []string{
-        {%- for url in context.urls -%}
-            "{{ url }}",
-        {%- endfor %}
-        }
-        sort.Sort(sort.StringSlice(expected_context_urls))
-        sort.Sort(sort.StringSlice(context_urls))
+		// Check context strings. Using maps.Equal() would be much better, but requires go >= 1.21
+		sort.Sort(sort.StringSlice(context_urls))
 
-        if ! reflect.DeepEqual(context_urls, expected_context_urls) {
-            return &DecodeError{sub_path, "Wrong context URL(s)"}
-        }
-    }
+		if !reflect.DeepEqual(context_urls, CONTEXT_URLS) {
+			return &DecodeError{sub_path, "Wrong context URL(s)"}
+		}
+	}
 
-    delete(data, "@context")
+	delete(data, "@context")
 
-    decodeProxy := func (data any, path Path, context map[string]string, check DecodeCheckType, state *DecodeState) (SHACLObject, error) {
-        return DecodeSHACLObject[SHACLObject](data, path, context, nil, state)
-    }
+	decodeProxy := func(data any, path Path, context map[string]string, check DecodeCheckType, state *DecodeState) (SHACLObject, error) {
+		return DecodeSHACLObject[SHACLObject](data, path, context, nil, state)
+	}
 
-    _, has_graph := data["@graph"]
-    if has_graph {
-        for k, v := range data {
-            switch k {
-            case "@graph": {
-                objs, err := DecodeList[SHACLObject](
-                    v,
-                    path.PushPath("@graph"),
-                    map[string]string{},
-                    decodeProxy,
-                    nil,
-                    &state,
-                )
+	_, has_graph := data["@graph"]
+	if has_graph {
+		for k, v := range data {
+			switch k {
+			case "@graph":
+				{
+					objs, err := DecodeList[SHACLObject](
+						v,
+						path.PushPath("@graph"),
+						map[string]string{},
+						decodeProxy,
+						nil,
+						&state,
+					)
 
-                if err != nil {
-                    return err
-                }
+					if err != nil {
+						return err
+					}
 
-                for _, obj := range objs {
-                    self.AddObject(obj)
-                }
-            }
+					for _, obj := range objs {
+						self.AddObject(obj)
+					}
+				}
 
-            default:
-                return &DecodeError{path, "Unknown property '" + k + "'"}
-            }
-        }
-    } else {
-        obj, err := decodeProxy(data, path, map[string]string{}, nil, &state)
-        if err != nil {
-            return err
-        }
+			default:
+				return &DecodeError{path, "Unknown property '" + k + "'"}
+			}
+		}
+	} else {
+		obj, err := decodeProxy(data, path, map[string]string{}, nil, &state)
+		if err != nil {
+			return err
+		}
 
-        self.AddObject(obj)
-    }
+		self.AddObject(obj)
+	}
 
-    missing, err := self.Link()
-    self.missingIDs = missing
-    return err
+	missing, err := self.Link()
+	self.missingIDs = missing
+	return err
 }
 
 func (self *SHACLObjectSetObject) Encode(encoder *json.Encoder) error {
-    data := make(map[string]interface{})
-    num_context := {{ context.urls | length }}
-    if len(self.context) > 0 {
-        num_context += 1
-    }
+	data := make(map[string]interface{})
+	num_context := len(CONTEXT_URLS)
+	if len(self.context) > 0 {
+		num_context += 1
+	}
 
-    if num_context == 1 {
-{%- if context.urls | length %}
-        data["@context"] = "{{ context.urls[0] }}"
-{%- else %}
-        data["@context"] = self.context
-{%- endif %}
-    } else if num_context > 1 {
-        ctx := []interface{} {
-        {%- for url in context.urls %}
-             "{{ url }}",
-        {%- endfor %}
-        }
-        if len(self.context) > 0 {
-            ctx = append(ctx, self.context)
-        }
-        data["@context"] = ctx
-    }
+	if num_context == 1 {
+		if len(CONTEXT_URLS) > 0 {
+			data["@context"] = CONTEXT_URLS[0]
+		} else {
+			data["@context"] = self.context
+		}
+	} else if num_context > 1 {
+		ctx := []interface{}{}
+		for _, url := range CONTEXT_URLS {
+			ctx = append(ctx, url)
+		}
+		if len(self.context) > 0 {
+			ctx = append(ctx, self.context)
+		}
+		data["@context"] = ctx
+	}
 
-    path := Path{}
-    state := EncodeState{
-        Written: make(map[SHACLObject]bool),
-        objectSet: self,
-    }
+	path := Path{}
+	state := EncodeState{
+		Written:   make(map[SHACLObject]bool),
+		objectSet: self,
+	}
 
-    ref_counts := make(map[SHACLObject]int)
-    top_objects := make(map[SHACLObject]bool)
+	ref_counts := make(map[SHACLObject]int)
+	top_objects := make(map[SHACLObject]bool)
 
-    // Count references
-    self.Walk(func (path Path, v any) {
-        r, ok := v.(Ref[SHACLObject])
-        if ! ok {
-            return
-        }
+	// Count references
+	self.Walk(func(path Path, v any) {
+		r, ok := v.(Ref[SHACLObject])
+		if !ok {
+			return
+		}
 
-        if ! r.IsObj() {
-            return
-        }
+		if !r.IsObj() {
+			return
+		}
 
-        o := r.GetObj()
+		o := r.GetObj()
 
-        // Remove blank nodes for reassignment
-        if o.ID().IsSet() && IsBlankNode(o.ID().Get()) {
-            o.ID().Delete()
-        }
+		// Remove blank nodes for reassignment
+		if o.ID().IsSet() && IsBlankNode(o.ID().Get()) {
+			o.ID().Delete()
+		}
 
-        ref_counts[o] = ref_counts[o] + 1
-    })
+		ref_counts[o] = ref_counts[o] + 1
+	})
 
-    // Assign blank nodes to objects that have more than one reference
-    blank_count := 0
-    for o, count := range ref_counts {
-        if count <= 1 {
-            continue
-        }
+	// Assign blank nodes to objects that have more than one reference
+	blank_count := 0
+	for o, count := range ref_counts {
+		if count <= 1 {
+			continue
+		}
 
-        if o.ID().IsSet() {
-            continue
-        }
+		if o.ID().IsSet() {
+			continue
+		}
 
+		o.ID().Set(fmt.Sprintf("_:%s%d", o.GetType().GetCompactTypeIRI().GetDefault(""), blank_count))
+		blank_count += 1
+		top_objects[o] = true
+	}
 
-        o.ID().Set(fmt.Sprintf("_:%s%d", o.GetType().GetCompactTypeIRI().GetDefault(""), blank_count))
-        blank_count += 1
-        top_objects[o] = true
-    }
+	for _, o := range self.objects {
+		top_objects[o] = true
+	}
 
-    for _, o := range self.objects {
-        top_objects[o] = true
-    }
+	// Convert to a list and sort
+	top_list := []SHACLObject{}
+	for o, _ := range top_objects {
+		top_list = append(top_list, o)
+	}
 
-    // Convert to a list and sort
-    top_list := []SHACLObject{}
-    for o, _ := range top_objects {
-        top_list = append(top_list, o)
-    }
+	sort.Sort(makeshaclObjectList(top_list))
 
-    sort.Sort(makeshaclObjectList(top_list))
+	if len(top_list) == 1 {
+		err := top_list[0].EncodeProperties(data, path, &state)
+		if err != nil {
+			return err
+		}
+	} else if len(top_objects) > 1 {
+		// All objects directly added to the object set should be written as
+		// top level objects, so mark then as written until they are ready to
+		// be serialized, which will force them to be referenced by IRI until
+		// we are ready
+		for _, o := range top_list {
+			state.Written[o] = true
+		}
 
-    if len(top_list) == 1 {
-        err := top_list[0].EncodeProperties(data, path, &state)
-        if err != nil {
-            return err
-        }
-    } else if len(top_objects) > 1 {
-        // All objects directly added to the object set should be written as
-        // top level objects, so mark then as written until they are ready to
-        // be serialized, which will force them to be referenced by IRI until
-        // we are ready
-        for _, o := range top_list {
-            state.Written[o] = true
-        }
+		graph_path := path.PushPath("@graph")
+		lst := []interface{}{}
+		for idx, o := range top_list {
+			// Remove this object from the written set now so it gets serialized
+			delete(state.Written, o)
 
-        graph_path := path.PushPath("@graph")
-        lst := []interface{}{}
-        for idx, o := range top_list {
-            // Remove this object from the written set now so it gets serialized
-            delete(state.Written, o)
+			d, err := EncodeSHACLObject(o, graph_path.PushIndex(idx), &state)
+			if err != nil {
+				return err
+			}
+			lst = append(lst, d)
+		}
 
-            d, err := EncodeSHACLObject(o, graph_path.PushIndex(idx), &state)
-            if err != nil {
-                return err
-            }
-            lst = append(lst, d)
-        }
+		data["@graph"] = lst
+	}
 
-        data["@graph"] = lst
-    }
-
-    return encoder.Encode(data)
+	return encoder.Encode(data)
 }
 
 func (self *SHACLObjectSetObject) Walk(visit Visit) {
-    path := Path{}
-    visited := map[SHACLObject]bool{}
+	path := Path{}
+	visited := map[SHACLObject]bool{}
 
-    visit_proxy := func (path Path, v any) {
-        switch v.(type) {
-        case Ref[SHACLObject]:
-            r := v.(Ref[SHACLObject])
-            if ! r.IsObj() {
-                visit(path, v)
-                return
-            }
+	visit_proxy := func(path Path, v any) {
+		switch v.(type) {
+		case Ref[SHACLObject]:
+			r := v.(Ref[SHACLObject])
+			if !r.IsObj() {
+				visit(path, v)
+				return
+			}
 
-            o := r.GetObj()
-            _, ok := visited[o]
-            if ok {
-                return
-            }
-            visited[o] = true
-            visit(path, v)
-            o.Walk(path, visit)
-            return
+			o := r.GetObj()
+			_, ok := visited[o]
+			if ok {
+				return
+			}
+			visited[o] = true
+			visit(path, v)
+			o.Walk(path, visit)
+			return
 
-        default:
-            visit(path, v)
-            return
-        }
-    }
+		default:
+			visit(path, v)
+			return
+		}
+	}
 
-    for idx, o := range(self.objects) {
-        sub_path := path.PushIndex(idx)
-        visit_proxy(sub_path, MakeObjectRef(o))
-    }
+	for idx, o := range self.objects {
+		sub_path := path.PushIndex(idx)
+		visit_proxy(sub_path, MakeObjectRef(o))
+	}
 }
 
 func (self *SHACLObjectSetObject) Validate(handler ErrorHandler) bool {
-    valid := true
+	valid := true
 
-    self.Walk(func (path Path, v any) {
-        r, ok := v.(Ref[SHACLObject])
-        if ! ok {
-            return
-        }
+	self.Walk(func(path Path, v any) {
+		r, ok := v.(Ref[SHACLObject])
+		if !ok {
+			return
+		}
 
-        if ! r.IsObj() {
-            return
-        }
+		if !r.IsObj() {
+			return
+		}
 
-        if ! r.GetObj().Validate(path, handler) {
-            valid = false
-        }
-    })
+		if !r.GetObj().Validate(path, handler) {
+			valid = false
+		}
+	})
 
-    return valid
+	return valid
 }
 
 func (self *SHACLObjectSetObject) Link() (map[string]bool, error) {
-    state := LinkState{
-        make(map[string]SHACLObject),
-        make(map[string]bool),
-    }
+	state := LinkState{
+		make(map[string]SHACLObject),
+		make(map[string]bool),
+	}
 
-    // Collect IDs and remove blank nodes
-    self.Walk(func (path Path, v any) {
-        r, ok := v.(Ref[SHACLObject])
-        if ! ok {
-            return
-        }
+	// Collect IDs and remove blank nodes
+	self.Walk(func(path Path, v any) {
+		r, ok := v.(Ref[SHACLObject])
+		if !ok {
+			return
+		}
 
-        if ! r.IsObj() {
-            return
-        }
+		if !r.IsObj() {
+			return
+		}
 
-        o := r.GetObj()
-        if o.ID().IsSet() {
-            state.Objs[o.ID().Get()] = o
+		o := r.GetObj()
+		if o.ID().IsSet() {
+			state.Objs[o.ID().Get()] = o
 
-            if IsBlankNode(o.ID().Get()) {
-                o.ID().Delete()
-            }
-        }
-    })
+			if IsBlankNode(o.ID().Get()) {
+				o.ID().Delete()
+			}
+		}
+	})
 
-    // Link references
-    self.Walk(func (path Path, v any) {
-        r, ok := v.(Ref[SHACLObject])
-        if ! ok {
-            return
-        }
+	// Link references
+	self.Walk(func(path Path, v any) {
+		r, ok := v.(Ref[SHACLObject])
+		if !ok {
+			return
+		}
 
-        if ! r.IsObj() {
-            return
-        }
+		if !r.IsObj() {
+			return
+		}
 
-        o := r.GetObj()
-        o.Link(&state)
-    })
+		o := r.GetObj()
+		o.Link(&state)
+	})
 
-    return state.Missing, nil
+	return state.Missing, nil
 }
 
 func (self *SHACLObjectSetObject) GetMissingIDs() map[string]bool {
-    return self.missingIDs
+	return self.missingIDs
 }
 
 func (self *SHACLObjectSetObject) CompactIRI(iri string) string {
-    for prefix, expanded := range self.context {
-        if iri == expanded {
-            return self.CompactIRI(prefix)
-        }
-        if strings.HasPrefix(iri, expanded) {
-            return self.CompactIRI(prefix + ":" + iri[len(expanded):])
-        }
-    }
-    return iri
+	for prefix, expanded := range self.context {
+		if iri == expanded {
+			return self.CompactIRI(prefix)
+		}
+		if strings.HasPrefix(iri, expanded) {
+			return self.CompactIRI(prefix + ":" + iri[len(expanded):])
+		}
+	}
+	return iri
 }
 func (self *SHACLObjectSetObject) ExpandIRI(iri string) string {
-    for prefix, expanded := range self.context {
-        if iri == prefix {
-            return self.ExpandIRI(expanded)
-        }
-        if strings.HasPrefix(iri, prefix + ":") {
-            return self.ExpandIRI(expanded + iri[len(prefix)+1:])
-        }
-    }
-    return iri
+	for prefix, expanded := range self.context {
+		if iri == prefix {
+			return self.ExpandIRI(expanded)
+		}
+		if strings.HasPrefix(iri, prefix+":") {
+			return self.ExpandIRI(expanded + iri[len(prefix)+1:])
+		}
+	}
+	return iri
 }
 
 func (self *SHACLObjectSetObject) GetContext() map[string]string {
-    return self.context
+	return self.context
 }
 
 func (self *SHACLObjectSetObject) AddContext(prefix string, expanded string) {
-    if self.context == nil {
-        self.context = map[string]string{}
-    }
-    self.context[prefix] = expanded
+	if self.context == nil {
+		self.context = map[string]string{}
+	}
+	self.context[prefix] = expanded
 }
 
 func NewSHACLObjectSet() SHACLObjectSet {
-    os := SHACLObjectSetObject{}
-    return &os
+	os := SHACLObjectSetObject{}
+	return &os
 }
-

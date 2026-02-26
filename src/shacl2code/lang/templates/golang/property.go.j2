@@ -1,101 +1,101 @@
-//{#
+/*{#
 vim: ft=go
+*/                 // This line keeps gofmt happy
+package shacl2code /*
 #}
-//
-// {{ disclaimer }}
-//
-// SPDX-License-Identifier: {{ spdx_license }}
+{{ disclaimer }}
 
-package {{ package }}
+SPDX-License-Identifier: {{ spdx_license }}
+{{ go_package }} */
 
 type PropertyInterface[T any] interface {
-    Get() T
-    Set(val T) error
-    Delete()
-    IsSet() bool
-    Walk(path Path, visit Visit)
-    Link(state *LinkState) error
-    DecodeCheck(data any, path Path) error
+	Get() T
+	Set(val T) error
+	Delete()
+	IsSet() bool
+	Walk(path Path, visit Visit)
+	Link(state *LinkState) error
+	DecodeCheck(data any, path Path) error
 }
 
 type Property[T any] struct {
-    value Optional[T]
-    name string
-    validators []Validator[T]
-    decodeValidators []Validator[any]
+	value            Optional[T]
+	name             string
+	validators       []Validator[T]
+	decodeValidators []Validator[any]
 }
 
 func NewProperty[T any](name string, validators []Validator[T], decodeValidators []Validator[any]) Property[T] {
-    return Property[T]{
-        value: NewEmptyOptional[T](),
-        name: name,
-        validators: validators,
-        decodeValidators: decodeValidators,
-    }
+	return Property[T]{
+		value:            NewEmptyOptional[T](),
+		name:             name,
+		validators:       validators,
+		decodeValidators: decodeValidators,
+	}
 }
 
 func (self *Property[T]) Get() T {
-    return self.value.Get()
+	return self.value.Get()
 }
 
 func (self *Property[T]) Set(val T) error {
-    for _, validator := range self.validators {
-        err := validator.Check(val, self.name)
-        if err != nil {
-            return err
-        }
-    }
+	for _, validator := range self.validators {
+		err := validator.Check(val, self.name)
+		if err != nil {
+			return err
+		}
+	}
 
-    self.value = NewOptional(val)
-    return nil
+	self.value = NewOptional(val)
+	return nil
 }
 
 func (self *Property[T]) Delete() {
-    self.value = NewEmptyOptional[T]()
+	self.value = NewEmptyOptional[T]()
 }
 
 func (self *Property[T]) IsSet() bool {
-    return self.value.IsSet()
+	return self.value.IsSet()
 }
 
 func (self *Property[T]) Check(path Path, handler ErrorHandler) bool {
-    if ! self.value.IsSet() {
-        return true
-    }
+	if !self.value.IsSet() {
+		return true
+	}
 
-    var valid bool
-    valid = true
+	var valid bool
+	valid = true
 
-    for _, validator := range self.validators {
-        err := validator.Check(self.value.Get(), self.name)
-        if err != nil {
-            if handler != nil {
-                handler.HandleError(err, path)
-            }
-            valid = false
-        }
-    }
-    return valid
+	for _, validator := range self.validators {
+		err := validator.Check(self.value.Get(), self.name)
+		if err != nil {
+			if handler != nil {
+				handler.HandleError(err, path)
+			}
+			valid = false
+		}
+	}
+	return valid
 }
 
 func (self *Property[T]) Walk(path Path, visit Visit) {
-    if ! self.value.IsSet() {
-        return
-    }
+	if !self.value.IsSet() {
+		return
+	}
 
-    visit(path.PushPath(self.name), self.value.Get())
+	visit(path.PushPath(self.name), self.value.Get())
 }
 
 func (self *Property[T]) Link(state *LinkState) error {
-    return nil
+	return nil
 }
 
 func (self *Property[T]) DecodeCheck(data any, path Path) error {
-    for _, v := range self.decodeValidators {
-        err := v.Check(data, self.name)
-        if err != nil {
-            return err
-        }
-    }
-    return nil
+	for _, v := range self.decodeValidators {
+		err := v.Check(data, self.name)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

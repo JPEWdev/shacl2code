@@ -1,15 +1,14 @@
-//{#
+/*{#
 vim: ft=go
+*/                 // This line keeps gofmt happy
+package shacl2code /*
 #}
-//
-// {{ disclaimer }}
-//
-// SPDX-License-Identifier: {{ spdx_license }}
+{{ disclaimer }}
 
-package {{ package }}
+SPDX-License-Identifier: {{ spdx_license }}
+{{ go_package }} */
 
 type LinkState struct {
-    Objs map[string]SHACLObject
-    Missing map[string]bool
+	Objs    map[string]SHACLObject
+	Missing map[string]bool
 }
-

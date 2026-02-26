@@ -1,36 +1,36 @@
-//{#
+/*{#
 vim: ft=go
+*/                 // This line keeps gofmt happy
+package shacl2code /*
 #}
-//
-// {{ disclaimer }}
-//
-// SPDX-License-Identifier: {{ spdx_license }}
+{{ disclaimer }}
 
-package {{ package }}
+SPDX-License-Identifier: {{ spdx_license }}
+{{ go_package }} */
 
 type Optional[T any] struct {
-    value *T
+	value *T
 }
 
 func (self Optional[T]) Get() T {
-    return *self.value
+	return *self.value
 }
 
 func (self Optional[T]) GetDefault(val T) T {
-    if ! self.IsSet() {
-        return val
-    }
-    return *self.value
+	if !self.IsSet() {
+		return val
+	}
+	return *self.value
 }
 
 func (self Optional[T]) IsSet() bool {
-    return self.value != nil
+	return self.value != nil
 }
 
 func NewOptional[T any](value T) Optional[T] {
-    return Optional[T]{&value}
+	return Optional[T]{&value}
 }
 
 func NewEmptyOptional[T any]() Optional[T] {
-    return Optional[T]{nil}
+	return Optional[T]{nil}
 }

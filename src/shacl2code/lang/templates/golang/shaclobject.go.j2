@@ -1,131 +1,129 @@
-//{#
+/*{#
 vim: ft=go
+*/                 // This line keeps gofmt happy
+package shacl2code /*
 #}
-//
-// {{ disclaimer }}
-//
-// SPDX-License-Identifier: {{ spdx_license }}
+{{ disclaimer }}
 
-package {{ package }}
+SPDX-License-Identifier: {{ spdx_license }}
+{{ go_package }} */
 
 type Visit func(Path, any)
 
 // Base SHACL Object
 type SHACLObjectBase struct {
-    // Object ID
-    id Property[string]
-    typ SHACLType
-    typeIRI string
+	// Object ID
+	id      Property[string]
+	typ     SHACLType
+	typeIRI string
 }
 
 func (self *SHACLObjectBase) ID() PropertyInterface[string] { return &self.id }
 
 func (self *SHACLObjectBase) Validate(path Path, handler ErrorHandler) bool {
-    var valid bool = true
+	var valid bool = true
 
-    switch self.typ.GetNodeKind() {
-    case NodeKindBlankNode:
-        if self.ID().IsSet() && ! IsBlankNode(self.ID().Get()) {
-            handler.HandleError(&ValidationError{
-                "id",
-                "ID must by be blank node"},
-                path.PushPath("id"))
-            valid = false
-        }
-    case NodeKindIRI:
-        if ! self.ID().IsSet() || ! IsIRI(self.ID().Get()) {
-            handler.HandleError(&ValidationError{
-                "id",
-                "ID must be an IRI"},
-                path.PushPath("id"))
-            valid = false
-        }
-    case NodeKindBlankNodeOrIRI:
-        if self.ID().IsSet() && ! IsBlankNode(self.ID().Get()) && ! IsIRI(self.ID().Get()) {
-            handler.HandleError(&ValidationError{
-                "id",
-                "ID must be a blank node or IRI"},
-                path.PushPath("id"))
-            valid = false
-        }
-    default:
-        panic("Unknown node kind")
-    }
+	switch self.typ.GetNodeKind() {
+	case NodeKindBlankNode:
+		if self.ID().IsSet() && !IsBlankNode(self.ID().Get()) {
+			handler.HandleError(&ValidationError{
+				"id",
+				"ID must by be blank node"},
+				path.PushPath("id"))
+			valid = false
+		}
+	case NodeKindIRI:
+		if !self.ID().IsSet() || !IsIRI(self.ID().Get()) {
+			handler.HandleError(&ValidationError{
+				"id",
+				"ID must be an IRI"},
+				path.PushPath("id"))
+			valid = false
+		}
+	case NodeKindBlankNodeOrIRI:
+		if self.ID().IsSet() && !IsBlankNode(self.ID().Get()) && !IsIRI(self.ID().Get()) {
+			handler.HandleError(&ValidationError{
+				"id",
+				"ID must be a blank node or IRI"},
+				path.PushPath("id"))
+			valid = false
+		}
+	default:
+		panic("Unknown node kind")
+	}
 
-    return valid
+	return valid
 }
 
 func (self *SHACLObjectBase) Walk(path Path, visit Visit) {
-    self.id.Walk(path, visit)
+	self.id.Walk(path, visit)
 }
 
 func (self *SHACLObjectBase) EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error {
-    if self.typeIRI != "" {
-        data["{{ context.compact_iri('@type') }}"] = state.CompactIRI(self.typeIRI)
-    } else {
-        data["{{ context.compact_iri('@type') }}"] = self.typ.GetCompactTypeIRI().GetDefault(state.CompactIRI(self.typ.GetTypeIRI()))
-    }
+	if self.typeIRI != "" {
+		data["{{ context.compact_iri('@type') }}"] = state.CompactIRI(self.typeIRI)
+	} else {
+		data["{{ context.compact_iri('@type') }}"] = self.typ.GetCompactTypeIRI().GetDefault(state.CompactIRI(self.typ.GetTypeIRI()))
+	}
 
-    id_prop := self.typ.GetIDAlias().GetDefault("@id")
+	id_prop := self.typ.GetIDAlias().GetDefault("@id")
 
-    if self.id.IsSet() {
-        data[id_prop] = state.CompactIRI(self.id.Get())
-    }
+	if self.id.IsSet() {
+		data[id_prop] = state.CompactIRI(self.id.Get())
+	}
 
-    return nil
+	return nil
 }
 
 func (self *SHACLObjectBase) GetType() SHACLType {
-    return self.typ
+	return self.typ
 }
 
 func (self *SHACLObjectBase) GetTypeIRI() string {
-    return self.typeIRI
+	return self.typeIRI
 }
 
 func (self *SHACLObjectBase) setTypeIRI(iri string) {
-    self.typeIRI = iri
+	self.typeIRI = iri
 }
 
 func (self *SHACLObjectBase) Link(state *LinkState) error {
-    return nil
+	return nil
 }
 
 func ConstructSHACLObjectBase(o *SHACLObjectBase, typ SHACLType) *SHACLObjectBase {
-    o.id = NewProperty[string]("id", []Validator[string]{ IDValidator{}, }, []Validator[any]{})
-    o.typ = typ
-    return o
+	o.id = NewProperty[string]("id", []Validator[string]{IDValidator{}}, []Validator[any]{})
+	o.typ = typ
+	return o
 }
 
 type SHACLObject interface {
-    ID() PropertyInterface[string]
-    Validate(path Path, handler ErrorHandler) bool
-    Walk(path Path, visit Visit)
-    EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error
-    GetType() SHACLType
-    GetTypeIRI() string
-    setTypeIRI(iri string)
-    Link(state *LinkState) error
+	ID() PropertyInterface[string]
+	Validate(path Path, handler ErrorHandler) bool
+	Walk(path Path, visit Visit)
+	EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error
+	GetType() SHACLType
+	GetTypeIRI() string
+	setTypeIRI(iri string)
+	Link(state *LinkState) error
 }
 
 func EncodeSHACLObject(o SHACLObject, path Path, state *EncodeState) (any, error) {
-    if state != nil {
-        if state.Written[o] {
-            if o.ID().IsSet() {
-                return state.CompactIRI(o.ID().Get()), nil
-            }
+	if state != nil {
+		if state.Written[o] {
+			if o.ID().IsSet() {
+				return state.CompactIRI(o.ID().Get()), nil
+			}
 
-            return nil, &EncodeError{
-                path,
-                "Object referenced multiple times, but does not have an ID assigned",
-            }
-        }
+			return nil, &EncodeError{
+				path,
+				"Object referenced multiple times, but does not have an ID assigned",
+			}
+		}
 
-        state.Written[o] = true
-    }
+		state.Written[o] = true
+	}
 
-    d := make(map[string]interface{})
-    return d, o.EncodeProperties(d, path, state)
+	d := make(map[string]interface{})
+	return d, o.EncodeProperties(d, path, state)
 }
-
-

@@ -713,8 +713,6 @@ class SHACLObjectMeta(type):
 
         attrs["_IRI"] = {p.pyname: p.iri for p in attrs["_OBJ_PY_PROPS"].values()}
 
-        global NAMED_INDIVIDUALS
-
         auto_ni = True
         if "AUTO_NAMED_INDIVIDUALS" in attrs:
             auto_ni = attrs["AUTO_NAMED_INDIVIDUALS"]
@@ -1403,8 +1401,6 @@ class SHACLObjectSet(object):
         return self._link()
 
     def _link(self) -> Set[str]:
-        global NAMED_INDIVIDUALS
-
         self.missing_ids = set()
         visited: Set[SHACLObject] = set()
 
@@ -1462,6 +1458,7 @@ class SHACLObjectSet(object):
     def foreach_type(
         self, typ: str, *, match_subclass: bool = True
     ) -> Iterator[SHACLObject]: ...
+
     @overload
     def foreach_type(
         self, typ: Type[T_SHACLObject], *, match_subclass: bool = True
@@ -1517,8 +1514,6 @@ class SHACLObjectSet(object):
         ref_counts: Dict[SHACLObject, int] = {}
 
         def walk_callback(value: SHACLObject, path: List[str]) -> bool:
-            nonlocal ref_counts
-
             if not isinstance(value, SHACLObject):
                 return True
 
@@ -1564,9 +1559,6 @@ class SHACLObjectSet(object):
         ref_counts: Dict[SHACLObject, int] = {}
 
         def walk_callback(value: SHACLObject, path: List[str]) -> bool:
-            nonlocal state
-            nonlocal ref_counts
-
             if not isinstance(value, SHACLObject):
                 return True
 
@@ -2429,7 +2421,6 @@ def decode_context(decoder: Decoder, objectset: SHACLObjectSet):
     if decoder.is_list():
         for ctx_d in decoder.read_list():
             _decode_ctx(ctx_d)
-            pass
     else:
         _decode_ctx(decoder)
 
@@ -2698,8 +2689,6 @@ def print_tree(objects, all_fields: bool = False) -> None:
     seen = set()
 
     def callback(value, path: List[str]):
-        nonlocal seen
-
         s = ("  " * (len(path) - 1)) + f"{path[-1]}"
         if isinstance(value, SHACLObject):
             s += f" {value} ({id(value)})"

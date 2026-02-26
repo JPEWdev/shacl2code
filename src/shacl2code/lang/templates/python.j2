@@ -124,7 +124,7 @@ class StringProp(Property):
     def set(self, value) -> str:
         return str(value)
 
-    def encode(self, encoder: Encoder, value: str, state: EncodeState) -> None:
+    def encode(self, encoder: Encoder, value, state: EncodeState) -> None:
         encoder.write_string(value)
 
     def decode(self, decoder: Decoder, state: DecodeState) -> Optional[str]:
@@ -132,7 +132,7 @@ class StringProp(Property):
 
 
 class AnyURIProp(StringProp):
-    def encode(self, encoder: Encoder, value: str, state: EncodeState) -> None:
+    def encode(self, encoder: Encoder, value, state: EncodeState) -> None:
         encoder.write_iri(value)
 
     def decode(self, decoder: Decoder, state: DecodeState) -> Optional[str]:
@@ -153,7 +153,7 @@ class DateTimeProp(Property):
     def set(self, value: datetime) -> datetime:
         return self._normalize(value)
 
-    def encode(self, encoder: Encoder, value: datetime, state: EncodeState) -> None:
+    def encode(self, encoder: Encoder, value, state: EncodeState) -> None:
         encoder.write_datetime(self.to_string(value))
 
     def decode(self, decoder: Decoder, state: DecodeState) -> Optional[datetime]:

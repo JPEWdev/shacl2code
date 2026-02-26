@@ -17,7 +17,7 @@ type SHACLType interface {
     GetCompactTypeIRI() Optional[string]
     GetNodeKind() int
     GetIDAlias() Optional[string]
-    DecodeProperty(SHACLObject, string, interface{}, Path) (bool, error)
+    DecodeProperty(SHACLObject, string, interface{}, Path, *DecodeState) (bool, error)
     Create() SHACLObject
     IsAbstract() bool
     IsExtensible() bool
@@ -125,16 +125,35 @@ func (self EncodeState) CompactIRI(iri string) string {
     return self.objectSet.CompactIRI(iri);
 }
 
-func (self SHACLTypeBase) DecodeProperty(o SHACLObject, name string, value interface{}, path Path) (bool, error) {
+type DecodeState struct {
+    objectSet SHACLObjectSet
+}
+
+func (self DecodeState) ExpandIRI(iri string) string {
+    if self.objectSet == nil {
+        return iri;
+    }
+
+    return self.objectSet.ExpandIRI(iri);
+}
+
+func (self DecodeState) CompactIRI(iri string) string {
+    if self.objectSet == nil {
+        return iri;
+    }
+    return self.objectSet.CompactIRI(iri);
+}
+
+func (self SHACLTypeBase) DecodeProperty(o SHACLObject, name string, value interface{}, path Path, state *DecodeState) (bool, error) {
     id_alias := self.GetIDAlias()
     if id_alias.IsSet() {
         switch name {
         case id_alias.Get():
-            val, err := DecodeString(value, path.PushPath(name), map[string]string{}, o.ID())
+            val, err := DecodeString(value, path.PushPath(name), map[string]string{}, o.ID(), state)
             if err != nil {
                 return false, err
             }
-            err = o.ID().Set(val)
+            err = o.ID().Set(state.ExpandIRI(val))
             if err != nil {
                 return false, err
             }
@@ -146,11 +165,11 @@ func (self SHACLTypeBase) DecodeProperty(o SHACLObject, name string, value inter
             }
         }
     } else if name == "@id" {
-        val, err := DecodeString(value, path.PushPath(name), map[string]string{}, o.ID())
+        val, err := DecodeString(value, path.PushPath(name), map[string]string{}, o.ID(), state)
         if err != nil {
             return false, err
         }
-        err = o.ID().Set(val)
+        err = o.ID().Set(state.ExpandIRI(val))
         if err != nil {
             return false, err
         }
@@ -159,7 +178,7 @@ func (self SHACLTypeBase) DecodeProperty(o SHACLObject, name string, value inter
 
     for _, parent_id := range(self.parentIRIs) {
         p := objectTypes[parent_id]
-        found, err := p.DecodeProperty(o, name, value, path)
+        found, err := p.DecodeProperty(o, name, value, path, state)
         if err != nil || found {
             return found, err
         }
@@ -167,16 +186,16 @@ func (self SHACLTypeBase) DecodeProperty(o SHACLObject, name string, value inter
 
     if self.isExtensible.GetDefault(false) {
         obj := o.(SHACLExtensibleObject)
-        v, err := DecodeAny(value, path, map[string]string{}, nil)
+        v, err := DecodeAny(value, path, map[string]string{}, nil, state)
         if err != nil {
             return false, err
         }
 
         lst, is_list := v.([]interface{})
         if is_list {
-            obj.SetExtProperty(name, lst)
+            obj.SetExtProperty(state.ExpandIRI(name), lst)
         } else {
-            obj.SetExtProperty(name, []interface{}{v})
+            obj.SetExtProperty(state.ExpandIRI(name), []interface{}{v})
         }
         return true, nil
     }

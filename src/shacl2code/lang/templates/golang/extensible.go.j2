@@ -27,7 +27,7 @@ func (self *SHACLExtensibleBase) DeleteExtProperty(name string) {
     delete(self.properties, name)
 }
 
-func (self *SHACLExtensibleBase) EncodeExtProperties(data map[string]any, path Path) error {
+func (self *SHACLExtensibleBase) EncodeExtProperties(data map[string]any, path Path, state* EncodeState) error {
     for k, values := range self.properties {
         if len(values) == 0 {
             continue
@@ -37,7 +37,7 @@ func (self *SHACLExtensibleBase) EncodeExtProperties(data map[string]any, path P
         for _, v := range values {
             lst = append(lst, v)
         }
-        data[k] = lst
+        data[state.CompactIRI(k)] = lst
     }
     return nil
 }

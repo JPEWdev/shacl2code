@@ -49,8 +49,9 @@ void SHACLExtensibleObjectBase::encodeExtensibleProperties(
         if (!v.size()) {
             continue;
         }
-        path.pushMember(p.first, [&] {
-            encoder.writeProperty(p.first, {}, [&](ValueEncoder& prop_encoder) {
+        auto const iri = encoder.getState().compactIRI(p.first);
+        path.pushMember(iri, [&] {
+            encoder.writeProperty(iri, {}, [&](ValueEncoder& prop_encoder) {
                 prop_encoder.writeList([&](ListEncoder& list_encoder) {
                     path.foreachItem(v, [&](auto const& variant) {
                         list_encoder.writeItem([&](ValueEncoder& item_encoder) {
@@ -104,7 +105,7 @@ void SHACLExtensibleObjectBase::encodeExtensibleProperties(
 void SHACLExtensibleObjectBase::decodeExtensibleProperty(
     std::string const& name, ValueDecoder& decoder, ErrorHandler& errorHandler,
     ObjectPath& path) {
-    auto& p = getExtProperty(name);
+    auto& p = getExtProperty(decoder.getState().expandIRI(name));
 
     path.pushMember(name, [&] {
         if (decoder.getType() == ValueDecoder::Type::List) {

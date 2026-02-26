@@ -1460,3 +1460,48 @@ def test_objset_context(compile_test, context, expanded, compacted):
     output = compile_test("\n".join(program))
 
     assert output.splitlines() == [compacted, expanded]
+
+
+def test_extensible_context(compile_test, roundtrip):
+    # Test that extensible object IDs and properties account for the context
+    compile_test(f"""\
+        SHACLObjectSet objset;
+        {{
+            std::ifstream infile;
+            infile.open("{roundtrip}");
+
+            JSONLDDeserializer d;
+            d.read(infile, objset);
+            infile.close();
+        }}
+
+        auto o = objset.findById("http://serialize.example.com/test-uses-extensible-abstract");
+        if (!o) {{
+            std::cout << "Unable to find object" << std::endl;
+            return 1;
+        }}
+
+        auto abstract = std::dynamic_pointer_cast<model::uses_extensible_abstract_class>(o);
+        if (!abstract) {{
+            std::cout << "Object is not of expected type" << std::endl;
+            return 1;
+        }}
+
+        auto p = abstract->_uses_extensible_abstract_class_prop.get();
+
+        if (!p.isObj()) {{
+            std::cout << "Property is not an object" << std::endl;
+            return 1;
+        }}
+
+        if (p->getTypeIRI() != "http://serialize.example.com/custom-extensible") {{
+            std::cout << "Property is not of expected type. Got: " << p->getTypeIRI() << std::endl;
+            return 1;
+        }}
+
+        auto val = p->getExtProperty("http://custom-prop.example.com/prop");
+        if (!val.size()) {{
+            std::cout << "Unable to find property value" << std::endl;
+            return 1;
+        }}
+        """)

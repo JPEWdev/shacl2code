@@ -1039,7 +1039,8 @@ def test_roundtrip(tmp_path, roundtrip, roundtrip_test):
 def test_datetime_decode(compile_test, value, expect):
     output = compile_test(
         f"""\
-        t, err := model.DecodeDateTime("{value}", model.Path{{}}, make(map[string]string), nil)
+        state := model.DecodeState{{}}
+        t, err := model.DecodeDateTime("{value}", model.Path{{}}, make(map[string]string), nil, &state)
         if err != nil {{
             return err
         }}
@@ -1065,7 +1066,8 @@ def test_datetime_decode(compile_test, value, expect):
 def test_datetimestamp_decode(compile_test, value, expect):
     output = compile_test(
         f"""\
-        t, err := model.DecodeDateTimeStamp("{value}", model.Path{{}}, make(map[string]string), nil)
+        state := model.DecodeState{{}}
+        t, err := model.DecodeDateTimeStamp("{value}", model.Path{{}}, make(map[string]string), nil, &state)
         if err != nil {{
             return err
         }}
@@ -1163,3 +1165,55 @@ def test_objset_context(compile_test, context, expanded, compacted):
     output = compile_test("\n".join(program))
 
     assert output.splitlines() == [compacted, expanded]
+
+
+def test_extensible_context(compile_test, roundtrip):
+    # Test that extensible object IDs and properties account for the context
+    compile_test(
+        f"""\
+        objset := model.NewSHACLObjectSet()
+
+        in_file, err := os.Open("{roundtrip}")
+        if err != nil {{
+            fmt.Println(err)
+            os.Exit(1)
+        }}
+        defer in_file.Close()
+
+        decoder := json.NewDecoder(in_file)
+
+        if err := objset.Decode(decoder); err != nil {{
+            fmt.Println(err)
+            os.Exit(1)
+        }}
+
+        o := objset.GetObjectByID("http://serialize.example.com/test-uses-extensible-abstract")
+        if o == nil {{
+            fmt.Println("Unable to find object")
+            os.Exit(1)
+        }}
+        abstract, ok := o.(model.UsesExtensibleAbstractClass)
+        if !ok {{
+            fmt.Println("Object is not of expected type")
+            os.Exit(1)
+        }}
+
+        p := abstract.UsesExtensibleAbstractClassProp().Get().GetObj()
+        if p == nil {{
+            fmt.Println("Unable to find property")
+            os.Exit(1)
+        }}
+
+        if p.GetTypeIRI() != "http://serialize.example.com/custom-extensible" {{
+            fmt.Println("Wrong type for property. Got: ", p.GetTypeIRI())
+            os.Exit(1)
+        }}
+
+        val := p.GetExtProperty("http://custom-prop.example.com/prop")
+        if val == nil {{
+            fmt.Println("Unable to find property value")
+            os.Exit(1)
+        }}
+        """,
+        imports=["encoding/json"],
+    )

@@ -79,6 +79,10 @@ func (self *SHACLObjectBase) GetType() SHACLType {
     return self.typ
 }
 
+func (self *SHACLObjectBase) GetTypeIRI() string {
+    return self.typeIRI
+}
+
 func (self *SHACLObjectBase) setTypeIRI(iri string) {
     self.typeIRI = iri
 }
@@ -99,6 +103,7 @@ type SHACLObject interface {
     Walk(path Path, visit Visit)
     EncodeProperties(data map[string]interface{}, path Path, state *EncodeState) error
     GetType() SHACLType
+    GetTypeIRI() string
     setTypeIRI(iri string)
     Link(state *LinkState) error
 }

@@ -2421,7 +2421,6 @@ def decode_context(decoder: Decoder, objectset: SHACLObjectSet):
     if decoder.is_list():
         for ctx_d in decoder.read_list():
             _decode_ctx(ctx_d)
-            pass
     else:
         _decode_ctx(decoder)
 

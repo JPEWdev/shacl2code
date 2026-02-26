@@ -1542,7 +1542,12 @@ class SHACLObjectSet(object):
         self.objects = new_objects
 
     def encode(
-        self, encoder: Encoder, state: EncodeState, force_list: bool = False, *, key=None
+        self,
+        encoder: Encoder,
+        state: EncodeState,
+        force_list: bool = False,
+        *,
+        key=None
     ) -> None:
         """
         Serialize a list of objects to a serialization encoder

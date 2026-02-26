@@ -1698,6 +1698,13 @@ def test_slots_yes(tmp_path):
     assert "_USE_SLOTS = True" in text
 
 
+def test_slots_no(tmp_path):
+    outfile = tmp_path / "output.py"
+    shacl2code_generate(["--input", TEST_MODEL], ["--use-slots", "no"], outfile)
+    text = outfile.read_text()
+    assert "_USE_SLOTS = False" in text
+
+
 def test_extensible_properties(model, model_context_url):
 
     class Extension(model.extensible_class):

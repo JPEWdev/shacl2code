@@ -374,11 +374,10 @@ class ObjectProp(IRIProp):
             return self.cls.decode(decoder, state)
 
         iri = decoder.read_iri()
+        if iri is None:
+            raise TypeError("IRI cannot be None")
 
         iri = self.expand(iri) or state.expand_iri(iri) or iri
-
-        if iri is None:
-            return None
 
         if state.objectset is None:
             return iri
@@ -1097,12 +1096,9 @@ class SHACLObject(metaclass=SHACLObjectMeta):
         if key in ("@id", self.ID_ALIAS):
             return True
 
-<<<<<<< set-py38
         if key is None:
             return False
 
-=======
->>>>>>> main
         expanded_key = state.expand_iri(key)
         if expanded_key and expanded_key in self._OBJ_IRI_PROPS:
             p = self._OBJ_IRI_PROPS[expanded_key]
@@ -1115,7 +1111,7 @@ class SHACLObject(metaclass=SHACLObjectMeta):
 
         with decoder.read_property(key) as prop_d:
             if prop_d is None:
-                raise TypeError(f"Property decoder for key '{key}' is None")
+                raise TypeError(f"Property decoder for key '{key}' cannot be None")
             v = p.prop.decode(prop_d, state)
             self.__set(p, v)
         return True
@@ -1224,14 +1220,10 @@ class SHACLExtensibleObject(SHACLObject):
             if self._decode_prop(decoder, key, state):
                 continue
 
-<<<<<<< set-py38
             if key is None:
                 raise KeyError("Property key cannot be None")
 
-            expanded_key = state.objectset.expand_iri(key)
-=======
             expanded_key = state.expand_iri(key) or key
->>>>>>> main
 
             if not is_IRI(expanded_key):
                 raise KeyError(
@@ -1650,11 +1642,7 @@ class SHACLObjectSet(object):
 
         self._link()
 
-<<<<<<< set-py38
-    def expand_iri(self, iri: str) -> str:
-=======
     def expand_iri(self, iri: str, default: Optional[str] = None) -> Optional[str]:
->>>>>>> main
         for k, v in self.context.items():
             if iri == k:
                 return self.expand_iri(v, v)
@@ -1663,11 +1651,7 @@ class SHACLObjectSet(object):
                 return self.expand_iri(new_iri, new_iri)
         return default
 
-<<<<<<< set-py38
-    def compact_iri(self, iri: str) -> str:
-=======
     def compact_iri(self, iri: str, default: Optional[str] = None) -> Optional[str]:
->>>>>>> main
         for k, v in self.context.items():
             if iri == v:
                 return self.compact_iri(k, k)
@@ -2635,12 +2619,12 @@ try:
 
         def __add_literal(self, v):
             if self.subject is None or self.predicate is None:
-                raise TypeError()
+                raise TypeError("Subject and predicate of literal value cannot be None")
             self.graph.add((self.subject, self.predicate, rdflib.Literal(v)))
 
         def __add_uriref(self, v):
             if self.subject is None or self.predicate is None:
-                raise TypeError()
+                raise TypeError("Subject and predicate of URIRef value cannot be None")
             self.graph.add((self.subject, self.predicate, rdflib.URIRef(v)))
 
         def write_string(self, v):
@@ -2686,7 +2670,7 @@ try:
 
             if self.subject is not None:
                 if self.predicate is None:
-                    raise TypeError()
+                    raise TypeError("Predicate cannot be None when subject is not None")
                 self.graph.add((self.subject, self.predicate, obj))
             self.graph.add((obj, RDF.type, rdflib.URIRef(typ)))  # type: ignore # RDF.type is dynamic
             yield self.__class__(self.graph, obj)

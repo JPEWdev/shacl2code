@@ -294,21 +294,13 @@ class IRIProp(Property):
         super().__init__(pattern=pattern)
         self.context = context
 
-    def compact(
-        self, value: Optional[str], dflt: Optional[str] = None
-    ) -> Optional[str]:
-        if value is None:
-            return None
-
+    def compact(self, value: str, dflt: Optional[str] = None) -> Optional[str]:
         for iri, compact in self.context:
             if value == iri:
                 return compact
         return dflt
 
-    def expand(self, value: Optional[str], dflt: Optional[str] = None) -> Optional[str]:
-        if value is None:
-            return None
-
+    def expand(self, value: str, dflt: Optional[str] = None) -> Optional[str]:
         for iri, compact in self.context:
             if value == compact:
                 return iri
@@ -574,8 +566,10 @@ class EnumProp(IRIProp):
     def encode(self, encoder: Encoder, value: str, state: EncodeState) -> None:
         encoder.write_enum(value, self, self.compact(value))
 
-    def decode(self, decoder: Decoder, state: DecodeState) -> Optional[str]:
+    def decode(self, decoder: Decoder, state: DecodeState) -> str:
         v = decoder.read_enum(self)
+        if v is None:
+            raise TypeError("Enum IRI cannot be None")
         return self.expand(v) or v
 
 

@@ -294,13 +294,27 @@ class IRIProp(Property):
         super().__init__(pattern=pattern)
         self.context = context
 
-    def compact(self, value, dflt=None) -> Optional[str]:
+    def compact(
+        self,
+        value: Optional[str],
+        dflt: Optional[str] = None
+    ) -> Optional[str]:
+        if value is None:
+            return None
+
         for iri, compact in self.context:
             if value == iri:
                 return compact
         return dflt
 
-    def expand(self, value, dflt=None) -> Optional[str]:
+    def expand(
+        self,
+        value: Optional[str],
+        dflt: Optional[str] = None
+    ) -> Optional[str]:
+        if value is None:
+            return None
+
         for iri, compact in self.context:
             if value == compact:
                 return iri
@@ -370,6 +384,9 @@ class ObjectProp(IRIProp):
         iri = decoder.read_iri()
 
         iri = self.expand(iri) or iri
+
+        if iri is None:
+            return None
 
         if state.objectset is None:
             return iri

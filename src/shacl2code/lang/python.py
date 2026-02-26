@@ -30,7 +30,7 @@ class PythonRender(BasicJinjaRender):
     HELP = "Python Language Bindings"
 
     def __init__(self, args):
-        super().__init__(args, TEMPLATE_DIR / "python.j2")
+        super().__init__(args, TEMPLATE_DIR / "python.py.j2")
         self.__use_slots = args.use_slots
         self.__render_args = {
             "elide_lists": args.elide_lists,

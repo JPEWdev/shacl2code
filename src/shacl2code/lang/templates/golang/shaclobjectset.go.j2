@@ -18,6 +18,7 @@ import (
 
 type SHACLObjectSet interface {
     Objects(yield func(SHACLObject) bool)
+    GetObjectByID(id string) SHACLObject
     AddObject(r SHACLObject)
     Decode(decoder *json.Decoder) error
     Encode(encoder *json.Encoder) error
@@ -33,6 +34,7 @@ type SHACLObjectSet interface {
 
 type SHACLObjectSetObject struct {
     objects []SHACLObject
+    objectsById map[string]SHACLObject
     missingIDs map[string]bool
     context map[string]string
 }
@@ -85,8 +87,18 @@ func (self *SHACLObjectSetObject) Objects(yield func(SHACLObject) bool) {
     }
 }
 
+func (self *SHACLObjectSetObject) GetObjectByID(id string) SHACLObject {
+    return self.objectsById[id]
+}
+
 func (self *SHACLObjectSetObject) AddObject(r SHACLObject) {
     self.objects = append(self.objects, r)
+    if r.ID().IsSet() {
+        if self.objectsById == nil {
+            self.objectsById = make(map[string]SHACLObject)
+        }
+        self.objectsById[r.ID().Get()] = r
+    }
 }
 
 func (self *SHACLObjectSetObject) decodeContext(d map[string]interface{}, path Path) error {
@@ -104,6 +116,7 @@ func (self *SHACLObjectSetObject) decodeContext(d map[string]interface{}, path P
 
 func (self *SHACLObjectSetObject) Decode(decoder *json.Decoder) error {
     path := Path{}
+    state := DecodeState{self}
 
     var data map[string]interface{}
     if err := decoder.Decode(&data); err != nil {
@@ -169,8 +182,8 @@ func (self *SHACLObjectSetObject) Decode(decoder *json.Decoder) error {
 
     delete(data, "@context")
 
-    decodeProxy := func (data any, path Path, context map[string]string, check DecodeCheckType) (SHACLObject, error) {
-        return DecodeSHACLObject[SHACLObject](data, path, context, nil)
+    decodeProxy := func (data any, path Path, context map[string]string, check DecodeCheckType, state *DecodeState) (SHACLObject, error) {
+        return DecodeSHACLObject[SHACLObject](data, path, context, nil, state)
     }
 
     _, has_graph := data["@graph"]
@@ -184,6 +197,7 @@ func (self *SHACLObjectSetObject) Decode(decoder *json.Decoder) error {
                     map[string]string{},
                     decodeProxy,
                     nil,
+                    &state,
                 )
 
                 if err != nil {
@@ -200,7 +214,7 @@ func (self *SHACLObjectSetObject) Decode(decoder *json.Decoder) error {
             }
         }
     } else {
-        obj, err := decodeProxy(data, path, map[string]string{}, nil)
+        obj, err := decodeProxy(data, path, map[string]string{}, nil, &state)
         if err != nil {
             return err
         }

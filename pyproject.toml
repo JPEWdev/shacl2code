@@ -73,4 +73,4 @@ relative_files = true
 patch = ["subprocess"]
 
 [tool.black]
-include = '(\.pyi?$)|(python\.j2$)'
+include = '(\.pyi?$)|(python\.py\.j2$)'

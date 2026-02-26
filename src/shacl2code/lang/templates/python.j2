@@ -294,11 +294,7 @@ class IRIProp(Property):
         super().__init__(pattern=pattern)
         self.context = context
 
-    def compact(
-        self,
-        value: Optional[str],
-        dflt: Optional[str] = None
-    ) -> Optional[str]:
+    def compact(self, value: Optional[str], dflt: Optional[str] = None) -> Optional[str]:
         if value is None:
             return None
 
@@ -307,11 +303,7 @@ class IRIProp(Property):
                 return compact
         return dflt
 
-    def expand(
-        self,
-        value: Optional[str],
-        dflt: Optional[str] = None
-    ) -> Optional[str]:
+    def expand(self, value: Optional[str], dflt: Optional[str] = None) -> Optional[str]:
         if value is None:
             return None
 

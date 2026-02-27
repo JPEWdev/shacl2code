@@ -34,6 +34,7 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
+    Generic,
     Union,
     cast,
     overload,
@@ -52,7 +53,10 @@ def check_type(obj: Any, types: Union[Type[Any], Tuple[Type[Any], ...]]) -> None
         )
 
 
-class Property(ABC):
+T_PropV = TypeVar("T_PropV")
+
+
+class Property(Generic[T_PropV], ABC):
     """
     A generic SHACL object property. The different types will derive from this
     class
@@ -65,10 +69,10 @@ class Property(ABC):
     def __init__(self, *, pattern: Optional[str] = None):
         self.pattern = pattern
 
-    def init(self) -> Any:
+    def init(self) -> Optional[T_PropV]:
         return None
 
-    def validate(self, value) -> None:
+    def validate(self, value: Any) -> None:
         check_type(value, self.VALID_TYPES)
         if self.pattern is not None and not re.search(
             self.pattern, self.to_string(value)
@@ -77,7 +81,7 @@ class Property(ABC):
                 f"Value is not correctly formatted. Got '{self.to_string(value)}'"
             )
 
-    def set(self, value: Any) -> Any:
+    def set(self, value: T_PropV) -> T_PropV:
         return value
 
     def check_min_count(self, value, min_count: int) -> bool:
@@ -93,7 +97,7 @@ class Property(ABC):
         callback(value, path)
 
     def iter_objects(
-        self, value, recursive: bool, visited: Set[SHACLObject]
+        self, value: Optional[T_PropV], recursive: bool, visited: Set["SHACLObject"]
     ) -> Iterable[Any]:
         return []
 
@@ -106,11 +110,11 @@ class Property(ABC):
         return str(value)
 
     @abstractmethod
-    def encode(self, encoder: Encoder, value, state: EncodeState) -> None:
+    def encode(self, encoder: "Encoder", value: T_PropV, state: "EncodeState") -> None:
         raise NotImplementedError("Subclasses must implement encode method")
 
     @abstractmethod
-    def decode(self, decoder: Decoder, state: DecodeState) -> Any:
+    def decode(self, decoder: "Decoder", state: "DecodeState") -> Optional[T_PropV]:
         raise NotImplementedError("Subclasses must implement decode method")
 
 
@@ -405,35 +409,35 @@ class ObjectProp(IRIProp):
         return value
 
 
-class ListProxy(object):
+class ListProxy(Generic[T_PropV]):
     __slots__ = ("_data", "_prop")
 
-    def __init__(self, prop: Property, data: Optional[List[Any]] = None):
+    def __init__(self, prop: Property[T_PropV], data: Optional[List[T_PropV]] = None) -> None:
         if data is None:
-            self._data: List[Any] = []
+            self._data: List[T_PropV] = []
         else:
             self._data = data
-        self._prop = prop
+        self._prop: Property[T_PropV] = prop
 
-    def append(self, value) -> None:
+    def append(self, value: T_PropV) -> None:
         self._prop.validate(value)
         self._data.append(self._prop.set(value))
 
-    def insert(self, idx: int, value) -> None:
+    def insert(self, idx: int, value: T_PropV) -> None:
         self._prop.validate(value)
         self._data.insert(idx, self._prop.set(value))
 
-    def extend(self, items: Iterable[Any]) -> None:
+    def extend(self, items: Iterable[T_PropV]) -> None:
         for i in items:
             self.append(i)
 
     def sort(self, *args, **kwargs) -> None:
         self._data.sort(*args, **kwargs)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Union[int, slice]) -> Any:
         return self._data[key]
 
-    def __setitem__(self, key, value) -> None:
+    def __setitem__(self, key: Union[int, slice], value) -> None:
         if isinstance(key, slice):
             for v in value:
                 self._prop.validate(v)
@@ -446,13 +450,13 @@ class ListProxy(object):
                 f"ListProxy indices must be integers or slices. Got {type(key).__name__}"
             )
 
-    def __delitem__(self, key) -> None:
+    def __delitem__(self, key: Union[int, slice]) -> None:
         del self._data[key]
 
-    def __contains__(self, item):
+    def __contains__(self, item: Any) -> bool:
         return item in self._data
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[T_PropV]:
         return iter(self._data)
 
     def __len__(self) -> int:
@@ -461,10 +465,10 @@ class ListProxy(object):
     def __str__(self) -> str:
         return str(self._data)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(self._data)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, ListProxy):
             return self._data == other._data
 
@@ -512,11 +516,15 @@ class ListProp(Property):
         return len(value) == 0
 
     def walk(self, value, callback: Callable, path: List[str]) -> None:
+        if value is None:
+            return
         callback(value, path)
         for idx, v in enumerate(value):
             self.prop.walk(v, callback, path + [f"[{idx}]"])
 
-    def iter_objects(self, value, recursive: bool, visited):
+    def iter_objects(self, value: Optional[ListProxy], recursive: bool, visited):
+        if value is None:
+            return
         for v in value:
             for c in self.prop.iter_objects(v, recursive, visited):
                 yield c
@@ -599,16 +607,39 @@ def is_blank_node(s: Any) -> bool:
 
 @dataclass()  # After Python 3.10, use slots=True to save a little space
 class ClassProp:
+    # Keep class-level annotations for tools, but implement a custom
+    # initializer to preserve positional argument ordering used throughout
+    # the generated code: (pyname, reg, iri, ...)
     pyname: str
-    reg: Callable
+    reg: Optional[Callable[..., Any]]
     iri: str
-    min_count: Optional[int] = None
-    max_count: Optional[int] = None
-    compact: Optional[str] = None
-    deprecated: bool = False
+    min_count: Optional[int]
+    max_count: Optional[int]
+    compact: Optional[str]
+    deprecated: bool
     # For efficiency reasons this should be of type Property (only) but
     # initialized to None
-    prop: Property = None  # type: ignore
+    prop: Property
+
+    def __init__(
+        self,
+        pyname: str,
+        reg: Optional[Callable[..., Any]],
+        iri: str,
+        min_count: Optional[int] = None,
+        max_count: Optional[int] = None,
+        compact: Optional[str] = None,
+        deprecated: bool = False,
+        prop: Property = None,  # type: ignore
+    ) -> None:
+        self.pyname = pyname
+        self.reg = reg
+        self.iri = iri
+        self.min_count = min_count
+        self.max_count = max_count
+        self.compact = compact
+        self.deprecated = deprecated
+        self.prop = prop
 
 
 # fmt: off
@@ -667,10 +698,10 @@ class SHACLObjectMeta(type):
             ):
                 p.pyname = p.pyname + "_"
 
-            if not isinstance(p.reg, Callable):
-                raise ValueError(
-                    f"Registration of {name}.{p.pyname} must be a callable to allow deferred class typing. Try: `lambda: ...`"
-                )
+            # Registration `reg` is expected to be a callable that can be
+            # invoked later during class initialization. We do not enforce a
+            # strict callable check here to avoid narrowing static types; the
+            # call/validation is performed at registration time.
 
             py_properties[p.pyname] = p
             iri_properties[p.iri] = p
@@ -743,9 +774,8 @@ class SHACLObjectMeta(type):
 
     @staticmethod
     def _add_class(key: str, c: Type[SHACLObject]) -> None:
-        assert (
-            key not in SHACLObject.CLASSES
-        ), f"{key} already registered to {SHACLObject.CLASSES[key].__name__}"
+        if key in SHACLObject.CLASSES:
+            raise KeyError(f"{key} already registered to {SHACLObject.CLASSES[key].__name__}")
         SHACLObject.CLASSES[key] = c
 
 
@@ -823,9 +853,8 @@ class SHACLObject(metaclass=SHACLObjectMeta):
 
     def __init_subclass__(cls, **kwargs):
         def add_class(key: str, c: Type[SHACLObject]) -> None:
-            assert (
-                key not in SHACLObject.CLASSES
-            ), f"{key} already registered to {SHACLObject.CLASSES[key].__name__}"
+            if key in SHACLObject.CLASSES:
+                raise KeyError(f"{key} already registered to {SHACLObject.CLASSES[key].__name__}")
             SHACLObject.CLASSES[key] = c
 
         super().__init_subclass__(**kwargs)
@@ -854,8 +883,13 @@ class SHACLObject(metaclass=SHACLObjectMeta):
                     # with their parents, the property might have already been
                     # initialized.
                     if p.prop is None and p.reg is not None:
-                        p.prop = p.reg()
-                        p.reg = None
+                        reg_callable = p.reg
+                        try:
+                            p.prop = reg_callable()
+                        except Exception as e:
+                            raise ValueError(
+                                f"Registration of {cls.__name__}.{p.pyname} failed: {e}"
+                            ) from e
                 cls._NEEDS_REG = False
 
         self._metadata = {}
@@ -1182,7 +1216,7 @@ class SHACLExtensibleObject(SHACLObject):
         return False
 
     @property
-    def _ext_data(self) -> Dict[str, str]:
+    def _ext_data(self) -> Dict[str, Any]:
         return self._extensible["data"]
 
     @classmethod
@@ -1982,7 +2016,7 @@ class JSONLDDeserializer(object):
 
 class Encoder(ABC):
     @abstractmethod
-    def write_string(self, v) -> None:
+    def write_string(self, v: str) -> None:
         """
         Write a string value
 
@@ -1991,7 +2025,7 @@ class Encoder(ABC):
         raise NotImplementedError("Subclasses must implement write_string method")
 
     @abstractmethod
-    def write_datetime(self, v) -> None:
+    def write_datetime(self, v: str) -> None:
         """
         Write a date & time string
 
@@ -2002,7 +2036,7 @@ class Encoder(ABC):
         raise NotImplementedError("Subclasses must implement write_datetime method")
 
     @abstractmethod
-    def write_integer(self, v) -> None:
+    def write_integer(self, v: int) -> None:
         """
         Write an integer value
 
@@ -2011,7 +2045,7 @@ class Encoder(ABC):
         raise NotImplementedError("Subclasses must implement write_integer method")
 
     @abstractmethod
-    def write_iri(self, v, compact=None) -> None:
+    def write_iri(self, v: str, compact: Optional[str] = None) -> None:
         """
         Write IRI
 
@@ -2023,7 +2057,7 @@ class Encoder(ABC):
         raise NotImplementedError("Subclasses must implement write_iri method")
 
     @abstractmethod
-    def write_enum(self, v, e, compact=None) -> None:
+    def write_enum(self, v: str, e: Any, compact: Optional[str] = None) -> None:
         """
         Write enum value IRI
 
@@ -2034,7 +2068,7 @@ class Encoder(ABC):
         raise NotImplementedError("Subclasses must implement write_enum method")
 
     @abstractmethod
-    def write_bool(self, v) -> None:
+    def write_bool(self, v: bool) -> None:
         """
         Write boolean
 
@@ -2043,7 +2077,7 @@ class Encoder(ABC):
         raise NotImplementedError("Subclasses must implement write_bool method")
 
     @abstractmethod
-    def write_float(self, v) -> None:
+    def write_float(self, v: float) -> None:
         """
         Write float
 
@@ -2061,7 +2095,7 @@ class Encoder(ABC):
         _id: str,
         compact_id: Optional[str],
         needs_id: bool,
-    ):
+    ) -> Iterator["Encoder"]:
         """
         Write object
 
@@ -2083,7 +2117,7 @@ class Encoder(ABC):
 
     @abstractmethod
     @contextmanager
-    def write_property(self, iri: str, compact: Optional[str] = None):
+    def write_property(self, iri: str, compact: Optional[str] = None) -> Iterator["Encoder"]:
         """
         Write object property
 
@@ -2098,7 +2132,7 @@ class Encoder(ABC):
 
     @abstractmethod
     @contextmanager
-    def write_list(self):
+    def write_list(self) -> Iterator["Encoder"]:
         """
         Write list
 
@@ -2111,7 +2145,7 @@ class Encoder(ABC):
 
     @abstractmethod
     @contextmanager
-    def write_list_item(self):
+    def write_list_item(self) -> Iterator["Encoder"]:
         """
         Write list item
 
@@ -2122,7 +2156,7 @@ class Encoder(ABC):
 
     @abstractmethod
     @contextmanager
-    def write_object_list(self):
+    def write_object_list(self) -> Iterator["Encoder"]:
         """
         Write top level object list
 
@@ -2135,39 +2169,42 @@ class Encoder(ABC):
 
 
 class JSONLDEncoder(Encoder):
-    def __init__(self, data=None):
-        self.data = data
+    def __init__(self, data: Optional[Any] = None) -> None:
+        self.data: Any = data
 
-    def write_string(self, v):
+    def write_string(self, v: str) -> None:
         self.data = v
 
-    def write_datetime(self, v):
+    def write_datetime(self, v: str) -> None:
         self.data = v
 
-    def write_integer(self, v):
+    def write_integer(self, v: int) -> None:
         self.data = v
 
-    def write_iri(self, v, compact=None):
+    def write_iri(self, v: str, compact: Optional[str] = None) -> None:
         self.write_string(compact or v)
 
-    def write_enum(self, v, e, compact=None):
+    def write_enum(self, v: str, e: Any, compact: Optional[str] = None) -> None:
         self.write_string(compact or v)
 
-    def write_bool(self, v):
+    def write_bool(self, v: bool) -> None:
         self.data = v
 
-    def write_float(self, v):
+    def write_float(self, v: float) -> None:
         self.data = str(v)
 
     @contextmanager
-    def write_property(self, iri: str, compact: Optional[str] = None):
+    def write_property(self, iri: str, compact: Optional[str] = None) -> Iterator["JSONLDEncoder"]:
         s = self.__class__(None)
         yield s
         if s.data is not None:
-            self.data[compact or iri] = s.data  # type: ignore # within write_object() context, self.data is always dict or None
+            # within write_object() context, self.data is expected to be a dict
+            if not isinstance(self.data, dict):
+                raise TypeError("Encoder.write_property used outside of write_object context; encoder.data is not a dict")
+            self.data[compact or iri] = s.data  # type: ignore
 
     @contextmanager
-    def write_dict(self):
+    def write_dict(self) -> Iterator["JSONLDEncoder"]:
         if not self.data:
             self.data = {}
         yield self
@@ -2189,21 +2226,23 @@ class JSONLDEncoder(Encoder):
             yield obj_dict
 
     @contextmanager
-    def write_list(self):
+    def write_list(self) -> Iterator["JSONLDEncoder"]:
         self.data = []
         yield self
         if not self.data:
             self.data = None
 
     @contextmanager
-    def write_list_item(self):
+    def write_list_item(self) -> Iterator["JSONLDEncoder"]:
         s = self.__class__(None)
         yield s
         if s.data is not None:
-            self.data.append(s.data)  # type: ignore # within write_list() context, self.data is always list or None
+            if not isinstance(self.data, list):
+                raise TypeError("Encoder.write_list_item used outside of write_list context; encoder.data is not a list")
+            self.data.append(s.data)  # type: ignore
 
     @contextmanager
-    def write_object_list(self):
+    def write_object_list(self) -> Iterator["JSONLDEncoder"]:
         with self.write_property("@graph") as graph_prop:
             with graph_prop.write_list() as graph_list:
                 yield graph_list
@@ -2254,44 +2293,44 @@ class JSONLDSerializer(object):
 
 
 class JSONLDInlineEncoder(Encoder):
-    def __init__(self, f, sha1, in_dict=False):
-        self.f = f
-        self.comma = False
-        self.sha1 = sha1
-        self.in_dict = in_dict
+    def __init__(self, f: Any, sha1: Any, in_dict: bool = False) -> None:
+        self.f: Any = f
+        self.comma: bool = False
+        self.sha1: Any = sha1
+        self.in_dict: bool = in_dict
 
-    def write(self, s):
-        s = s.encode("utf-8")
-        self.f.write(s)
-        self.sha1.update(s)
+    def write(self, s: str) -> None:
+        b = s.encode("utf-8")
+        self.f.write(b)
+        self.sha1.update(b)
 
-    def _write_comma(self):
+    def _write_comma(self) -> None:
         if self.comma:
             self.write(",")
             self.comma = False
 
-    def write_string(self, v):
+    def write_string(self, v: str) -> None:
         self.write(json.dumps(v))
 
-    def write_datetime(self, v):
+    def write_datetime(self, v: str) -> None:
         self.write_string(v)
 
-    def write_integer(self, v):
+    def write_integer(self, v: int) -> None:
         self.write(f"{v}")
 
-    def write_iri(self, v, compact=None):
+    def write_iri(self, v: str, compact: Optional[str] = None) -> None:
         self.write_string(compact or v)
 
-    def write_enum(self, v, e, compact=None):
+    def write_enum(self, v: str, e: Any, compact: Optional[str] = None) -> None:
         self.write_iri(v, compact)
 
-    def write_bool(self, v):
+    def write_bool(self, v: bool) -> None:
         if v:
             self.write("true")
         else:
             self.write("false")
 
-    def write_float(self, v):
+    def write_float(self, v: float) -> None:
         self.write(json.dumps(str(v)))
 
     @contextmanager

@@ -20,6 +20,7 @@ from testfixtures import jsonvalidation, timetests
 
 THIS_FILE = Path(__file__)
 THIS_DIR = THIS_FILE.parent
+TOP_DIR = THIS_DIR.parent
 
 DATA_DIR = THIS_DIR / "data"
 
@@ -182,6 +183,23 @@ class TestCheckType:
         shacl2code_generate(args, [], outfile)
         subprocess.run(
             ["pyright", outfile],
+            encoding="utf-8",
+            check=True,
+        )
+
+    def test_flake8(self, tmp_path, args):
+        """
+        Flake8 linting
+        """
+        outfile = tmp_path / "output.py"
+        shacl2code_generate(args, [], outfile)
+        subprocess.run(
+            [
+                "flake8",
+                "--config",
+                TOP_DIR / ".flake8",
+                outfile,
+            ],
             encoding="utf-8",
             check=True,
         )

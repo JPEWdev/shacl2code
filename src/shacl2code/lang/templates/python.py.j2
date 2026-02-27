@@ -18,6 +18,7 @@ import threading
 import time
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Collection
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from enum import Enum
@@ -42,6 +43,10 @@ from typing import (
 )
 from dataclasses import dataclass
 
+# Allow Property subclasses to define their own value types,
+# reduce the use of Any in the type hints.
+T_PropV = TypeVar("T_PropV")
+
 
 def check_type(obj: Any, types: Union[Type[Any], Tuple[Type[Any], ...]]) -> None:
     if not isinstance(obj, types):
@@ -54,10 +59,7 @@ def check_type(obj: Any, types: Union[Type[Any], Tuple[Type[Any], ...]]) -> None
         )
 
 
-T_PropV = TypeVar("T_PropV")
-
-
-class Property(Generic[T_PropV], ABC):
+class Property(ABC, Generic[T_PropV]):
     """
     A generic SHACL object property. The different types will derive from this
     class
@@ -67,7 +69,7 @@ class Property(Generic[T_PropV], ABC):
 
     __slots__ = ("pattern",)
 
-    def __init__(self, *, pattern: Optional[str] = None):
+    def __init__(self, *, pattern: Optional[str] = None) -> None:
         self.pattern = pattern
 
     def init(self) -> Optional[T_PropV]:
@@ -82,19 +84,24 @@ class Property(Generic[T_PropV], ABC):
                 f"Value is not correctly formatted. Got '{self.to_string(value)}'"
             )
 
-    def set(self, value: T_PropV) -> T_PropV:
-        return value
+    def set(self, value: Any) -> T_PropV:
+        return cast(T_PropV, value)
 
-    def check_min_count(self, value, min_count: int) -> bool:
+    def check_min_count(self, value: T_PropV, min_count: int) -> bool:
         return min_count == 1
 
-    def check_max_count(self, value, max_count: int) -> bool:
+    def check_max_count(self, value: T_PropV, max_count: int) -> bool:
         return max_count == 1
 
-    def elide(self, value: Any) -> bool:
+    def elide(self, value: T_PropV) -> bool:
         return value is None
 
-    def walk(self, value: Any, callback: Callable[[Any, List[str]], Optional[bool]], path: List[str]) -> None:
+    def walk(
+        self,
+        value: T_PropV,
+        callback: Callable[[Any, List[str]], Optional[bool]],
+        path: List[str],
+    ) -> None:
         callback(value, path)
 
     def iter_objects(
@@ -103,11 +110,15 @@ class Property(Generic[T_PropV], ABC):
         return []
 
     def link_prop(
-        self, value: Any, objectset: Any, missing: Optional[Set[str]], visited: Set["SHACLObject"]
+        self,
+        value: T_PropV,
+        objectset: "SHACLObjectSet",
+        missing: Optional[Set[str]],
+        visited: Set["SHACLObject"],
     ) -> Any:
         return value
 
-    def to_string(self, value: Any) -> str:
+    def to_string(self, value: T_PropV) -> str:
         return str(value)
 
     @abstractmethod
@@ -119,7 +130,7 @@ class Property(Generic[T_PropV], ABC):
         raise NotImplementedError("Subclasses must implement decode method")
 
 
-class StringProp(Property):
+class StringProp(Property[str]):
     """
     A scalar string property for an SHACL object
     """
@@ -129,7 +140,7 @@ class StringProp(Property):
     def set(self, value: Any) -> str:
         return str(value)
 
-    def encode(self, encoder: Encoder, value: Any, state: EncodeState) -> None:
+    def encode(self, encoder: Encoder, value: str, state: EncodeState) -> None:
         encoder.write_string(value)
 
     def decode(self, decoder: Decoder, state: DecodeState) -> Optional[str]:
@@ -137,14 +148,14 @@ class StringProp(Property):
 
 
 class AnyURIProp(StringProp):
-    def encode(self, encoder: Encoder, value: Any, state: EncodeState) -> None:
+    def encode(self, encoder: Encoder, value: str, state: EncodeState) -> None:
         encoder.write_iri(value)
 
     def decode(self, decoder: Decoder, state: DecodeState) -> Optional[str]:
         return decoder.read_iri()
 
 
-class DateTimeProp(Property):
+class DateTimeProp(Property[datetime]):
     """
     A Date/Time Object with optional timezone
     """
@@ -222,15 +233,15 @@ class DateTimeStampProp(DateTimeProp):
     __slots__ = ()
 
 
-class IntegerProp(Property):
+class IntegerProp(Property[int]):
     VALID_TYPES = int
 
     __slots__ = ()
 
-    def set(self, value) -> int:
+    def set(self, value: Any) -> int:
         return int(value)
 
-    def encode(self, encoder: Encoder, value, state: EncodeState) -> None:
+    def encode(self, encoder: Encoder, value: int, state: EncodeState) -> None:
         encoder.write_integer(value)
 
     def decode(self, decoder: Decoder, state: DecodeState) -> Optional[int]:
@@ -240,7 +251,7 @@ class IntegerProp(Property):
 class PositiveIntegerProp(IntegerProp):
     __slots__ = ()
 
-    def validate(self, value) -> None:
+    def validate(self, value: int) -> None:
         super().validate(value)
         if value < 1:
             raise ValueError(f"Value must be >= 1. Got {value}")
@@ -255,37 +266,37 @@ class NonNegativeIntegerProp(IntegerProp):
             raise ValueError(f"Value must be >= 0. Got {value}")
 
 
-class BooleanProp(Property):
+class BooleanProp(Property[bool]):
     VALID_TYPES = bool
 
     __slots__ = ()
 
-    def set(self, value) -> bool:
+    def set(self, value: Any) -> bool:
         return bool(value)
 
-    def encode(self, encoder: Encoder, value, state: EncodeState) -> None:
+    def encode(self, encoder: Encoder, value: bool, state: EncodeState) -> None:
         encoder.write_bool(value)
 
     def decode(self, decoder: Decoder, state: DecodeState) -> Optional[bool]:
         return decoder.read_bool()
 
 
-class FloatProp(Property):
+class FloatProp(Property[float]):
     VALID_TYPES = (float, int)
 
     __slots__ = ()
 
-    def set(self, value) -> float:
+    def set(self, value: Any) -> float:
         return float(value)
 
-    def encode(self, encoder: Encoder, value, state: EncodeState) -> None:
+    def encode(self, encoder: Encoder, value: Union[float, int], state: EncodeState) -> None:
         encoder.write_float(value)
 
     def decode(self, decoder: Decoder, state: DecodeState) -> Optional[float]:
         return decoder.read_float()
 
 
-class IRIProp(Property):
+class IRIProp(Property[T_PropV]):
     __slots__ = ("context",)
 
     def __init__(
@@ -311,11 +322,11 @@ class IRIProp(Property):
                 return iri
         return dflt
 
-    def iri_values(self):
+    def iri_values(self) -> Iterator[str]:
         return (iri for iri, _ in self.context)
 
 
-class ObjectProp(IRIProp):
+class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
     """
     A scalar SHACL object property of a SHACL object
     """
@@ -324,7 +335,7 @@ class ObjectProp(IRIProp):
 
     def __init__(
         self,
-        cls,
+        cls: Type["SHACLObject"],
         required: bool,
         context: Optional[Tuple[Tuple[str, str], ...]] = None,
     ):
@@ -332,10 +343,10 @@ class ObjectProp(IRIProp):
         self.cls = cls
         self.required = required
 
-    def validate(self, value) -> None:
+    def validate(self, value: Any) -> None:
         check_type(value, (self.cls, str))
 
-    def walk(self, value, callback: Callable, path: List[str]) -> None:
+    def walk(self, value: Any, callback: Callable[[Any, List[str]], bool], path: List[str]) -> None:
         if value is None:
             return
 
@@ -344,7 +355,9 @@ class ObjectProp(IRIProp):
         else:
             callback(value, path)
 
-    def iter_objects(self, value, recursive: bool, visited):
+    def iter_objects(
+        self, value: Any, recursive: bool, visited: Set["SHACLObject"]
+    ) -> Iterable["SHACLObject"]:
         if value is None or isinstance(value, str):
             return
 
@@ -356,7 +369,9 @@ class ObjectProp(IRIProp):
                 for c in value.iter_objects(recursive=True, visited=visited):
                     yield c
 
-    def encode(self, encoder: Encoder, value, state: EncodeState) -> None:
+    def encode(
+        self, encoder: Encoder, value: Union[str, "SHACLObject"], state: EncodeState
+    ) -> None:
         if value is None:
             raise ValueError("Object cannot be None")
 
@@ -366,7 +381,7 @@ class ObjectProp(IRIProp):
 
         return value.encode(encoder, state)
 
-    def decode(self, decoder: Decoder, state: DecodeState):
+    def decode(self, decoder: Decoder, state: DecodeState) -> Any:
         if decoder.is_object():
             return self.cls.decode(decoder, state)
 

@@ -38,6 +38,7 @@ from typing import (
     Union,
     cast,
     overload,
+    BinaryIO,
 )
 from dataclasses import dataclass
 
@@ -62,7 +63,7 @@ class Property(Generic[T_PropV], ABC):
     class
     """
 
-    VALID_TYPES: Union[Tuple, Type] = ()
+    VALID_TYPES: Union[Type[Any], Tuple[Type[Any], ...]] = ()
 
     __slots__ = ("pattern",)
 
@@ -90,10 +91,10 @@ class Property(Generic[T_PropV], ABC):
     def check_max_count(self, value, max_count: int) -> bool:
         return max_count == 1
 
-    def elide(self, value) -> bool:
+    def elide(self, value: Any) -> bool:
         return value is None
 
-    def walk(self, value, callback: Callable, path: List[str]) -> None:
+    def walk(self, value: Any, callback: Callable[[Any, List[str]], Optional[bool]], path: List[str]) -> None:
         callback(value, path)
 
     def iter_objects(
@@ -102,11 +103,11 @@ class Property(Generic[T_PropV], ABC):
         return []
 
     def link_prop(
-        self, value, objectset, missing: Optional[Set[str]], visited: Set[SHACLObject]
-    ):
+        self, value: Any, objectset: Any, missing: Optional[Set[str]], visited: Set["SHACLObject"]
+    ) -> Any:
         return value
 
-    def to_string(self, value) -> str:
+    def to_string(self, value: Any) -> str:
         return str(value)
 
     @abstractmethod
@@ -125,10 +126,10 @@ class StringProp(Property):
 
     VALID_TYPES = str
 
-    def set(self, value) -> str:
+    def set(self, value: Any) -> str:
         return str(value)
 
-    def encode(self, encoder: Encoder, value, state: EncodeState) -> None:
+    def encode(self, encoder: Encoder, value: Any, state: EncodeState) -> None:
         encoder.write_string(value)
 
     def decode(self, decoder: Decoder, state: DecodeState) -> Optional[str]:
@@ -136,7 +137,7 @@ class StringProp(Property):
 
 
 class AnyURIProp(StringProp):
-    def encode(self, encoder: Encoder, value, state: EncodeState) -> None:
+    def encode(self, encoder: Encoder, value: Any, state: EncodeState) -> None:
         encoder.write_iri(value)
 
     def decode(self, decoder: Decoder, state: DecodeState) -> Optional[str]:
@@ -157,7 +158,7 @@ class DateTimeProp(Property):
     def set(self, value: datetime) -> datetime:
         return self._normalize(value)
 
-    def encode(self, encoder: Encoder, value, state: EncodeState) -> None:
+    def encode(self, encoder: Encoder, value: datetime, state: EncodeState) -> None:
         encoder.write_datetime(self.to_string(value))
 
     def decode(self, decoder: Decoder, state: DecodeState) -> Optional[datetime]:
@@ -242,7 +243,7 @@ class PositiveIntegerProp(IntegerProp):
     def validate(self, value) -> None:
         super().validate(value)
         if value < 1:
-            raise ValueError(f"Value must be >=1. Got {value}")
+            raise ValueError(f"Value must be >= 1. Got {value}")
 
 
 class NonNegativeIntegerProp(IntegerProp):
@@ -1998,7 +1999,7 @@ class JSONLDDecoder(Decoder):
 
 
 class JSONLDDeserializer(object):
-    def deserialize_data(self, data, objectset: SHACLObjectSet) -> None:
+    def deserialize_data(self, data: Any, objectset: SHACLObjectSet) -> None:
         h = JSONLDDecoder(data, True)
 
         with h.read_property("@context") as context_prop:
@@ -2009,7 +2010,7 @@ class JSONLDDeserializer(object):
         with h.read_property("@graph") as graph_prop:
             objectset.decode(graph_prop if graph_prop else h, state)
 
-    def read(self, f, objectset: SHACLObjectSet) -> None:
+    def read(self, f: BinaryIO, objectset: SHACLObjectSet) -> None:
         data = json.load(f)
         self.deserialize_data(data, objectset)
 
@@ -2256,7 +2257,7 @@ class JSONLDSerializer(object):
         self,
         objectset: SHACLObjectSet,
         force_at_graph: bool = False,
-    ):
+    ) -> Any:
         h = JSONLDEncoder()
         state = EncodeState(objectset)
         with h.write_dict() as doc_s:
@@ -2267,10 +2268,10 @@ class JSONLDSerializer(object):
     def write(
         self,
         objectset: SHACLObjectSet,
-        f,
+        f: BinaryIO,
         force_at_graph: bool = False,
         **kwargs,
-    ):
+    ) -> str:
         """
         Write a SHACLObjectSet to a JSON LD file
 
@@ -2293,8 +2294,8 @@ class JSONLDSerializer(object):
 
 
 class JSONLDInlineEncoder(Encoder):
-    def __init__(self, f: Any, sha1: Any, in_dict: bool = False) -> None:
-        self.f: Any = f
+    def __init__(self, f: BinaryIO, sha1: Any, in_dict: bool = False) -> None:
+        self.f: BinaryIO = f
         self.comma: bool = False
         self.sha1: Any = sha1
         self.in_dict: bool = in_dict
@@ -2334,7 +2335,7 @@ class JSONLDInlineEncoder(Encoder):
         self.write(json.dumps(str(v)))
 
     @contextmanager
-    def write_property(self, iri: str, compact: Optional[str] = None):
+    def write_property(self, iri: str, compact: Optional[str] = None) -> Iterator["JSONLDInlineEncoder"]:
         self._write_comma()
         self.write_string(compact or iri)
         self.write(":")
@@ -2342,7 +2343,7 @@ class JSONLDInlineEncoder(Encoder):
         self.comma = True
 
     @contextmanager
-    def write_dict(self):
+    def write_dict(self) -> Iterator["JSONLDInlineEncoder"]:
         self._write_comma()
         if self.in_dict:
             yield self
@@ -2362,7 +2363,7 @@ class JSONLDInlineEncoder(Encoder):
         _id: str,
         compact_id: Optional[str],
         needs_id: bool,
-    ):
+    ) -> Iterator["JSONLDInlineEncoder"]:
         with self.write_dict() as obj_dict:
             with obj_dict.write_property(
                 "{{ context.compact_iri('@type') }}"
@@ -2376,7 +2377,7 @@ class JSONLDInlineEncoder(Encoder):
             yield obj_dict
 
     @contextmanager
-    def write_list(self):
+    def write_list(self) -> Iterator["JSONLDInlineEncoder"]:
         self._write_comma()
         self.write("[")
         yield self.__class__(self.f, self.sha1)
@@ -2384,13 +2385,13 @@ class JSONLDInlineEncoder(Encoder):
         self.comma = True
 
     @contextmanager
-    def write_list_item(self):
+    def write_list_item(self) -> Iterator["JSONLDInlineEncoder"]:
         self._write_comma()
         yield self.__class__(self.f, self.sha1)
         self.comma = True
 
     @contextmanager
-    def write_object_list(self):
+    def write_object_list(self) -> Iterator["JSONLDInlineEncoder"]:
         with self.write_property("@graph") as graph_prop:
             with graph_prop.write_list() as graph_list:
                 yield graph_list
@@ -2400,7 +2401,7 @@ class JSONLDInlineSerializer(object):
     def write(
         self,
         objectset: SHACLObjectSet,
-        f,
+        f: BinaryIO,
         force_at_graph: bool = False,
     ):
         """
@@ -2419,7 +2420,7 @@ class JSONLDInlineSerializer(object):
         return sha1.hexdigest()
 
 
-def encode_context(encoder: Encoder, objectset: SHACLObjectSet):
+def encode_context(encoder: Encoder, objectset: SHACLObjectSet) -> None:
     context: List[Union[str, Dict[str, str]]] = list(CONTEXT_URLS)
     if objectset.context:
         context.append(objectset.context)
@@ -2446,7 +2447,7 @@ def encode_context(encoder: Encoder, objectset: SHACLObjectSet):
                         write_context(context_list_item, ctx)
 
 
-def decode_context(decoder: Decoder, objectset: SHACLObjectSet):
+def decode_context(decoder: Decoder, objectset: SHACLObjectSet) -> None:
     def _decode_ctx(d: Decoder):
         if not d.is_object():
             return
@@ -2476,13 +2477,13 @@ try:
             subject: Optional[rdflib.term.Node] = None,
             predicate: Optional[rdflib.term.Node] = None,
             value: Optional[rdflib.term.Node] = None,
-        ):
-            self.graph = graph
-            self.subject = subject
-            self.predicate = predicate
-            self.value = value
+        ) -> None:
+            self.graph: rdflib.Graph = graph
+            self.subject: Optional[rdflib.term.Node] = subject
+            self.predicate: Optional[rdflib.term.Node] = predicate
+            self.value: Optional[rdflib.term.Node] = value
 
-        def __read_node(self):
+        def __read_node(self) -> Optional[rdflib.term.Node]:
             if self.value is not None:
                 return self.value
             if self.predicate is None:
@@ -2576,7 +2577,7 @@ try:
             return len(list(self.graph.objects(self.subject, self.predicate))) > 1
 
         @contextmanager
-        def read_property(self, key) -> Iterator[Optional["RDFDecoder"]]:
+        def read_property(self, key: str) -> Iterator[Optional["RDFDecoder"]]:
             if key == "@id":
                 yield self.__class__(self.graph, value=self.subject)
             else:
@@ -2633,17 +2634,17 @@ try:
             graph: rdflib.Graph,
             subject: Optional[rdflib.term.Node] = None,
             predicate: Optional[rdflib.term.Node] = None,
-        ):
-            self.graph = graph
-            self.subject = subject
-            self.predicate = predicate
+        ) -> None:
+            self.graph: rdflib.Graph = graph
+            self.subject: Optional[rdflib.term.Node] = subject
+            self.predicate: Optional[rdflib.term.Node] = predicate
 
-        def __add_literal(self, v):
+        def __add_literal(self, v: Any) -> None:
             if self.subject is None or self.predicate is None:
                 raise TypeError("Subject and predicate of literal value cannot be None")
             self.graph.add((self.subject, self.predicate, rdflib.Literal(v)))
 
-        def __add_uriref(self, v):
+        def __add_uriref(self, v: str) -> None:
             if self.subject is None or self.predicate is None:
                 raise TypeError("Subject and predicate of URIRef value cannot be None")
             self.graph.add((self.subject, self.predicate, rdflib.URIRef(v)))
@@ -2709,7 +2710,7 @@ try:
             yield self
 
     class RDFSerializer(object):
-        def write(self, objset: SHACLObjectSet, g: rdflib.Graph):
+        def write(self, objset: SHACLObjectSet, g: rdflib.Graph) -> None:
             """
             Write a SHACLObjectSet to an RDF graph
             """
@@ -2721,7 +2722,7 @@ except ImportError:
     pass
 
 
-def print_tree(objects, all_fields: bool = False) -> None:
+def print_tree(objects: Iterable[SHACLObject], all_fields: bool = False) -> None:
     """
     Print object tree
     """

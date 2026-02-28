@@ -49,6 +49,8 @@ T_PropV = TypeVar("T_PropV")
 
 
 def check_type(obj: Any, types: Union[Type[Any], Tuple[Type[Any], ...]]) -> None:
+    """Check if an object is an instance of a type or one of types.
+    Raise a TypeError if not."""
     if not isinstance(obj, types):
         if isinstance(types, (list, tuple)):
             raise TypeError(
@@ -401,7 +403,13 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
         self.validate(obj)
         return obj
 
-    def link_prop(self, value, objectset, missing, visited):
+    def link_prop(
+        self,
+        value: Any,
+        objectset: "SHACLObjectSet",
+        missing: Optional[Set[str]],
+        visited: Set["SHACLObject"],
+    ) -> Any:
         if value is None:
             return value
 
@@ -428,7 +436,9 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
 class ListProxy(Generic[T_PropV]):
     __slots__ = ("_data", "_prop")
 
-    def __init__(self, prop: Property[T_PropV], data: Optional[List[T_PropV]] = None) -> None:
+    def __init__(
+        self, prop: Property[T_PropV], data: Optional[List[T_PropV]] = None
+    ) -> None:
         if data is None:
             self._data: List[T_PropV] = []
         else:
@@ -453,7 +463,15 @@ class ListProxy(Generic[T_PropV]):
     def __getitem__(self, key: Union[int, slice]) -> Any:
         return self._data[key]
 
-    def __setitem__(self, key: Union[int, slice], value) -> None:
+    @overload
+    def __setitem__(self, key: int, value: T_PropV) -> None: ...
+
+    @overload
+    def __setitem__(self, key: slice, value: Iterable[T_PropV]) -> None: ...
+
+    def __setitem__(
+        self, key: Union[int, slice], value: Union[T_PropV, Iterable[T_PropV]]
+    ) -> None:
         if isinstance(key, slice):
             for v in value:
                 self._prop.validate(v)
@@ -491,7 +509,7 @@ class ListProxy(Generic[T_PropV]):
         return self._data == other
 
 
-class ListProp(Property):
+class ListProp(Property[ListProxy[T_PropV]]):
     """
     A list of SHACL properties
     """

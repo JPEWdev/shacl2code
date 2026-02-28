@@ -19,12 +19,15 @@ import time
 import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import (
     Any,
+    BinaryIO,
     Callable,
     Dict,
+    Generic,
     Iterable,
     Iterator,
     List,
@@ -33,13 +36,10 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
-    Generic,
     Union,
     cast,
     overload,
-    BinaryIO,
 )
-from dataclasses import dataclass
 
 # Allow Property subclasses to define their own value types,
 # reduce the use of Any in the type hints.

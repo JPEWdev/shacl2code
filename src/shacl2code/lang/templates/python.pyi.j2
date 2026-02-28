@@ -24,19 +24,18 @@ from datetime import datetime
 from enum import Enum
 from typing import (
     Any,
+    BinaryIO,
     Dict,
+    Generic,
     Iterable,
+    Iterator,
     List,
     Optional,
     Set,
     Tuple,
     TypeVar,
-    Generic,
     Union,
-    Iterator,
     overload,
-    TextIO,
-    BinaryIO,
 )
 
 T_PropV = TypeVar("T_PropV")
@@ -76,11 +75,11 @@ class SHACLObjectSet:
 
 class JSONLDDeserializer:
     def __init__(self, **kwargs: Any) -> None: ...
-    def read(self, f: Union[TextIO, BinaryIO], objectset: SHACLObjectSet) -> None: ...
+    def read(self, f: BinaryIO, objectset: SHACLObjectSet) -> None: ...
 
 class JSONLDSerializer:
     def __init__(self, **kwargs: Any) -> None: ...
-    def write(self, objectset: SHACLObjectSet, f: Union[TextIO, BinaryIO]) -> None: ...
+    def write(self, objectset: SHACLObjectSet, f: BinaryIO) -> None: ...
 
 # CLASSES
 {%- for class in classes %}
@@ -144,7 +143,11 @@ class {{ varname(*class.clsname) }}(
         {%- else %}
         {%- set ptype = DATATYPE_PYTHON_TYPES[prop.datatype] %}
         {%- endif %}
-        {{ varname(prop.varname) }}: {% if is_list %}Iterable[{{ ptype }}]{% else %}Optional[{{ ptype }}]{% endif %} = None,
+        {%- if is_list -%}
+        {{ varname(prop.varname) }}: Optional[Iterable[{{ ptype }}]] = None,
+        {%- else -%}
+        {{ varname(prop.varname) }}: Optional[{{ ptype }}] = None,
+        {%- endif %}
         {%- endfor %}
         {%- endif %}
         **kwargs: Any

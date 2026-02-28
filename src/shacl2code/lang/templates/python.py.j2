@@ -22,27 +22,32 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from enum import Enum
+{# Types used in class inheritance need to be imported at run time #}
 from typing import (
-    Any,
-    BinaryIO,
-    Callable,
-    Dict,
+    TYPE_CHECKING,
     Generic,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Type,
     TypeVar,
     Union,
     cast,
     overload,
 )
 
-# Allow Property subclasses to define their own value types,
-# reduce the use of Any in the type hints.
+{# Types imported only for type checking #}
+if TYPE_CHECKING:
+    from typing import (
+        Any,
+        BinaryIO,
+        Callable,
+        Dict,
+        Iterable,
+        Iterator,
+        List,
+        Optional,
+        Set,
+        Tuple,
+        Type,
+    )
+
 T_PropV = TypeVar("T_PropV")
 
 

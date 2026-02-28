@@ -46,8 +46,13 @@ class JinjaTemplateRender(object):
     def get_extra_env(self):
         return {}
 
-    def render(self, template, output, *, extra_env={}, render_args={}):
-        def abort_helper(msg):
+    def render(self, template, output, *, extra_env=None, render_args=None):
+        if extra_env is None:
+            extra_env = {}
+        if render_args is None:
+            render_args = {}
+
+        def abort_helper(msg: str):
             raise TemplateRuntimeError(msg)
 
         env = Environment(loader=FileSystemLoader([template.parent, THIS_DIR.parent]))

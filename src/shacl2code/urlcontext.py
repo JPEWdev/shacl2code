@@ -16,7 +16,9 @@ class ContextData:
 
 
 class UrlContext(Context):
-    def __init__(self, contexts=[]):
+    def __init__(self, contexts=None):
+        if contexts is None:
+            contexts = []
         super().__init__([c.context.get("@context", {}) for c in contexts])
         self.urls = []
         for ctx in contexts:

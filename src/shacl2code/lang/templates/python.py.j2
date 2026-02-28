@@ -2911,11 +2911,6 @@ CONTEXT_URLS: List[str] = [
 
 # CLASSES
 {%- for class in classes %}
-{%- if class.comment %}
-{%- for l in class.comment.split("\n") %}
-#{{ (" " + l).rstrip() }}
-{%- endfor %}
-{%- endif %}
 class {{ varname(*class.clsname) }}(
 {%- if class.parent_ids %}
     {%- for id in class.parent_ids -%}
@@ -2929,6 +2924,13 @@ class {{ varname(*class.clsname) }}(
 {%- else -%}
     SHACLObject
 {%- endif -%}):
+{%- if class.comment %}
+    {{ '"' }}{{ '"' }}{{ '"' }}
+    {%- for l in class.comment.split("\n") %}
+    {{ (" " + l).rstrip() }}
+    {%- endfor %}
+    {{ '"' }}{{ '"' }}{{ '"' }}
+{% endif %}
     TYPE = "{{ class._id }}"
     {%- if context.compact_iri(class._id) != class._id %}
     COMPACT_TYPE = "{{ context.compact_iri(class._id) }}"
@@ -2956,39 +2958,6 @@ class {{ varname(*class.clsname) }}(
     }
     {%- endif %}
 
-    {%- if is_stub is defined and is_stub %}
-
-    def __init__(
-        self,
-        {%- if class.properties %}
-        *,
-        {%- for prop in class.properties %}
-        {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
-        {%- if prop.enum_values %}
-        {%- set ptype = "str" %}
-        {%- elif prop.class_id %}
-        {%- set ptype = "Union[str, '" ~ varname(*classes.get(prop.class_id).clsname) ~ "']" %}
-        {%- else %}
-        {%- set ptype = DATATYPE_PYTHON_TYPES[prop.datatype] %}
-        {%- endif %}
-        {{ varname(prop.varname) }}: {% if is_list %}Iterable[{{ ptype }}]{% else %}Optional[{{ ptype }}]{% endif %} = None,
-        {%- endfor %}
-        {%- endif %}
-        **kwargs: Any
-    ) -> None: ...
-
-    {%- for prop in class.properties %}
-        {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
-        {%- if prop.enum_values %}
-        {%- set ptype = "str" %}
-        {%- elif prop.class_id %}
-        {%- set ptype = "Union[str, '" ~ varname(*classes.get(prop.class_id).clsname) ~ "']" %}
-        {%- else %}
-        {%- set ptype = DATATYPE_PYTHON_TYPES[prop.datatype] %}
-        {%- endif %}
-    {{ varname(prop.varname) }}: {% if is_list %}ListProxy[{{ ptype }}]{% else %}Optional[{{ ptype }}]{% endif %}
-    {%- endfor %}
-    {%- else %}
     {%- if class.properties %}
     PROPERTIES = [
     {%- for prop in class.properties %}
@@ -3042,7 +3011,6 @@ class {{ varname(*class.clsname) }}(
         ),
     {%- endfor %}
     ]
-    {%- endif %}
     {%- endif %}
 
 {% endfor %}

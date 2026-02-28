@@ -1,2 +1,165 @@
-{% set is_stub = True -%}
-{% include "python.py.j2" %}
+# Generated stub for the generated Python bindings
+#
+# {{ disclaimer }}
+#
+# SPDX-License-Identifier: {{ spdx_license }}
+{% set DATATYPE_PYTHON_TYPES = {
+    "http://www.w3.org/2001/XMLSchema#string": "str",
+    "http://www.w3.org/2001/XMLSchema#boolean": "bool",
+    "http://www.w3.org/2001/XMLSchema#integer": "int",
+    "http://www.w3.org/2001/XMLSchema#nonNegativeInteger": "int",
+    "http://www.w3.org/2001/XMLSchema#positiveInteger": "int",
+    "http://www.w3.org/2001/XMLSchema#float": "float",
+    "http://www.w3.org/2001/XMLSchema#anyURI": "str",
+    "http://www.w3.org/2001/XMLSchema#decimal": "float",
+    "http://www.w3.org/2001/XMLSchema#dateTime": "datetime",
+    "http://www.w3.org/2001/XMLSchema#dateTimeStamp": "datetime",
+}
+-%}
+
+from __future__ import annotations
+
+import decimal
+from datetime import datetime
+from enum import Enum
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    TypeVar,
+    Generic,
+    Union,
+    Iterator,
+    overload,
+    TextIO,
+    BinaryIO,
+)
+
+T_PropV = TypeVar("T_PropV")
+
+class NodeKind(Enum):
+    BlankNode = 1
+    IRI = 2
+    BlankNodeOrIRI = 3
+
+class ListProxy(List[T_PropV]): ...
+
+class SHACLObject:
+    NAMED_INDIVIDUALS: Dict[str, str]
+    AUTO_NAMED_INDIVIDUALS: bool
+    NODE_KIND: NodeKind
+    ID_ALIAS: Optional[str]
+    IS_ABSTRACT: bool
+    IS_DEPRECATED: bool
+    TYPE: str
+    COMPACT_TYPE: Optional[str]
+
+    def __init__(self, **kwargs: Any) -> None: ...
+    def get_type(self) -> str: ...
+    def get_compact_type(self) -> Optional[str]: ...
+
+class SHACLExtensibleObject(SHACLObject):
+    CLOSED: bool
+    def __init__(self, typ: Optional[str] = None, **kwargs: Any) -> None: ...
+
+class SHACLObjectSet:
+    def __init__(self) -> None: ...
+    def add(self, obj: SHACLObject) -> None: ...
+    def create(self, typ: str, **kwargs: Any) -> SHACLObject: ...
+    def __iter__(self) -> Iterator[SHACLObject]: ...
+    @property
+    def objects(self) -> Iterable[SHACLObject]: ...
+
+class JSONLDDeserializer:
+    def __init__(self, **kwargs: Any) -> None: ...
+    def read(self, f: Union[TextIO, BinaryIO], objectset: SHACLObjectSet) -> None: ...
+
+class JSONLDSerializer:
+    def __init__(self, **kwargs: Any) -> None: ...
+    def write(self, objectset: SHACLObjectSet, f: Union[TextIO, BinaryIO]) -> None: ...
+
+# CLASSES
+{%- for class in classes %}
+class {{ varname(*class.clsname) }}(
+{%- if class.parent_ids %}
+    {%- for id in class.parent_ids -%}
+        {{- varname(*classes.get(id).clsname) }}{%- if not loop.last or class.is_extensible -%}, {% endif -%}
+    {%- endfor -%}
+    {%- if class.is_extensible -%}
+        SHACLExtensibleObject
+    {%- endif -%}
+{%- elif class.is_extensible -%}
+    SHACLExtensibleObject
+{%- else -%}
+    SHACLObject
+{%- endif -%}):
+{%- if class.comment %}
+    {{ '"' }}{{ '"' }}{{ '"' }}
+    {%- for l in class.comment.split("\n") %}
+    {{ l.rstrip() }}
+    {%- endfor %}
+    {{ '"' }}{{ '"' }}{{ '"' }}
+{% endif %}
+    TYPE = "{{ class._id }}"
+    {%- if context.compact_iri(class._id) != class._id %}
+    COMPACT_TYPE = "{{ context.compact_iri(class._id) }}"
+    {%- endif %}
+    NODE_KIND: NodeKind
+    {%- if class.id_property %}
+    ID_ALIAS: Optional[str]
+    {%- endif %}
+    {%- if class.is_abstract %}
+    IS_ABSTRACT: bool
+    {%- endif %}
+    {%- if class.deprecated %}
+    IS_DEPRECATED: bool
+    {%- endif %}
+    {%- if class.named_individuals %}
+    NAMED_INDIVIDUALS: Dict[str, str]
+
+    {%- for member in class.named_individuals %}
+    {%- if member.comment %}
+    {%- for l in member.comment.split("\n") %}
+    #{{ (" " + l).rstrip() }}
+    {%- endfor %}
+    {%- endif %}
+    {{ varname(member.varname) }}: str
+    {%- endfor %}
+    {%- endif %}
+
+    def __init__(
+        self,
+        {%- if class.properties %}
+        *,
+        {%- for prop in class.properties %}
+        {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
+        {%- if prop.enum_values %}
+        {%- set ptype = "str" %}
+        {%- elif prop.class_id %}
+        {%- set ptype = "Union[str, '" ~ varname(*classes.get(prop.class_id).clsname) ~ "']" %}
+        {%- else %}
+        {%- set ptype = DATATYPE_PYTHON_TYPES[prop.datatype] %}
+        {%- endif %}
+        {{ varname(prop.varname) }}: {% if is_list %}Iterable[{{ ptype }}]{% else %}Optional[{{ ptype }}]{% endif %} = None,
+        {%- endfor %}
+        {%- endif %}
+        **kwargs: Any
+    ) -> None: ...
+
+    {%- for prop in class.properties %}
+        {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
+        {%- if prop.enum_values %}
+        {%- set ptype = "str" %}
+        {%- elif prop.class_id %}
+        {%- set ptype = "Union[str, '" ~ varname(*classes.get(prop.class_id).clsname) ~ "']" %}
+        {%- else %}
+        {%- set ptype = DATATYPE_PYTHON_TYPES[prop.datatype] %}
+        {%- endif %}
+    {{ varname(prop.varname) }}: {% if is_list %}ListProxy[{{ ptype }}]{% else %}Optional[{{ ptype }}]{% endif %}
+    {%- endfor %}
+
+{% endfor %}

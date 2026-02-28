@@ -74,6 +74,7 @@ class PythonRender(BasicJinjaRender):
         yield self._output_file, TEMPLATE_DIR / "python.py.j2", {}
         if self._output_file.path != "-":
             import os
+
             base, ext = os.path.splitext(self._output_file.path)
             pyi_path = base + ".pyi"
             yield OutputFile(pyi_path), TEMPLATE_DIR / "python.pyi.j2", {}

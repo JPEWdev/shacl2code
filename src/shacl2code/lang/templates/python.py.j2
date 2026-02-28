@@ -99,7 +99,7 @@ class Property(ABC, Generic[T_PropV]):
     def walk(
         self,
         value: T_PropV,
-        callback: Callable[[Any, List[str]], Optional[bool]],
+        callback: Callable[[Any, List[str]], bool],
         path: List[str],
     ) -> None:
         callback(value, path)
@@ -289,7 +289,9 @@ class FloatProp(Property[float]):
     def set(self, value: Any) -> float:
         return float(value)
 
-    def encode(self, encoder: Encoder, value: Union[float, int], state: EncodeState) -> None:
+    def encode(
+        self, encoder: Encoder, value: Union[float, int], state: EncodeState
+    ) -> None:
         encoder.write_float(value)
 
     def decode(self, decoder: Decoder, state: DecodeState) -> Optional[float]:
@@ -352,7 +354,10 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
         return str(value)
 
     def walk(
-        self, value: Any, callback: Callable[[Any, List[str]], Optional[bool]], path: List[str]
+        self,
+        value: Any,
+        callback: Callable[[Any, List[str]], bool],
+        path: List[str],
     ) -> None:
         if value is None:
             return
@@ -561,7 +566,7 @@ class ListProp(Property[ListProxy[T_PropV]]):
     def walk(
         self,
         value: ListProxy[T_PropV],
-        callback: Callable,
+        callback: Callable[[Any, List[str]], bool],
         path: List[str]
     ) -> None:
         if value is None:
@@ -837,7 +842,9 @@ class SHACLObjectMeta(type):
     @staticmethod
     def _add_class(key: str, c: Type[SHACLObject]) -> None:
         if key in SHACLObject.CLASSES:
-            raise KeyError(f"{key} already registered to {SHACLObject.CLASSES[key].__name__}")
+            raise KeyError(
+                f"{key} already registered to {SHACLObject.CLASSES[key].__name__}"
+            )
         SHACLObject.CLASSES[key] = c
 
 
@@ -916,7 +923,9 @@ class SHACLObject(metaclass=SHACLObjectMeta):
     def __init_subclass__(cls, **kwargs):
         def add_class(key: str, c: Type[SHACLObject]) -> None:
             if key in SHACLObject.CLASSES:
-                raise KeyError(f"{key} already registered to {SHACLObject.CLASSES[key].__name__}")
+                raise KeyError(
+                    f"{key} already registered to {SHACLObject.CLASSES[key].__name__}"
+                )
             SHACLObject.CLASSES[key] = c
 
         super().__init_subclass__(**kwargs)
@@ -1029,7 +1038,7 @@ class SHACLObject(metaclass=SHACLObjectMeta):
         )
 
     def __dir__(self) -> Iterable[str]:
-        return set(super().__dir__()) | set(self._OBJ_PY_PROPS.keys())
+        return sorted(set(super().__dir__()) | set(self._OBJ_PY_PROPS.keys()))
 
     def __delattr__(self, name: str) -> None:
         if name in self._EXTRA_SLOTS:
@@ -1056,7 +1065,7 @@ class SHACLObject(metaclass=SHACLObjectMeta):
     def walk(
         self,
         callback: Callable[[Any, List[str]], bool],
-        path: Optional[List[str]] = None
+        path: Optional[List[str]] = None,
     ) -> None:
         """
         Walk object tree, invoking the callback for each item
@@ -2832,7 +2841,7 @@ def print_tree(objects: Iterable[SHACLObject], all_fields: bool = False) -> None
     """
     seen = set()
 
-    def callback(value: Any, path: List[str]):
+    def callback(value: Any, path: List[str]) -> bool:
         s = ("  " * (len(path) - 1)) + f"{path[-1]}"
         if isinstance(value, SHACLObject):
             s += f" {value} ({id(value)})"

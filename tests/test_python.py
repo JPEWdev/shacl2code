@@ -1921,7 +1921,7 @@ def test_introspection(model):
     Tests that the __dir__ override correctly exposes SHACL properties
     to Python's introspection.
     __dir__ is used for autocompletion in IDEs like Jupyter and IPython.
-    """ 
+    """
     c = model.test_class()
     props = dir(c)
 

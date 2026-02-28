@@ -14,6 +14,7 @@ def varname(*name):
     """
     Make a valid Python variable name.
     """
+
     name = "_".join(name)
     # Any invalid characters at the beginning of the name are removed (except
     # "@")
@@ -33,6 +34,7 @@ class PythonRender(BasicJinjaRender):
     """
     Render Python Language Bindings
     """
+
     HELP = "Python Language Bindings"
 
     def __init__(self, args):

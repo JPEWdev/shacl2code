@@ -567,7 +567,7 @@ class ListProp(Property[ListProxy[T_PropV]]):
         self,
         value: ListProxy[T_PropV],
         callback: Callable[[Any, List[str]], bool],
-        path: List[str]
+        path: List[str],
     ) -> None:
         if value is None:
             return
@@ -1169,9 +1169,7 @@ class SHACLObject(metaclass=SHACLObjectMeta):
 
     @classmethod
     def decode(
-        cls: Type[T_SHACLObject],
-        decoder: Decoder,
-        state: DecodeState
+        cls: Type[T_SHACLObject], decoder: Decoder, state: DecodeState
     ) -> "SHACLObject":
         typ, obj_d = decoder.read_object()
         if typ is None:

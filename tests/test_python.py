@@ -162,7 +162,6 @@ class TestCheckType:
             check=True,
         )
 
-    @pytest.mark.xfail(reason="pyrefly is ignoring type annotations from rdflib")
     def test_pyrefly(self, tmp_path, args):
         """
         Pyrefly static type checking
@@ -1895,3 +1894,44 @@ def test_extensible_context(model, roundtrip):
     ), "Property does not have expected type"
 
     assert p["http://custom-prop.example.com/prop"], "Unable to find property value"
+
+
+def test_object_prop_set_coercion(model):
+    """
+    Tests that ObjectProp.set() inherently respects and retains both
+    raw string IRIs and actual SHACLObject instances securely without
+    coercing the object prematurely into a string representation.
+    """
+    c = model.test_class()
+
+    # Assigning string should remain string
+    c.test_class_class_prop = "http://example.org/assigned-iri"
+    assert isinstance(c.test_class_class_prop, str)
+    assert c.test_class_class_prop == "http://example.org/assigned-iri"
+
+    # Assigning an object should preserve the object instance without str() coercion
+    embedded_obj = model.test_class(_id="http://example.org/embedded-obj")
+    c.test_class_class_prop = embedded_obj
+    assert isinstance(c.test_class_class_prop, model.test_class)  # check if same class
+    assert c.test_class_class_prop is embedded_obj  # check if same object
+
+
+def test_introspection(model):
+    """
+    Tests that the __dir__ override correctly exposes SHACL properties
+    to Python's introspection.
+    __dir__ is used for autocompletion in IDEs like Jupyter and IPython.
+    """ 
+    c = model.test_class()
+    props = dir(c)
+
+    # Standard SHACLObject properties
+    assert "ID_ALIAS" in props
+    assert "NODE_KIND" in props
+
+    # Added properties from test model
+    assert "test_class_boolean_prop" in props
+    assert "test_class_class_prop" in props
+    assert "test_class_integer_prop" in props
+    assert "test_class_string_scalar_prop" in props
+    assert "test_class_string_list_prop" in props

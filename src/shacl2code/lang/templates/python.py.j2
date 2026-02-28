@@ -18,14 +18,12 @@ import threading
 import time
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Collection
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import (
     Any,
     Callable,
-    Collection,
     Dict,
     Iterable,
     Iterator,
@@ -354,7 +352,7 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
         return str(value)
 
     def walk(
-        self, value: Any, callback: Callable[[Any, List[str]], bool], path: List[str]
+        self, value: Any, callback: Callable[[Any, List[str]], Optional[bool]], path: List[str]
     ) -> None:
         if value is None:
             return
@@ -480,9 +478,10 @@ class ListProxy(Generic[T_PropV]):
         self, key: Union[int, slice], value: Union[T_PropV, Iterable[T_PropV]]
     ) -> None:
         if isinstance(key, slice):
-            for v in value:
+            val_iter = cast(Iterable[T_PropV], value)
+            for v in val_iter:
                 self._prop.validate(v)
-            self._data[key] = [self._prop.set(v) for v in value]
+            self._data[key] = [self._prop.set(v) for v in val_iter]
         elif isinstance(key, int):
             self._prop.validate(value)
             self._data[key] = self._prop.set(value)
@@ -608,11 +607,12 @@ class ListProp(Property[ListProxy[T_PropV]]):
                     self.prop.encode(item_s, v, state)
 
     def decode(self, decoder: Decoder, state: DecodeState) -> ListProxy[T_PropV]:
-        data = []
+        data: List[T_PropV] = []
         for val_d in decoder.read_list():
             v = self.prop.decode(val_d, state)
-            self.prop.validate(v)
-            data.append(v)
+            if v is not None:
+                self.prop.validate(v)
+                data.append(v)
 
         return ListProxy(self.prop, data=data)
 
@@ -1028,6 +1028,9 @@ class SHACLObject(metaclass=SHACLObjectMeta):
             f"'{name}' is not a valid property of {self.__class__.__name__}"
         )
 
+    def __dir__(self) -> Iterable[str]:
+        return set(super().__dir__()) | set(self._OBJ_PY_PROPS.keys())
+
     def __delattr__(self, name: str) -> None:
         if name in self._EXTRA_SLOTS:
             object.__delattr__(self, name)
@@ -1415,7 +1418,7 @@ class SHACLExtensibleObject(SHACLObject):
 class SHACLObjectSet(object):
     def __init__(
         self,
-        objects: Collection[SHACLObject] = None,
+        objects: Optional[Iterable[SHACLObject]] = None,
         *,
         link: bool = False
     ) -> None:
@@ -2811,6 +2814,10 @@ try:
         def write_object_list(self):
             yield self
 
+        @contextmanager
+        def write_dict(self):
+            yield self
+
     class RDFSerializer(object):
         def write(self, objset: SHACLObjectSet, g: rdflib.Graph) -> None:
             """
@@ -2873,7 +2880,19 @@ DATATYPE_CLASSES = {
     "http://www.w3.org/2001/XMLSchema#dateTimeStamp": "DateTimeStampProp",
 }
 %}
-
+{% set
+DATATYPE_PYTHON_TYPES = {
+    "http://www.w3.org/2001/XMLSchema#string": "str",
+    "http://www.w3.org/2001/XMLSchema#anyURI": "str",
+    "http://www.w3.org/2001/XMLSchema#integer": "int",
+    "http://www.w3.org/2001/XMLSchema#positiveInteger": "int",
+    "http://www.w3.org/2001/XMLSchema#nonNegativeInteger": "int",
+    "http://www.w3.org/2001/XMLSchema#boolean": "bool",
+    "http://www.w3.org/2001/XMLSchema#decimal": "float",
+    "http://www.w3.org/2001/XMLSchema#dateTime": "datetime",
+    "http://www.w3.org/2001/XMLSchema#dateTimeStamp": "datetime",
+}
+%}
 CONTEXT_URLS: List[str] = [
 {%- for url in context.urls %}
     "{{ url }}",
@@ -2907,7 +2926,7 @@ class {{ varname(*class.clsname) }}(
     {%- endif %}
     NODE_KIND: NodeKind = NodeKind.{{ class.node_kind.split("#")[-1] }}
     {%- if class.id_property %}
-    ID_ALIAS: Optional[str]] = "{{ class.id_property }}"
+    ID_ALIAS: Optional[str] = "{{ class.id_property }}"
     {%- endif %}
     {%- if class.is_abstract %}
     IS_ABSTRACT: bool = True
@@ -2928,6 +2947,39 @@ class {{ varname(*class.clsname) }}(
     }
     {%- endif %}
 
+    {%- if is_stub is defined and is_stub %}
+
+    def __init__(
+        self,
+        {%- if class.properties %}
+        *,
+        {%- for prop in class.properties %}
+        {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
+        {%- if prop.enum_values %}
+        {%- set ptype = "str" %}
+        {%- elif prop.class_id %}
+        {%- set ptype = "Union[str, '" ~ varname(*classes.get(prop.class_id).clsname) ~ "']" %}
+        {%- else %}
+        {%- set ptype = DATATYPE_PYTHON_TYPES[prop.datatype] %}
+        {%- endif %}
+        {{ varname(prop.varname) }}: {% if is_list %}Iterable[{{ ptype }}]{% else %}Optional[{{ ptype }}]{% endif %} = None,
+        {%- endfor %}
+        {%- endif %}
+        **kwargs: Any
+    ) -> None: ...
+
+    {%- for prop in class.properties %}
+        {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
+        {%- if prop.enum_values %}
+        {%- set ptype = "str" %}
+        {%- elif prop.class_id %}
+        {%- set ptype = "Union[str, '" ~ varname(*classes.get(prop.class_id).clsname) ~ "']" %}
+        {%- else %}
+        {%- set ptype = DATATYPE_PYTHON_TYPES[prop.datatype] %}
+        {%- endif %}
+    {{ varname(prop.varname) }}: {% if is_list %}ListProxy[{{ ptype }}]{% else %}Optional[{{ ptype }}]{% endif %}
+    {%- endfor %}
+    {%- else %}
     {%- if class.properties %}
     PROPERTIES = [
     {%- for prop in class.properties %}
@@ -2981,6 +3033,7 @@ class {{ varname(*class.clsname) }}(
         ),
     {%- endfor %}
     ]
+    {%- endif %}
     {%- endif %}
 
 {% endfor %}

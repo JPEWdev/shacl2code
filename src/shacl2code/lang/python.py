@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .common import BasicJinjaRender
+from .common import BasicJinjaRender, OutputFile
 from .lang import language, TEMPLATE_DIR
 
 import re
@@ -31,6 +31,7 @@ class PythonRender(BasicJinjaRender):
 
     def __init__(self, args):
         super().__init__(args, TEMPLATE_DIR / "python.py.j2")
+        self._output_file = args.output
         self.__use_slots = args.use_slots
         self.__render_args = {
             "elide_lists": args.elide_lists,
@@ -68,3 +69,11 @@ class PythonRender(BasicJinjaRender):
             "use_slots": use_slots,
             **self.__render_args,
         }
+
+    def get_outputs(self):
+        yield self._output_file, TEMPLATE_DIR / "python.py.j2", {}
+        if self._output_file.path != "-":
+            import os
+            base, ext = os.path.splitext(self._output_file.path)
+            pyi_path = base + ".pyi"
+            yield OutputFile(pyi_path), TEMPLATE_DIR / "python.pyi.j2", {}

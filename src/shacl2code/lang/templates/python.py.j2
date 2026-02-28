@@ -1426,10 +1426,7 @@ class SHACLExtensibleObject(SHACLObject):
 
 class SHACLObjectSet(object):
     def __init__(
-        self,
-        objects: Optional[Iterable[SHACLObject]] = None,
-        *,
-        link: bool = False
+        self, objects: Optional[Iterable[SHACLObject]] = None, *, link: bool = False
     ) -> None:
         if objects is None:
             objects = []
@@ -2159,7 +2156,9 @@ class Encoder(ABC):
         raise NotImplementedError("Subclasses must implement write_iri method")
 
     @abstractmethod
-    def write_enum(self, v: str, e: Property[Any], compact: Optional[str] = None) -> None:
+    def write_enum(
+        self, v: str, e: Property[Any], compact: Optional[str] = None
+    ) -> None:
         """
         Write enum value IRI
 
@@ -2309,13 +2308,17 @@ class JSONLDEncoder(Encoder):
         self.data = str(v)
 
     @contextmanager
-    def write_property(self, iri: str, compact: Optional[str] = None) -> Iterator["JSONLDEncoder"]:
+    def write_property(
+        self, iri: str, compact: Optional[str] = None
+    ) -> Iterator["JSONLDEncoder"]:
         s = self.__class__(None)
         yield s
         if s.data is not None:
             # within write_object() context, self.data is expected to be a dict
             if not isinstance(self.data, dict):
-                raise TypeError("Encoder.write_property used outside of write_object context; encoder.data is not a dict")
+                raise TypeError(
+                    "Encoder.write_property used outside of write_object context; encoder.data is not a dict"
+                )
             self.data[compact or iri] = s.data  # type: ignore
 
     @contextmanager
@@ -2353,7 +2356,9 @@ class JSONLDEncoder(Encoder):
         yield s
         if s.data is not None:
             if not isinstance(self.data, list):
-                raise TypeError("Encoder.write_list_item used outside of write_list context; encoder.data is not a list")
+                raise TypeError(
+                    "Encoder.write_list_item used outside of write_list context; encoder.data is not a list"
+                )
             self.data.append(s.data)  # type: ignore
 
     @contextmanager
@@ -2449,7 +2454,9 @@ class JSONLDInlineEncoder(Encoder):
         self.write(json.dumps(str(v)))
 
     @contextmanager
-    def write_property(self, iri: str, compact: Optional[str] = None) -> Iterator["JSONLDInlineEncoder"]:
+    def write_property(
+        self, iri: str, compact: Optional[str] = None
+    ) -> Iterator["JSONLDInlineEncoder"]:
         self._write_comma()
         self.write_string(compact or iri)
         self.write(":")

@@ -2650,7 +2650,6 @@ try:
             if not self.subject:
                 blank_nodes = set()
                 for s in self.graph.subjects(unique=True):
-                    # type: ignore # RDF.type is dynamic
                     if (s, RDF.type, None) not in self.graph:
                         continue
 
@@ -2663,7 +2662,6 @@ try:
                     yield self.__class__(self.graph, s)
             else:
                 for o in self.graph.objects(self.subject, self.predicate):
-                    # type: ignore # RDF.type is dynamic
                     if (o, RDF.type, None) in self.graph:
                         yield self.__class__(self.graph, o)
                     else:
@@ -2690,12 +2688,10 @@ try:
 
         def is_object(self) -> bool:
             n = self.__read_node() or self.subject
-            # type: ignore # RDF.type is dynamic
             return (n, RDF.type, None) in self.graph
 
         def object_keys(self) -> Iterator[str]:
             for p in self.graph.predicates(self.subject, unique=True):
-                # type: ignore # RDF.type is dynamic
                 if p == RDF.type:
                     continue
 
@@ -2709,7 +2705,6 @@ try:
             if s is None:
                 s = self.subject
 
-            # type: ignore # RDF.type is dynamic
             typ = self.graph.value(s, RDF.type)
             if typ is None:
                 return None, self
@@ -2799,7 +2794,7 @@ try:
                 if self.predicate is None:
                     raise TypeError("Predicate cannot be None when subject is not None")
                 self.graph.add((self.subject, self.predicate, obj))
-            self.graph.add((obj, RDF.type, rdflib.URIRef(typ)))  # type: ignore # RDF.type is dynamic
+            self.graph.add((obj, RDF.type, rdflib.URIRef(typ)))
             yield self.__class__(self.graph, obj)
 
         @contextmanager

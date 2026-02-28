@@ -2930,7 +2930,7 @@ class {{ varname(*class.clsname) }}(
 {%- if class.comment %}
     {{ '"' }}{{ '"' }}{{ '"' }}
     {%- for l in class.comment.split("\n") %}
-    {{ (" " + l).rstrip() }}
+    {{ l.rstrip() }}
     {%- endfor %}
     {{ '"' }}{{ '"' }}{{ '"' }}
 {% endif %}

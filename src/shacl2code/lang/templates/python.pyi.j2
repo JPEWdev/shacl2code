@@ -143,9 +143,9 @@ class {{ varname(*class.clsname) }}(
         {%- else %}
         {%- set ptype = DATATYPE_PYTHON_TYPES[prop.datatype] %}
         {%- endif %}
-        {%- if is_list -%}
+        {%- if is_list %}
         {{ varname(prop.varname) }}: Optional[Iterable[{{ ptype }}]] = None,
-        {%- else -%}
+        {%- else %}
         {{ varname(prop.varname) }}: Optional[{{ ptype }}] = None,
         {%- endif %}
         {%- endfor %}

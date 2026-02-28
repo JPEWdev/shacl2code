@@ -27,12 +27,15 @@ from typing import (
 
 T_PropV = TypeVar("T_PropV")
 
+
 class NodeKind(Enum):
     BlankNode = 1
     IRI = 2
     BlankNodeOrIRI = 3
 
+
 class ListProxy(List[T_PropV]): ...
+
 
 class SHACLObject:
     NAMED_INDIVIDUALS: Dict[str, str]
@@ -48,9 +51,12 @@ class SHACLObject:
     def get_type(self) -> str: ...
     def get_compact_type(self) -> Optional[str]: ...
 
+
 class SHACLExtensibleObject(SHACLObject):
     CLOSED: bool
+
     def __init__(self, typ: Optional[str] = None, **kwargs: Any) -> None: ...
+
 
 class SHACLObjectSet:
     def __init__(self) -> None: ...
@@ -60,13 +66,16 @@ class SHACLObjectSet:
     @property
     def objects(self) -> Iterable[SHACLObject]: ...
 
+
 class JSONLDDeserializer:
     def __init__(self, **kwargs: Any) -> None: ...
     def read(self, f: BinaryIO, objectset: SHACLObjectSet) -> None: ...
 
+
 class JSONLDSerializer:
     def __init__(self, **kwargs: Any) -> None: ...
     def write(self, objectset: SHACLObjectSet, f: BinaryIO) -> None: ...
+
 
 # fmt: off
 """Format Guard{{ '"' }}{{ '"' }}{{ '"' }}

@@ -22,7 +22,6 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-{# Types used in class inheritance need to be imported at run time #}
 from typing import (
     TYPE_CHECKING,
     Generic,
@@ -32,7 +31,6 @@ from typing import (
     overload,
 )
 
-{# Types imported only for type checking #}
 if TYPE_CHECKING:
     from typing import (
         Any,

@@ -13,7 +13,10 @@ def foreach_context(contexts):
 
 
 class Context(object):
-    def __init__(self, contexts=[]):
+    def __init__(self, contexts=None):
+        if contexts is None:
+            contexts = []  # pragma: no cover
+
         self.contexts = [c for c in contexts if c]
         self.__vocabs = []
         self.__expanded_iris = {}

@@ -6,6 +6,7 @@
 
 import typing
 from dataclasses import dataclass
+
 from .context import Context
 
 
@@ -18,7 +19,8 @@ class ContextData:
 class UrlContext(Context):
     def __init__(self, contexts=None):
         if contexts is None:
-            contexts = []
+            contexts = []  # pragma: no cover
+
         super().__init__([c.context.get("@context", {}) for c in contexts])
         self.urls = []
         for ctx in contexts:

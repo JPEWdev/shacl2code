@@ -3,14 +3,16 @@
 #
 # SPDX-License-Identifier: MIT
 
-import sys
 import os
-from pathlib import Path
+import sys
 from contextlib import contextmanager
+from pathlib import Path
+
 import jinja2
 from jinja2 import Environment, FileSystemLoader, TemplateRuntimeError
 from markupsafe import Markup
 from rdflib.namespace import SH
+
 from ..model import SHACL2CODE
 from ..version import VERSION
 
@@ -48,9 +50,9 @@ class JinjaTemplateRender(object):
 
     def render(self, template, output, *, extra_env=None, render_args=None):
         if extra_env is None:
-            extra_env = {}
+            extra_env = {}  # pragma: no cover
         if render_args is None:
-            render_args = {}
+            render_args = {}  # pragma: no cover
 
         def abort_helper(msg: str):
             raise TemplateRuntimeError(msg)

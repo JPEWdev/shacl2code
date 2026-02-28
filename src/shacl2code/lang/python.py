@@ -3,14 +3,18 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .common import BasicJinjaRender
-from .lang import language, TEMPLATE_DIR
-
 import re
 import keyword
 
+from .common import BasicJinjaRender
+from .lang import language, TEMPLATE_DIR
+
 
 def varname(*name):
+    """
+    Make a valid Python variable name.
+    """
+
     name = "_".join(name)
     # Any invalid characters at the beginning of the name are removed (except
     # "@")
@@ -27,6 +31,10 @@ def varname(*name):
 
 @language("python")
 class PythonRender(BasicJinjaRender):
+    """
+    Render Python Language Bindings
+    """
+
     HELP = "Python Language Bindings"
 
     def __init__(self, args):

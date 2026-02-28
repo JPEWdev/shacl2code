@@ -3,19 +3,6 @@
 # {{ disclaimer }}
 #
 # SPDX-License-Identifier: {{ spdx_license }}
-{% set DATATYPE_PYTHON_TYPES = {
-    "http://www.w3.org/2001/XMLSchema#string": "str",
-    "http://www.w3.org/2001/XMLSchema#boolean": "bool",
-    "http://www.w3.org/2001/XMLSchema#integer": "int",
-    "http://www.w3.org/2001/XMLSchema#nonNegativeInteger": "int",
-    "http://www.w3.org/2001/XMLSchema#positiveInteger": "int",
-    "http://www.w3.org/2001/XMLSchema#float": "float",
-    "http://www.w3.org/2001/XMLSchema#anyURI": "str",
-    "http://www.w3.org/2001/XMLSchema#decimal": "float",
-    "http://www.w3.org/2001/XMLSchema#dateTime": "datetime",
-    "http://www.w3.org/2001/XMLSchema#dateTimeStamp": "datetime",
-}
--%}
 
 from __future__ import annotations
 
@@ -80,6 +67,22 @@ class JSONLDDeserializer:
 class JSONLDSerializer:
     def __init__(self, **kwargs: Any) -> None: ...
     def write(self, objectset: SHACLObjectSet, f: BinaryIO) -> None: ...
+
+# fmt: off
+"""Format Guard{{ '"' }}{{ '"' }}{{ '"' }}
+{% set DATATYPE_PYTHON_TYPES = {
+    "http://www.w3.org/2001/XMLSchema#string": "str",
+    "http://www.w3.org/2001/XMLSchema#boolean": "bool",
+    "http://www.w3.org/2001/XMLSchema#integer": "int",
+    "http://www.w3.org/2001/XMLSchema#nonNegativeInteger": "int",
+    "http://www.w3.org/2001/XMLSchema#positiveInteger": "int",
+    "http://www.w3.org/2001/XMLSchema#float": "float",
+    "http://www.w3.org/2001/XMLSchema#anyURI": "str",
+    "http://www.w3.org/2001/XMLSchema#decimal": "float",
+    "http://www.w3.org/2001/XMLSchema#dateTime": "datetime",
+    "http://www.w3.org/2001/XMLSchema#dateTimeStamp": "datetime",
+}
+-%}
 
 # CLASSES
 {%- for class in classes %}
@@ -166,3 +169,5 @@ class {{ varname(*class.clsname) }}(
     {%- endfor %}
 
 {% endfor %}
+{{ '"' }}{{ '"' }}{{ '"' }}Format Guard"""
+# fmt: on

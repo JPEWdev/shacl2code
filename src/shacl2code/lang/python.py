@@ -5,7 +5,7 @@
 import re
 import keyword
 
-from .common import BasicJinjaRender
+from .common import BasicJinjaRender, OutputFile
 from .lang import language, TEMPLATE_DIR
 
 

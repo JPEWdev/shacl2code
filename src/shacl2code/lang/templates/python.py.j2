@@ -442,7 +442,10 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
 
         # De-duplicate IDs
         if value._id:
-            value = objectset.find_by_id(value._id, value)
+            # Since value must be a SHACLObject at this point,
+            # find_by_id will always return a SHACLObject because we pass value as default.
+            # So we can safely cast here to allow subsequent value.link_helper call to work.
+            value = cast("SHACLObject", objectset.find_by_id(value._id, value))
             self.validate(value)
 
         value.link_helper(objectset, missing, visited)

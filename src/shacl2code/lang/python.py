@@ -1,7 +1,9 @@
 # Copyright (c) 2024 Joshua Watt
 #
 # SPDX-License-Identifier: MIT
+"""Python language binding renderer for shacl2code."""
 
+import os
 import re
 import keyword
 
@@ -9,14 +11,35 @@ from .common import BasicJinjaRender, OutputFile
 from .lang import language, TEMPLATE_DIR
 
 
-def varname(*name):
-    """
-    Make a valid Python variable name.
-    """
+DATATYPE_CLASSES = {
+    "http://www.w3.org/2001/XMLSchema#string": "StringProp",
+    "http://www.w3.org/2001/XMLSchema#anyURI": "AnyURIProp",
+    "http://www.w3.org/2001/XMLSchema#integer": "IntegerProp",
+    "http://www.w3.org/2001/XMLSchema#positiveInteger": "PositiveIntegerProp",
+    "http://www.w3.org/2001/XMLSchema#nonNegativeInteger": "NonNegativeIntegerProp",
+    "http://www.w3.org/2001/XMLSchema#boolean": "BooleanProp",
+    "http://www.w3.org/2001/XMLSchema#decimal": "FloatProp",
+    "http://www.w3.org/2001/XMLSchema#dateTime": "DateTimeProp",
+    "http://www.w3.org/2001/XMLSchema#dateTimeStamp": "DateTimeStampProp",
+}
 
+DATATYPE_PYTHON_TYPES = {
+    "http://www.w3.org/2001/XMLSchema#string": "str",
+    "http://www.w3.org/2001/XMLSchema#anyURI": "str",
+    "http://www.w3.org/2001/XMLSchema#integer": "int",
+    "http://www.w3.org/2001/XMLSchema#positiveInteger": "int",
+    "http://www.w3.org/2001/XMLSchema#nonNegativeInteger": "int",
+    "http://www.w3.org/2001/XMLSchema#boolean": "bool",
+    "http://www.w3.org/2001/XMLSchema#decimal": "float",
+    "http://www.w3.org/2001/XMLSchema#dateTime": "datetime",
+    "http://www.w3.org/2001/XMLSchema#dateTimeStamp": "datetime",
+}
+
+
+def varname(*name):
+    """Make a valid Python variable name."""
     name = "_".join(name)
-    # Any invalid characters at the beginning of the name are removed (except
-    # "@")
+    # Any invalid characters at the beginning of the name are removed (except "@")
     name = re.sub(r"^[^a-zA-Z0-9_@]*", "", name)
     # Any other invalid characters are replaced with "_" (including "@")
     name = re.sub(r"[^a-zA-Z0-9_]", "_", name)
@@ -30,9 +53,7 @@ def varname(*name):
 
 @language("python")
 class PythonRender(BasicJinjaRender):
-    """
-    Render Python Language Bindings
-    """
+    """Render Python Language Bindings."""
 
     HELP = "Python Language Bindings"
 
@@ -57,12 +78,17 @@ class PythonRender(BasicJinjaRender):
             "--use-slots",
             choices=("auto", "yes", "no"),
             default="auto",
-            help="Use __slot__ to reduce memory usage. Slots prevents multiple inheritance. Default is %(default)s",
+            help=(
+                "Use __slot__ to reduce memory usage. "
+                "Slots prevents multiple inheritance. Default is %(default)s"
+            ),
         )
 
     def get_extra_env(self):
         return {
             "varname": varname,
+            "DATATYPE_CLASSES": DATATYPE_CLASSES,
+            "DATATYPE_PYTHON_TYPES": DATATYPE_PYTHON_TYPES,
         }
 
     def get_additional_render_args(self, model):
@@ -80,8 +106,6 @@ class PythonRender(BasicJinjaRender):
     def get_outputs(self):
         yield self._output_file, TEMPLATE_DIR / "python.py.j2", {}
         if self._output_file.path != "-":
-            import os
-
-            base, ext = os.path.splitext(self._output_file.path)
+            base = os.path.splitext(self._output_file.path)[0]
             pyi_path = base + ".pyi"
             yield OutputFile(pyi_path), TEMPLATE_DIR / "python.pyi.j2", {}

@@ -109,16 +109,16 @@ class Property(ABC, Generic[T_PropV]):
 
     def iter_objects(
         self, value: Optional[T_PropV], recursive: bool, visited: Set["SHACLObject"]
-    ) -> Iterable[Any]:
+    ) -> Iterable["SHACLObject"]:
         return []
 
     def link_prop(
         self,
-        value: T_PropV,
+        value: Optional[T_PropV],
         objectset: "SHACLObjectSet",
         missing: Optional[Set[str]],
         visited: Set["SHACLObject"],
-    ) -> Any:
+    ) -> Optional[T_PropV]:
         return value
 
     def to_string(self, value: T_PropV) -> str:
@@ -358,7 +358,7 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
 
     def walk(
         self,
-        value: Any,
+        value: Optional[Union[str, "SHACLObject"]],
         callback: Callable[[Any, List[str]], bool],
         path: List[str],
     ) -> None:
@@ -371,7 +371,10 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
             callback(value, path)
 
     def iter_objects(
-        self, value: Any, recursive: bool, visited: Set["SHACLObject"]
+        self,
+        value: Optional[Union[str, "SHACLObject"]],
+        recursive: bool,
+        visited: Set["SHACLObject"],
     ) -> Iterable["SHACLObject"]:
         if value is None or isinstance(value, str):
             return
@@ -396,7 +399,7 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
 
         return value.encode(encoder, state)
 
-    def decode(self, decoder: Decoder, state: DecodeState) -> Any:
+    def decode(self, decoder: Decoder, state: DecodeState) -> Union[str, "SHACLObject"]:
         if decoder.is_object():
             return self.cls.decode(decoder, state)
 
@@ -418,11 +421,11 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
 
     def link_prop(
         self,
-        value: Any,
+        value: Optional[Union[str, "SHACLObject"]],
         objectset: "SHACLObjectSet",
         missing: Optional[Set[str]],
         visited: Set["SHACLObject"],
-    ) -> Any:
+    ) -> Optional[Union[str, "SHACLObject"]]:
         if value is None:
             return value
 
@@ -470,10 +473,16 @@ class ListProxy(Generic[T_PropV]):
         for i in items:
             self.append(i)
 
-    def sort(self, *args, **kwargs) -> None:
+    def sort(self, *args: Any, **kwargs: Any) -> None:
         self._data.sort(*args, **kwargs)
 
-    def __getitem__(self, key: Union[int, slice]) -> Any:
+    @overload
+    def __getitem__(self, key: int) -> T_PropV: ...
+
+    @overload
+    def __getitem__(self, key: slice) -> List[T_PropV]: ...
+
+    def __getitem__(self, key: Union[int, slice]) -> Union[T_PropV, List[T_PropV]]:
         return self._data[key]
 
     @overload
@@ -592,15 +601,18 @@ class ListProp(Property[ListProxy[T_PropV]]):
 
     def link_prop(
         self,
-        value: ListProxy[T_PropV],
+        value: Optional[ListProxy[T_PropV]],
         objectset: "SHACLObjectSet",
         missing: Optional[Set[str]],
         visited: Set["SHACLObject"],
     ) -> ListProxy[T_PropV]:
-        if isinstance(value, ListProxy):
-            data = [self.prop.link_prop(v, objectset, missing, visited) for v in value]
-        else:
-            data = [self.prop.link_prop(v, objectset, missing, visited) for v in value]
+        if value is None:
+            return ListProxy(self.prop)
+
+        data: List[T_PropV] = [
+            cast(T_PropV, self.prop.link_prop(v, objectset, missing, visited)) 
+            for v in value
+        ]
 
         return ListProxy(self.prop, data=data)
 
@@ -985,7 +997,7 @@ class SHACLObject(metaclass=SHACLObjectMeta):
     def _is_abstract(self) -> bool:
         return self.__class__.IS_ABSTRACT
 
-    def __set(self, p: ClassProp, value):
+    def __set(self, p: ClassProp, value: Any) -> None:
         if p.iri == "@id":
             if self.NODE_KIND == NodeKind.BlankNode:
                 if not is_blank_node(value):
@@ -1014,7 +1026,7 @@ class SHACLObject(metaclass=SHACLObjectMeta):
     def __del(self, p: ClassProp):
         object.__setattr__(self, p.pyname, p.prop.init())
 
-    def __get_attr(self, name):
+    def __get_attr(self, name: str) -> ClassProp:
         if name == self.ID_ALIAS:
             name = "_id"
 
@@ -1025,14 +1037,14 @@ class SHACLObject(metaclass=SHACLObjectMeta):
                 f"'{name}' is not a valid property of {self.__class__.__name__}"
             )
 
-    def __setattr__(self, name: str, value) -> None:
+    def __setattr__(self, name: str, value: Any) -> None:
         if name in self._EXTRA_SLOTS:
             object.__setattr__(self, name, value)
             return
 
         self.__set(self.__get_attr(name), value)
 
-    def __getattr__(self, name: str):
+    def __getattr__(self, name: str) -> Any:
         if name == self.ID_ALIAS:
             return self._id
 
@@ -1040,7 +1052,7 @@ class SHACLObject(metaclass=SHACLObjectMeta):
             f"'{name}' is not a valid property of {self.__class__.__name__}"
         )
 
-    def __dir__(self) -> Iterable[str]:
+    def __dir__(self) -> List[str]:
         return sorted(set(super().__dir__()) | set(self._OBJ_PY_PROPS.keys()))
 
     def __delattr__(self, name: str) -> None:
@@ -1050,13 +1062,13 @@ class SHACLObject(metaclass=SHACLObjectMeta):
 
         self.__del(self.__get_attr(name))
 
-    def __get_key(self, iri: str):
+    def __get_key(self, iri: str) -> ClassProp:
         return self._OBJ_IRI_PROPS[iri]
 
     def __getitem__(self, iri: str) -> Any:
         return getattr(self, self.__get_key(iri).pyname)
 
-    def __setitem__(self, iri: str, value) -> None:
+    def __setitem__(self, iri: str, value: Any) -> None:
         self.__set(self.__get_key(iri), value)
 
     def __delitem__(self, iri: str) -> None:
@@ -1795,7 +1807,7 @@ class EncodeState(object):
 
         return self.blank_objects[o]
 
-    def is_refed(self, o) -> bool:
+    def is_refed(self, o: SHACLObject) -> bool:
         return o in self.ref_objects
 
     def add_refed(self, o: SHACLObject) -> None:
@@ -1836,7 +1848,7 @@ class DecodeState(object):
 
 class Decoder(ABC):
     @abstractmethod
-    def read_value(self) -> Optional[Any]:
+    def read_value(self) -> Any:
         """
         Consume next item
 
@@ -2320,7 +2332,7 @@ class JSONLDEncoder(Encoder):
                 raise TypeError(
                     "Encoder.write_property used outside of write_object context; encoder.data is not a dict"
                 )
-            self.data[compact or iri] = s.data  # type: ignore
+            self.data[compact or iri] = s.data
 
     @contextmanager
     def write_dict(self) -> Iterator["JSONLDEncoder"]:
@@ -2337,11 +2349,11 @@ class JSONLDEncoder(Encoder):
         _id: str,
         compact_id: Optional[str],
         needs_id: bool,
-    ):
+    ) -> Iterator["JSONLDEncoder"]:
         with self.write_dict() as obj_dict:
-            obj_dict.data["{{ context.compact_iri('@type') }}"] = compact_type or typ  # type: ignore
+            obj_dict.data["{{ context.compact_iri('@type') }}"] = compact_type or typ
             if needs_id:
-                obj_dict.data[id_alias or "@id"] = compact_id or _id  # type: ignore
+                obj_dict.data[id_alias or "@id"] = compact_id or _id
             yield obj_dict
 
     @contextmanager
@@ -2360,7 +2372,7 @@ class JSONLDEncoder(Encoder):
                 raise TypeError(
                     "Encoder.write_list_item used outside of write_list context; encoder.data is not a list"
                 )
-            self.data.append(s.data)  # type: ignore
+            self.data.append(s.data)
 
     @contextmanager
     def write_object_list(self) -> Iterator["JSONLDEncoder"]:
@@ -2879,32 +2891,6 @@ def print_tree(objects: Iterable[SHACLObject], all_fields: bool = False) -> None
 
 # fmt: off
 """Format Guard{{ '"' }}{{ '"' }}{{ '"' }}
-{% set
-DATATYPE_CLASSES = {
-    "http://www.w3.org/2001/XMLSchema#string": "StringProp",
-    "http://www.w3.org/2001/XMLSchema#anyURI": "AnyURIProp",
-    "http://www.w3.org/2001/XMLSchema#integer": "IntegerProp",
-    "http://www.w3.org/2001/XMLSchema#positiveInteger": "PositiveIntegerProp",
-    "http://www.w3.org/2001/XMLSchema#nonNegativeInteger": "NonNegativeIntegerProp",
-    "http://www.w3.org/2001/XMLSchema#boolean": "BooleanProp",
-    "http://www.w3.org/2001/XMLSchema#decimal": "FloatProp",
-    "http://www.w3.org/2001/XMLSchema#dateTime": "DateTimeProp",
-    "http://www.w3.org/2001/XMLSchema#dateTimeStamp": "DateTimeStampProp",
-}
-%}
-{% set
-DATATYPE_PYTHON_TYPES = {
-    "http://www.w3.org/2001/XMLSchema#string": "str",
-    "http://www.w3.org/2001/XMLSchema#anyURI": "str",
-    "http://www.w3.org/2001/XMLSchema#integer": "int",
-    "http://www.w3.org/2001/XMLSchema#positiveInteger": "int",
-    "http://www.w3.org/2001/XMLSchema#nonNegativeInteger": "int",
-    "http://www.w3.org/2001/XMLSchema#boolean": "bool",
-    "http://www.w3.org/2001/XMLSchema#decimal": "float",
-    "http://www.w3.org/2001/XMLSchema#dateTime": "datetime",
-    "http://www.w3.org/2001/XMLSchema#dateTimeStamp": "datetime",
-}
-%}
 CONTEXT_URLS: List[str] = [
 {%- for url in context.urls %}
     "{{ url }}",

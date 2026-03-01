@@ -6,36 +6,33 @@
 
 from __future__ import annotations
 
-import decimal
 from datetime import datetime
 from enum import Enum
 from typing import (
     Any,
     BinaryIO,
+    Callable,
     Dict,
-    Generic,
     Iterable,
     Iterator,
     List,
     Optional,
-    Set,
     Tuple,
+    Type,
     TypeVar,
     Union,
     overload,
 )
 
 T_PropV = TypeVar("T_PropV")
-
+T_SHACLObject = TypeVar("T_SHACLObject", bound="SHACLObject")
 
 class NodeKind(Enum):
     BlankNode = 1
     IRI = 2
     BlankNodeOrIRI = 3
 
-
 class ListProxy(List[T_PropV]): ...
-
 
 class SHACLObject:
     NAMED_INDIVIDUALS: Dict[str, str]
@@ -50,48 +47,65 @@ class SHACLObject:
     def __init__(self, **kwargs: Any) -> None: ...
     def get_type(self) -> str: ...
     def get_compact_type(self) -> Optional[str]: ...
-
+    def walk(
+        self,
+        callback: Callable[[Any, List[str]], bool],
+        path: Optional[List[str]] = None,
+    ) -> None: ...
+    def property_keys(
+        self,
+    ) -> Iterator[Tuple[Optional[str], str, Optional[str]]]: ...
+    def iter_objects(
+        self,
+        *,
+        recursive: bool = False,
+    ) -> Iterable[SHACLObject]: ...
+    def __dir__(self) -> List[str]: ...
+    def __iter__(self) -> Iterator[str]: ...
+    def __getitem__(self, iri: str) -> Any: ...
+    def __setitem__(self, iri: str, value: Any) -> None: ...
+    def __delitem__(self, iri: str) -> None: ...
 
 class SHACLExtensibleObject(SHACLObject):
     CLOSED: bool
 
     def __init__(self, typ: Optional[str] = None, **kwargs: Any) -> None: ...
 
-
 class SHACLObjectSet:
     def __init__(self) -> None: ...
     def add(self, obj: SHACLObject) -> None: ...
     def create(self, typ: str, **kwargs: Any) -> SHACLObject: ...
+    def find_by_id(
+        self, id: str, default: Optional[SHACLObject] = None
+    ) -> Optional[SHACLObject]: ...
+    @overload
+    def foreach_type(
+        self,
+        typ: Type[T_SHACLObject],
+        *,
+        match_subclass: bool = ...,
+    ) -> Iterable[T_SHACLObject]: ...
+    @overload
+    def foreach_type(
+        self,
+        typ: str,
+        *,
+        match_subclass: bool = ...,
+    ) -> Iterable[SHACLObject]: ...
     def __iter__(self) -> Iterator[SHACLObject]: ...
     @property
     def objects(self) -> Iterable[SHACLObject]: ...
-
 
 class JSONLDDeserializer:
     def __init__(self, **kwargs: Any) -> None: ...
     def read(self, f: BinaryIO, objectset: SHACLObjectSet) -> None: ...
 
-
 class JSONLDSerializer:
     def __init__(self, **kwargs: Any) -> None: ...
     def write(self, objectset: SHACLObjectSet, f: BinaryIO) -> None: ...
 
-
 # fmt: off
 """Format Guard{{ '"' }}{{ '"' }}{{ '"' }}
-{% set DATATYPE_PYTHON_TYPES = {
-    "http://www.w3.org/2001/XMLSchema#string": "str",
-    "http://www.w3.org/2001/XMLSchema#boolean": "bool",
-    "http://www.w3.org/2001/XMLSchema#integer": "int",
-    "http://www.w3.org/2001/XMLSchema#nonNegativeInteger": "int",
-    "http://www.w3.org/2001/XMLSchema#positiveInteger": "int",
-    "http://www.w3.org/2001/XMLSchema#float": "float",
-    "http://www.w3.org/2001/XMLSchema#anyURI": "str",
-    "http://www.w3.org/2001/XMLSchema#decimal": "float",
-    "http://www.w3.org/2001/XMLSchema#dateTime": "datetime",
-    "http://www.w3.org/2001/XMLSchema#dateTimeStamp": "datetime",
-}
--%}
 
 # CLASSES
 {%- for class in classes %}

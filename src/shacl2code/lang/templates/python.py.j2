@@ -690,7 +690,17 @@ def is_blank_node(s: Any) -> bool:
     return True
 
 
-@dataclass()  # After Python 3.10, use slots=True to save a little space
+# fmt: off
+"""Format Guard{{ '"' }}{{ '"' }}{{ '"' }}
+_USE_SLOTS = {{ use_slots }}
+{{ '"' }}{{ '"' }}{{ '"' }}Format Guard"""
+# fmt: on
+
+# After Python 3.10, use slots=True to save a little space
+_DC_KWARGS = {"slots": True} if __USE_SLOTS and sys.version_info >= (3, 10) else {}
+
+
+@dataclass(**_DC_KWARGS)
 class ClassProp:
     pyname: str
     reg: Optional[Callable[..., Any]]
@@ -702,13 +712,6 @@ class ClassProp:
     # For efficiency reasons this should be of type Property (only) but
     # initialized to None
     prop: Property = None  # type: ignore
-
-
-# fmt: off
-"""Format Guard{{ '"' }}{{ '"' }}{{ '"' }}
-_USE_SLOTS = {{ use_slots }}
-{{ '"' }}{{ '"' }}{{ '"' }}Format Guard"""
-# fmt: on
 
 
 class SHACLObjectMeta(type):
@@ -2476,9 +2479,7 @@ class JSONLDInlineEncoder(Encoder):
         needs_id: bool,
     ) -> Iterator["JSONLDInlineEncoder"]:
         with self.write_dict() as obj_dict:
-            with obj_dict.write_property(
-                "{{ context.compact_iri('@type') }}"
-            ) as type_prop:
+            with obj_dict.write_property("{{ context.compact_iri('@type') }}") as type_prop:
                 type_prop.write_string(compact_type or typ)
 
             if needs_id:

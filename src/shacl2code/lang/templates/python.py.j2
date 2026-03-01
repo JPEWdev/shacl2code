@@ -692,39 +692,15 @@ def is_blank_node(s: Any) -> bool:
 
 @dataclass()  # After Python 3.10, use slots=True to save a little space
 class ClassProp:
-    # Keep class-level annotations for tools, but implement a custom
-    # initializer to preserve positional argument ordering used throughout
-    # the generated code: (pyname, reg, iri, ...)
     pyname: str
-    reg: Optional[Callable[..., Any]]
-    iri: str
-    min_count: Optional[int]
-    max_count: Optional[int]
-    compact: Optional[str]
-    deprecated: bool
+    reg: Callable
+    min_count: Optional[int] = None
+    max_count: Optional[int] = None
+    compact: Optional[str] = None
+    deprecated: bool = False
     # For efficiency reasons this should be of type Property (only) but
     # initialized to None
-    prop: Property
-
-    def __init__(
-        self,
-        pyname: str,
-        reg: Optional[Callable[..., Any]],
-        iri: str,
-        min_count: Optional[int] = None,
-        max_count: Optional[int] = None,
-        compact: Optional[str] = None,
-        deprecated: bool = False,
-        prop: Property = None,  # type: ignore
-    ) -> None:
-        self.pyname = pyname
-        self.reg = reg
-        self.iri = iri
-        self.min_count = min_count
-        self.max_count = max_count
-        self.compact = compact
-        self.deprecated = deprecated
-        self.prop = prop
+    prop: Property = None  # type: ignore
 
 
 # fmt: off

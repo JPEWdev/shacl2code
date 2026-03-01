@@ -10,7 +10,6 @@ import keyword
 from .common import BasicJinjaRender, OutputFile
 from .lang import language, TEMPLATE_DIR
 
-
 DATATYPE_CLASSES = {
     "http://www.w3.org/2001/XMLSchema#string": "StringProp",
     "http://www.w3.org/2001/XMLSchema#anyURI": "AnyURIProp",

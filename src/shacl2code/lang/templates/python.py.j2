@@ -960,6 +960,7 @@ class SHACLObject(metaclass=SHACLObjectMeta):
                         reg_callable = p.reg
                         try:
                             p.prop = reg_callable()
+                            p.reg = None  # type: ignore[assignment]
                         except Exception as e:
                             raise ValueError(
                                 f"Registration of {cls.__name__}.{p.pyname} failed: {e}"

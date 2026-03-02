@@ -83,7 +83,7 @@ def main(args=None):
     generate_parser.add_argument(
         "--input",
         "-i",
-        help="Input model (path, URL, or '-')",
+        help="Input model (path, URL, or '-'). Specified multiple times for multiple inputs",
         action="append",
         default=[],
         required=True,
@@ -97,14 +97,14 @@ def main(args=None):
     generate_parser.add_argument(
         "--context",
         "-x",
-        help="Require context for output (URL)",
+        help="Require context for output (URL). Specified multiple times for multiple contexts",
         action="append",
         default=[],
     )
     generate_parser.add_argument(
         "--context-url",
         "-u",
-        help="Require context from LOCATION (path or URL), but report as URL in generated code",
+        help="Require context from LOCATION (path or URL), but report as URL in generated code. Specified multiple times for multiple contexts",
         nargs=2,
         metavar=("LOCATION", "URL"),
         action="append",

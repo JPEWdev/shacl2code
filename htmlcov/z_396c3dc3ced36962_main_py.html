@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="z_396c3dc3ced36962_model_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.11.0">coverage.py v7.11.0</a>,
-            created at 2026-02-28 19:00 +0000
+            created at 2026-03-02 22:50 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -165,7 +165,7 @@
     <p class="run"><span class="n"><a id="t83" href="#t83">83</a></span><span class="t">    <span class="nam">generate_parser</span><span class="op">.</span><span class="nam">add_argument</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t84" href="#t84">84</a></span><span class="t">        <span class="str">"--input"</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t85" href="#t85">85</a></span><span class="t">        <span class="str">"-i"</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t86" href="#t86">86</a></span><span class="t">        <span class="nam">help</span><span class="op">=</span><span class="str">"Input model (path, URL, or '-')"</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t86" href="#t86">86</a></span><span class="t">        <span class="nam">help</span><span class="op">=</span><span class="str">"Input model (path, URL, or '-'). Specified multiple times for multiple inputs"</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t87" href="#t87">87</a></span><span class="t">        <span class="nam">action</span><span class="op">=</span><span class="str">"append"</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t88" href="#t88">88</a></span><span class="t">        <span class="nam">default</span><span class="op">=</span><span class="op">[</span><span class="op">]</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t89" href="#t89">89</a></span><span class="t">        <span class="nam">required</span><span class="op">=</span><span class="key">True</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
@@ -179,14 +179,14 @@
     <p class="run"><span class="n"><a id="t97" href="#t97">97</a></span><span class="t">    <span class="nam">generate_parser</span><span class="op">.</span><span class="nam">add_argument</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t98" href="#t98">98</a></span><span class="t">        <span class="str">"--context"</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t99" href="#t99">99</a></span><span class="t">        <span class="str">"-x"</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t100" href="#t100">100</a></span><span class="t">        <span class="nam">help</span><span class="op">=</span><span class="str">"Require context for output (URL)"</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t100" href="#t100">100</a></span><span class="t">        <span class="nam">help</span><span class="op">=</span><span class="str">"Require context for output (URL). Specified multiple times for multiple contexts"</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t101" href="#t101">101</a></span><span class="t">        <span class="nam">action</span><span class="op">=</span><span class="str">"append"</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t102" href="#t102">102</a></span><span class="t">        <span class="nam">default</span><span class="op">=</span><span class="op">[</span><span class="op">]</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t103" href="#t103">103</a></span><span class="t">    <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t104" href="#t104">104</a></span><span class="t">    <span class="nam">generate_parser</span><span class="op">.</span><span class="nam">add_argument</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t105" href="#t105">105</a></span><span class="t">        <span class="str">"--context-url"</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t106" href="#t106">106</a></span><span class="t">        <span class="str">"-u"</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t107" href="#t107">107</a></span><span class="t">        <span class="nam">help</span><span class="op">=</span><span class="str">"Require context from LOCATION (path or URL), but report as URL in generated code"</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t107" href="#t107">107</a></span><span class="t">        <span class="nam">help</span><span class="op">=</span><span class="str">"Require context from LOCATION (path or URL), but report as URL in generated code. Specified multiple times for multiple contexts"</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t108" href="#t108">108</a></span><span class="t">        <span class="nam">nargs</span><span class="op">=</span><span class="num">2</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t109" href="#t109">109</a></span><span class="t">        <span class="nam">metavar</span><span class="op">=</span><span class="op">(</span><span class="str">"LOCATION"</span><span class="op">,</span> <span class="str">"URL"</span><span class="op">)</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t110" href="#t110">110</a></span><span class="t">        <span class="nam">action</span><span class="op">=</span><span class="str">"append"</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
@@ -234,7 +234,7 @@
             <a class="nav" href="z_396c3dc3ced36962_model_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.11.0">coverage.py v7.11.0</a>,
-            created at 2026-02-28 19:00 +0000
+            created at 2026-03-02 22:50 +0000
         </p>
     </div>
 </footer>

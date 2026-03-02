@@ -768,10 +768,10 @@ class SHACLObjectMeta(type):
             ):
                 p.pyname = p.pyname + "_"
 
-            # Registration `reg` is expected to be a callable that can be
-            # invoked later during class initialization. We do not enforce a
-            # strict callable check here to avoid narrowing static types; the
-            # call/validation is performed at registration time.
+            if not callable(p.reg):
+                raise ValueError(
+                    f"Registration of {name}.{p.pyname} must be a callable to allow deferred class typing. Try: `lambda: ...`"
+                )
 
             py_properties[p.pyname] = p
             iri_properties[p.iri] = p

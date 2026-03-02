@@ -2484,7 +2484,9 @@ class JSONLDInlineEncoder(Encoder):
         needs_id: bool,
     ) -> Iterator["JSONLDInlineEncoder"]:
         with self.write_dict() as obj_dict:
-            with obj_dict.write_property("{{ context.compact_iri('@type') }}") as type_prop:
+            with obj_dict.write_property(
+                "{{ context.compact_iri('@type') }}"
+            ) as type_prop:
                 type_prop.write_string(compact_type or typ)
 
             if needs_id:

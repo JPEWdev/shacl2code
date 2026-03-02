@@ -3,11 +3,12 @@
 # SPDX-License-Identifier: MIT
 """Python language binding renderer for shacl2code."""
 
-import os
 import re
 import keyword
 
-from .common import BasicJinjaRender, OutputFile
+from pathlib import Path
+
+from .common import JinjaTemplateRender
 from .lang import language, TEMPLATE_DIR
 
 DATATYPE_CLASSES = {
@@ -51,14 +52,19 @@ def varname(*name):
 
 
 @language("python")
-class PythonRender(BasicJinjaRender):
+class PythonRender(JinjaTemplateRender):
     """Render Python Language Bindings."""
 
     HELP = "Python Language Bindings"
 
+    FILES = (
+        "main.py",
+        "stub.pyi",
+    )
+
     def __init__(self, args):
-        super().__init__(args, TEMPLATE_DIR / "python.py.j2")
-        self._output_file = args.output
+        super().__init__(args)
+        self.__output = args.output
         self.__use_slots = args.use_slots
         self.__render_args = {
             "elide_lists": args.elide_lists,
@@ -66,8 +72,13 @@ class PythonRender(BasicJinjaRender):
 
     @classmethod
     def get_arguments(cls, parser):
-        super().get_arguments(parser)
-
+        parser.add_argument(
+            "--output",
+            "-o",
+            type=Path,
+            help="Output directory",
+            required=True,
+        )
         parser.add_argument(
             "--elide-lists",
             action="store_true",
@@ -82,6 +93,13 @@ class PythonRender(BasicJinjaRender):
                 "Slots prevents multiple inheritance. Default is %(default)s"
             ),
         )
+
+    def get_outputs(self):
+        t = TEMPLATE_DIR / "python"
+        self.__output.mkdir(parents=True, exist_ok=True)
+
+        for s in self.FILES:
+            yield self.__output / s, t / (s + ".j2"), {}
 
     def get_extra_env(self):
         return {
@@ -101,10 +119,3 @@ class PythonRender(BasicJinjaRender):
             "use_slots": use_slots,
             **self.__render_args,
         }
-
-    def get_outputs(self):
-        yield self._output_file, TEMPLATE_DIR / "python.py.j2", {}
-        if self._output_file.path != "-":
-            base = os.path.splitext(self._output_file.path)[0]
-            pyi_path = base + ".pyi"
-            yield OutputFile(pyi_path), TEMPLATE_DIR / "python.pyi.j2", {}

@@ -151,6 +151,8 @@ class StringProp(Property[str]):
 
 
 class AnyURIProp(StringProp):
+    """A string property whose value is encoded as an IRI rather than a plain string."""
+
     def encode(self, encoder: Encoder, value: str, state: EncodeState) -> None:
         encoder.write_iri(value)
 
@@ -237,6 +239,8 @@ class DateTimeStampProp(DateTimeProp):
 
 
 class IntegerProp(Property[int]):
+    """A scalar integer property for a SHACL object."""
+
     VALID_TYPES = int
 
     __slots__ = ()
@@ -252,6 +256,8 @@ class IntegerProp(Property[int]):
 
 
 class PositiveIntegerProp(IntegerProp):
+    """An integer property that enforces a minimum value of 1."""
+
     __slots__ = ()
 
     def validate(self, value: Any) -> None:
@@ -261,6 +267,8 @@ class PositiveIntegerProp(IntegerProp):
 
 
 class NonNegativeIntegerProp(IntegerProp):
+    """An integer property that enforces a minimum value of 0."""
+
     __slots__ = ()
 
     def validate(self, value: Any) -> None:
@@ -270,6 +278,8 @@ class NonNegativeIntegerProp(IntegerProp):
 
 
 class BooleanProp(Property[bool]):
+    """A scalar boolean property for a SHACL object."""
+
     VALID_TYPES = bool
 
     __slots__ = ()
@@ -285,6 +295,8 @@ class BooleanProp(Property[bool]):
 
 
 class FloatProp(Property[float]):
+    """A scalar floating-point property for a SHACL object."""
+
     VALID_TYPES = (float, int)
 
     __slots__ = ()
@@ -302,6 +314,8 @@ class FloatProp(Property[float]):
 
 
 class IRIProp(Property[T_PropV]):
+    """A property that holds IRI values with an optional context for compaction and expansion."""
+
     __slots__ = ("context",)
 
     def __init__(
@@ -316,18 +330,21 @@ class IRIProp(Property[T_PropV]):
         self.context = context
 
     def compact(self, value: str, dflt: Optional[str] = None) -> Optional[str]:
+        """Return the compact alias for the given IRI, or dflt if not found in context."""
         for iri, compact in self.context:
             if value == iri:
                 return compact
         return dflt
 
     def expand(self, value: str, dflt: Optional[str] = None) -> Optional[str]:
+        """Return the full IRI for the given compact alias, or dflt if not found in context."""
         for iri, compact in self.context:
             if value == compact:
                 return iri
         return dflt
 
     def iri_values(self) -> Iterator[str]:
+        """Iterate over all full IRI values defined in the context."""
         return (iri for iri, _ in self.context)
 
 
@@ -453,6 +470,8 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
 
 
 class ListProxy(Generic[T_PropV]):
+    """A type-checked, property-aware list wrapper for multi-valued SHACL properties."""
+
     __slots__ = ("_data", "_prop")
 
     def __init__(
@@ -641,6 +660,8 @@ class ListProp(Property[ListProxy[T_PropV]]):
 
 
 class EnumProp(IRIProp[str]):
+    """An IRI property restricted to a fixed set of named individual values."""
+
     VALID_TYPES = str
 
     __slots__ = ()
@@ -672,6 +693,8 @@ class EnumProp(IRIProp[str]):
 
 
 class NodeKind(Enum):
+    """The allowed identifier kind for a SHACL node (blank node, IRI, or either)."""
+
     BlankNode = 1
     IRI = 2
     BlankNodeOrIRI = 3
@@ -707,6 +730,8 @@ _DC_KWARGS = {"slots": True} if _USE_SLOTS and sys.version_info >= (3, 10) else 
 
 @dataclass(**_DC_KWARGS)
 class ClassProp:
+    """Descriptor for a single property on a SHACLObject class, holding its IRI, Python name, and constraints."""
+
     pyname: str
     reg: Optional[Callable[..., Any]]
     iri: str
@@ -720,6 +745,8 @@ class ClassProp:
 
 
 class SHACLObjectMeta(type):
+    """Metaclass for SHACLObject that processes PROPERTIES, slots, and named individuals at class creation time."""
+
     def __new__(cls, name, bases, attrs):
         def check_base_prop(name):
             return any(hasattr(b, name) or name in b._EXTRA_SLOTS for b in bases)
@@ -858,6 +885,8 @@ T_SHACLObject = TypeVar("T_SHACLObject", bound="SHACLObject")
 
 @functools.total_ordering
 class SHACLObject(metaclass=SHACLObjectMeta):
+    """Base class for all SHACL-defined objects, providing property access, encoding, and decoding."""
+
     CLASSES: Dict[str, Type] = {}
 
     # Class properties that can be set in derived classes:
@@ -978,9 +1007,11 @@ class SHACLObject(metaclass=SHACLObjectMeta):
             setattr(self, k, v)
 
     def get_type(self) -> str:
+        """Return the fully qualified IRI type of this object."""
         return self._TYPE
 
     def get_compact_type(self) -> Optional[str]:
+        """Return the compacted type IRI of this object, or None if not defined."""
         return self._COMPACT_TYPE
 
     def _is_abstract(self) -> bool:
@@ -1084,6 +1115,7 @@ class SHACLObject(metaclass=SHACLObjectMeta):
                 p.prop.walk(getattr(self, p.pyname), callback, path + [f".{p.iri}"])
 
     def property_keys(self) -> Iterator[Tuple[Optional[str], str, Optional[str]]]:
+        """Yield (python_name, iri, compact_iri) tuples for each property defined on this object."""
         for p in self._OBJ_PY_PROPS.values():
             if p.iri == "@id":
                 compact = self.ID_ALIAS
@@ -1107,6 +1139,7 @@ class SHACLObject(metaclass=SHACLObjectMeta):
                 yield c
 
     def encode(self, encoder: Encoder, state: EncodeState) -> None:
+        """Encode this object to the given encoder, writing its type, ID, and properties."""
         idname = self.ID_ALIAS or "@id"
         if not self._id and self.NODE_KIND == NodeKind.IRI:
             raise ValueError(
@@ -1229,6 +1262,7 @@ class SHACLObject(metaclass=SHACLObjectMeta):
         missing: Optional[Set[str]],
         visited: Set["SHACLObject"],
     ) -> None:
+        """Resolve string IRI references in this object's properties to actual SHACLObject instances."""
         if self in visited:
             return
 
@@ -1277,6 +1311,8 @@ class SHACLObject(metaclass=SHACLObjectMeta):
 
 
 class SHACLExtensibleObject(SHACLObject):
+    """A SHACLObject that accepts and round-trips arbitrary IRI-keyed extension properties."""
+
     CLOSED = False
 
     def __init__(self, typ: Optional[str] = None, **kwargs: Any) -> None:
@@ -1289,9 +1325,11 @@ class SHACLExtensibleObject(SHACLObject):
         super().__init__(**kwargs)
 
     def get_type(self) -> str:
+        """Return the type IRI stored in the extensible data, which may differ from the class TYPE."""
         return self._extensible["type"]
 
     def get_compact_type(self) -> Optional[str]:
+        """Return the compacted type IRI from the extensible data, or None if not set."""
         return self._extensible["compact_type"]
 
     def _is_abstract(self) -> bool:
@@ -1424,6 +1462,8 @@ class SHACLExtensibleObject(SHACLObject):
 
 
 class SHACLObjectSet(object):
+    """A collection of SHACLObject instances with indexing, linking, serialization, and query support."""
+
     def __init__(
         self, objects: Optional[Iterable[SHACLObject]] = None, *, link: bool = False
     ) -> None:
@@ -1750,6 +1790,7 @@ class SHACLObjectSet(object):
             objects[0].encode(encoder, state)
 
     def decode(self, decoder: Decoder, state: DecodeState):
+        """Decode objects from the decoder and add them to this set, then link all references."""
         self.create_index()
         for obj_d in decoder.read_list():
             o = SHACLExtensibleObject.decode(obj_d, state)
@@ -1758,6 +1799,7 @@ class SHACLObjectSet(object):
         self._link()
 
     def expand_iri(self, iri: str, default: Optional[str] = None) -> Optional[str]:
+        """Expand a compact IRI to a full IRI using the object set's context, or return default."""
         for k, v in self.context.items():
             if iri == k:
                 return self.expand_iri(v, v)
@@ -1767,6 +1809,7 @@ class SHACLObjectSet(object):
         return default
 
     def compact_iri(self, iri: str, default: Optional[str] = None) -> Optional[str]:
+        """Compact a full IRI to a prefixed short form using the object set's context, or return default."""
         for k, v in self.context.items():
             if iri == v:
                 return self.compact_iri(k, k)
@@ -1777,6 +1820,8 @@ class SHACLObjectSet(object):
 
 
 class EncodeState(object):
+    """Tracks per-serialization state: object IDs, reference counts, and write order."""
+
     def __init__(self, objectset: SHACLObjectSet):
         self.ref_objects: Set[SHACLObject] = set()
         self.written_objects: Set[SHACLObject] = set()
@@ -1817,6 +1862,8 @@ class EncodeState(object):
 
 
 class DecodeState(object):
+    """Carries the target SHACLObjectSet and context during a deserialization pass."""
+
     def __init__(self, objectset: SHACLObjectSet):
         self.objectset = objectset
         self.read_objs: Dict[str, SHACLObject] = {}
@@ -1833,6 +1880,8 @@ class DecodeState(object):
 
 
 class Decoder(ABC):
+    """Abstract interface for reading typed values and objects from a serialized source."""
+
     @abstractmethod
     def read_value(self) -> Any:
         """
@@ -2004,6 +2053,8 @@ class Decoder(ABC):
 
 
 class JSONLDDecoder(Decoder):
+    """Decoder implementation that reads SHACL objects from a parsed JSON-LD data structure."""
+
     def __init__(self, data: Any, root: bool = False) -> None:
         self.data = data
         self.root = root
@@ -2096,7 +2147,10 @@ class JSONLDDecoder(Decoder):
 
 
 class JSONLDDeserializer(object):
+    """Deserializes SHACL objects from JSON-LD data or files into a SHACLObjectSet."""
+
     def deserialize_data(self, data: Any, objectset: SHACLObjectSet) -> None:
+        """Decode SHACL objects from a pre-parsed JSON-LD data structure into the given object set."""
         h = JSONLDDecoder(data, True)
 
         with h.read_property("@context") as context_prop:
@@ -2108,11 +2162,14 @@ class JSONLDDeserializer(object):
             objectset.decode(graph_prop if graph_prop else h, state)
 
     def read(self, f: BinaryIO, objectset: SHACLObjectSet) -> None:
+        """Parse a JSON-LD file and deserialize its objects into the given object set."""
         data = json.load(f)
         self.deserialize_data(data, objectset)
 
 
 class Encoder(ABC):
+    """Abstract interface for writing typed values and objects to a serialized output."""
+
     @abstractmethod
     def write_string(self, v: str) -> None:
         """
@@ -2282,6 +2339,8 @@ class Encoder(ABC):
 
 
 class JSONLDEncoder(Encoder):
+    """Encoder that builds a JSON-LD Python data structure (dicts/lists) for later JSON serialization."""
+
     def __init__(self, data: Optional[Any] = None) -> None:
         self.data: Any = data
 
@@ -2368,6 +2427,8 @@ class JSONLDEncoder(Encoder):
 
 
 class JSONLDSerializer(object):
+    """Serializes a SHACLObjectSet to a JSON-LD file or in-memory data structure."""
+
     def __init__(self, **args: Any) -> None:
         self.args = args
 
@@ -2376,6 +2437,7 @@ class JSONLDSerializer(object):
         objectset: SHACLObjectSet,
         force_at_graph: bool = False,
     ) -> Any:
+        """Encode the object set to a JSON-LD Python data structure and return it."""
         h = JSONLDEncoder()
         state = EncodeState(objectset)
         with h.write_dict() as doc_s:
@@ -2412,6 +2474,8 @@ class JSONLDSerializer(object):
 
 
 class JSONLDInlineEncoder(Encoder):
+    """Encoder that writes JSON-LD output directly to a binary file stream, computing a SHA-1 hash."""
+
     def __init__(self, f: BinaryIO, sha1: Any, in_dict: bool = False) -> None:
         self.f: BinaryIO = f
         self.comma: bool = False
@@ -2419,6 +2483,7 @@ class JSONLDInlineEncoder(Encoder):
         self.in_dict: bool = in_dict
 
     def write(self, s: str) -> None:
+        """Write a raw string to the output stream and update the SHA-1 hash."""
         b = s.encode("utf-8")
         self.f.write(b)
         self.sha1.update(b)
@@ -2518,6 +2583,8 @@ class JSONLDInlineEncoder(Encoder):
 
 
 class JSONLDInlineSerializer(object):
+    """Serializes a SHACLObjectSet directly to a binary stream, returning a SHA-1 digest."""
+
     def write(
         self,
         objectset: SHACLObjectSet,
@@ -2741,7 +2808,10 @@ try:
             return self.subject.toPython()
 
     class RDFDeserializer(object):
+        """Deserializes SHACL objects from an rdflib Graph into a SHACLObjectSet."""
+
         def read(self, graph: Graph, objset: SHACLObjectSet) -> None:
+            """Decode all typed subjects from the rdflib Graph into the given object set."""
             d = RDFDecoder(graph)
             state = DecodeState(objset)
             objset.decode(d, state)
@@ -2833,9 +2903,11 @@ try:
             yield self
 
     class RDFSerializer(object):
+        """Serializes a SHACLObjectSet into an rdflib Graph."""
+
         def write(self, objset: SHACLObjectSet, g: Graph) -> None:
             """
-            Write a SHACLObjectSet to an RDF graph
+            Write a SHACLObjectSet to an rdflib Graph
             """
             e = RDFEncoder(g)
             state = EncodeState(objset)

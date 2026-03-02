@@ -13,6 +13,7 @@ from typing import (
     BinaryIO,
     Callable,
     Dict,
+    Generic,
     Iterable,
     Iterator,
     List,
@@ -34,7 +35,7 @@ class NodeKind(Enum):
     BlankNodeOrIRI = 3
 
 
-class ListProxy(List[T_PropV]): ...
+class ListProxy(Generic[T_PropV]): ...
 
 
 class SHACLObject:

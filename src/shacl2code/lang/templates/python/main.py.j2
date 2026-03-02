@@ -1388,6 +1388,7 @@ class SHACLExtensibleObject(SHACLObject):
     def __setitem__(self, iri: str, value: Any) -> None:
         try:
             super().__setitem__(iri, value)
+            return
         except KeyError:
             if self.CLOSED:
                 raise
@@ -1399,6 +1400,7 @@ class SHACLExtensibleObject(SHACLObject):
     def __delitem__(self, iri: str) -> None:
         try:
             super().__delitem__(iri)
+            return
         except KeyError:
             if self.CLOSED:
                 raise

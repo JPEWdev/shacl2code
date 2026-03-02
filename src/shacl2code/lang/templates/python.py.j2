@@ -2585,24 +2585,28 @@ def decode_context(decoder: Decoder, objectset: SHACLObjectSet) -> None:
 
 
 try:
-    import rdflib
-    import rdflib.term
+    from rdflib import BNode, Literal, URIRef
+    from rdflib.term import IdentifiedNode
     from rdflib.namespace import RDF
+
+    if TYPE_CHECKING:
+        from rdflib import Graph
+        from rdflib.term import Node
 
     class RDFDecoder(Decoder):
         def __init__(
             self,
-            graph: rdflib.Graph,
-            subject: Optional[rdflib.term.Node] = None,
-            predicate: Optional[rdflib.term.Node] = None,
-            value: Optional[rdflib.term.Node] = None,
+            graph: Graph,
+            subject: Optional[Node] = None,
+            predicate: Optional[Node] = None,
+            value: Optional[Node] = None,
         ) -> None:
-            self.graph: rdflib.Graph = graph
-            self.subject: Optional[rdflib.term.Node] = subject
-            self.predicate: Optional[rdflib.term.Node] = predicate
-            self.value: Optional[rdflib.term.Node] = value
+            self.graph: Graph = graph
+            self.subject: Optional[Node] = subject
+            self.predicate: Optional[Node] = predicate
+            self.value: Optional[Node] = value
 
-        def __read_node(self) -> Optional[rdflib.term.Node]:
+        def __read_node(self) -> Optional[Node]:
             if self.value is not None:
                 return self.value
             if self.predicate is None:
@@ -2611,7 +2615,7 @@ try:
 
         def read_value(self) -> Optional[Any]:
             v = self.__read_node()
-            if isinstance(v, rdflib.term.Literal):
+            if isinstance(v, Literal):
                 return v.toPython()
             return None
 
@@ -2644,19 +2648,19 @@ try:
 
         def read_iri(self) -> Optional[str]:
             v = self.__read_node()
-            if isinstance(v, rdflib.term.URIRef):
+            if isinstance(v, URIRef):
                 return v.toPython()
-            elif isinstance(v, rdflib.term.Literal):
+            elif isinstance(v, Literal):
                 v = v.toPython()
                 if isinstance(v, str):
                     return v
-            elif isinstance(v, rdflib.term.BNode):
+            elif isinstance(v, BNode):
                 return v.n3()
             return None
 
         def read_enum(self, e) -> Optional[str]:
             v = self.__read_node()
-            if isinstance(v, rdflib.term.URIRef):
+            if isinstance(v, URIRef):
                 return v.toPython()
             return None
 
@@ -2667,7 +2671,7 @@ try:
                     if (s, RDF.type, None) not in self.graph:
                         continue
 
-                    if isinstance(s, rdflib.term.BNode):
+                    if isinstance(s, BNode):
                         blank_nodes.add(s)
                         continue
                     yield self.__class__(self.graph, s)
@@ -2698,7 +2702,7 @@ try:
             if key == "@id":
                 yield self.__class__(self.graph, value=self.subject)
             else:
-                yield self.__class__(self.graph, self.subject, rdflib.term.URIRef(key))
+                yield self.__class__(self.graph, self.subject, URIRef(key))
 
         def is_object(self) -> bool:
             n = self.__read_node() or self.subject
@@ -2709,7 +2713,7 @@ try:
                 if p == RDF.type:
                     continue
 
-                if not isinstance(p, rdflib.term.IdentifiedNode):
+                if not isinstance(p, IdentifiedNode):
                     raise TypeError(f"Predicate is of unknown type {type(p)}")
 
                 yield p.toPython()
@@ -2723,20 +2727,20 @@ try:
             if typ is None:
                 return None, self
 
-            if not isinstance(typ, rdflib.term.IdentifiedNode):
+            if not isinstance(typ, IdentifiedNode):
                 raise TypeError(f"Type value is of unknown type {type(typ)}")
 
             return typ.toPython(), self.__class__(self.graph, s)
 
         def read_object_id(self, alias=None) -> Optional[Any]:
-            if isinstance(self.subject, rdflib.term.BNode):
+            if isinstance(self.subject, BNode):
                 return self.subject.n3()
-            if not isinstance(self.subject, rdflib.term.IdentifiedNode):
+            if not isinstance(self.subject, IdentifiedNode):
                 raise TypeError(f"Subject is of unknown type {type(self.subject)}")
             return self.subject.toPython()
 
     class RDFDeserializer(object):
-        def read(self, graph: rdflib.Graph, objset: SHACLObjectSet) -> None:
+        def read(self, graph: Graph, objset: SHACLObjectSet) -> None:
             d = RDFDecoder(graph)
             state = DecodeState(objset)
             objset.decode(d, state)
@@ -2745,23 +2749,23 @@ try:
     class RDFEncoder(Encoder):
         def __init__(
             self,
-            graph: rdflib.Graph,
-            subject: Optional[rdflib.term.Node] = None,
-            predicate: Optional[rdflib.term.Node] = None,
+            graph: Graph,
+            subject: Optional[Node] = None,
+            predicate: Optional[Node] = None,
         ) -> None:
-            self.graph: rdflib.Graph = graph
-            self.subject: Optional[rdflib.term.Node] = subject
-            self.predicate: Optional[rdflib.term.Node] = predicate
+            self.graph: Graph = graph
+            self.subject: Optional[Node] = subject
+            self.predicate: Optional[Node] = predicate
 
         def __add_literal(self, v: Any) -> None:
             if self.subject is None or self.predicate is None:
                 raise TypeError("Subject and predicate of literal value cannot be None")
-            self.graph.add((self.subject, self.predicate, rdflib.Literal(v)))
+            self.graph.add((self.subject, self.predicate, Literal(v)))
 
         def __add_uriref(self, v: str) -> None:
             if self.subject is None or self.predicate is None:
                 raise TypeError("Subject and predicate of URIRef value cannot be None")
-            self.graph.add((self.subject, self.predicate, rdflib.URIRef(v)))
+            self.graph.add((self.subject, self.predicate, URIRef(v)))
 
         def write_string(self, v):
             self.__add_literal(v)
@@ -2786,7 +2790,7 @@ try:
 
         @contextmanager
         def write_property(self, iri: str, compact: Optional[str] = None):
-            yield self.__class__(self.graph, self.subject, rdflib.URIRef(iri))
+            yield self.__class__(self.graph, self.subject, URIRef(iri))
 
         @contextmanager
         def write_object(
@@ -2798,17 +2802,17 @@ try:
             compact_id: Optional[str],
             needs_id: bool,
         ):
-            obj: rdflib.term.Node
+            obj: Node
             if _id.startswith("_:"):
-                obj = rdflib.BNode(_id[2:])
+                obj = BNode(_id[2:])
             else:
-                obj = rdflib.URIRef(_id)
+                obj = URIRef(_id)
 
             if self.subject is not None:
                 if self.predicate is None:
                     raise TypeError("Predicate cannot be None when subject is not None")
                 self.graph.add((self.subject, self.predicate, obj))
-            self.graph.add((obj, RDF.type, rdflib.URIRef(typ)))
+            self.graph.add((obj, RDF.type, URIRef(typ)))
             yield self.__class__(self.graph, obj)
 
         @contextmanager
@@ -2828,7 +2832,7 @@ try:
             yield self
 
     class RDFSerializer(object):
-        def write(self, objset: SHACLObjectSet, g: rdflib.Graph) -> None:
+        def write(self, objset: SHACLObjectSet, g: Graph) -> None:
             """
             Write a SHACLObjectSet to an RDF graph
             """

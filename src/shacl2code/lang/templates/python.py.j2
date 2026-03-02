@@ -1264,18 +1264,19 @@ class SHACLObject(metaclass=SHACLObjectMeta):
     def __eq__(self, other):
         return super().__eq__(other)
 
-    def __lt__(self, other):
-        def sort_key(obj):
-            if isinstance(obj, str):
-                return (obj, "", "", "")
-            return (
-                obj._id or "",
-                obj.get_type(),
-                getattr(obj, "name", None) or "",
-                self._birth_index,
-            )
+    @staticmethod
+    def _sort_key(obj: Any) -> Tuple[str, str, str, int]:
+        if isinstance(obj, str):
+            return (obj, "", "", 0)
+        return (
+            obj._id or "",
+            obj.get_type(),
+            getattr(obj, "name", None) or "",
+            obj._birth_index,
+        )
 
-        return sort_key(self) < sort_key(other)
+    def __lt__(self, other: Any) -> bool:
+        return SHACLObject._sort_key(self) < SHACLObject._sort_key(other)
 
 
 class SHACLExtensibleObject(SHACLObject):

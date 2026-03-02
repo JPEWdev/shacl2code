@@ -2944,11 +2944,11 @@ class {{ varname(*class.clsname) }}(
             lambda:
             {% if is_list -%}ListProp({% endif %}
             {%- if prop.enum_values -%}
-                EnumProp([
+                EnumProp((
                 {%- for value in prop.enum_values %}
                     ("{{ value }}", "{{ context.compact_vocab(value, prop.path) }}"),
                 {%- endfor %}
-                ])
+                ))
             {%- elif prop.class_id -%}
                 {%- set ctx = [] %}
                 {%- for value in get_all_named_individuals(classes.get(prop.class_id)) %}

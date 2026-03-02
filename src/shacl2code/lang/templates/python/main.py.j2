@@ -1227,11 +1227,8 @@ class SHACLObject(metaclass=SHACLObjectMeta):
         self,
         objectset: SHACLObjectSet,
         missing: Optional[Set[str]],
-        visited: Optional[Set["SHACLObject"]] = None,
+        visited: Set["SHACLObject"],
     ) -> None:
-        if visited is None:
-            visited = set()
-
         if self in visited:
             return
 
@@ -1536,13 +1533,13 @@ class SHACLObjectSet(object):
 
     def _link(self) -> Set[str]:
         self.missing_ids = set()
-
+        visited: Set[SHACLObject] = set()
         new_objects: Set[SHACLObject] = set()
 
         for o in self.objects:
             if o._id:
                 o = cast(SHACLObject, self.find_by_id(o._id, o))
-            o.link_helper(self, self.missing_ids)
+            o.link_helper(self, self.missing_ids, visited)
             new_objects.add(o)
 
         self.objects = new_objects

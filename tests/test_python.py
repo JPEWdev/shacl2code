@@ -1921,9 +1921,11 @@ def test_object_prop_set_coercion(model):
 
 def test_introspection(model):
     """
-    Tests that the __dir__ override correctly exposes SHACL properties
-    to Python's introspection.
-    __dir__ is used for autocompletion in IDEs like Jupyter and IPython.
+    Tests that defined properties on a class are discoverable
+    through Python's introspection mechanisms (e.g., dir()).
+
+    dir() is one of the primary sources for the tab-completion feature in
+    Python REPLs and IDEs.
     """
     c = model.test_class()
     props = dir(c)
@@ -1938,3 +1940,33 @@ def test_introspection(model):
     assert "test_class_integer_prop" in props
     assert "test_class_string_scalar_prop" in props
     assert "test_class_string_list_prop" in props
+
+
+def test_introspection_extensible(model):
+    """
+    Tests that defined properties on an extensible class are discoverable
+    through Python's introspection mechanisms (e.g., dir()).
+
+    Extensible properties set by IRI are not expected to appear in dir()
+    since they are only known at runtime by IRI, not by Python name.
+    """
+    c = model.extensible_class(extensible_class_required="required")
+    props = dir(c)
+
+    # Standard SHACLObject properties
+    assert "ID_ALIAS" in props
+    assert "NODE_KIND" in props
+
+    # Inherited properties from link_class (extensible_class extends link_class)
+    assert "link_class_link_prop" in props
+    assert "link_class_link_prop_no_class" in props
+    assert "link_class_link_list_prop" in props
+    assert "link_class_tag" in props
+
+    # Properties defined on extensible_class itself
+    assert "extensible_class_property" in props
+    assert "extensible_class_required" in props
+
+    # IRI-keyed extensible properties must NOT appear in dir()
+    c["http://example.org/extensible-test-prop"] = "test-value"
+    assert "http://example.org/extensible-test-prop" not in dir(c)

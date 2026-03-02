@@ -309,7 +309,7 @@ class IRIProp(Property[T_PropV]):
         context: Optional[Tuple[Tuple[str, str], ...]] = None,
         *,
         pattern: Optional[str] = None,
-    ):
+    ) -> None:
         if context is None:
             context = ()
         super().__init__(pattern=pattern)
@@ -645,7 +645,12 @@ class EnumProp(IRIProp[str]):
 
     __slots__ = ()
 
-    def __init__(self, values, *, pattern: Optional[str] = None):
+    def __init__(
+        self,
+        values: Optional[Tuple[Tuple[str, str], ...]] = None,
+        *,
+        pattern: Optional[str] = None,
+    ) -> None:
         super().__init__(values, pattern=pattern)
 
     def validate(self, value: Any) -> None:
@@ -697,7 +702,7 @@ _USE_SLOTS = {{ use_slots }}
 # fmt: on
 
 # After Python 3.10, use slots=True to save a little space
-_DC_KWARGS = {"slots": True} if __USE_SLOTS and sys.version_info >= (3, 10) else {}
+_DC_KWARGS = {"slots": True} if _USE_SLOTS and sys.version_info >= (3, 10) else {}
 
 
 @dataclass(**_DC_KWARGS)
@@ -1275,7 +1280,7 @@ class SHACLObject(metaclass=SHACLObjectMeta):
 class SHACLExtensibleObject(SHACLObject):
     CLOSED = False
 
-    def __init__(self, typ=None, **kwargs):
+    def __init__(self, typ: Optional[str] = None, **kwargs: Any) -> None:
         self._extensible = {
             "type": typ if typ else self._TYPE,
             "compact_type": None if typ else self._COMPACT_TYPE,
@@ -1304,7 +1309,7 @@ class SHACLExtensibleObject(SHACLObject):
         return self._extensible["data"]
 
     @classmethod
-    def _make_object(cls: Type, typ: str):
+    def _make_object(cls: Type["SHACLExtensibleObject"], typ: str) -> "SHACLObject":
         # Check for a known type, and if so, deserialize as that instead
         if typ in cls.CLASSES:
             return cls.CLASSES[typ]()
@@ -1370,7 +1375,7 @@ class SHACLExtensibleObject(SHACLObject):
                                     f"Unsupported serialized type {type(i)} with value {i!r}"
                                 )
 
-    def __getitem__(self, iri: str):
+    def __getitem__(self, iri: str) -> Any:
         try:
             return super().__getitem__(iri)
         except KeyError:
@@ -1381,7 +1386,7 @@ class SHACLExtensibleObject(SHACLObject):
             raise KeyError(f"Key '{iri}' must be an IRI")
         return self._ext_data[iri]
 
-    def __setitem__(self, iri: str, value) -> None:
+    def __setitem__(self, iri: str, value: Any) -> None:
         try:
             super().__setitem__(iri, value)
         except KeyError:

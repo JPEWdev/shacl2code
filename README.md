@@ -39,6 +39,7 @@ shacl2code list
 ### Generating the JSON Schema file
 
 `shacl2code` can generate a JSON schema with the following command:
+
 ```shell
 shacl2code generate -i spdx-model.json-ld -u spdx-context.jsonld https://spdx.org/rdf/3.0.1/spdx-context.jsonld jsonschema -o json-schema-3.0.1.json
 ```

@@ -1,10 +1,9 @@
 #! /usr/bin/env python3
 #
-# Generated Python bindings from a SHACL model
-#
 # {{ disclaimer }}
 #
 # SPDX-License-Identifier: {{ spdx_license }}
+"""Generated Python bindings from a SHACL model"""
 
 from __future__ import annotations
 
@@ -22,14 +21,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    Generic,
-    TypeVar,
-    Union,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Generic, TypeVar, Union, cast, overload
 
 if TYPE_CHECKING:
     from typing import (
@@ -2654,8 +2646,8 @@ def decode_context(decoder: Decoder, objectset: SHACLObjectSet) -> None:
 
 try:
     from rdflib import BNode, Literal, URIRef
-    from rdflib.term import IdentifiedNode
     from rdflib.namespace import RDF
+    from rdflib.term import IdentifiedNode
 
     if TYPE_CHECKING:
         from rdflib import Graph

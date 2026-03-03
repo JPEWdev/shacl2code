@@ -2,6 +2,7 @@
 # Copyright (c) 2024 Joshua Watt
 #
 # SPDX-License-Identifier: MIT
+"""Common code for language renderers"""
 
 import os
 import sys

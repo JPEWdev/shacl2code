@@ -4,17 +4,18 @@
 # SPDX-License-Identifier: MIT
 
 import hashlib
+import importlib
 import json
+import re
+import subprocess
+import sys
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
 import jsonschema
 import pyshacl
 import pytest
 import rdflib
-import re
-import subprocess
-import sys
-import importlib
-from pathlib import Path
-from datetime import datetime, timezone, timedelta
 
 from testfixtures import jsonvalidation, timetests
 

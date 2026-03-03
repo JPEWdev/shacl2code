@@ -8,12 +8,13 @@ import argparse
 import json
 import sys
 import urllib.request
-import rdflib
 from pathlib import Path
 
-from . import Model, UrlContext, ContextData
-from .version import VERSION
+import rdflib
+
+from . import ContextData, Model, UrlContext
 from .lang import LANGUAGES
+from .version import VERSION
 
 
 def main(args=None):

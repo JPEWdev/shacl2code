@@ -3,8 +3,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-import pytest
 from pathlib import Path
+
+import pytest
 from pytest import param
 
 THIS_FILE = Path(__file__)

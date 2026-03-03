@@ -3,16 +3,16 @@
 #
 # SPDX-License-Identifier: MIT
 
-from dataclasses import dataclass
-from enum import Enum
 import json
 import multiprocessing
 import os
-from pathlib import Path
 import re
 import shutil
 import subprocess
 import textwrap
+from dataclasses import dataclass
+from enum import Enum
+from pathlib import Path
 
 import pytest
 

@@ -3,8 +3,10 @@
 #
 # SPDX-License-Identifier: MIT
 
-import pytest
 import itertools
+
+import pytest
+
 from shacl2code.model import common_prefix
 
 

@@ -3,9 +3,10 @@
 #
 # SPDX-License-Identifier: MIT
 
+from datetime import datetime, timedelta, timezone
+
 import pytest
 from pytest import param
-from datetime import datetime, timezone, timedelta
 
 
 def datetime_encode_tests():

@@ -8,9 +8,9 @@ import re
 import textwrap
 from pathlib import Path
 
-from ..version import VERSION
 from .common import JinjaTemplateRender
 from .lang import TEMPLATE_DIR, language
+from ..version import VERSION
 
 
 def varname(*name):

@@ -11,3 +11,5 @@ extend-ignore = E501,E203
 # F401: Module imported but unused
 per-file-ignores =
     *.pyi: E301,E302,E305,E701,F401
+
+application-import-names = shacl2code,testfixtures

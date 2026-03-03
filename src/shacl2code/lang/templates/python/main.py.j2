@@ -22,29 +22,11 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    Generic,
-    TypeVar,
-    Union,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Generic, TypeVar, Union, cast, overload
 
 if TYPE_CHECKING:
-    from typing import (
-        Any,
-        BinaryIO,
-        Callable,
-        Dict,
-        Iterable,
-        Iterator,
-        List,
-        Optional,
-        Set,
-        Tuple,
-        Type,
-    )
+    from typing import (Any, BinaryIO, Callable, Dict, Iterable, Iterator,
+                        List, Optional, Set, Tuple, Type)
 
 T_PropV = TypeVar("T_PropV")
 
@@ -2654,8 +2636,8 @@ def decode_context(decoder: Decoder, objectset: SHACLObjectSet) -> None:
 
 try:
     from rdflib import BNode, Literal, URIRef
-    from rdflib.term import IdentifiedNode
     from rdflib.namespace import RDF
+    from rdflib.term import IdentifiedNode
 
     if TYPE_CHECKING:
         from rdflib import Graph

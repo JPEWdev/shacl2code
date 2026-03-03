@@ -4,14 +4,16 @@
 # SPDX-License-Identifier: MIT
 
 import json
-import pytest
+import os
+import os.path
 import re
 import subprocess
 import textwrap
-import os
-import os.path
-from pathlib import Path
 from enum import Enum
+from pathlib import Path
+
+import pytest
+
 from testfixtures import jsonvalidation, timetests
 
 THIS_FILE = Path(__file__)

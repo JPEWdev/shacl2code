@@ -2,14 +2,14 @@
 # Copyright (c) 2024 Joshua Watt
 #
 # SPDX-License-Identifier: MIT
-
-from .common import JinjaTemplateRender
-from .lang import language, TEMPLATE_DIR
-
-from pathlib import Path
+"""Go schema renderer"""
 
 import re
 import textwrap
+from pathlib import Path
+
+from .common import JinjaTemplateRender
+from .lang import TEMPLATE_DIR, language
 
 GO_KEYWORDS = (
     "break",

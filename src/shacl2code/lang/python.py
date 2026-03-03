@@ -1,15 +1,14 @@
 # Copyright (c) 2024 Joshua Watt
 #
 # SPDX-License-Identifier: MIT
-"""Python language binding renderer for shacl2code."""
+"""Python language binding renderer"""
 
-import re
 import keyword
-
+import re
 from pathlib import Path
 
 from .common import JinjaTemplateRender
-from .lang import language, TEMPLATE_DIR
+from .lang import TEMPLATE_DIR, language
 
 DATATYPE_CLASSES = {
     "http://www.w3.org/2001/XMLSchema#string": "StringProp",

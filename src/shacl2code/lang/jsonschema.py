@@ -2,12 +2,13 @@
 # Copyright (c) 2024 Joshua Watt
 #
 # SPDX-License-Identifier: MIT
+"""JSON Schema renderer"""
+
+import keyword
+import re
 
 from .common import BasicJinjaRender
-from .lang import language, TEMPLATE_DIR
-
-import re
-import keyword
+from .lang import TEMPLATE_DIR, language
 
 
 def varname(*name):

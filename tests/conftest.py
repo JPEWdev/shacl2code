@@ -5,13 +5,13 @@
 
 import json
 import os
-import pytest
 import shutil
 import subprocess
 import time
-from testfixtures.httpserver import HTTPTestServer
-
 from pathlib import Path
+
+import pytest
+from testfixtures.httpserver import HTTPTestServer
 
 THIS_FILE = Path(__file__)
 THIS_DIR = THIS_FILE.parent

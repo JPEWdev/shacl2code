@@ -3,12 +3,13 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
 import shutil
 import subprocess
+from pathlib import Path
+
 import pytest
 import rdflib
-import json
-from pathlib import Path
 
 import shacl2code
 
@@ -381,7 +382,7 @@ def test_model_errors(file):
 
 
 def test_context_contents():
-    from rdflib import RDF, OWL, RDFS
+    from rdflib import OWL, RDF, RDFS
 
     model = rdflib.Graph()
     model.parse(TEST_MODEL)

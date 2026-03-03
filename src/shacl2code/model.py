@@ -8,7 +8,7 @@ import typing
 from dataclasses import dataclass, field
 
 from rdflib import URIRef
-from rdflib.namespace import RDF, RDFS, OWL, SH, XSD, DefinedNamespace, Namespace
+from rdflib.namespace import OWL, RDF, RDFS, SH, XSD, DefinedNamespace, Namespace
 
 PATTERN_DATATYPES = [
     str(XSD.string),

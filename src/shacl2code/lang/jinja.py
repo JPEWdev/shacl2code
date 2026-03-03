@@ -2,6 +2,7 @@
 # Copyright (c) 2024 Joshua Watt
 #
 # SPDX-License-Identifier: MIT
+"""Jinja template renderer (for testing)"""
 
 from pathlib import Path
 

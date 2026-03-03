@@ -4,10 +4,10 @@
 
 | Name                                |    Stmts |     Miss |    Cover |   Missing |
 |------------------------------------ | -------: | -------: | -------: | --------: |
-| src/shacl2code/\_\_init\_\_.py      |        4 |        0 |     100% |           |
+| src/shacl2code/\_\_init\_\_.py      |        5 |        0 |     100% |           |
 | src/shacl2code/\_\_main\_\_.py      |        4 |        0 |     100% |           |
 | src/shacl2code/context.py           |      161 |        0 |     100% |           |
-| src/shacl2code/lang/\_\_init\_\_.py |        6 |        0 |     100% |           |
+| src/shacl2code/lang/\_\_init\_\_.py |        7 |        0 |     100% |           |
 | src/shacl2code/lang/common.py       |       94 |        0 |     100% |           |
 | src/shacl2code/lang/cpp.py          |       64 |        0 |     100% |           |
 | src/shacl2code/lang/golang.py       |      128 |        0 |     100% |           |
@@ -19,7 +19,7 @@
 | src/shacl2code/model.py             |      181 |        0 |     100% |           |
 | src/shacl2code/urlcontext.py        |       14 |        0 |     100% |           |
 | src/shacl2code/version.py           |        1 |        0 |     100% |           |
-|                           **TOTAL** |  **815** |    **0** | **100%** |           |
+|                           **TOTAL** |  **817** |    **0** | **100%** |           |
 
 
 ## Setup coverage badge

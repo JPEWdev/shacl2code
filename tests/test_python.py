@@ -60,7 +60,7 @@ def model_context_url(model_server):
 @pytest.fixture(scope="module")
 def python_model(tmp_path_factory, model_context_url):
     tmp_directory = tmp_path_factory.mktemp("pythontestcontext")
-    outfile = tmp_directory / "model.py"
+    output_dir = tmp_directory / "model"
     shacl2code_generate(
         [
             "--input",
@@ -69,10 +69,11 @@ def python_model(tmp_path_factory, model_context_url):
             model_context_url,
         ],
         [],
-        outfile,
+        output_dir,
     )
-    outfile.chmod(0o755)
-    yield (tmp_directory, outfile)
+    py_file = output_dir / "main.py"
+    py_file.chmod(0o755)
+    yield (output_dir, py_file)
 
 
 @pytest.fixture(scope="module")
@@ -83,15 +84,15 @@ def model_script(python_model):
 
 @pytest.fixture(scope="function")
 def model(python_model):
-    tmp_directory, _ = python_model
+    output_dir, _ = python_model
 
     old_path = sys.path[:]
-    sys.path.append(str(tmp_directory))
+    sys.path.append(str(output_dir))
     try:
-        import model
+        import main
 
-        importlib.reload(model)
-        yield model
+        importlib.reload(main)
+        yield main
     finally:
         sys.path = old_path
 
@@ -112,29 +113,31 @@ class TestOutput:
         """
         Checks that the output file is valid python syntax by executing it"
         """
-        outfile = tmp_path / "output.py"
-        shacl2code_generate(args, [], outfile)
+        output_dir = tmp_path / "output"
+        shacl2code_generate(args, [], output_dir)
 
-        subprocess.run([sys.executable, outfile, "--help"], check=True)
+        subprocess.run([sys.executable, output_dir / "main.py", "--help"], check=True)
 
-    def test_trailing_whitespace(self, args):
+    def test_trailing_whitespace(self, tmp_path, args):
         """
         Tests that the generated file does not have trailing whitespace
         """
-        p = shacl2code_generate(args, [], "-")
+        output_dir = tmp_path / "output"
+        shacl2code_generate(args, [], output_dir)
 
-        for num, line in enumerate(p.stdout.splitlines()):
+        for num, line in enumerate((output_dir / "main.py").read_text().splitlines()):
             assert (
                 re.search(r"\s+$", line) is None
             ), f"Line {num + 1} has trailing whitespace"
 
-    def test_tabs(self, args):
+    def test_tabs(self, tmp_path, args):
         """
         Tests that the output file doesn't contain tabs
         """
-        p = shacl2code_generate(args, [], "-")
+        output_dir = tmp_path / "output"
+        shacl2code_generate(args, [], output_dir)
 
-        for num, line in enumerate(p.stdout.splitlines()):
+        for num, line in enumerate((output_dir / "main.py").read_text().splitlines()):
             assert "\t" not in line, f"Line {num + 1} has tabs"
 
 
@@ -154,23 +157,22 @@ class TestCheckType:
         """
         Mypy static type checking
         """
-        outfile = tmp_path / "output.py"
-        shacl2code_generate(args, [], outfile)
+        output_dir = tmp_path / "output"
+        shacl2code_generate(args, [], output_dir)
         subprocess.run(
-            ["mypy", outfile],
+            ["mypy", output_dir / "main.py"],
             encoding="utf-8",
             check=True,
         )
 
-    @pytest.mark.xfail(reason="pyrefly is ignoring type annotations from rdflib")
     def test_pyrefly(self, tmp_path, args):
         """
         Pyrefly static type checking
         """
-        outfile = tmp_path / "output.py"
-        shacl2code_generate(args, [], outfile)
+        output_dir = tmp_path / "output"
+        shacl2code_generate(args, [], output_dir)
         subprocess.run(
-            ["pyrefly", "check", outfile],
+            ["pyrefly", "check", output_dir / "main.py"],
             encoding="utf-8",
             check=True,
         )
@@ -179,10 +181,10 @@ class TestCheckType:
         """
         Pyright static type checking
         """
-        outfile = tmp_path / "output.py"
-        shacl2code_generate(args, [], outfile)
+        output_dir = tmp_path / "output"
+        shacl2code_generate(args, [], output_dir)
         subprocess.run(
-            ["pyright", outfile],
+            ["pyright", output_dir / "main.py"],
             encoding="utf-8",
             check=True,
         )
@@ -191,14 +193,14 @@ class TestCheckType:
         """
         Flake8 linting
         """
-        outfile = tmp_path / "output.py"
-        shacl2code_generate(args, [], outfile)
+        output_dir = tmp_path / "output"
+        shacl2code_generate(args, [], output_dir)
         subprocess.run(
             [
                 "flake8",
                 "--config",
                 TOP_DIR / ".flake8",
-                outfile,
+                output_dir / "main.py",
             ],
             encoding="utf-8",
             check=True,
@@ -1710,16 +1712,16 @@ def test_slots(model):
 
 
 def test_slots_yes(tmp_path):
-    outfile = tmp_path / "output.py"
-    shacl2code_generate(["--input", TEST_MODEL], ["--use-slots", "yes"], outfile)
-    text = outfile.read_text()
+    output_dir = tmp_path / "output"
+    shacl2code_generate(["--input", TEST_MODEL], ["--use-slots", "yes"], output_dir)
+    text = (output_dir / "main.py").read_text()
     assert "_USE_SLOTS = True" in text
 
 
 def test_slots_no(tmp_path):
-    outfile = tmp_path / "output.py"
-    shacl2code_generate(["--input", TEST_MODEL], ["--use-slots", "no"], outfile)
-    text = outfile.read_text()
+    output_dir = tmp_path / "output"
+    shacl2code_generate(["--input", TEST_MODEL], ["--use-slots", "no"], output_dir)
+    text = (output_dir / "main.py").read_text()
     assert "_USE_SLOTS = False" in text
 
 
@@ -1895,3 +1897,76 @@ def test_extensible_context(model, roundtrip):
     ), "Property does not have expected type"
 
     assert p["http://custom-prop.example.com/prop"], "Unable to find property value"
+
+
+def test_object_prop_set_coercion(model):
+    """
+    Tests that ObjectProp.set() inherently respects and retains both
+    raw string IRIs and actual SHACLObject instances securely without
+    coercing the object prematurely into a string representation.
+    """
+    c = model.test_class()
+
+    # Assigning string should remain string
+    c.test_class_class_prop = "http://example.org/assigned-iri"
+    assert isinstance(c.test_class_class_prop, str)
+    assert c.test_class_class_prop == "http://example.org/assigned-iri"
+
+    # Assigning an object should preserve the object instance without str() coercion
+    embedded_obj = model.test_class(_id="http://example.org/embedded-obj")
+    c.test_class_class_prop = embedded_obj
+    assert isinstance(c.test_class_class_prop, model.test_class)  # check if same class
+    assert c.test_class_class_prop is embedded_obj  # check if same object
+
+
+def test_introspection(model):
+    """
+    Tests that defined properties on a class are discoverable
+    through Python's introspection mechanisms (e.g., dir()).
+
+    dir() is one of the primary sources for the tab-completion feature in
+    Python REPLs and IDEs.
+    """
+    c = model.test_class()
+    props = dir(c)
+
+    # Standard SHACLObject properties
+    assert "ID_ALIAS" in props
+    assert "NODE_KIND" in props
+
+    # Added properties from test model
+    assert "test_class_boolean_prop" in props
+    assert "test_class_class_prop" in props
+    assert "test_class_integer_prop" in props
+    assert "test_class_string_scalar_prop" in props
+    assert "test_class_string_list_prop" in props
+
+
+def test_introspection_extensible(model):
+    """
+    Tests that defined properties on an extensible class are discoverable
+    through Python's introspection mechanisms (e.g., dir()).
+
+    Extensible properties set by IRI are not expected to appear in dir()
+    since they are only known at runtime by IRI, not by Python name.
+    """
+    c = model.extensible_class(extensible_class_required="required")
+    props = dir(c)
+
+    # Standard SHACLObject properties
+    assert "ID_ALIAS" in props
+    assert "NODE_KIND" in props
+
+    # Inherited properties from link_class (extensible_class extends link_class)
+    assert "link_class_link_prop" in props
+    assert "link_class_link_prop_no_class" in props
+    assert "link_class_link_list_prop" in props
+    assert "link_class_tag" in props
+
+    # Properties defined on extensible_class itself
+    assert "extensible_class_property" in props
+    assert "extensible_class_required" in props
+
+    # IRI-keyed extensible properties must NOT appear in dir()
+    c["http://example.org/extensible-test-prop"] = "test-value"
+    assert "http://example.org/extensible-test-prop" not in dir(c)

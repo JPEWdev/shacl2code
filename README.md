@@ -19,19 +19,19 @@ python3 -m pip install shacl2code
 `shacl2code` can generate bindings from either a local file:
 
 ```shell
-shacl2code generate -i model.jsonld python -o out.py
+shacl2code generate -i model.jsonld python -o out
 ```
 
 Or from a URL:
 
 ```shell
-shacl2code generate -i https://example.com/rdf/model.jsonld python -o out.py
+shacl2code generate -i https://example.com/rdf/model.jsonld python -o out
 ```
 
 Or from stdin:
 
 ```shell
-cat model.jsonld | shacl2code generate -i - python -o - > out.py
+cat model.jsonld | shacl2code generate -i - python -o out
 ```
 
 For more information, run:

@@ -2,3 +2,12 @@
 # E501 line too long - Handled by black
 # E203 whitespace before ':' - Handled by black
 extend-ignore = E501,E203
+
+# These execptions are made to keep stub compact / keep imported types info
+# E301: Expected 2 blank lines, found 1
+# E302: Expected 2 blank lines, found 0
+# E305: Expected 2 blank lines after end of function or class
+# E701: Multiple statements on one line (colon)
+# F401: Module imported but unused
+per-file-ignores =
+    *.pyi: E301,E302,E305,E701,F401

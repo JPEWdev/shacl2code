@@ -6,9 +6,11 @@
 import hashlib
 import importlib
 import json
+import os
 import re
 import subprocess
 import sys
+import textwrap
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -72,28 +74,37 @@ def python_model(tmp_path_factory, model_context_url):
         [],
         output_dir,
     )
-    py_file = output_dir / "main.py"
-    py_file.chmod(0o755)
-    yield (output_dir, py_file)
+    yield tmp_directory
 
 
 @pytest.fixture(scope="module")
-def model_script(python_model):
-    _, script = python_model
+def model_script(tmp_path_factory, python_model):
+    tmp_directory = tmp_path_factory.mktemp("pythonmodelscript")
+
+    script = tmp_directory / "script.py"
+    script.write_text(textwrap.dedent(f"""\
+        #! /usr/bin/env python3
+        import sys
+        sys.path.append("{python_model}")
+
+        import model
+
+        sys.exit(model.main())
+        """))
+    script.chmod(0o755)
     yield script
 
 
 @pytest.fixture(scope="function")
 def model(python_model):
-    output_dir, _ = python_model
-
     old_path = sys.path[:]
-    sys.path.append(str(output_dir))
+    sys.path.append(str(python_model))
     try:
-        import main
-
-        importlib.reload(main)
-        yield main
+        # Reload all model modules
+        for m in list(sys.modules):
+            if m == "model" or m.startswith("model."):
+                importlib.reload(sys.modules[m])
+        yield importlib.import_module("model")
     finally:
         sys.path = old_path
 
@@ -110,14 +121,11 @@ class TestOutput:
     Test syntax and formatting of the output file
     """
 
-    def test_output_syntax(self, tmp_path, args):
+    def test_output_syntax(self, model_script, args):
         """
         Checks that the output file is valid python syntax by executing it"
         """
-        output_dir = tmp_path / "output"
-        shacl2code_generate(args, [], output_dir)
-
-        subprocess.run([sys.executable, output_dir / "main.py", "--help"], check=True)
+        subprocess.run([model_script, "--help"], check=True)
 
     def test_trailing_whitespace(self, tmp_path, args):
         """
@@ -126,10 +134,11 @@ class TestOutput:
         output_dir = tmp_path / "output"
         shacl2code_generate(args, [], output_dir)
 
-        for num, line in enumerate((output_dir / "main.py").read_text().splitlines()):
-            assert (
-                re.search(r"\s+$", line) is None
-            ), f"Line {num + 1} has trailing whitespace"
+        for p in output_dir.iterdir():
+            for num, line in enumerate(p.read_text().splitlines()):
+                assert (
+                    re.search(r"\s+$", line) is None
+                ), f"{p}: Line {num + 1} has trailing whitespace"
 
     def test_tabs(self, tmp_path, args):
         """
@@ -138,8 +147,9 @@ class TestOutput:
         output_dir = tmp_path / "output"
         shacl2code_generate(args, [], output_dir)
 
-        for num, line in enumerate((output_dir / "main.py").read_text().splitlines()):
-            assert "\t" not in line, f"Line {num + 1} has tabs"
+        for p in output_dir.iterdir():
+            for num, line in enumerate(p.read_text().splitlines()):
+                assert "\t" not in line, f"{p}: Line {num + 1} has tabs"
 
 
 @pytest.mark.parametrize(
@@ -158,10 +168,10 @@ class TestCheckType:
         """
         Mypy static type checking
         """
-        output_dir = tmp_path / "output"
+        output_dir = tmp_path / "model"
         shacl2code_generate(args, [], output_dir)
         subprocess.run(
-            ["mypy", output_dir / "main.py"],
+            ["mypy"] + list(output_dir.iterdir()),
             encoding="utf-8",
             check=True,
         )
@@ -170,10 +180,11 @@ class TestCheckType:
         """
         Pyrefly static type checking
         """
-        output_dir = tmp_path / "output"
+        output_dir = tmp_path / "model"
         shacl2code_generate(args, [], output_dir)
         subprocess.run(
-            ["pyrefly", "check", output_dir / "main.py"],
+            ["pyrefly", "check", "--search-path", tmp_path]
+            + list(output_dir.iterdir()),
             encoding="utf-8",
             check=True,
         )
@@ -182,10 +193,10 @@ class TestCheckType:
         """
         Pyright static type checking
         """
-        output_dir = tmp_path / "output"
+        output_dir = tmp_path / "model"
         shacl2code_generate(args, [], output_dir)
         subprocess.run(
-            ["pyright", output_dir / "main.py"],
+            ["pyright"] + list(output_dir.iterdir()),
             encoding="utf-8",
             check=True,
         )
@@ -194,15 +205,10 @@ class TestCheckType:
         """
         Flake8 linting
         """
-        output_dir = tmp_path / "output"
+        output_dir = tmp_path / "model"
         shacl2code_generate(args, [], output_dir)
         subprocess.run(
-            [
-                "flake8",
-                "--config",
-                TOP_DIR / ".flake8",
-                output_dir / "main.py",
-            ],
+            ["flake8", "--config", TOP_DIR / ".flake8"] + list(output_dir.iterdir()),
             encoding="utf-8",
             check=True,
         )
@@ -254,6 +260,30 @@ def test_script_roundtrip(model_script, tmp_path, roundtrip):
     subprocess.run(
         [model_script, roundtrip, "--outfile", outpath],
         check=True,
+    )
+
+    with roundtrip.open("r") as f:
+        expect_data = json.load(f)
+
+    with outpath.open("r") as f:
+        data = json.load(f)
+
+    assert data == expect_data
+
+
+def test_module_roundtrip(python_model, tmp_path, roundtrip):
+    outpath = tmp_path / "out.json"
+
+    env = os.environ.copy()
+
+    env["PYTHONPATH"] = os.pathsep.join(
+        env.get("PYTHONPATH", "").split(os.pathsep) + [str(python_model)]
+    )
+
+    subprocess.run(
+        [sys.executable, "-m", "model", roundtrip, "--outfile", outpath],
+        check=True,
+        env=env,
     )
 
     with roundtrip.open("r") as f:
@@ -1709,20 +1739,20 @@ def test_objset_context(model, context, expanded, compacted):
 
 
 def test_slots(model):
-    assert model._USE_SLOTS
+    assert model.model._USE_SLOTS
 
 
 def test_slots_yes(tmp_path):
     output_dir = tmp_path / "output"
     shacl2code_generate(["--input", TEST_MODEL], ["--use-slots", "yes"], output_dir)
-    text = (output_dir / "main.py").read_text()
+    text = (output_dir / "model.py").read_text()
     assert "_USE_SLOTS = True" in text
 
 
 def test_slots_no(tmp_path):
     output_dir = tmp_path / "output"
     shacl2code_generate(["--input", TEST_MODEL], ["--use-slots", "no"], output_dir)
-    text = (output_dir / "main.py").read_text()
+    text = (output_dir / "model.py").read_text()
     assert "_USE_SLOTS = False" in text
 
 

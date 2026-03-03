@@ -57,7 +57,10 @@ class PythonRender(JinjaTemplateRender):
     HELP = "Python Language Bindings"
 
     FILES = (
-        "main.py",
+        "__init__.py",
+        "__main__.py",
+        "cmd.py",
+        "model.py",
         "stub.pyi",
     )
 

@@ -68,9 +68,6 @@ class PythonRender(JinjaTemplateRender):
         super().__init__(args)
         self.__output = args.output
         self.__use_slots = args.use_slots
-        self.__render_args = {
-            "elide_lists": args.elide_lists,
-        }
 
     @classmethod
     def get_arguments(cls, parser):
@@ -80,11 +77,6 @@ class PythonRender(JinjaTemplateRender):
             type=Path,
             help="Output directory",
             required=True,
-        )
-        parser.add_argument(
-            "--elide-lists",
-            action="store_true",
-            help="Elide lists when writing documents if they only contain a single item",
         )
         parser.add_argument(
             "--use-slots",
@@ -119,5 +111,4 @@ class PythonRender(JinjaTemplateRender):
             use_slots = False
         return {
             "use_slots": use_slots,
-            **self.__render_args,
         }

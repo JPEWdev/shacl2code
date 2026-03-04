@@ -9,6 +9,7 @@ import subprocess
 from pathlib import Path
 
 import jsonschema
+
 import pytest
 
 from testfixtures import jsonvalidation

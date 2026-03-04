@@ -29,6 +29,7 @@ license = "MIT"
 [project.optional-dependencies]
 dev = [
     "flake8 >= 7.0.0",
+    "flake8-import-order >= 0.19.2",
     "jsonschema >= 4.21.1",
     "mypy >= 1.14.1",  # latest version for Python 3.8 is 1.14.x
     "pyrefly >= 0.55.0",

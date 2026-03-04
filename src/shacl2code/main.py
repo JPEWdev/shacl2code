@@ -12,8 +12,9 @@ from pathlib import Path
 
 import rdflib
 
-from . import ContextData, Model, UrlContext
 from .lang import LANGUAGES
+from .model import Model
+from .urlcontext import ContextData, UrlContext
 from .version import VERSION
 
 

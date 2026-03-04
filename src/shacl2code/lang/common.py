@@ -11,7 +11,9 @@ from pathlib import Path
 
 import jinja2
 from jinja2 import Environment, FileSystemLoader, TemplateRuntimeError
+
 from markupsafe import Markup
+
 from rdflib.namespace import SH
 
 from ..model import SHACL2CODE

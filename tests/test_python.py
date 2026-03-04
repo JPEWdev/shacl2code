@@ -15,8 +15,11 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import jsonschema
+
 import pyshacl
+
 import pytest
+
 import rdflib
 
 from testfixtures import jsonvalidation, timetests

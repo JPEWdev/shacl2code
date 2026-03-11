@@ -374,9 +374,9 @@ class {{ varname(*class.clsname) }}(
     {%- endfor %}
     {{ '"' }}{{ '"' }}{{ '"' }}
 {% endif %}
-    TYPE = "{{ class._id }}"
+    TYPE: ClassVar[str] = "{{ class._id }}"
     {%- if context.compact_iri(class._id) != class._id %}
-    COMPACT_TYPE = "{{ context.compact_iri(class._id) }}"
+    COMPACT_TYPE: ClassVar[Optional[str]] = "{{ context.compact_iri(class._id) }}"
     {%- endif %}
     NODE_KIND: ClassVar[NodeKind]
     {%- if class.id_property %}

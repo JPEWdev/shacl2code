@@ -28,6 +28,7 @@ if TYPE_CHECKING:
         Any,
         BinaryIO,
         Callable,
+        ClassVar,
         Dict,
         Iterable,
         Iterator,
@@ -60,7 +61,7 @@ class Property(ABC, Generic[T_PropV]):
     class
     """
 
-    VALID_TYPES: Union[Type[Any], Tuple[Type[Any], ...]] = ()
+    VALID_TYPES: ClassVar[Union[Type[Any], Tuple[Type[Any], ...]]] = ()
 
     __slots__ = ("pattern",)
 
@@ -884,65 +885,65 @@ T_SHACLObject = TypeVar("T_SHACLObject", bound="SHACLObject")
 class SHACLObject(metaclass=SHACLObjectMeta):
     """Base class for all SHACL-defined objects, providing property access, encoding, and decoding."""
 
-    CLASSES: Dict[str, Type] = {}
+    CLASSES: ClassVar[Dict[str, Type]] = {}
 
     # Class properties that can be set in derived classes:
 
     # A dictionary of Named Individuals. The key is the python name of the
     # individual and the value is the IRI of the individual (not inherited)
-    NAMED_INDIVIDUALS: Dict[str, str] = {}
+    NAMED_INDIVIDUALS: ClassVar[Dict[str, str]] = {}
 
     # If True, class member variables will be automatically created for the class
     # from the NAMED_INDIVIDUALS dictionary
     # NOTE: This variable is not present in the class
-    AUTO_NAMED_INDIVIDUALS: bool = True
+    AUTO_NAMED_INDIVIDUALS: ClassVar[bool] = True
 
     # The type of ID the object is allowed to have (inherited from parent)
-    NODE_KIND = NodeKind.BlankNodeOrIRI
+    NODE_KIND: ClassVar[NodeKind] = NodeKind.BlankNodeOrIRI
 
     # An alternate IRI for the ID property, besides "@id" (inherited from
     # parent)
-    ID_ALIAS: Optional[str] = None
+    ID_ALIAS: ClassVar[Optional[str]] = None
 
     # If True, this class is abstract and cannot be implemented (not inherited
     # from parent)
-    IS_ABSTRACT: bool = True
+    IS_ABSTRACT: ClassVar[bool] = True
 
     # If True, this class is deprecated and will raise a warning when created
     # (not inherited from parent)
-    IS_DEPRECATED: bool = False
+    IS_DEPRECATED: ClassVar[bool] = False
 
     # The fully qualified Type IRI for the object. Required
     # NOTE: This variable is not present in the class. Use get_type() instead
-    TYPE: str = ""
+    TYPE: ClassVar[str] = ""
 
     # The compacted Type IRI of the object. Must match how the TYPE property
     # would be compacted by the context. Not inherited from parent
     # NOTE: This variable is not present in the class. Use get_compact_type()
     # instead
-    COMPACT_TYPE: Optional[str] = None
+    COMPACT_TYPE: ClassVar[Optional[str]] = None
 
     # A list of properties for this object. Each entry must be a ClassProp
     # object. Properties are automatically inherited from parent classes and do
     # not need to be re-listed here.
     # NOTE: The variable is not present in the class
-    PROPERTIES = [
+    PROPERTIES: ClassVar[List[ClassProp]] = [
         ClassProp("_id", lambda: StringProp(), "@id"),
     ]
 
     # Internal variables
-    _EXTRA_SLOTS: Union[Set[str], Tuple[str, ...]] = (
+    _EXTRA_SLOTS: ClassVar[Union[Set[str], Tuple[str, ...]]] = (
         "_extensible",
         "_metadata",
         "_birth_index",
     )
-    _OBJ_PY_PROPS: Dict[str, ClassProp] = {}
-    _OBJ_IRI_PROPS: Dict[str, ClassProp] = {}
-    _OBJ_COMPACT_PROPS: Dict[str, ClassProp] = {}
-    _NEEDS_REG: bool = True
-    _next_birth_index: int = 0
-    _TYPE: str
-    _COMPACT_TYPE: Optional[str]
+    _OBJ_PY_PROPS: ClassVar[Dict[str, ClassProp]] = {}
+    _OBJ_IRI_PROPS: ClassVar[Dict[str, ClassProp]] = {}
+    _OBJ_COMPACT_PROPS: ClassVar[Dict[str, ClassProp]] = {}
+    _NEEDS_REG: ClassVar[bool] = True
+    _next_birth_index: ClassVar[int] = 0
+    _TYPE: ClassVar[str]
+    _COMPACT_TYPE: ClassVar[Optional[str]]
     _extensible: Dict[str, Any]
 
     # Instance variables
@@ -2945,22 +2946,22 @@ class {{ varname(*class.clsname) }}(
     {%- endfor %}
     {{ '"' }}{{ '"' }}{{ '"' }}
 {% endif %}
-    TYPE = "{{ class._id }}"
+    TYPE: ClassVar[str] = "{{ class._id }}"
     {%- if context.compact_iri(class._id) != class._id %}
-    COMPACT_TYPE = "{{ context.compact_iri(class._id) }}"
+    COMPACT_TYPE: ClassVar[Optional[str]] = "{{ context.compact_iri(class._id) }}"
     {%- endif %}
-    NODE_KIND: NodeKind = NodeKind.{{ class.node_kind.split("#")[-1] }}
+    NODE_KIND: ClassVar[NodeKind] = NodeKind.{{ class.node_kind.split("#")[-1] }}
     {%- if class.id_property %}
-    ID_ALIAS: Optional[str] = "{{ class.id_property }}"
+    ID_ALIAS: ClassVar[Optional[str]] = "{{ class.id_property }}"
     {%- endif %}
     {%- if class.is_abstract %}
-    IS_ABSTRACT: bool = True
+    IS_ABSTRACT: ClassVar[bool] = True
     {%- endif %}
     {%- if class.deprecated %}
-    IS_DEPRECATED: bool = True
+    IS_DEPRECATED: ClassVar[bool] = True
     {%- endif %}
     {%- if class.named_individuals %}
-    NAMED_INDIVIDUALS: Dict[str, str] = {
+    NAMED_INDIVIDUALS: ClassVar[Dict[str, str]] = {
         {%- for member in class.named_individuals %}
         {%- if member.comment %}
         {%- for l in member.comment.split("\n") %}
@@ -2973,7 +2974,7 @@ class {{ varname(*class.clsname) }}(
     {%- endif %}
 
     {%- if class.properties %}
-    PROPERTIES = [
+    PROPERTIES: ClassVar[List[ClassProp]] = [
     {%- for prop in class.properties %}
         {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
         {%- if prop.comment %}

@@ -746,7 +746,7 @@ class SHACLObjectMeta(type):
     """Metaclass for SHACLObject that processes PROPERTIES, slots, and named individuals at class creation time."""
 
     def __new__(cls, name, bases, attrs):
-        def check_base_prop(name):
+        def check_base_prop(name: str) -> bool:
             return any(hasattr(b, name) or name in b._EXTRA_SLOTS for b in bases)
 
         is_base = name == "SHACLObject"
@@ -761,7 +761,8 @@ class SHACLObjectMeta(type):
         py_properties = {}
         iri_properties = {}
         compact_properties = {}
-        for p in attrs.get("PROPERTIES", []):
+        props: List[ClassProp] = attrs.get("PROPERTIES", [])
+        for p in props:
             if not is_base:
                 for b in bases:
                     if p.pyname in b._OBJ_PY_PROPS or p.pyname in b._EXTRA_SLOTS:
@@ -885,7 +886,7 @@ T_SHACLObject = TypeVar("T_SHACLObject", bound="SHACLObject")
 class SHACLObject(metaclass=SHACLObjectMeta):
     """Base class for all SHACL-defined objects, providing property access, encoding, and decoding."""
 
-    CLASSES: ClassVar[Dict[str, Type]] = {}
+    CLASSES: ClassVar[Dict[str, Type[SHACLObject]]] = {}
 
     # Class properties that can be set in derived classes:
 
@@ -1041,7 +1042,7 @@ class SHACLObject(metaclass=SHACLObjectMeta):
             )
         object.__setattr__(self, p.pyname, p.prop.set(value))
 
-    def __del(self, p: ClassProp):
+    def __del(self, p: ClassProp) -> None:
         object.__setattr__(self, p.pyname, p.prop.init())
 
     def __get_attr(self, name: str) -> ClassProp:
@@ -1278,7 +1279,7 @@ class SHACLObject(metaclass=SHACLObjectMeta):
                 ),
             )
 
-    def __str__(self):
+    def __str__(self) -> str:
         parts = [
             f"{self.__class__.__name__}(",
         ]
@@ -1287,10 +1288,10 @@ class SHACLObject(metaclass=SHACLObjectMeta):
         parts.append(")")
         return "".join(parts)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return super().__hash__()
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         return super().__eq__(other)
 
     @staticmethod
@@ -1353,7 +1354,7 @@ class SHACLExtensibleObject(SHACLObject):
         return obj
 
     def _decode_properties(self, decoder: Decoder, state: DecodeState) -> None:
-        def decode_value(d):
+        def decode_value(d: Decoder) -> Any:
             if not d.is_list():
                 return d.read_value()
 
@@ -1378,6 +1379,7 @@ class SHACLExtensibleObject(SHACLObject):
                 )
 
             with decoder.read_property(key) as prop_d:
+                assert prop_d is not None
                 self._ext_data[expanded_key] = decode_value(prop_d)
 
     def _encode_properties(self, encoder: Encoder, state: EncodeState) -> None:
@@ -1787,7 +1789,7 @@ class SHACLObjectSet(object):
         elif objects:
             objects[0].encode(encoder, state)
 
-    def decode(self, decoder: Decoder, state: DecodeState):
+    def decode(self, decoder: Decoder, state: DecodeState) -> None:
         """Decode objects from the decoder and add them to this set, then link all references."""
         self.create_index()
         for obj_d in decoder.read_list():
@@ -1937,7 +1939,7 @@ class Decoder(ABC):
         raise NotImplementedError("Subclasses must implement read_iri method")
 
     @abstractmethod
-    def read_enum(self, e) -> Optional[str]:
+    def read_enum(self, e: EnumProp) -> Optional[str]:
         """
         Consumes the next item as an Enum value string
 
@@ -2093,7 +2095,7 @@ class JSONLDDecoder(Decoder):
             return self.data
         return None
 
-    def read_enum(self, e) -> Optional[str]:
+    def read_enum(self, e: EnumProp) -> Optional[str]:
         if isinstance(self.data, str):
             return self.data
         return None
@@ -2448,7 +2450,7 @@ class JSONLDSerializer(object):
         objectset: SHACLObjectSet,
         f: BinaryIO,
         force_at_graph: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ) -> str:
         """
         Write a SHACLObjectSet to a JSON LD file
@@ -2588,7 +2590,7 @@ class JSONLDInlineSerializer(object):
         objectset: SHACLObjectSet,
         f: BinaryIO,
         force_at_graph: bool = False,
-    ):
+    ) -> str:
         """
         Write a SHACLObjectSet to a JSON LD file
 
@@ -2613,7 +2615,7 @@ def encode_context(encoder: Encoder, objectset: SHACLObjectSet) -> None:
     if not context:
         return
 
-    def write_context(e, ctx):
+    def write_context(e: Encoder, ctx: Union[str, Dict[str, str]]) -> None:
         if isinstance(ctx, str):
             e.write_string(ctx)
         else:
@@ -2633,7 +2635,7 @@ def encode_context(encoder: Encoder, objectset: SHACLObjectSet) -> None:
 
 
 def decode_context(decoder: Decoder, objectset: SHACLObjectSet) -> None:
-    def _decode_ctx(d: Decoder):
+    def _decode_ctx(d: Decoder) -> None:
         if not d.is_object():
             return
 
@@ -2724,7 +2726,7 @@ try:
                 return v.n3()
             return None
 
-        def read_enum(self, e) -> Optional[str]:
+        def read_enum(self, e: EnumProp) -> Optional[str]:
             v = self.__read_node()
             if isinstance(v, URIRef):
                 return v.toPython()
@@ -2798,7 +2800,7 @@ try:
 
             return typ.toPython(), self.__class__(self.graph, s)
 
-        def read_object_id(self, alias=None) -> Optional[Any]:
+        def read_object_id(self, alias: Optional[str] = None) -> Optional[Any]:
             if isinstance(self.subject, BNode):
                 return self.subject.n3()
             if not isinstance(self.subject, IdentifiedNode):
@@ -2836,29 +2838,31 @@ try:
                 raise TypeError("Subject and predicate of URIRef value cannot be None")
             self.graph.add((self.subject, self.predicate, URIRef(v)))
 
-        def write_string(self, v):
+        def write_string(self, v: str) -> None:
             self.__add_literal(v)
 
-        def write_datetime(self, v):
+        def write_datetime(self, v: str) -> None:
             self.__add_literal(v)
 
-        def write_integer(self, v):
+        def write_integer(self, v: int) -> None:
             self.__add_literal(v)
 
-        def write_iri(self, v, compact=None):
+        def write_iri(self, v: str, compact: Optional[str] = None) -> None:
             self.__add_uriref(v)
 
-        def write_enum(self, v, e, compact=None):
+        def write_enum(self, v: str, e: Any, compact: Optional[str] = None) -> None:
             self.__add_uriref(v)
 
-        def write_bool(self, v):
+        def write_bool(self, v: bool) -> None:
             self.__add_literal(v)
 
-        def write_float(self, v):
+        def write_float(self, v: float) -> None:
             self.__add_literal(v)
 
         @contextmanager
-        def write_property(self, iri: str, compact: Optional[str] = None):
+        def write_property(
+            self, iri: str, compact: Optional[str] = None
+        ) -> Iterator[Encoder]:
             yield self.__class__(self.graph, self.subject, URIRef(iri))
 
         @contextmanager
@@ -2870,7 +2874,7 @@ try:
             _id: str,
             compact_id: Optional[str],
             needs_id: bool,
-        ):
+        ) -> Iterator[Encoder]:
             obj: Node
             if _id.startswith("_:"):
                 obj = BNode(_id[2:])
@@ -2885,19 +2889,19 @@ try:
             yield self.__class__(self.graph, obj)
 
         @contextmanager
-        def write_list(self):
+        def write_list(self) -> Iterator["RDFEncoder"]:
             yield self
 
         @contextmanager
-        def write_list_item(self):
+        def write_list_item(self) -> Iterator["RDFEncoder"]:
             yield self
 
         @contextmanager
-        def write_object_list(self):
+        def write_object_list(self) -> Iterator["RDFEncoder"]:
             yield self
 
         @contextmanager
-        def write_dict(self):
+        def write_dict(self) -> Iterator["RDFEncoder"]:
             yield self
 
     class RDFSerializer(object):

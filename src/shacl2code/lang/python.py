@@ -58,8 +58,6 @@ class PythonRender(JinjaTemplateRender):
 
     FILES = (
         "__init__.py",
-        "__main__.py",
-        "cmd.py",
         "model.py",
         "stub.pyi",
     )
@@ -68,6 +66,7 @@ class PythonRender(JinjaTemplateRender):
         super().__init__(args)
         self.__output = args.output
         self.__use_slots = args.use_slots
+        self.__include_main = args.include_main == "yes"
 
     @classmethod
     def get_arguments(cls, parser):
@@ -77,6 +76,12 @@ class PythonRender(JinjaTemplateRender):
             type=Path,
             help="Output directory",
             required=True,
+        )
+        parser.add_argument(
+            "--include-main",
+            choices=("yes", "no"),
+            default="yes",
+            help="Generate a main function for the module. Default is '%(default)s'",
         )
         parser.add_argument(
             "--use-slots",
@@ -92,8 +97,15 @@ class PythonRender(JinjaTemplateRender):
         t = TEMPLATE_DIR / "python"
         self.__output.mkdir(parents=True, exist_ok=True)
 
+        def get_file(name):
+            return self.__output / name, t / (name + ".j2"), {}
+
         for s in self.FILES:
-            yield self.__output / s, t / (s + ".j2"), {}
+            yield get_file(s)
+
+        if self.__include_main:
+            yield get_file("cmd.py")
+            yield get_file("__main__.py")
 
     def get_extra_env(self):
         return {
@@ -111,4 +123,5 @@ class PythonRender(JinjaTemplateRender):
             use_slots = False
         return {
             "use_slots": use_slots,
+            "include_main": self.__include_main,
         }

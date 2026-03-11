@@ -112,30 +112,46 @@ def model(python_model):
         sys.path = old_path
 
 
-@pytest.mark.parametrize(
-    "args",
+MODEL_TESTS = [
+    "args,python_args",
     [
-        ["--input", TEST_MODEL],
-        ["--input", TEST_MODEL, "--context-url", TEST_CONTEXT, SPDX3_CONTEXT_URL],
+        pytest.param(
+            ["--input", TEST_MODEL],
+            [],
+            id="Model",
+        ),
+        pytest.param(
+            ["--input", TEST_MODEL, "--context-url", TEST_CONTEXT, SPDX3_CONTEXT_URL],
+            [],
+            id="Context URL",
+        ),
+        pytest.param(
+            ["--input", TEST_MODEL],
+            ["--include-main=no"],
+            id="No main",
+        ),
     ],
-)
+]
+
+
+@pytest.mark.parametrize(*MODEL_TESTS)
 class TestOutput:
     """
     Test syntax and formatting of the output file
     """
 
-    def test_output_syntax(self, model_script, args):
+    def test_output_syntax(self, model_script, args, python_args):
         """
         Checks that the output file is valid python syntax by executing it"
         """
         subprocess.run([model_script, "--help"], check=True)
 
-    def test_trailing_whitespace(self, tmp_path, args):
+    def test_trailing_whitespace(self, tmp_path, args, python_args):
         """
         Tests that the generated file does not have trailing whitespace
         """
         output_dir = tmp_path / "output"
-        shacl2code_generate(args, [], output_dir)
+        shacl2code_generate(args, python_args, output_dir)
 
         for p in output_dir.iterdir():
             for num, line in enumerate(p.read_text().splitlines()):
@@ -143,48 +159,42 @@ class TestOutput:
                     re.search(r"\s+$", line) is None
                 ), f"{p}: Line {num + 1} has trailing whitespace"
 
-    def test_tabs(self, tmp_path, args):
+    def test_tabs(self, tmp_path, args, python_args):
         """
         Tests that the output file doesn't contain tabs
         """
         output_dir = tmp_path / "output"
-        shacl2code_generate(args, [], output_dir)
+        shacl2code_generate(args, python_args, output_dir)
 
         for p in output_dir.iterdir():
             for num, line in enumerate(p.read_text().splitlines()):
                 assert "\t" not in line, f"{p}: Line {num + 1} has tabs"
 
 
-@pytest.mark.parametrize(
-    "args",
-    [
-        ["--input", TEST_MODEL],
-        ["--input", TEST_MODEL, "--context-url", TEST_CONTEXT, SPDX3_CONTEXT_URL],
-    ],
-)
+@pytest.mark.parametrize(*MODEL_TESTS)
 class TestCheckType:
     """
     Static type checking tests for the generated Python code
     """
 
-    def test_mypy(self, tmp_path, args):
+    def test_mypy(self, tmp_path, args, python_args):
         """
         Mypy static type checking
         """
         output_dir = tmp_path / "model"
-        shacl2code_generate(args, [], output_dir)
+        shacl2code_generate(args, python_args, output_dir)
         subprocess.run(
             ["mypy"] + list(output_dir.iterdir()),
             encoding="utf-8",
             check=True,
         )
 
-    def test_pyrefly(self, tmp_path, args):
+    def test_pyrefly(self, tmp_path, args, python_args):
         """
         Pyrefly static type checking
         """
         output_dir = tmp_path / "model"
-        shacl2code_generate(args, [], output_dir)
+        shacl2code_generate(args, python_args, output_dir)
         subprocess.run(
             ["pyrefly", "check", "--search-path", tmp_path]
             + list(output_dir.iterdir()),
@@ -192,24 +202,24 @@ class TestCheckType:
             check=True,
         )
 
-    def test_pyright(self, tmp_path, args):
+    def test_pyright(self, tmp_path, args, python_args):
         """
         Pyright static type checking
         """
         output_dir = tmp_path / "model"
-        shacl2code_generate(args, [], output_dir)
+        shacl2code_generate(args, python_args, output_dir)
         subprocess.run(
             ["pyright"] + list(output_dir.iterdir()),
             encoding="utf-8",
             check=True,
         )
 
-    def test_flake8(self, tmp_path, args):
+    def test_flake8(self, tmp_path, args, python_args):
         """
         Flake8 linting
         """
         output_dir = tmp_path / "model"
-        shacl2code_generate(args, [], output_dir)
+        shacl2code_generate(args, python_args, output_dir)
         subprocess.run(
             ["flake8", "--config", TOP_DIR / ".flake8"] + list(output_dir.iterdir()),
             encoding="utf-8",

@@ -4,5 +4,12 @@
 #
 # SPDX-License-Identifier: {{ spdx_license }}
 
-from .cmd import main  # noqa: F401
 from .model import *  # noqa: F401, F403
+
+# fmt: off
+"""Format Guard{{ '"' }}{{ '"' }}{{ '"' }}
+{%- if include_main %}
+from .cmd import main  # noqa: F401, I100, I202
+{%- endif %}
+{{ '"' }}{{ '"' }}{{ '"' }}Format Guard"""
+# fmt on

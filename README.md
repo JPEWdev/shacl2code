@@ -14,12 +14,13 @@
 | src/shacl2code/lang/jinja.py        |       12 |        0 |     100% |           |
 | src/shacl2code/lang/jsonschema.py   |       26 |        0 |     100% |           |
 | src/shacl2code/lang/lang.py         |        8 |        0 |     100% |           |
-| src/shacl2code/lang/python.py       |       48 |        0 |     100% |           |
+| src/shacl2code/lang/python.py       |       54 |        0 |     100% |           |
 | src/shacl2code/main.py              |       70 |        0 |     100% |           |
 | src/shacl2code/model.py             |      181 |        0 |     100% |           |
 | src/shacl2code/urlcontext.py        |       14 |        0 |     100% |           |
+| src/shacl2code/util.py              |       15 |        0 |     100% |           |
 | src/shacl2code/version.py           |        1 |        0 |     100% |           |
-|                           **TOTAL** |  **823** |    **0** | **100%** |           |
+|                           **TOTAL** |  **844** |    **0** | **100%** |           |
 
 
 ## Setup coverage badge

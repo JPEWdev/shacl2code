@@ -264,9 +264,34 @@ def python_usage_script(python_model_env, tmp_path):
     script_path = tmp_path / "script.py"
     script_path.write_text(textwrap.dedent(f"""
             #! /usr/bin/env python3
+            from typing import ClassVar, Iterable, List, Union
             import {module_name}
 
             print({module_name}.enumType.foo)
+
+            class OERecipeExtension({module_name}.extensible_abstract_class):
+                TYPE: ClassVar[str] = "http://example.org/recipe-extension"
+                NODE_KIND: ClassVar[{module_name}.NodeKind] = {module_name}.NodeKind.BlankNodeOrIRI
+                PROPERTIES: ClassVar[List[{module_name}.ClassProp]] = [
+                    {module_name}.ClassProp(
+                        "is_native",
+                        lambda: {module_name}.BooleanProp(),
+                        iri="http://example.org/is-native",
+                        max_count=1,
+                    ),
+                ]
+
+            def test1(o: {module_name}.link_class) -> int:
+                return len(o.link_class_link_list_prop)
+
+            def test2(o: {module_name}.link_class) -> Iterable[Union[{module_name}.link_class, str]]:
+                yield from o.link_class_link_list_prop
+
+            def test3(a: {module_name}.link_class, b: {module_name}.link_class) -> bool:
+                return a in b.link_class_link_list_prop
+
+            def test4(lst: Iterable[{module_name}.SHACLObject]) -> List[{module_name}.SHACLObject]:
+                return sorted(lst)
             """))
 
     # Validate the script runs

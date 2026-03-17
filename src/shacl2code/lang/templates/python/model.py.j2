@@ -21,23 +21,26 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Generic, TYPE_CHECKING, TypeVar, Union, cast, overload
-
-if TYPE_CHECKING:
-    from typing import (
-        Any,
-        BinaryIO,
-        Callable,
-        ClassVar,
-        Dict,
-        Iterable,
-        Iterator,
-        List,
-        Optional,
-        Set,
-        Tuple,
-        Type,
-    )
+from typing import (
+    Any,
+    BinaryIO,
+    Callable,
+    ClassVar,
+    Dict,
+    Generic,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Set,
+    TYPE_CHECKING,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 T_PropV = TypeVar("T_PropV")
 
@@ -2658,7 +2661,7 @@ try:
     from rdflib.term import IdentifiedNode
 
     if TYPE_CHECKING:
-        from rdflib import Graph
+        from rdflib import Graph  # noqa: I300
         from rdflib.term import Node
 
     class RDFDecoder(Decoder):

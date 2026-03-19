@@ -30,13 +30,14 @@ license = "MIT"
 dev = [
     "flake8 >= 7.0.0",
     "flake8-import-order >= 0.19.2",
-    "jsonschema >= 4.21.1",
+    "jsonschema >= 4.23.0",  # latest version for Python 3.8 is 4.23.x
     "mypy >= 1.14.1",  # latest version for Python 3.8 is 1.14.x
     "pyrefly >= 0.55.0",
     "pyright >= 1.1.403",
     "pyshacl >= 0.25.0",
     "pytest >= 7.4",
     "pytest-cov >= 4.1",
+    "types-jsonschema >= 4.23.0",
 ]
 
 [project.urls]
@@ -53,6 +54,23 @@ build-backend = "hatchling.build"
 
 [tool.hatch.version]
 path = "src/shacl2code/version.py"
+
+[tool.mypy]
+disallow_incomplete_defs = true
+# disallow_untyped_defs = true
+extra_checks = true
+mypy_path = ["testfixtures"]
+pretty = true
+# strict = true
+strict_bytes = true
+# strict_equality = true
+strict_equality_for_none = true
+strict_optional = true
+warn_no_return = true
+warn_redundant_casts = true
+# warn_return_any = true
+# warn_unreachable = true
+# warn_unused_ignores = true
 
 [tool.pytest.ini_options]
 addopts = [

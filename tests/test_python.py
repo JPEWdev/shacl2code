@@ -135,7 +135,7 @@ def model(python_model):
         sys.path = old_path
 
 
-MODEL_TESTS = [
+MODEL_TESTS = (
     "args,python_args",
     [
         pytest.param(
@@ -155,7 +155,7 @@ MODEL_TESTS = [
         ),
         pytest.param(["--input", TEST_MODEL], ["--version=1.0.0"], id="Version"),
     ],
-]
+)
 
 
 @pytest.mark.parametrize(*MODEL_TESTS)

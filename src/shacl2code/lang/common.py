@@ -57,7 +57,7 @@ class JinjaTemplateRender(object):
         if render_args is None:
             render_args = {}  # pragma: no cover
 
-        def abort_helper(msg: str):
+        def abort_helper(msg: str) -> None:
             raise TemplateRuntimeError(msg)
 
         env = Environment(loader=FileSystemLoader([template.parent, THIS_DIR.parent]))

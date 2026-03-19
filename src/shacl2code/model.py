@@ -4,8 +4,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-import typing
 from dataclasses import dataclass, field
+from typing import List, Optional
 
 from rdflib import URIRef
 from rdflib.namespace import (
@@ -74,9 +74,9 @@ class Property:
     path: str
     varname: str
     comment: str = ""
-    max_count: int = None
-    min_count: int = None
-    enum_values: list = field(default_factory=list)
+    max_count: Optional[int] = None
+    min_count: Optional[int] = None
+    enum_values: List[str] = field(default_factory=list)
     class_id: str = ""
     datatype: str = ""
     pattern: str = ""
@@ -87,15 +87,15 @@ class Property:
 class Class:
     _id: str
     clsname: str
-    parent_ids: typing.List[str]
-    derived_ids: list
-    properties: typing.List[Property]
+    parent_ids: List[str]
+    derived_ids: List[str]
+    properties: List[Property]
     comment: str = ""
     id_property: str = ""
-    node_kind: str = None
+    node_kind: Optional[str] = None
     is_extensible: bool = False
     is_abstract: bool = False
-    named_individuals: list = None
+    named_individuals: Optional[List[Individual]] = None
     deprecated: bool = False
 
 

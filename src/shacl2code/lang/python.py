@@ -67,7 +67,7 @@ def varname(*name):
     name = re.sub(r"[^a-zA-Z0-9_]", "_", name)
     # Consolidate runs of "_" to a single one
     name = re.sub(r"__+", "_", name)
-    # Add a _ to anything that is a python keyword
+    # Append '_' to avoid collisions with Python or SHACLObject keywords
     while keyword.iskeyword(name) or name in SHACLOBJECT_RESERVED_WORDS:
         name = name + "_"
     return name

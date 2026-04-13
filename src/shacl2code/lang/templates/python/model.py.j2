@@ -1009,9 +1009,7 @@ class SHACLObject(metaclass=SHACLObjectMeta):
             setattr(self, k, v)
 
     def get_id(self) -> Optional[str]:
-        """
-        Return the IRI or blank node ID of this object, or None if not set
-        """
+        """Return the IRI or blank node ID of this object, or None if not set."""
         return self._id
 
     def get_type(self) -> str:

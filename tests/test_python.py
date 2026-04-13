@@ -679,6 +679,11 @@ def test_node_kind_iri(model, test_context_url, cls):
     ["id_prop_class", "inherited_id_prop_class"],
 )
 def test_id_name(model, test_context_url, cls):
+    """
+    Test that alternate ID property names work correctly,
+    including serialization and initialization.
+    """
+
     s = model.JSONLDSerializer()
     c = getattr(model, cls)()
 
@@ -696,7 +701,7 @@ def test_id_name(model, test_context_url, cls):
     assert c.testid is None
     assert c._id is None
 
-    # Serialization should the alias name
+    # Serialization should use the alias name
     c._id = TEST_ID
     result = s.serialize_data(model.SHACLObjectSet([c]))
     assert result == {

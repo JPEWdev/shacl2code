@@ -440,8 +440,8 @@ class {{ varname(*class.clsname) }}(
         {%- if class.is_extensible %}
         typ: Optional[str] = None,
         {%- endif %}
+        {%- if class.id_property or class.properties %}
         *,
-        _id: Optional[str] = None,
         {%- if class.id_property %}
         {{ class.id_property }}: Optional[str] = None,
         {%- endif %}
@@ -460,6 +460,7 @@ class {{ varname(*class.clsname) }}(
         {{ varname(prop.varname) }}: Optional[{{ ptype }}] = None,
         {%- endif %}
         {%- endfor %}
+        {%- endif %}
         **kwargs: Any
     ) -> None: ...
 

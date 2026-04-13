@@ -1326,6 +1326,10 @@ class SHACLExtensibleObject(SHACLObject):
 
         super().__init__(**kwargs)
 
+    def get_id(self) -> Optional[str]:
+        """Return the IRI or blank node ID of this object, or None if not set."""
+        return self._id
+
     def get_type(self) -> str:
         """Return the type IRI stored in the extensible data, which may differ from the class TYPE."""
         return self._extensible["type"]

@@ -705,9 +705,9 @@ def test_id_name(model, test_context_url, cls):
         "testid": TEST_ID,
     }
 
-    # Also test initialization using ID alias
+    # Test initialization using ID alias
     c2 = getattr(model, cls)(testid=TEST_ID)
-    assert c2._id == TEST_ID
+    assert c2.get_id() == TEST_ID
     assert c2.testid == TEST_ID
 
 

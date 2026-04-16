@@ -1740,6 +1740,44 @@ def test_objset_foreach_type(model, roundtrip):
     assert set(objset.foreach_type(model.abstract_class, match_subclass=True)) == expect
 
 
+def test_objset_remove(model):
+    """
+    Tests that removing an object from the object set works correctly
+    """
+    obj1 = model.test_class(_id="https://example.org/obj1")
+    obj2 = model.test_class(_id="https://example.org/obj2")
+
+    objset = model.SHACLObjectSet([obj1, obj2])
+    assert obj1 in objset
+    assert obj2 in objset
+
+    objset.remove(obj1)
+
+    assert obj1 not in objset
+    assert obj2 in objset
+
+
+def test_objset_remove_not_existing(model):
+    """
+    Tests that removing an object that is not in the object set does not
+    raise an error. It should just do nothing silently.
+    """
+    obj = model.test_class(_id="https://example.org/obj")
+    objset = model.SHACLObjectSet()
+
+    objset.remove(obj)
+
+
+def test_objset_remove_invalid_type(model):
+    """
+    Tests that removing an object that is not a SHACLObject raises a TypeError
+    """
+    objset = model.SHACLObjectSet()
+
+    with pytest.raises(TypeError):
+        objset.remove("not-a-shacl-object")
+
+
 @pytest.mark.parametrize(
     "abstract,concrete",
     [

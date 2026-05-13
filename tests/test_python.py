@@ -1986,13 +1986,13 @@ def test_varname_reserved_words(tmp_path):
     # Generated source must contain the renamed names, not the originals
     text = (output_dir / "model.py").read_text()
     for renamed in ("get_id_", "set_id_", "encode_", "class_"):
-        assert renamed in text, (
-            f"expected renamed property '{renamed}' in generated code"
-        )
+        assert (
+            renamed in text
+        ), f"expected renamed property '{renamed}' in generated code"
     for original in ('"get_id"', '"set_id"', '"encode"', '"class"'):
-        assert f"ClassProp({original}," not in text, (
-            f"unrenamed property {original} found as ClassProp pyname"
-        )
+        assert (
+            f"ClassProp({original}," not in text
+        ), f"unrenamed property {original} found as ClassProp pyname"
 
     # Import the generated module and exercise the renamed properties
     old_path = sys.path[:]

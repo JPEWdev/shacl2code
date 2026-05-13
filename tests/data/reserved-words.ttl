@@ -4,8 +4,7 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-# A class whose properties collide with
-# SHACLObject keywords and Python keywords.
+# A class whose properties collide with SHACLObject keywords.
 
 <test-rw-class> a rdfs:Class, sh:NodeShape, owl:Class;
     sh:property [

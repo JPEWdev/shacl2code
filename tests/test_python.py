@@ -1971,6 +1971,56 @@ def test_slots_no(tmp_path):
     assert "_USE_SLOTS = False" in text
 
 
+RESERVED_WORDS_MODEL = DATA_DIR / "reserved-words.ttl"
+
+
+def test_varname_reserved_words(tmp_path):
+    """
+    varname() must append '_' to property names that collide with
+    SHACLOBJECT_RESERVED_WORDS or Python keywords so that the generated
+    ClassProp pyname, the __init__ kwargs, and _OBJ_PY_PROPS keys all agree.
+    """
+    output_dir = tmp_path / "temp_rwmodel"
+    shacl2code_generate(["--input", RESERVED_WORDS_MODEL], [], output_dir)
+
+    # Generated source must contain the renamed names, not the originals
+    text = (output_dir / "model.py").read_text()
+    for renamed in ("get_id_", "set_id_", "encode_", "class_"):
+        assert renamed in text, (
+            f"expected renamed property '{renamed}' in generated code"
+        )
+    for original in ('"get_id"', '"set_id"', '"encode"', '"class"'):
+        assert f"ClassProp({original}," not in text, (
+            f"unrenamed property {original} found as ClassProp pyname"
+        )
+
+    # Import the generated module and exercise the renamed properties
+    old_path = sys.path[:]
+    sys.path.append(str(tmp_path))
+    try:
+        import temp_rwmodel as m  # noqa: PLC0415
+
+        cls = m.SHACLObject.CLASSES["http://example.org/test-rw-class"]
+
+        # Renamed kwargs must work at construction time
+        obj = cls(get_id_="a", set_id_="b", encode_="c", class_="d")
+        assert obj.get_id_ == "a"
+        assert obj.set_id_ == "b"
+        assert obj.encode_ == "c"
+        assert obj.class_ == "d"
+
+        # SHACLObject.get_id() must still return the object IRI,
+        # not the value of the prop (get_id_)
+        assert obj.get_id() is None
+        obj.set_id("http://example.org/obj")
+        assert obj.get_id() == "http://example.org/obj"
+    finally:
+        sys.path = old_path
+        for mod in list(sys.modules):
+            if mod == "rwmodel" or mod.startswith("rwmodel."):
+                del sys.modules[mod]
+
+
 def test_extensible_properties(model, model_context_url):
 
     class Extension(model.extensible_class):

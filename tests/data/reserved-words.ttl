@@ -1,0 +1,35 @@
+@base <http://example.org/reserved#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# A class whose properties collide with
+# SHACLObject keywords and Python keywords.
+
+<test-rw-class> a rdfs:Class, sh:NodeShape, owl:Class;
+    sh:property [
+        sh:datatype xsd:string ;
+        sh:name "get_id" ;
+        sh:path <prop/get_id> ;
+        sh:maxCount 1
+    ],
+    [
+        sh:datatype xsd:string ;
+        sh:name "set_id" ;
+        sh:path <prop/set_id> ;
+        sh:maxCount 1
+    ],
+    [
+        sh:datatype xsd:string ;
+        sh:name "encode" ;
+        sh:path <prop/encode> ;
+        sh:maxCount 1
+    ],
+    [
+        sh:datatype xsd:string ;
+        sh:name "class" ;
+        sh:path <prop/class> ;
+        sh:maxCount 1
+    ]
+    .

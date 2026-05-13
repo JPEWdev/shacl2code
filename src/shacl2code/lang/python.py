@@ -50,10 +50,12 @@ SHACLOBJECT_RESERVED_WORDS = {
     "decode",
     "encode",
     "get_compact_type",
+    "get_id",
     "get_type",
     "iter_objects",
     "link_helper",
     "property_keys",
+    "set_id",
     "walk",
 }
 

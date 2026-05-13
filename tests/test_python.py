@@ -716,6 +716,64 @@ def test_id_name(model, test_context_url, cls):
     assert c2.testid == TEST_ID
 
 
+def test_get_id_none(model):
+    """get_id returns None when no ID is set."""
+    c = model.test_class()
+    assert c.get_id() is None
+
+
+def test_get_id_set(model):
+    """get_id returns the assigned IRI."""
+    c = model.test_class()
+    c._id = "http://example.com/obj"
+    assert c.get_id() == "http://example.com/obj"
+
+
+def test_set_id(model):
+    """set_id assigns the IRI."""
+    c = model.test_class()
+    c.set_id("http://example.com/obj")
+    assert c._id == "http://example.com/obj"
+    assert c.get_id() == "http://example.com/obj"
+
+
+def test_set_id_none(model):
+    """set_id(None) clears the ID."""
+    c = model.test_class()
+    c.set_id("http://example.com/obj")
+    c.set_id(None)
+    assert c.get_id() is None
+    assert c._id is None
+
+
+def test_set_id_roundtrip(model, test_context_url):
+    """Object serialized with set_id value encodes correct @id."""
+    s = model.JSONLDSerializer()
+    c = model.test_class()
+    c.set_id("http://example.com/set-id-obj")
+    result = s.serialize_data(model.SHACLObjectSet([c]))
+    assert result["@id"] == "http://example.com/set-id-obj"
+
+
+@pytest.mark.parametrize("cls", ["id_prop_class", "inherited_id_prop_class"])
+def test_get_id_with_alias(model, cls):
+    """get_id returns ID set via alias property."""
+    # id-prop-class is a class with an ID alias "testid"
+    c = getattr(model, cls)()
+    c.testid = "http://example.com/alias-obj"
+    assert c.get_id() == "http://example.com/alias-obj"
+
+
+@pytest.mark.parametrize("cls", ["id_prop_class", "inherited_id_prop_class"])
+def test_set_id_with_alias(model, cls):
+    """set_id makes ID accessible through alias property."""
+    # id-prop-class is a class with an ID alias "testid"
+    c = getattr(model, cls)()
+    c.set_id("http://example.com/alias-obj")
+    assert c.testid == "http://example.com/alias-obj"
+    assert c.get_id() == "http://example.com/alias-obj"
+
+
 SAME_AS_VALUE = object()
 
 

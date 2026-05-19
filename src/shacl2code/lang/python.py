@@ -36,6 +36,30 @@ DATATYPE_PYTHON_TYPES = {
 }
 
 
+SHACLOBJECT_RESERVED_WORDS = {
+    "AUTO_NAMED_INDIVIDUALS",
+    "CLASSES",
+    "COMPACT_TYPE",
+    "ID_ALIAS",
+    "IS_ABSTRACT",
+    "IS_DEPRECATED",
+    "NAMED_INDIVIDUALS",
+    "NODE_KIND",
+    "PROPERTIES",
+    "TYPE",
+    "decode",
+    "encode",
+    "get_compact_type",
+    "get_id",
+    "get_type",
+    "iter_objects",
+    "link_helper",
+    "property_keys",
+    "set_id",
+    "walk",
+}
+
+
 def varname(*name):
     """Make a valid Python variable name."""
     name = "_".join(name)
@@ -45,8 +69,8 @@ def varname(*name):
     name = re.sub(r"[^a-zA-Z0-9_]", "_", name)
     # Consolidate runs of "_" to a single one
     name = re.sub(r"__+", "_", name)
-    # Add a _ to anything that is a python keyword
-    while keyword.iskeyword(name):
+    # Append '_' to avoid collisions with Python or SHACLObject keywords
+    while keyword.iskeyword(name) or name in SHACLOBJECT_RESERVED_WORDS:
         name = name + "_"
     return name
 

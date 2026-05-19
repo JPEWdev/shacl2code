@@ -679,6 +679,11 @@ def test_node_kind_iri(model, test_context_url, cls):
     ["id_prop_class", "inherited_id_prop_class"],
 )
 def test_id_name(model, test_context_url, cls):
+    """
+    Test that alternate ID property names work correctly,
+    including serialization and initialization.
+    """
+
     s = model.JSONLDSerializer()
     c = getattr(model, cls)()
 
@@ -696,7 +701,7 @@ def test_id_name(model, test_context_url, cls):
     assert c.testid is None
     assert c._id is None
 
-    # Serialization should the alias name
+    # Serialization should use the alias name
     c._id = TEST_ID
     result = s.serialize_data(model.SHACLObjectSet([c]))
     assert result == {
@@ -704,6 +709,69 @@ def test_id_name(model, test_context_url, cls):
         "@type": cls.replace("_", "-"),
         "testid": TEST_ID,
     }
+
+    # Test initialization using ID alias
+    c2 = getattr(model, cls)(testid=TEST_ID)
+    assert c2.get_id() == TEST_ID
+    assert c2.testid == TEST_ID
+
+
+def test_get_id_none(model):
+    """get_id returns None when no ID is set."""
+    c = model.test_class()
+    assert c.get_id() is None
+
+
+def test_get_id_set(model):
+    """get_id returns the assigned IRI."""
+    c = model.test_class()
+    c._id = "http://example.com/obj"
+    assert c.get_id() == "http://example.com/obj"
+
+
+def test_set_id(model):
+    """set_id assigns the IRI."""
+    c = model.test_class()
+    c.set_id("http://example.com/obj")
+    assert c._id == "http://example.com/obj"
+    assert c.get_id() == "http://example.com/obj"
+
+
+def test_set_id_none(model):
+    """set_id(None) clears the ID."""
+    c = model.test_class()
+    c.set_id("http://example.com/obj")
+    c.set_id(None)
+    assert c.get_id() is None
+    assert c._id is None
+
+
+def test_set_id_roundtrip(model, test_context_url):
+    """Object serialized with set_id value encodes correct @id."""
+    s = model.JSONLDSerializer()
+    c = model.test_class()
+    c.set_id("http://example.com/set-id-obj")
+    result = s.serialize_data(model.SHACLObjectSet([c]))
+    assert result["@id"] == "http://example.com/set-id-obj"
+
+
+@pytest.mark.parametrize("cls", ["id_prop_class", "inherited_id_prop_class"])
+def test_get_id_with_alias(model, cls):
+    """get_id returns ID set via alias property."""
+    # id-prop-class is a class with an ID alias "testid"
+    c = getattr(model, cls)()
+    c.testid = "http://example.com/alias-obj"
+    assert c.get_id() == "http://example.com/alias-obj"
+
+
+@pytest.mark.parametrize("cls", ["id_prop_class", "inherited_id_prop_class"])
+def test_set_id_with_alias(model, cls):
+    """set_id makes ID accessible through alias property."""
+    # id-prop-class is a class with an ID alias "testid"
+    c = getattr(model, cls)()
+    c.set_id("http://example.com/alias-obj")
+    assert c.testid == "http://example.com/alias-obj"
+    assert c.get_id() == "http://example.com/alias-obj"
 
 
 SAME_AS_VALUE = object()
@@ -1903,6 +1971,56 @@ def test_slots_no(tmp_path):
     assert "_USE_SLOTS = False" in text
 
 
+RESERVED_WORDS_MODEL = DATA_DIR / "reserved-words.ttl"
+
+
+def test_varname_reserved_words(tmp_path):
+    """
+    varname() must append '_' to property names that collide with
+    SHACLOBJECT_RESERVED_WORDS or Python keywords so that the generated
+    ClassProp pyname, the __init__ kwargs, and _OBJ_PY_PROPS keys all agree.
+    """
+    output_dir = tmp_path / "temp_rwmodel"
+    shacl2code_generate(["--input", RESERVED_WORDS_MODEL], [], output_dir)
+
+    # Generated source must contain the renamed names, not the originals
+    text = (output_dir / "model.py").read_text()
+    for renamed in ("get_id_", "set_id_", "encode_", "class_"):
+        assert (
+            renamed in text
+        ), f"expected renamed property '{renamed}' in generated code"
+    for original in ('"get_id"', '"set_id"', '"encode"', '"class"'):
+        assert (
+            f"ClassProp({original}," not in text
+        ), f"unrenamed property {original} found as ClassProp pyname"
+
+    # Import the generated module and exercise the renamed properties
+    old_path = sys.path[:]
+    sys.path.append(str(tmp_path))
+    try:
+        import temp_rwmodel as m  # noqa: PLC0415
+
+        cls = m.SHACLObject.CLASSES["http://example.org/test-rw-class"]
+
+        # Renamed kwargs must work at construction time
+        obj = cls(get_id_="a", set_id_="b", encode_="c", class_="d")
+        assert obj.get_id_ == "a"
+        assert obj.set_id_ == "b"
+        assert obj.encode_ == "c"
+        assert obj.class_ == "d"
+
+        # SHACLObject.get_id() must still return the object IRI,
+        # not the value of the prop (get_id_)
+        assert obj.get_id() is None
+        obj.set_id("http://example.org/obj")
+        assert obj.get_id() == "http://example.org/obj"
+    finally:
+        sys.path = old_path
+        for mod in list(sys.modules):
+            if mod == "rwmodel" or mod.startswith("rwmodel."):
+                del sys.modules[mod]
+
+
 def test_extensible_properties(model, model_context_url):
 
     class Extension(model.extensible_class):
@@ -2151,6 +2269,9 @@ def test_introspection_extensible(model):
 
 
 def test_version(model):
+    """
+    Tests that the version string is correctly mapped.
+    """
     from shacl2code.util import convert_version_string
 
     assert model.VERSION_STRING == MODEL_VERSION

@@ -1008,6 +1008,18 @@ class SHACLObject(metaclass=SHACLObjectMeta):
         for k, v in kwargs.items():
             setattr(self, k, v)
 
+    def get_id(self) -> Optional[str]:
+        """Return the IRI or blank node ID of this object, or None if not set."""
+        return self._id
+
+    def set_id(self, value: Optional[str]) -> None:
+        """Set the IRI or blank node ID of this object,
+        or clear it if value is None."""
+        if value is None:
+            del self._id
+        else:
+            self._id = value
+
     def get_type(self) -> str:
         """Return the fully qualified IRI type of this object."""
         return self._TYPE

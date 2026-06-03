@@ -3,6 +3,7 @@
 # Copyright (c) 2024 Joshua Watt
 #
 # SPDX-License-Identifier: MIT
+"""SHACL model parsing and data class definitions"""
 
 from dataclasses import dataclass, field
 from typing import List, Optional

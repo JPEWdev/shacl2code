@@ -38,8 +38,7 @@ def _build_rust_prog(test_lib, tmp_path, name, code):
     (tmp_path / "src").mkdir(exist_ok=True)
 
     cargo_toml = tmp_path / "Cargo.toml"
-    cargo_toml.write_text(
-        textwrap.dedent(f"""\
+    cargo_toml.write_text(textwrap.dedent(f"""\
             [package]
             name = "{name}"
             version = "0.1.0"

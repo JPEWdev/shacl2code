@@ -234,7 +234,7 @@ def validate_test(test_lib, tmp_path_factory):
                 p.returncode == 0
             ), f"Validation failed when a pass was expected. stderr: {p.stderr}"
         else:
-            assert p.returncode != 0, f"Validation passed when a failure was expected"
+            assert p.returncode != 0, "Validation passed when a failure was expected"
 
     yield f
 

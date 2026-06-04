@@ -155,9 +155,9 @@ def compile_test(test_lib, tmp_path):
         )
 
         if progress == Progress.COMPILE_FAILS:
-            assert p.returncode != 0, (
-                f"Compile succeeded when failure was expected. Output: {p.stdout}"
-            )
+            assert (
+                p.returncode != 0
+            ), f"Compile succeeded when failure was expected. Output: {p.stdout}"
             return None
 
         assert p.returncode == 0, (

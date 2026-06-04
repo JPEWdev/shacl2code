@@ -37,6 +37,7 @@ dev = [
     "pyshacl >= 0.25.0",
     "pytest >= 7.4",
     "pytest-cov >= 4.1",
+    "pytest-xdist >= 3.5",
     "types-jsonschema >= 4.23.0",
 ]
 
@@ -75,6 +76,9 @@ warn_redundant_casts = true
 addopts = [
     "--import-mode=importlib",
     "--cov=shacl2code",
+    "-n",
+    "auto",
+    "--dist=loadfile",
 ]
 # Suppress 3rd-party warnings to reduce log noise. Remove after libraries get updated.
 filterwarnings = [

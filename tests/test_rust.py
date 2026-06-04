@@ -100,8 +100,7 @@ def compile_test(test_lib, tmp_path):
         (tmp_path / "src").mkdir(exist_ok=True)
 
         cargo_toml = tmp_path / "Cargo.toml"
-        cargo_toml.write_text(
-            textwrap.dedent(f"""\
+        cargo_toml.write_text(textwrap.dedent(f"""\
                 [package]
                 name = "test_prog"
                 version = "0.1.0"

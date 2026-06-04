@@ -1,0 +1,2174 @@
+{# vim: ft=rust #}
+{#- ============================================================ -#}
+{#- Macros for DRY decode/encode dispatch across property types   -#}
+{#- ============================================================ -#}
+{%- macro decode_value_expr(val, pathvar, prop, cls, classes) -%}
+{%- if prop.enum_values -%}
+expand_from_context(&decode_string({{ val }}, &{{ pathvar }})?, &{{ const_name(*prop_defining_class(cls, prop, classes).clsname) }}_{{ const_name(prop.varname) }}_CTX)
+{%- elif prop.class_id -%}
+decode_ref({{ val }}, &{{ pathvar }}, &{{ const_name(*prop_defining_class(cls, prop, classes).clsname) }}_{{ const_name(prop.varname) }}_CTX, Some(&{{ const_name(*classes.get(prop.class_id).clsname) }}_TYPE_INFO), state)?
+{%- elif prop.datatype in ["http://www.w3.org/2001/XMLSchema#string", "http://www.w3.org/2001/XMLSchema#anyURI"] -%}
+decode_string({{ val }}, &{{ pathvar }})?
+{%- elif prop.datatype in ["http://www.w3.org/2001/XMLSchema#integer", "http://www.w3.org/2001/XMLSchema#positiveInteger", "http://www.w3.org/2001/XMLSchema#nonNegativeInteger"] -%}
+decode_integer({{ val }}, &{{ pathvar }})?
+{%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#boolean" -%}
+decode_boolean({{ val }}, &{{ pathvar }})?
+{%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#decimal" -%}
+decode_float({{ val }}, &{{ pathvar }})?
+{%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#dateTime" -%}
+decode_datetime({{ val }}, &{{ pathvar }})?
+{%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#dateTimeStamp" -%}
+decode_datetimestamp({{ val }}, &{{ pathvar }})?
+{%- endif -%}
+{%- endmacro -%}
+
+{%- macro encode_value_expr(val, pathvar, prop, cls, classes) -%}
+{%- if prop.enum_values -%}
+encode_iri({{ val }}, &{{ const_name(*prop_defining_class(cls, prop, classes).clsname) }}_{{ const_name(prop.varname) }}_CTX)
+{%- elif prop.class_id -%}
+encode_ref({{ val }}, &{{ pathvar }}, &{{ const_name(*prop_defining_class(cls, prop, classes).clsname) }}_{{ const_name(prop.varname) }}_CTX, state)?
+{%- elif prop.datatype in ["http://www.w3.org/2001/XMLSchema#string", "http://www.w3.org/2001/XMLSchema#anyURI"] -%}
+encode_string({{ val }})
+{%- elif prop.datatype in ["http://www.w3.org/2001/XMLSchema#integer", "http://www.w3.org/2001/XMLSchema#positiveInteger", "http://www.w3.org/2001/XMLSchema#nonNegativeInteger"] -%}
+encode_integer(*{{ val }})
+{%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#boolean" -%}
+encode_boolean(*{{ val }})
+{%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#decimal" -%}
+encode_float(*{{ val }})
+{%- elif prop.datatype in ["http://www.w3.org/2001/XMLSchema#dateTime", "http://www.w3.org/2001/XMLSchema#dateTimeStamp"] -%}
+Value::String(encode_datetime({{ val }}))
+{%- endif -%}
+{%- endmacro -%}
+
+// {{ disclaimer }}
+//
+// SPDX-License-Identifier: {{ spdx_license }}
+
+use std::collections::HashMap;
+use std::fmt;
+use std::io::{Read, Write};
+
+use chrono::{DateTime, FixedOffset, Local, NaiveDateTime, TimeZone};
+use lazy_static::lazy_static;
+use regex::Regex;
+use serde_json::Value;
+
+// ============================================================
+// Error types
+// ============================================================
+
+/// Error type for decode/validation operations
+#[derive(Debug)]
+pub enum Error {
+    Decode(String, String),
+    Validation(String, String),
+    Io(std::io::Error),
+    Json(serde_json::Error),
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Error::Decode(path, msg) => write!(f, "Decode error at {}: {}", path, msg),
+            Error::Validation(prop, msg) => write!(f, "Validation error in {}: {}", prop, msg),
+            Error::Io(e) => write!(f, "IO error: {}", e),
+            Error::Json(e) => write!(f, "JSON error: {}", e),
+        }
+    }
+}
+
+impl std::error::Error for Error {}
+
+impl From<std::io::Error> for Error {
+    fn from(e: std::io::Error) -> Self {
+        Error::Io(e)
+    }
+}
+
+impl From<serde_json::Error> for Error {
+    fn from(e: serde_json::Error) -> Self {
+        Error::Json(e)
+    }
+}
+
+// ============================================================
+// ErrorHandler trait
+// ============================================================
+
+/// Trait for handling validation errors
+pub trait ErrorHandler {
+    fn handle_error(&mut self, err: &Error, path: &str);
+}
+
+// ============================================================
+// Path tracking
+// ============================================================
+
+/// Tracks the current decoding/encoding path for error messages
+#[derive(Debug, Clone, Default)]
+pub struct Path {
+    parts: Vec<String>,
+}
+
+impl Path {
+    pub fn new() -> Self {
+        Self { parts: Vec::new() }
+    }
+
+    pub fn push_path(&self, name: &str) -> Self {
+        let mut p = self.clone();
+        p.parts.push(name.to_string());
+        p
+    }
+
+    pub fn push_index(&self, idx: usize) -> Self {
+        let mut p = self.clone();
+        p.parts.push(format!("[{}]", idx));
+        p
+    }
+}
+
+impl fmt::Display for Path {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.parts.is_empty() {
+            write!(f, "/")
+        } else {
+            write!(f, "/{}", self.parts.join("/"))
+        }
+    }
+}
+
+// ============================================================
+// Reference type
+// ============================================================
+
+/// A reference to another object, either by IRI or inline
+#[derive(Debug, Clone)]
+pub enum Ref {
+    IRI(String),
+    Object(Box<AnyObject>),
+}
+
+impl Ref {
+    pub fn is_iri(&self) -> bool {
+        matches!(self, Ref::IRI(_))
+    }
+
+    pub fn is_object(&self) -> bool {
+        matches!(self, Ref::Object(_))
+    }
+
+    pub fn get_iri(&self) -> Option<&str> {
+        match self {
+            Ref::IRI(s) => Some(s),
+            Ref::Object(_) => None,
+        }
+    }
+
+    pub fn get_object(&self) -> Option<&AnyObject> {
+        match self {
+            Ref::Object(o) => Some(o),
+            Ref::IRI(_) => None,
+        }
+    }
+
+    pub fn get_object_mut(&mut self) -> Option<&mut AnyObject> {
+        match self {
+            Ref::Object(o) => Some(o),
+            Ref::IRI(_) => None,
+        }
+    }
+}
+
+// ============================================================
+// Utility functions
+// ============================================================
+
+/// Check if a string is an IRI
+pub fn is_iri(s: &str) -> bool {
+    s.contains("://") || s.contains(':')
+}
+
+/// Check if a string is a blank node
+pub fn is_blank_node(s: &str) -> bool {
+    s.starts_with("_:")
+}
+
+// ============================================================
+// DateTime helpers
+// ============================================================
+
+lazy_static! {
+    static ref DATETIME_RE: Regex =
+        Regex::new(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(Z|[+-]\d{2}:\d{2})?$").unwrap();
+    static ref DATETIMESTAMP_RE: Regex =
+        Regex::new(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(Z|[+-]\d{2}:\d{2})$").unwrap();
+}
+
+fn decode_datetime_string(
+    s: &str,
+    path: &Path,
+    re: &Regex,
+) -> Result<DateTime<FixedOffset>, Error> {
+    let caps = re
+        .captures(s)
+        .ok_or_else(|| Error::Decode(path.to_string(), format!("Invalid date time string '{}'", s)))?;
+
+    let base = &caps[1];
+    let tz = caps.get(2).map(|m| m.as_str()).unwrap_or("");
+
+    match tz {
+        "Z" => {
+            let full = format!("{}+00:00", base);
+            DateTime::parse_from_str(&full, "%Y-%m-%dT%H:%M:%S%:z")
+                .map_err(|e| Error::Decode(path.to_string(), format!("Invalid date time '{}': {}", s, e)))
+        }
+        "" => {
+            let naive = NaiveDateTime::parse_from_str(base, "%Y-%m-%dT%H:%M:%S")
+                .map_err(|e| Error::Decode(path.to_string(), format!("Invalid date time '{}': {}", s, e)))?;
+            let local_offset = *Local::now().offset();
+            Ok(local_offset.from_local_datetime(&naive).single()
+                .ok_or_else(|| Error::Decode(path.to_string(), format!("Ambiguous local time '{}'", s)))?)
+        }
+        _ => {
+            let full = format!("{}{}", base, tz);
+            DateTime::parse_from_str(&full, "%Y-%m-%dT%H:%M:%S%:z")
+                .map_err(|e| Error::Decode(path.to_string(), format!("Invalid date time '{}': {}", s, e)))
+        }
+    }
+}
+
+fn encode_datetime(dt: &DateTime<FixedOffset>) -> String {
+    let offset_secs = dt.offset().local_minus_utc();
+    if offset_secs == 0 {
+        dt.format("%Y-%m-%dT%H:%M:%SZ").to_string()
+    } else {
+        let abs_secs = offset_secs.unsigned_abs();
+        let hours = abs_secs / 3600;
+        let minutes = (abs_secs % 3600) / 60;
+        let sign = if offset_secs >= 0 { '+' } else { '-' };
+        format!("{}{}{:02}:{:02}", dt.format("%Y-%m-%dT%H:%M:%S"), sign, hours, minutes)
+    }
+}
+
+/// Decode a DateTime string (timezone optional)
+pub fn decode_date_time(s: &str, path: &Path) -> Result<DateTime<FixedOffset>, Error> {
+    decode_datetime_string(s, path, &DATETIME_RE)
+}
+
+/// Decode a DateTimeStamp string (timezone required)
+pub fn decode_date_time_stamp(s: &str, path: &Path) -> Result<DateTime<FixedOffset>, Error> {
+    decode_datetime_string(s, path, &DATETIMESTAMP_RE)
+}
+
+/// Encode a DateTime to string
+pub fn encode_date_time(dt: &DateTime<FixedOffset>) -> String {
+    encode_datetime(dt)
+}
+
+// ============================================================
+// Node kind constants
+// ============================================================
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NodeKind {
+    BlankNode,
+    IRI,
+    BlankNodeOrIRI,
+}
+
+// ============================================================
+// Type info (static metadata about each class)
+// ============================================================
+
+#[derive(Debug, Clone)]
+pub struct TypeInfo {
+    pub type_iri: &'static str,
+    pub compact_type_iri: Option<&'static str>,
+    pub is_abstract: bool,
+    pub is_extensible: bool,
+    pub node_kind: Option<NodeKind>,
+    pub id_alias: Option<&'static str>,
+    pub parent_iris: &'static [&'static str],
+}
+
+impl TypeInfo {
+    /// Get the effective node kind, checking parents if not set
+    pub fn get_node_kind(&self) -> NodeKind {
+        if let Some(nk) = self.node_kind {
+            return nk;
+        }
+        for parent_iri in self.parent_iris {
+            if let Some(info) = TYPE_REGISTRY.get(parent_iri) {
+                return info.get_node_kind();
+            }
+        }
+        NodeKind::BlankNodeOrIRI
+    }
+
+    /// Get the effective ID alias, checking parents if not set
+    pub fn get_id_alias(&self) -> Option<&'static str> {
+        if self.id_alias.is_some() {
+            return self.id_alias;
+        }
+        for parent_iri in self.parent_iris {
+            if let Some(info) = TYPE_REGISTRY.get(parent_iri) {
+                let alias = info.get_id_alias();
+                if alias.is_some() {
+                    return alias;
+                }
+            }
+        }
+        None
+    }
+
+    /// Check if this type is a subclass of another
+    pub fn is_subclass_of(&self, other_iri: &str) -> bool {
+        if self.type_iri == other_iri {
+            return true;
+        }
+        for parent_iri in self.parent_iris {
+            if let Some(info) = TYPE_REGISTRY.get(parent_iri) {
+                if info.is_subclass_of(other_iri) {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+    /// Check if this type is extensible (including inherited)
+    pub fn is_effectively_extensible(&self) -> bool {
+        if self.is_extensible {
+            return true;
+        }
+        for parent_iri in self.parent_iris {
+            if let Some(info) = TYPE_REGISTRY.get(parent_iri) {
+                if info.is_effectively_extensible() {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+}
+
+// ============================================================
+// Type registry
+// ============================================================
+
+pub struct TypeRegistry {
+    types: HashMap<&'static str, &'static TypeInfo>,
+}
+
+impl TypeRegistry {
+    fn new() -> Self {
+        Self {
+            types: HashMap::new(),
+        }
+    }
+
+    fn register(&mut self, info: &'static TypeInfo) {
+        self.types.insert(info.type_iri, info);
+        if let Some(compact) = info.compact_type_iri {
+            self.types.insert(compact, info);
+        }
+    }
+
+    pub fn get(&self, iri: &str) -> Option<&'static TypeInfo> {
+        self.types.get(iri).copied()
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &'static TypeInfo> + '_ {
+        let mut seen = std::collections::HashSet::new();
+        self.types.values().copied().filter(move |info| seen.insert(info.type_iri))
+    }
+}
+
+// ============================================================
+// SHACLObject trait
+// ============================================================
+
+/// Trait implemented by all generated SHACL objects
+pub trait SHACLObject: fmt::Debug {
+    /// Get the type IRI for this object
+    fn type_iri(&self) -> &str;
+
+    /// Set the type IRI (for extensible objects)
+    fn set_type_iri(&mut self, iri: String);
+
+    /// Get the static type info
+    fn type_info(&self) -> &'static TypeInfo;
+
+    /// Get the object ID
+    fn id(&self) -> Option<&str>;
+
+    /// Set the object ID
+    fn set_id(&mut self, id: Option<String>);
+
+    /// Decode a property from JSON-LD
+    fn decode_property(
+        &mut self,
+        name: &str,
+        value: &Value,
+        path: &Path,
+        state: &DecodeState,
+    ) -> Result<bool, Error>;
+
+    /// Encode properties to a JSON-LD map
+    fn encode_properties(
+        &self,
+        data: &mut serde_json::Map<String, Value>,
+        path: &Path,
+        state: &mut EncodeState,
+    ) -> Result<(), Error>;
+
+    /// Validate the object
+    fn validate(&self, path: &Path, handler: Option<&mut dyn ErrorHandler>) -> bool;
+
+    /// Walk all references in this object
+    fn walk(&self, path: &Path, visitor: &mut dyn FnMut(&Path, &Ref));
+
+    /// Walk all mutable references in this object
+    fn walk_mut(&mut self, path: &Path, visitor: &mut dyn FnMut(&Path, &mut Ref));
+
+    /// Get extension properties (for extensible objects)
+    fn get_ext_properties(&self) -> Option<&HashMap<String, Vec<Value>>> {
+        None
+    }
+
+    /// Set an extension property
+    fn set_ext_property(&mut self, _name: String, _values: Vec<Value>) {}
+
+    /// Encode extension properties
+    fn encode_ext_properties(
+        &self,
+        data: &mut serde_json::Map<String, Value>,
+        _path: &Path,
+        state: &mut EncodeState,
+    ) -> Result<(), Error> {
+        if let Some(ext_props) = self.get_ext_properties() {
+            for (k, v) in ext_props {
+                let key = state.compact_iri(k);
+                data.insert(key, Value::Array(v.clone()));
+            }
+        }
+        Ok(())
+    }
+}
+
+// ============================================================
+// Encode / Decode state
+// ============================================================
+
+pub struct EncodeState {
+    pub known_ids: std::collections::HashSet<String>,
+    pub context: HashMap<String, String>,
+}
+
+impl EncodeState {
+    pub fn new() -> Self {
+        Self {
+            known_ids: std::collections::HashSet::new(),
+            context: HashMap::new(),
+        }
+    }
+
+    pub fn compact_iri(&self, iri: &str) -> String {
+        for (prefix, expanded) in &self.context {
+            if iri == expanded {
+                return self.compact_iri(prefix);
+            }
+            if iri.starts_with(expanded.as_str()) {
+                let rest = &iri[expanded.len()..];
+                return self.compact_iri(&format!("{}:{}", prefix, rest));
+            }
+        }
+        iri.to_string()
+    }
+
+    pub fn expand_iri(&self, iri: &str) -> String {
+        for (prefix, expanded) in &self.context {
+            if iri == prefix {
+                return self.expand_iri(expanded);
+            }
+            let prefix_colon = format!("{}:", prefix);
+            if iri.starts_with(&prefix_colon) {
+                let rest = &iri[prefix_colon.len()..];
+                return self.expand_iri(&format!("{}{}", expanded, rest));
+            }
+        }
+        iri.to_string()
+    }
+}
+
+impl Default for EncodeState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+pub struct DecodeState {
+    pub context: HashMap<String, String>,
+}
+
+impl DecodeState {
+    pub fn new() -> Self {
+        Self {
+            context: HashMap::new(),
+        }
+    }
+
+    pub fn expand_iri(&self, iri: &str) -> String {
+        for (prefix, expanded) in &self.context {
+            if iri == prefix {
+                return self.expand_iri(expanded);
+            }
+            let prefix_colon = format!("{}:", prefix);
+            if iri.starts_with(&prefix_colon) {
+                let rest = &iri[prefix_colon.len()..];
+                return self.expand_iri(&format!("{}{}", expanded, rest));
+            }
+        }
+        iri.to_string()
+    }
+
+    pub fn compact_iri(&self, iri: &str) -> String {
+        for (prefix, expanded) in &self.context {
+            if iri == expanded {
+                return self.compact_iri(prefix);
+            }
+            if iri.starts_with(expanded.as_str()) {
+                let rest = &iri[expanded.len()..];
+                return self.compact_iri(&format!("{}:{}", prefix, rest));
+            }
+        }
+        iri.to_string()
+    }
+}
+
+impl Default for DecodeState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+// ============================================================
+// Decode helpers
+// ============================================================
+
+fn decode_string(value: &Value, path: &Path) -> Result<String, Error> {
+    value
+        .as_str()
+        .map(|s| s.to_string())
+        .ok_or_else(|| Error::Decode(path.to_string(), format!("String expected, got {:?}", value)))
+}
+
+fn expand_from_context(s: &str, ctx: &HashMap<String, String>) -> String {
+    for (k, compact_v) in ctx {
+        if s == compact_v {
+            return k.clone();
+        }
+    }
+    s.to_string()
+}
+
+fn decode_boolean(value: &Value, path: &Path) -> Result<bool, Error> {
+    value
+        .as_bool()
+        .ok_or_else(|| Error::Decode(path.to_string(), format!("Boolean expected, got {:?}", value)))
+}
+
+fn decode_integer(value: &Value, path: &Path) -> Result<i64, Error> {
+    if let Some(i) = value.as_i64() {
+        return Ok(i);
+    }
+    if let Some(f) = value.as_f64() {
+        if f == (f as i64) as f64 {
+            return Ok(f as i64);
+        }
+        return Err(Error::Decode(
+            path.to_string(),
+            format!("Value must be an integer. Got {}", f),
+        ));
+    }
+    Err(Error::Decode(
+        path.to_string(),
+        format!("Integer expected, got {:?}", value),
+    ))
+}
+
+fn decode_float(value: &Value, path: &Path) -> Result<f64, Error> {
+    if let Some(f) = value.as_f64() {
+        return Ok(f);
+    }
+    if let Some(s) = value.as_str() {
+        return s
+            .parse::<f64>()
+            .map_err(|_| Error::Decode(path.to_string(), format!("Invalid float value '{}'", s)));
+    }
+    Err(Error::Decode(
+        path.to_string(),
+        format!("Float expected, got {:?}", value),
+    ))
+}
+
+fn decode_datetime(value: &Value, path: &Path) -> Result<DateTime<FixedOffset>, Error> {
+    let s = decode_string(value, path)?;
+    decode_datetime_string(&s, path, &DATETIME_RE)
+}
+
+fn decode_datetimestamp(value: &Value, path: &Path) -> Result<DateTime<FixedOffset>, Error> {
+    let s = decode_string(value, path)?;
+    decode_datetime_string(&s, path, &DATETIMESTAMP_RE)
+}
+
+// ============================================================
+// Encode helpers
+// ============================================================
+
+fn encode_string(value: &str) -> Value {
+    Value::String(value.to_string())
+}
+
+fn encode_iri(value: &str, context: &HashMap<String, String>) -> Value {
+    for (k, v) in context {
+        if value == k {
+            return Value::String(v.clone());
+        }
+    }
+    Value::String(value.to_string())
+}
+
+fn encode_boolean(value: bool) -> Value {
+    Value::Bool(value)
+}
+
+fn encode_integer(value: i64) -> Value {
+    Value::Number(serde_json::Number::from(value))
+}
+
+fn encode_float(value: f64) -> Value {
+    // Encode floats as strings (matching Go behavior)
+    Value::String(format!("{}", value))
+}
+
+fn encode_ref(
+    r: &Ref,
+    path: &Path,
+    context: &HashMap<String, String>,
+    state: &mut EncodeState,
+) -> Result<Value, Error> {
+    match r {
+        Ref::IRI(iri) => {
+            // First check per-property context (named individuals)
+            for (k, v) in context {
+                if iri == k {
+                    return Ok(Value::String(v.clone()));
+                }
+            }
+            // Then compact using the object set context (prefix mappings)
+            Ok(Value::String(state.compact_iri(iri)))
+        }
+        Ref::Object(obj) => {
+            // If the object has a known ID (a top-level or already-indexed object),
+            // encode as an IRI reference instead of inlining
+            if let Some(id) = obj.as_shacl_object().id() {
+                if state.known_ids.contains(id) {
+                    // First check per-property context (named individuals)
+                    for (k, v) in context {
+                        if id == k {
+                            return Ok(Value::String(v.clone()));
+                        }
+                    }
+                    return Ok(Value::String(state.compact_iri(id)));
+                }
+            }
+            encode_shacl_object(obj.as_shacl_object(), path, state)
+        }
+    }
+}
+
+// ============================================================
+// Context URLs
+// ============================================================
+
+const CONTEXT_URLS: &[&str] = &[
+{%- for url in context.urls | sort %}
+    "{{ url }}",
+{%- endfor %}
+];
+
+// ============================================================
+// Generated type info
+// ============================================================
+
+{% for class in classes %}
+static {{ const_name(*class.clsname) }}_TYPE_INFO: TypeInfo = TypeInfo {
+    type_iri: "{{ class._id }}",
+    {%- if context.compact_iri(class._id) != class._id %}
+    compact_type_iri: Some("{{ context.compact_iri(class._id) }}"),
+    {%- else %}
+    compact_type_iri: None,
+    {%- endif %}
+    is_abstract: {{ "true" if class.is_abstract else "false" }},
+    is_extensible: {{ "true" if class.is_extensible else "false" }},
+    {%- if class.node_kind %}
+    {%- set nk = class.node_kind.split('#')[-1] %}
+    node_kind: Some(NodeKind::{{ nk }}),
+    {%- else %}
+    node_kind: None,
+    {%- endif %}
+    {%- if class.id_property %}
+    id_alias: Some("{{ class.id_property }}"),
+    {%- else %}
+    id_alias: None,
+    {%- endif %}
+    parent_iris: &[
+        {%- for p in class.parent_ids %}
+        "{{ p }}",
+        {%- endfor %}
+    ],
+};
+{% endfor %}
+
+// ============================================================
+// Context maps for properties
+// ============================================================
+
+{% for class in classes %}
+{%- for prop in class.properties %}
+lazy_static! {
+    #[allow(clippy::let_and_return)]
+    static ref {{ const_name(*class.clsname) }}_{{ const_name(prop.varname) }}_CTX: HashMap<String, String> = {
+        #[allow(unused_mut)]
+        let mut m = HashMap::new();
+{%- if prop.enum_values %}
+{%- for value in prop.enum_values %}
+        m.insert("{{ value }}".to_string(), "{{ context.compact_vocab(value, prop.path) }}".to_string());
+{%- endfor %}
+{%- elif prop.class_id %}
+{%- for value in get_all_named_individuals(classes.get(prop.class_id)) %}
+{%- if context.compact_vocab(value, prop.path) != value %}
+        m.insert("{{ value }}".to_string(), "{{ context.compact_vocab(value, prop.path) }}".to_string());
+{%- endif %}
+{%- endfor %}
+{%- endif %}
+        m
+    };
+}
+{%- endfor %}
+{%- endfor %}
+
+// ============================================================
+// Generated struct definitions
+// ============================================================
+
+{% for class in classes %}
+{%- for l in class.comment.splitlines() %}
+/// {{ l }}
+{% endfor -%}
+{%- if class.deprecated -%}
+#[deprecated]
+{% endif -%}
+#[derive(Debug, Clone)]
+pub struct {{ struct_name(class) }} {
+    _id: Option<String>,
+    _type_iri: String,
+{%- if is_effectively_extensible(class, classes) %}
+    _ext_properties: HashMap<String, Vec<Value>>,
+{%- endif %}
+{%- for prop in all_props(class, classes) %}
+    {%- for l in prop.comment.splitlines() %}
+    /// {{ l }}
+    {%- endfor %}
+    {%- if prop.deprecated %}
+    #[deprecated]
+    {%- endif %}
+    pub {{ prop_field_name(prop) }}: {{ prop_full_type(prop, classes) }},
+{%- endfor %}
+}
+
+{%- for member in class.named_individuals %}
+{%- for l in member.comment.splitlines() %}
+/// {{ l }}
+{%- endfor %}
+pub const {{ const_name(*class.clsname) }}_{{ const_name(member.varname) }}: &str = "{{ member._id }}";
+{%- endfor %}
+
+{% if not class.is_abstract or is_effectively_extensible(class, classes) %}
+/// Create a new {{ struct_name(class) }} instance
+{%- if class.deprecated %}
+#[allow(deprecated)]
+{%- endif %}
+pub fn make_{{ varname(*class.clsname) }}() -> {{ struct_name(class) }} {
+    {{ struct_name(class) }} {
+        _id: None,
+        _type_iri: "{{ class._id }}".to_string(),
+{%- if is_effectively_extensible(class, classes) %}
+        _ext_properties: HashMap::new(),
+{%- endif %}
+{%- for prop in all_props(class, classes) %}
+    {%- if prop_is_list(prop) %}
+        {{ prop_field_name(prop) }}: Vec::new(),
+    {%- else %}
+        {{ prop_field_name(prop) }}: None,
+    {%- endif %}
+{%- endfor %}
+    }
+}
+{% endif %}
+{% endfor %}
+
+// ============================================================
+// AnyObject enum (wrapping all concrete types)
+// ============================================================
+
+/// Enum wrapping all object types for dynamic dispatch
+#[allow(deprecated)]
+#[derive(Debug, Clone)]
+pub enum AnyObject {
+{%- for class in classes %}
+    {{ struct_name(class) }}({{ struct_name(class) }}),
+{%- endfor %}
+}
+
+#[allow(deprecated)]
+impl AnyObject {
+    pub fn as_shacl_object(&self) -> &dyn SHACLObject {
+        match self {
+{%- for class in classes %}
+            AnyObject::{{ struct_name(class) }}(o) => o,
+{%- endfor %}
+        }
+    }
+
+    pub fn as_shacl_object_mut(&mut self) -> &mut dyn SHACLObject {
+        match self {
+{%- for class in classes %}
+            AnyObject::{{ struct_name(class) }}(o) => o,
+{%- endfor %}
+        }
+    }
+
+    /// Downcast to a specific type
+    pub fn downcast_ref<T: 'static>(&self) -> Option<&T> {
+        use std::any::Any;
+        match self {
+{%- for class in classes %}
+            AnyObject::{{ struct_name(class) }}(o) => (o as &dyn Any).downcast_ref::<T>(),
+{%- endfor %}
+        }
+    }
+
+    /// Downcast to a specific mutable type
+    pub fn downcast_mut<T: 'static>(&mut self) -> Option<&mut T> {
+        use std::any::Any;
+        match self {
+{%- for class in classes %}
+            AnyObject::{{ struct_name(class) }}(o) => (o as &mut dyn Any).downcast_mut::<T>(),
+{%- endfor %}
+        }
+    }
+}
+
+// ============================================================
+// SHACLObject implementations
+// ============================================================
+
+{% for class in classes %}
+{%- if class.deprecated %}
+#[allow(deprecated)]
+{%- endif %}
+impl SHACLObject for {{ struct_name(class) }} {
+    fn type_iri(&self) -> &str {
+        &self._type_iri
+    }
+
+    fn set_type_iri(&mut self, iri: String) {
+        self._type_iri = iri;
+    }
+
+    fn type_info(&self) -> &'static TypeInfo {
+        &{{ const_name(*class.clsname) }}_TYPE_INFO
+    }
+
+    fn id(&self) -> Option<&str> {
+        self._id.as_deref()
+    }
+
+    fn set_id(&mut self, id: Option<String>) {
+        self._id = id;
+    }
+
+    fn decode_property(
+        &mut self,
+        name: &str,
+        value: &Value,
+        path: &Path,
+        state: &DecodeState,
+    ) -> Result<bool, Error> {
+        let sub_path = path.push_path(name);
+
+        // Handle ID
+        let id_alias = self.type_info().get_id_alias();
+        if let Some(alias) = id_alias {
+            match name {
+                n if n == alias => {
+                    let val = decode_string(value, &sub_path)?;
+                    self._id = Some(state.expand_iri(&val));
+                    return Ok(true);
+                }
+                "@id" => {
+                    return Err(Error::Decode(
+                        sub_path.to_string(),
+                        format!("'@id' is not allowed for {} which has an ID alias", self.type_info().type_iri),
+                    ));
+                }
+                _ => {}
+            }
+        } else if name == "@id" {
+            let val = decode_string(value, &sub_path)?;
+            self._id = Some(state.expand_iri(&val));
+            return Ok(true);
+        }
+
+        // Handle known properties
+{%- set decode_ns = namespace(has_props=false) %}
+{%- for prop in all_props(class, classes) %}
+{%- set decode_ns.has_props = true %}
+{%- endfor %}
+{%- if decode_ns.has_props %}
+        match name {
+{%- for prop in all_props(class, classes) %}
+    {%- set owning_class = none %}
+    {%- for c in classes %}
+        {%- for p in c.properties %}
+            {%- if p.path == prop.path %}
+                {%- set owning_class = c %}
+            {%- endif %}
+        {%- endfor %}
+    {%- endfor %}
+            "{{ prop.path }}"{% if context.compact_vocab(prop.path) != prop.path %} | "{{ context.compact_vocab(prop.path) }}"{% endif %} => {
+    {%- if prop_is_list(prop) %}
+                let arr = value.as_array().ok_or_else(|| {
+                    Error::Decode(sub_path.to_string(), "Must be a list".to_string())
+                })?;
+                let mut result = Vec::new();
+      {%- if prop.pattern and prop.datatype in ["http://www.w3.org/2001/XMLSchema#dateTime", "http://www.w3.org/2001/XMLSchema#dateTimeStamp"] %}
+                {
+                    lazy_static! {
+                        static ref DECODE_RE: Regex = Regex::new(r"{{ prop.pattern }}").unwrap();
+                    }
+                    for (idx, v) in arr.iter().enumerate() {
+                        let item_path = sub_path.push_index(idx);
+                        let raw_str = decode_string(v, &item_path)?;
+                        if !DECODE_RE.is_match(&raw_str) {
+                            return Err(Error::Decode(
+                                item_path.to_string(),
+                                format!("Value '{}' does not match pattern '{{ escape_rust_string(prop.pattern) }}'", raw_str),
+                            ));
+                        }
+                        result.push(decode_datetime_string(&raw_str, &item_path, &{% if prop.datatype == "http://www.w3.org/2001/XMLSchema#dateTime" %}DATETIME_RE{% else %}DATETIMESTAMP_RE{% endif %})?);
+                    }
+                }
+      {%- else %}
+                for (idx, v) in arr.iter().enumerate() {
+                    let item_path = sub_path.push_index(idx);
+                    result.push({{ decode_value_expr("v", "item_path", prop, class, classes) }});
+                }
+      {%- endif %}
+                self.{{ prop_field_name(prop) }} = result;
+    {%- else %}
+      {%- if prop.pattern and prop.datatype in ["http://www.w3.org/2001/XMLSchema#dateTime", "http://www.w3.org/2001/XMLSchema#dateTimeStamp"] %}
+                {
+                    let raw_str = decode_string(value, &sub_path)?;
+                    lazy_static! {
+                        static ref DECODE_RE: Regex = Regex::new(r"{{ prop.pattern }}").unwrap();
+                    }
+                    if !DECODE_RE.is_match(&raw_str) {
+                        return Err(Error::Decode(
+                            sub_path.to_string(),
+                            format!("Value '{}' does not match pattern '{{ escape_rust_string(prop.pattern) }}'", raw_str),
+                        ));
+                    }
+                    self.{{ prop_field_name(prop) }} = Some(decode_datetime_string(&raw_str, &sub_path, &{% if prop.datatype == "http://www.w3.org/2001/XMLSchema#dateTime" %}DATETIME_RE{% else %}DATETIMESTAMP_RE{% endif %})?);
+                }
+      {%- else %}
+                self.{{ prop_field_name(prop) }} = Some({{ decode_value_expr("value", "sub_path", prop, class, classes) }});
+      {%- endif %}
+    {%- endif %}
+                Ok(true)
+            }
+{%- endfor %}
+            _ => {
+{%- if class.is_extensible %}
+                // Extensible: accept unknown properties
+                let decoded = decode_any(value, &sub_path)?;
+                match decoded {
+                    Value::Array(arr) => self.set_ext_property(state.expand_iri(name), arr.into_iter().collect()),
+                    other => self.set_ext_property(state.expand_iri(name), vec![other]),
+                }
+                Ok(true)
+{%- else %}
+{%- if is_effectively_extensible(class, classes) %}
+                // Inherited extensible: accept unknown properties
+                let decoded = decode_any(value, &sub_path)?;
+                match decoded {
+                    Value::Array(arr) => self.set_ext_property(state.expand_iri(name), arr.into_iter().collect()),
+                    other => self.set_ext_property(state.expand_iri(name), vec![other]),
+                }
+                Ok(true)
+{%- else %}
+                Ok(false)
+{%- endif %}
+{%- endif %}
+            }
+        }
+{%- else %}
+{%- if class.is_extensible or is_effectively_extensible(class, classes) %}
+        // Extensible: accept unknown properties
+        let decoded = decode_any(value, &sub_path)?;
+        match decoded {
+            Value::Array(arr) => self.set_ext_property(state.expand_iri(name), arr.into_iter().collect()),
+            other => self.set_ext_property(state.expand_iri(name), vec![other]),
+        }
+        Ok(true)
+{%- else %}
+        Ok(false)
+{%- endif %}
+{%- endif %}
+    }
+
+    fn encode_properties(
+        &self,
+        data: &mut serde_json::Map<String, Value>,
+        {% set enc_ns = namespace(uses_path=false) -%}
+        {%- for prop in all_props(class, classes) -%}
+            {%- if prop_is_list(prop) or (prop.class_id and not prop.enum_values) -%}
+                {%- set enc_ns.uses_path = true -%}
+            {%- endif -%}
+        {%- endfor -%}
+        {%- if is_effectively_extensible(class, classes) -%}
+            {%- set enc_ns.uses_path = true -%}
+        {%- endif -%}
+        {% if enc_ns.uses_path %}path{% else %}_path{% endif %}: &Path,
+        state: &mut EncodeState,
+    ) -> Result<(), Error> {
+        // Encode ID
+        let id_alias = self.type_info().get_id_alias();
+        if let Some(id) = &self._id {
+            if let Some(alias) = id_alias {
+                data.insert(alias.to_string(), Value::String(state.compact_iri(id)));
+            } else {
+                data.insert("@id".to_string(), Value::String(state.compact_iri(id)));
+            }
+        }
+
+{%- for prop in all_props(class, classes) %}
+    {%- if prop_is_list(prop) %}
+        if !self.{{ prop_field_name(prop) }}.is_empty() {
+            let prop_path = path.push_path("{{ prop_field_name(prop) }}");
+            let mut arr = Vec::new();
+            for (idx, v) in self.{{ prop_field_name(prop) }}.iter().enumerate() {
+                let _item_path = prop_path.push_index(idx);
+                arr.push({{ encode_value_expr("v", "_item_path", prop, class, classes) }});
+            }
+            data.insert("{{ context.compact_vocab(prop.path) }}".to_string(), Value::Array(arr));
+        }
+    {%- else %}
+        if let Some(v) = &self.{{ prop_field_name(prop) }} {
+        {%- if prop.class_id and not prop.enum_values %}
+            let prop_path = path.push_path("{{ prop_field_name(prop) }}");
+            data.insert("{{ context.compact_vocab(prop.path) }}".to_string(), {{ encode_value_expr("v", "prop_path", prop, class, classes) }});
+        {%- else %}
+            data.insert("{{ context.compact_vocab(prop.path) }}".to_string(), {{ encode_value_expr("v", "_unused", prop, class, classes) }});
+        {%- endif %}
+        }
+    {%- endif %}
+{%- endfor %}
+
+{%- if is_effectively_extensible(class, classes) %}
+        self.encode_ext_properties(data, path, state)?;
+{%- endif %}
+        Ok(())
+    }
+
+    fn validate(&self, path: &Path, mut handler: Option<&mut dyn ErrorHandler>) -> bool {
+        let type_info = self.type_info();
+        let mut valid = true;
+
+        // Validate node kind
+        let node_kind = type_info.get_node_kind();
+        match node_kind {
+            NodeKind::BlankNode => {
+                if let Some(id) = &self._id {
+                    if !is_blank_node(id) {
+                        if let Some(ref mut h) = handler {
+                            h.handle_error(
+                                &Error::Validation("@id".to_string(), "Must be a blank node".to_string()),
+                                &path.to_string(),
+                            );
+                        }
+                        valid = false;
+                    }
+                }
+            }
+            NodeKind::IRI => {
+                match &self._id {
+                    Some(id) if is_blank_node(id) => {
+                        if let Some(ref mut h) = handler {
+                            h.handle_error(
+                                &Error::Validation("@id".to_string(), "Must be an IRI, not a blank node".to_string()),
+                                &path.to_string(),
+                            );
+                        }
+                        valid = false;
+                    }
+                    None => {
+                        if let Some(ref mut h) = handler {
+                            h.handle_error(
+                                &Error::Validation("@id".to_string(), "IRI is required".to_string()),
+                                &path.to_string(),
+                            );
+                        }
+                        valid = false;
+                    }
+                    _ => {}
+                }
+            }
+            NodeKind::BlankNodeOrIRI => {
+                if let Some(ref id) = self._id {
+                    if !is_blank_node(id) && !is_iri(id) {
+                        if let Some(ref mut h) = handler {
+                            h.handle_error(
+                                &Error::Validation("@id".to_string(), "ID must be a blank node or IRI".to_string()),
+                                &path.to_string(),
+                            );
+                        }
+                        valid = false;
+                    }
+                }
+            }
+        }
+
+        // Validate properties
+{%- for prop in all_props(class, classes) %}
+        {
+            let _prop_path = path.push_path("{{ prop_field_name(prop) }}");
+    {%- if prop_is_list(prop) %}
+        {%- if not prop.min_count is none %}
+            if {% if prop.min_count == 1 %}self.{{ prop_field_name(prop) }}.is_empty(){% else %}self.{{ prop_field_name(prop) }}.len() < {{ prop.min_count }}{% endif %} {
+                if let Some(ref mut h) = handler {
+                    h.handle_error(
+                        &Error::Validation(
+                            "{{ prop_field_name(prop) }}".to_string(),
+                            "Too few elements. Minimum of {{ prop.min_count }} required".to_string(),
+                        ),
+                        &_prop_path.to_string(),
+                    );
+                }
+                valid = false;
+            }
+        {%- endif %}
+        {%- if not prop.max_count is none %}
+            if self.{{ prop_field_name(prop) }}.len() > {{ prop.max_count }} {
+                if let Some(ref mut h) = handler {
+                    h.handle_error(
+                        &Error::Validation(
+                            "{{ prop_field_name(prop) }}".to_string(),
+                            "Too many elements. Maximum of {{ prop.max_count }} allowed".to_string(),
+                        ),
+                        &_prop_path.to_string(),
+                    );
+                }
+                valid = false;
+            }
+        {%- endif %}
+        {%- if prop.enum_values %}
+            for v in &self.{{ prop_field_name(prop) }} {
+                let valid_values = [
+                    {%- for e in prop.enum_values %}
+                    "{{ e }}",
+                    {%- endfor %}
+                ];
+                if !valid_values.contains(&v.as_str()) {
+                    if let Some(ref mut h) = handler {
+                        h.handle_error(
+                            &Error::Validation(
+                                "{{ prop_field_name(prop) }}".to_string(),
+                                format!("Invalid enum value '{}'", v),
+                            ),
+                            &_prop_path.to_string(),
+                        );
+                    }
+                    valid = false;
+                }
+            }
+        {%- endif %}
+        {%- if prop.pattern %}
+            {
+                lazy_static! {
+                    static ref RE: Regex = Regex::new(r"{{ prop.pattern }}").unwrap();
+                }
+            {%- if prop.datatype in ["http://www.w3.org/2001/XMLSchema#dateTime", "http://www.w3.org/2001/XMLSchema#dateTimeStamp"] %}
+                for v in &self.{{ prop_field_name(prop) }} {
+                    let s = encode_datetime(v);
+                    if !RE.is_match(&s) {
+                        if let Some(ref mut h) = handler {
+                            h.handle_error(
+                                &Error::Validation(
+                                    "{{ prop_field_name(prop) }}".to_string(),
+                                    format!("Value '{}' does not match pattern '{{ escape_rust_string(prop.pattern) }}'", s),
+                                ),
+                                &_prop_path.to_string(),
+                            );
+                        }
+                        valid = false;
+                    }
+                }
+            {%- else %}
+                for v in &self.{{ prop_field_name(prop) }} {
+                    if !RE.is_match(v) {
+                        if let Some(ref mut h) = handler {
+                            h.handle_error(
+                                &Error::Validation(
+                                    "{{ prop_field_name(prop) }}".to_string(),
+                                    format!("Value '{}' does not match pattern '{{ escape_rust_string(prop.pattern) }}'", v),
+                                ),
+                                &_prop_path.to_string(),
+                            );
+                        }
+                        valid = false;
+                    }
+                }
+            {%- endif %}
+            }
+        {%- endif %}
+        {%- if prop.datatype == "http://www.w3.org/2001/XMLSchema#positiveInteger" %}
+            for v in &self.{{ prop_field_name(prop) }} {
+                if *v < 1 {
+                    if let Some(ref mut h) = handler {
+                        h.handle_error(
+                            &Error::Validation(
+                                "{{ prop_field_name(prop) }}".to_string(),
+                                format!("Value {} must be positive", v),
+                            ),
+                            &_prop_path.to_string(),
+                        );
+                    }
+                    valid = false;
+                }
+            }
+        {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#nonNegativeInteger" %}
+            for v in &self.{{ prop_field_name(prop) }} {
+                if *v < 0 {
+                    if let Some(ref mut h) = handler {
+                        h.handle_error(
+                            &Error::Validation(
+                                "{{ prop_field_name(prop) }}".to_string(),
+                                format!("Value {} must be non-negative", v),
+                            ),
+                            &_prop_path.to_string(),
+                        );
+                    }
+                    valid = false;
+                }
+            }
+        {%- endif %}
+        {%- if prop.class_id and not prop.enum_values %}
+            for r in &self.{{ prop_field_name(prop) }} {
+                if let Ref::Object(obj) = r {
+                    if !obj.as_shacl_object().validate(&_prop_path, None) {
+                        valid = false;
+                    }
+                }
+            }
+        {%- endif %}
+    {%- else %}
+        {%- if not prop.min_count is none and prop.min_count > 0 %}
+            if self.{{ prop_field_name(prop) }}.is_none() {
+                if let Some(ref mut h) = handler {
+                    h.handle_error(
+                        &Error::Validation(
+                            "{{ prop_field_name(prop) }}".to_string(),
+                            "Value is required".to_string(),
+                        ),
+                        &_prop_path.to_string(),
+                    );
+                }
+                valid = false;
+            }
+        {%- endif %}
+        {%- if prop.enum_values %}
+            if let Some(v) = &self.{{ prop_field_name(prop) }} {
+                let valid_values = [
+                    {%- for e in prop.enum_values %}
+                    "{{ e }}",
+                    {%- endfor %}
+                ];
+                if !valid_values.contains(&v.as_str()) {
+                    if let Some(ref mut h) = handler {
+                        h.handle_error(
+                            &Error::Validation(
+                                "{{ prop_field_name(prop) }}".to_string(),
+                                format!("Invalid enum value '{}'", v),
+                            ),
+                            &_prop_path.to_string(),
+                        );
+                    }
+                    valid = false;
+                }
+            }
+        {%- endif %}
+        {%- if prop.pattern %}
+            {
+                lazy_static! {
+                    static ref RE: Regex = Regex::new(r"{{ prop.pattern }}").unwrap();
+                }
+            {%- if prop.datatype in ["http://www.w3.org/2001/XMLSchema#dateTime", "http://www.w3.org/2001/XMLSchema#dateTimeStamp"] %}
+                if let Some(v) = &self.{{ prop_field_name(prop) }} {
+                    let s = encode_datetime(v);
+                    if !RE.is_match(&s) {
+                        if let Some(ref mut h) = handler {
+                            h.handle_error(
+                                &Error::Validation(
+                                    "{{ prop_field_name(prop) }}".to_string(),
+                                    format!("Value '{}' does not match pattern '{{ escape_rust_string(prop.pattern) }}'", s),
+                                ),
+                                &_prop_path.to_string(),
+                            );
+                        }
+                        valid = false;
+                    }
+                }
+            {%- else %}
+                if let Some(v) = &self.{{ prop_field_name(prop) }} {
+                    if !RE.is_match(v) {
+                        if let Some(ref mut h) = handler {
+                            h.handle_error(
+                                &Error::Validation(
+                                    "{{ prop_field_name(prop) }}".to_string(),
+                                    format!("Value '{}' does not match pattern '{{ escape_rust_string(prop.pattern) }}'", v),
+                                ),
+                                &_prop_path.to_string(),
+                            );
+                        }
+                        valid = false;
+                    }
+                }
+            {%- endif %}
+            }
+        {%- endif %}
+        {%- if prop.datatype == "http://www.w3.org/2001/XMLSchema#positiveInteger" %}
+            if let Some(v) = &self.{{ prop_field_name(prop) }} {
+                if *v < 1 {
+                    if let Some(ref mut h) = handler {
+                        h.handle_error(
+                            &Error::Validation(
+                                "{{ prop_field_name(prop) }}".to_string(),
+                                format!("Value {} must be positive", v),
+                            ),
+                            &_prop_path.to_string(),
+                        );
+                    }
+                    valid = false;
+                }
+            }
+        {%- elif prop.datatype == "http://www.w3.org/2001/XMLSchema#nonNegativeInteger" %}
+            if let Some(v) = &self.{{ prop_field_name(prop) }} {
+                if *v < 0 {
+                    if let Some(ref mut h) = handler {
+                        h.handle_error(
+                            &Error::Validation(
+                                "{{ prop_field_name(prop) }}".to_string(),
+                                format!("Value {} must be non-negative", v),
+                            ),
+                            &_prop_path.to_string(),
+                        );
+                    }
+                    valid = false;
+                }
+            }
+        {%- endif %}
+        {%- if prop.class_id and not prop.enum_values %}
+            if let Some(Ref::Object(obj)) = &self.{{ prop_field_name(prop) }} {
+                if !obj.as_shacl_object().validate(&_prop_path, None) {
+                    valid = false;
+                }
+            }
+        {%- endif %}
+    {%- endif %}
+        }
+{%- endfor %}
+
+        // Validate extensible required properties
+{%- if class.is_extensible %}
+        if let Some(ext) = self.get_ext_properties() {
+            // Extensible objects have no additional validation for unknown properties
+            let _ = ext;
+        }
+{%- endif %}
+
+        valid
+    }
+
+    fn walk(&self, {% set ns = namespace(has_refs=false) %}{% for prop in all_props(class, classes) %}{% if prop.class_id and not prop.enum_values %}{% set ns.has_refs = true %}{% endif %}{% endfor %}{% if ns.has_refs %}path{% else %}_path{% endif %}: &Path, {% if ns.has_refs %}visitor{% else %}_visitor{% endif %}: &mut dyn FnMut(&Path, &Ref)) {
+{%- for prop in all_props(class, classes) %}
+    {%- if prop.class_id and not prop.enum_values %}
+        {%- if prop_is_list(prop) %}
+        for (idx, r) in self.{{ prop_field_name(prop) }}.iter().enumerate() {
+            let p = path.push_path("{{ prop_field_name(prop) }}").push_index(idx);
+            visitor(&p, r);
+            if let Ref::Object(obj) = r {
+                obj.as_shacl_object().walk(&p, visitor);
+            }
+        }
+        {%- else %}
+        if let Some(r) = &self.{{ prop_field_name(prop) }} {
+            let p = path.push_path("{{ prop_field_name(prop) }}");
+            visitor(&p, r);
+            if let Ref::Object(obj) = r {
+                obj.as_shacl_object().walk(&p, visitor);
+            }
+        }
+        {%- endif %}
+    {%- endif %}
+{%- endfor %}
+    }
+
+    fn walk_mut(&mut self, {% if ns.has_refs %}path{% else %}_path{% endif %}: &Path, {% if ns.has_refs %}visitor{% else %}_visitor{% endif %}: &mut dyn FnMut(&Path, &mut Ref)) {
+{%- for prop in all_props(class, classes) %}
+    {%- if prop.class_id and not prop.enum_values %}
+        {%- if prop_is_list(prop) %}
+        for (idx, r) in self.{{ prop_field_name(prop) }}.iter_mut().enumerate() {
+            let p = path.push_path("{{ prop_field_name(prop) }}").push_index(idx);
+            visitor(&p, r);
+        }
+        {%- else %}
+        if let Some(r) = &mut self.{{ prop_field_name(prop) }} {
+            let p = path.push_path("{{ prop_field_name(prop) }}");
+            visitor(&p, r);
+        }
+        {%- endif %}
+    {%- endif %}
+{%- endfor %}
+    }
+
+{%- if class.is_extensible %}
+    fn get_ext_properties(&self) -> Option<&HashMap<String, Vec<Value>>> {
+        Some(&self._ext_properties)
+    }
+
+    fn set_ext_property(&mut self, name: String, values: Vec<Value>) {
+        self._ext_properties.insert(name, values);
+    }
+{%- else %}
+{%- if is_effectively_extensible(class, classes) %}
+    fn get_ext_properties(&self) -> Option<&HashMap<String, Vec<Value>>> {
+        Some(&self._ext_properties)
+    }
+
+    fn set_ext_property(&mut self, name: String, values: Vec<Value>) {
+        self._ext_properties.insert(name, values);
+    }
+{%- endif %}
+{%- endif %}
+}
+{% endfor %}
+
+// ============================================================
+// Type registry initialization
+// ============================================================
+
+lazy_static! {
+    pub static ref TYPE_REGISTRY: TypeRegistry = {
+        let mut registry = TypeRegistry::new();
+{%- for class in classes %}
+        registry.register(&{{ const_name(*class.clsname) }}_TYPE_INFO);
+{%- endfor %}
+        registry
+    };
+}
+
+// ============================================================
+// Object construction from type IRI
+// ============================================================
+
+#[allow(deprecated)]
+fn create_object(type_iri: &str) -> Option<AnyObject> {
+    match type_iri {
+{%- for class in classes %}
+{%- if not class.is_abstract or is_effectively_extensible(class, classes) %}
+        "{{ class._id }}"{% if context.compact_iri(class._id) != class._id %} | "{{ context.compact_iri(class._id) }}"{% endif %} => {
+            Some(AnyObject::{{ struct_name(class) }}(make_{{ varname(*class.clsname) }}()))
+        }
+{%- endif %}
+{%- endfor %}
+        _ => None,
+    }
+}
+
+// ============================================================
+// Decode any value
+// ============================================================
+
+fn decode_any(value: &Value, path: &Path) -> Result<Value, Error> {
+    match value {
+        Value::Null => Err(Error::Decode(path.to_string(), "Unexpected null".to_string())),
+        other => Ok(other.clone()),
+    }
+}
+
+// ============================================================
+// Decode a reference (IRI string or inline object)
+// ============================================================
+
+fn decode_ref(
+    value: &Value,
+    path: &Path,
+    context: &HashMap<String, String>,
+    target_type: Option<&'static TypeInfo>,
+    state: &DecodeState,
+) -> Result<Ref, Error> {
+    match value {
+        Value::String(s) => {
+            // Expand compact IRI from context
+            let mut expanded = s.clone();
+            for (k, v) in context {
+                if s == v {
+                    expanded = k.clone();
+                    break;
+                }
+            }
+            expanded = state.expand_iri(&expanded);
+
+            if !is_blank_node(&expanded) && !is_iri(&expanded) {
+                return Err(Error::Decode(
+                    path.to_string(),
+                    format!("Must be blank node or IRI. Got '{}'", s),
+                ));
+            }
+            Ok(Ref::IRI(expanded))
+        }
+        Value::Object(_) => {
+            let obj = decode_shacl_object(value, path, target_type, state)?;
+            Ok(Ref::Object(Box::new(obj)))
+        }
+        _ => Err(Error::Decode(
+            path.to_string(),
+            format!("Expected string or object, got {:?}", value),
+        )),
+    }
+}
+
+// ============================================================
+// Decode a SHACL object from JSON-LD
+// ============================================================
+
+fn decode_shacl_object(
+    data: &Value,
+    path: &Path,
+    target_type: Option<&'static TypeInfo>,
+    state: &DecodeState,
+) -> Result<AnyObject, Error> {
+    let dict = data.as_object().ok_or_else(|| {
+        Error::Decode(path.to_string(), "Expected object".to_string())
+    })?;
+
+    let type_val = dict
+        .get("@type")
+        .ok_or_else(|| Error::Decode(path.to_string(), "type missing".to_string()))?;
+
+    let type_iri_raw = type_val
+        .as_str()
+        .ok_or_else(|| Error::Decode(path.to_string(), "Wrong type for @type".to_string()))?;
+
+    let type_iri = state.expand_iri(type_iri_raw);
+
+    // Look up the type in the registry
+    let type_info = TYPE_REGISTRY.get(&type_iri);
+
+    let mut obj = if let Some(info) = type_info {
+        // Known type
+        if let Some(target) = target_type {
+            if !info.is_subclass_of(target.type_iri) {
+                return Err(Error::Decode(
+                    path.to_string(),
+                    format!(
+                        "Type {} is not valid where {} is expected",
+                        type_iri, target.type_iri
+                    ),
+                ));
+            }
+        }
+
+        if info.is_abstract {
+            return Err(Error::Decode(
+                path.to_string(),
+                format!("Unable to create abstract type '{}'", type_iri),
+            ));
+        }
+
+        create_object(&type_iri).ok_or_else(|| {
+            Error::Decode(
+                path.to_string(),
+                format!("Unable to create object of type '{}'", type_iri),
+            )
+        })?
+    } else if let Some(target) = target_type {
+        if target.is_effectively_extensible() {
+            // Create an extensible object of the (non-abstract) target type
+            create_object(target.type_iri).ok_or_else(|| {
+                Error::Decode(
+                    path.to_string(),
+                    format!("Unable to create extensible object of type '{}'", target.type_iri),
+                )
+            })?
+        } else {
+            // Search for extensible types that could work
+            if is_iri(&type_iri) {
+                let mut possible: Vec<&'static TypeInfo> = TYPE_REGISTRY
+                    .iter()
+                    .filter(|t| {
+                        t.is_effectively_extensible()
+                            && !t.is_abstract
+                            && t.is_subclass_of(target.type_iri)
+                    })
+                    .collect();
+                possible.sort_by_key(|t| t.type_iri);
+
+                for t in possible {
+                    if let Some(mut candidate) = create_object(t.type_iri) {
+                        let obj_mut = candidate.as_shacl_object_mut();
+                        obj_mut.set_type_iri(type_iri.clone());
+                        let mut success = true;
+                        for (k, v) in dict {
+                            if k == "@type" || k == "@context" {
+                                continue;
+                            }
+                            match obj_mut.decode_property(k, v, path, state) {
+                                Ok(true) => {}
+                                _ => {
+                                    success = false;
+                                    break;
+                                }
+                            }
+                        }
+                        if success {
+                            return Ok(candidate);
+                        }
+                    }
+                }
+            }
+            return Err(Error::Decode(
+                path.to_string(),
+                format!(
+                    "Unable to create object of type '{}' (no matching extensible object)",
+                    type_iri
+                ),
+            ));
+        }
+    } else {
+        // No target type - search extensible types
+        if is_iri(&type_iri) {
+            let mut possible: Vec<&'static TypeInfo> = TYPE_REGISTRY
+                .iter()
+                .filter(|t| t.is_effectively_extensible() && !t.is_abstract)
+                .collect();
+            possible.sort_by_key(|t| t.type_iri);
+
+            for t in possible {
+                if let Some(mut candidate) = create_object(t.type_iri) {
+                    let obj_mut = candidate.as_shacl_object_mut();
+                    obj_mut.set_type_iri(type_iri.clone());
+                    let mut success = true;
+                    for (k, v) in dict {
+                        if k == "@type" || k == "@context" {
+                            continue;
+                        }
+                        match obj_mut.decode_property(k, v, path, state) {
+                            Ok(true) => {}
+                            _ => {
+                                success = false;
+                                break;
+                            }
+                        }
+                    }
+                    if success {
+                        return Ok(candidate);
+                    }
+                }
+            }
+        }
+        return Err(Error::Decode(
+            path.to_string(),
+            format!(
+                "Unable to create object of type '{}' (no matching extensible object)",
+                type_iri
+            ),
+        ));
+    };
+
+    obj.as_shacl_object_mut().set_type_iri(type_iri);
+
+    // Decode properties
+    for (k, v) in dict {
+        if k == "@type" || k == "@context" {
+            continue;
+        }
+
+        let found = obj.as_shacl_object_mut().decode_property(k, v, path, state)?;
+        if !found {
+            return Err(Error::Decode(
+                path.to_string(),
+                format!("Unknown property '{}'", k),
+            ));
+        }
+    }
+
+    Ok(obj)
+}
+
+// ============================================================
+// Encode a SHACL object to JSON-LD
+// ============================================================
+
+fn encode_shacl_object(
+    obj: &dyn SHACLObject,
+    path: &Path,
+    state: &mut EncodeState,
+) -> Result<Value, Error> {
+    let mut data = serde_json::Map::new();
+
+    // Encode @type
+    let type_info = obj.type_info();
+    let type_str = if let Some(compact) = type_info.compact_type_iri {
+        if obj.type_iri() == type_info.type_iri {
+            compact.to_string()
+        } else {
+            state.compact_iri(obj.type_iri())
+        }
+    } else {
+        state.compact_iri(obj.type_iri())
+    };
+    data.insert("@type".to_string(), Value::String(type_str));
+
+    obj.encode_properties(&mut data, path, state)?;
+
+    Ok(Value::Object(data))
+}
+
+// ============================================================
+// SHACLObjectSet
+// ============================================================
+
+/// A collection of SHACL objects with JSON-LD serialization support
+pub struct SHACLObjectSet {
+    objects: Vec<AnyObject>,
+    objects_by_id: HashMap<String, usize>,
+    context: HashMap<String, String>,
+}
+
+impl SHACLObjectSet {
+    pub fn new() -> Self {
+        Self {
+            objects: Vec::new(),
+            objects_by_id: HashMap::new(),
+            context: HashMap::new(),
+        }
+    }
+
+    pub fn objects(&self) -> &[AnyObject] {
+        &self.objects
+    }
+
+    pub fn objects_mut(&mut self) -> &mut [AnyObject] {
+        &mut self.objects
+    }
+
+    pub fn get_object_by_id(&self, id: &str) -> Option<&AnyObject> {
+        self.objects_by_id.get(id).map(|&idx| &self.objects[idx])
+    }
+
+    pub fn add_object(&mut self, obj: AnyObject) {
+        let idx = self.objects.len();
+        if let Some(id) = obj.as_shacl_object().id() {
+            self.objects_by_id.insert(id.to_string(), idx);
+        }
+        self.objects.push(obj);
+    }
+
+    pub fn add_context(&mut self, prefix: String, expanded: String) {
+        self.context.insert(prefix, expanded);
+    }
+
+    pub fn get_context(&self) -> &HashMap<String, String> {
+        &self.context
+    }
+
+    pub fn compact_iri(&self, iri: &str) -> String {
+        for (prefix, expanded) in &self.context {
+            if iri == expanded {
+                return self.compact_iri(prefix);
+            }
+            if iri.starts_with(expanded.as_str()) {
+                let rest = &iri[expanded.len()..];
+                return self.compact_iri(&format!("{}:{}", prefix, rest));
+            }
+        }
+        iri.to_string()
+    }
+
+    pub fn expand_iri(&self, iri: &str) -> String {
+        for (prefix, expanded) in &self.context {
+            if iri == prefix {
+                return self.expand_iri(expanded);
+            }
+            let prefix_colon = format!("{}:", prefix);
+            if iri.starts_with(&prefix_colon) {
+                let rest = &iri[prefix_colon.len()..];
+                return self.expand_iri(&format!("{}{}", expanded, rest));
+            }
+        }
+        iri.to_string()
+    }
+
+    /// Decode a JSON-LD document from a reader
+    pub fn decode<R: Read>(&mut self, reader: R) -> Result<(), Error> {
+        let data: Value = serde_json::from_reader(reader)?;
+        let path = Path::new();
+
+        let dict = data.as_object().ok_or_else(|| {
+            Error::Decode(path.to_string(), "Expected object".to_string())
+        })?;
+
+        // Parse context
+        let mut context_urls = Vec::new();
+        if let Some(ctx_val) = dict.get("@context") {
+            let sub_path = path.push_path("@context");
+            match ctx_val {
+                Value::String(s) => {
+                    context_urls.push(s.clone());
+                }
+                Value::Array(arr) => {
+                    for item in arr {
+                        match item {
+                            Value::String(s) => {
+                                context_urls.push(s.clone());
+                            }
+                            Value::Object(obj) => {
+                                for (k, v) in obj {
+                                    let s = v.as_str().ok_or_else(|| {
+                                        Error::Decode(
+                                            sub_path.to_string(),
+                                            "Non-string value in context".to_string(),
+                                        )
+                                    })?;
+                                    self.context.insert(k.clone(), s.to_string());
+                                }
+                            }
+                            _ => {
+                                return Err(Error::Decode(
+                                    sub_path.to_string(),
+                                    "Bad context".to_string(),
+                                ));
+                            }
+                        }
+                    }
+                }
+                Value::Object(obj) => {
+                    for (k, v) in obj {
+                        let s = v.as_str().ok_or_else(|| {
+                            Error::Decode(
+                                path.push_path("@context").to_string(),
+                                "Non-string value in context".to_string(),
+                            )
+                        })?;
+                        self.context.insert(k.clone(), s.to_string());
+                    }
+                }
+                _ => {
+                    return Err(Error::Decode(
+                        path.push_path("@context").to_string(),
+                        "Bad type for context".to_string(),
+                    ));
+                }
+            }
+        }
+
+        // Validate context URLs
+        context_urls.sort();
+        let mut expected_urls: Vec<String> = CONTEXT_URLS.iter().map(|s| s.to_string()).collect();
+        expected_urls.sort();
+
+        if context_urls != expected_urls {
+            return Err(Error::Decode(
+                path.push_path("@context").to_string(),
+                "Wrong context URL(s)".to_string(),
+            ));
+        }
+
+        let state = DecodeState {
+            context: self.context.clone(),
+        };
+
+        if let Some(graph_val) = dict.get("@graph") {
+            // Check for unknown root fields
+            for k in dict.keys() {
+                if k != "@context" && k != "@graph" {
+                    return Err(Error::Decode(
+                        path.to_string(),
+                        format!("Unknown property '{}'", k),
+                    ));
+                }
+            }
+
+            let arr = graph_val.as_array().ok_or_else(|| {
+                Error::Decode(
+                    path.push_path("@graph").to_string(),
+                    "Must be a list".to_string(),
+                )
+            })?;
+            for (idx, item) in arr.iter().enumerate() {
+                let item_path = path.push_path("@graph").push_index(idx);
+                let obj = decode_shacl_object(item, &item_path, None, &state)?;
+                self.add_object(obj);
+            }
+        } else {
+            // Single root object
+            // Check for required fields
+            if !dict.contains_key("@type") {
+                return Err(Error::Decode(
+                    path.to_string(),
+                    "type missing".to_string(),
+                ));
+            }
+            let obj = decode_shacl_object(&data, &path, None, &state)?;
+            self.add_object(obj);
+        }
+
+        // Link references
+        self.link();
+
+        Ok(())
+    }
+
+    /// Encode the object set to JSON-LD
+    #[allow(clippy::const_is_empty)]
+    pub fn encode<W: Write>(&self, writer: W) -> Result<(), Error> {
+        let mut known_ids = std::collections::HashSet::new();
+        for obj in &self.objects {
+            if let Some(id) = obj.as_shacl_object().id() {
+                known_ids.insert(id.to_string());
+            }
+        }
+        let mut state = EncodeState {
+            known_ids,
+            context: self.context.clone(),
+        };
+
+        let mut data = serde_json::Map::new();
+
+        // Encode context
+        let num_context = CONTEXT_URLS.len() + if self.context.is_empty() { 0 } else { 1 };
+        if num_context == 1 {
+            if !CONTEXT_URLS.is_empty() {
+                data.insert(
+                    "@context".to_string(),
+                    Value::String(CONTEXT_URLS[0].to_string()),
+                );
+            } else {
+                let ctx_obj: serde_json::Map<String, Value> = self
+                    .context
+                    .iter()
+                    .map(|(k, v)| (k.clone(), Value::String(v.clone())))
+                    .collect();
+                data.insert("@context".to_string(), Value::Object(ctx_obj));
+            }
+        } else if num_context > 1 {
+            let mut ctx = Vec::new();
+            for url in CONTEXT_URLS {
+                ctx.push(Value::String(url.to_string()));
+            }
+            if !self.context.is_empty() {
+                let ctx_obj: serde_json::Map<String, Value> = self
+                    .context
+                    .iter()
+                    .map(|(k, v)| (k.clone(), Value::String(v.clone())))
+                    .collect();
+                ctx.push(Value::Object(ctx_obj));
+            }
+            data.insert("@context".to_string(), Value::Array(ctx));
+        }
+
+        let path = Path::new();
+
+        if self.objects.len() == 1 {
+            let obj = self.objects[0].as_shacl_object();
+            let type_info = obj.type_info();
+            let type_str = if let Some(compact) = type_info.compact_type_iri {
+                if obj.type_iri() == type_info.type_iri {
+                    compact.to_string()
+                } else {
+                    state.compact_iri(obj.type_iri())
+                }
+            } else {
+                state.compact_iri(obj.type_iri())
+            };
+            data.insert("@type".to_string(), Value::String(type_str));
+            obj.encode_properties(&mut data, &path, &mut state)?;
+        } else if self.objects.len() > 1 {
+            let mut graph = Vec::new();
+            for (idx, obj) in self.objects.iter().enumerate() {
+                let obj_path = path.push_path("@graph").push_index(idx);
+                let encoded = encode_shacl_object(obj.as_shacl_object(), &obj_path, &mut state)?;
+                graph.push(encoded);
+            }
+            data.insert("@graph".to_string(), Value::Array(graph));
+        }
+
+        serde_json::to_writer(writer, &Value::Object(data))?;
+        Ok(())
+    }
+
+    /// Encode to a pretty-printed JSON string
+    #[allow(clippy::const_is_empty)]
+    pub fn encode_pretty<W: Write>(&self, writer: W) -> Result<(), Error> {
+        let mut known_ids = std::collections::HashSet::new();
+        for obj in &self.objects {
+            if let Some(id) = obj.as_shacl_object().id() {
+                known_ids.insert(id.to_string());
+            }
+        }
+        let mut state = EncodeState {
+            known_ids,
+            context: self.context.clone(),
+        };
+
+        let mut data = serde_json::Map::new();
+
+        let num_context = CONTEXT_URLS.len() + if self.context.is_empty() { 0 } else { 1 };
+        if num_context == 1 {
+            if !CONTEXT_URLS.is_empty() {
+                data.insert(
+                    "@context".to_string(),
+                    Value::String(CONTEXT_URLS[0].to_string()),
+                );
+            } else {
+                let ctx_obj: serde_json::Map<String, Value> = self
+                    .context
+                    .iter()
+                    .map(|(k, v)| (k.clone(), Value::String(v.clone())))
+                    .collect();
+                data.insert("@context".to_string(), Value::Object(ctx_obj));
+            }
+        } else if num_context > 1 {
+            let mut ctx = Vec::new();
+            for url in CONTEXT_URLS {
+                ctx.push(Value::String(url.to_string()));
+            }
+            if !self.context.is_empty() {
+                let ctx_obj: serde_json::Map<String, Value> = self
+                    .context
+                    .iter()
+                    .map(|(k, v)| (k.clone(), Value::String(v.clone())))
+                    .collect();
+                ctx.push(Value::Object(ctx_obj));
+            }
+            data.insert("@context".to_string(), Value::Array(ctx));
+        }
+
+        let path = Path::new();
+
+        if self.objects.len() == 1 {
+            let obj = self.objects[0].as_shacl_object();
+            let type_info = obj.type_info();
+            let type_str = if let Some(compact) = type_info.compact_type_iri {
+                if obj.type_iri() == type_info.type_iri {
+                    compact.to_string()
+                } else {
+                    state.compact_iri(obj.type_iri())
+                }
+            } else {
+                state.compact_iri(obj.type_iri())
+            };
+            data.insert("@type".to_string(), Value::String(type_str));
+            obj.encode_properties(&mut data, &path, &mut state)?;
+        } else if self.objects.len() > 1 {
+            let mut graph = Vec::new();
+            for (idx, obj) in self.objects.iter().enumerate() {
+                let obj_path = path.push_path("@graph").push_index(idx);
+                let encoded = encode_shacl_object(obj.as_shacl_object(), &obj_path, &mut state)?;
+                graph.push(encoded);
+            }
+            data.insert("@graph".to_string(), Value::Array(graph));
+        }
+
+        serde_json::to_writer_pretty(writer, &Value::Object(data))?;
+        Ok(())
+    }
+
+    /// Validate all objects in the set
+    pub fn validate(&self, _handler: Option<&mut dyn ErrorHandler>) -> bool {
+        let mut valid = true;
+        let path = Path::new();
+        for (idx, obj) in self.objects.iter().enumerate() {
+            let obj_path = path.push_index(idx);
+            if !obj.as_shacl_object().validate(&obj_path, None) {
+                valid = false;
+            }
+        }
+        valid
+    }
+
+    /// Link IRI references to their corresponding objects
+    fn link(&mut self) {
+        // Build ID index
+        let mut id_map: HashMap<String, usize> = HashMap::new();
+        for (idx, obj) in self.objects.iter().enumerate() {
+            if let Some(id) = obj.as_shacl_object().id() {
+                id_map.insert(id.to_string(), idx);
+            }
+        }
+        // Also index nested objects
+        fn index_nested(obj: &AnyObject, id_map: &mut HashMap<String, usize>, base_idx: usize) {
+            let path = Path::new();
+            obj.as_shacl_object().walk(&path, &mut |_p, r| {
+                if let Ref::Object(inner) = r {
+                    if let Some(id) = inner.as_shacl_object().id() {
+                        id_map.insert(id.to_string(), base_idx);
+                    }
+                }
+            });
+        }
+        for idx in 0..self.objects.len() {
+            index_nested(&self.objects[idx], &mut id_map, idx);
+        }
+
+        // Clone objects that have IDs so they can be used for linking
+        let clones: HashMap<String, AnyObject> = id_map.iter()
+            .map(|(id, &idx)| (id.clone(), self.objects[idx].clone()))
+            .collect();
+
+        // Walk each object and resolve IRI refs to object refs
+        for obj in &mut self.objects {
+            let path = Path::new();
+            obj.as_shacl_object_mut().walk_mut(&path, &mut |_p, r| {
+                if let Ref::IRI(iri) = r {
+                    if let Some(target) = clones.get(iri.as_str()) {
+                        *r = Ref::Object(Box::new(target.clone()));
+                    }
+                }
+            });
+        }
+
+        self.objects_by_id = id_map;
+    }
+}
+
+impl Default for SHACLObjectSet {
+    fn default() -> Self {
+        Self::new()
+    }
+}

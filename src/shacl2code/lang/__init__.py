@@ -10,6 +10,7 @@ from .jinja import JinjaRender
 from .jsonschema import JsonSchemaRender
 from .lang import LANGUAGES
 from .python import PythonRender
+from .rust import RustRender
 
 __all__ = [
     "LANGUAGES",
@@ -18,4 +19,5 @@ __all__ = [
     "JinjaRender",
     "JsonSchemaRender",
     "PythonRender",
+    "RustRender",
 ]

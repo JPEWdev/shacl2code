@@ -112,8 +112,7 @@ def compile_test(test_lib, tmp_path):
                 shacl_model = {{ path = "{test_lib}" }}
                 serde_json = "1"
                 chrono = {{ version = "0.4", features = ["serde"] }}
-                """)
-        )
+                """))
 
         src = tmp_path / "src" / "main.rs"
         src.write_text(

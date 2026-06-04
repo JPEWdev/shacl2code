@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: MIT
 
 import json
-import os
 import subprocess
 import textwrap
 from enum import Enum

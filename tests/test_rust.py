@@ -160,9 +160,9 @@ def compile_test(test_lib, tmp_path):
             ), f"Compile succeeded when failure was expected. Output: {p.stdout}"
             return None
 
-        assert p.returncode == 0, (
-            f"Compile failed. stderr: {p.stderr}\nstdout: {p.stdout}"
-        )
+        assert (
+            p.returncode == 0
+        ), f"Compile failed. stderr: {p.stderr}\nstdout: {p.stdout}"
 
         prog = tmp_path / "target" / "release" / "test_prog"
 

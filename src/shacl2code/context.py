@@ -1,6 +1,7 @@
 # Copyright (c) 2024 Joshua Watt
 #
 # SPDX-License-Identifier: MIT
+"""JSON-LD context processing and IRI compaction/expansion utilities"""
 
 import re
 from contextlib import contextmanager

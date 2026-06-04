@@ -47,8 +47,7 @@ def _build_rust_prog(test_lib, tmp_path, name, code):
             [dependencies]
             shacl_model = {{ path = "{test_lib}" }}
             serde_json = "1"
-            """)
-    )
+            """))
 
     src = tmp_path / "src" / "main.rs"
     src.write_text(code)

@@ -482,7 +482,7 @@ def test_links(filename, name, expect_tag, tmp_path, test_context_url, link_test
 
 @jsonvalidation.context_tests()
 def test_objset_context(compile_test, context, expanded, compacted):
-    program = ['let mut objset = SHACLObjectSet::new();']
+    program = ["let mut objset = SHACLObjectSet::new();"]
 
     for k, v in context.items():
         program.append(f'objset.add_context("{k}".to_string(), "{v}".to_string());')

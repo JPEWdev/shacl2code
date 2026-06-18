@@ -3,6 +3,7 @@
 # Copyright (c) 2026 Joshua Watt
 #
 # SPDX-License-Identifier: MIT
+"""General utility functions"""
 
 
 def convert_version_string(s):

@@ -2,6 +2,7 @@
 # Copyright (c) 2024 Joshua Watt
 #
 # SPDX-License-Identifier: MIT
+"""Language binding renderers for shacl2code"""
 
 # All renderers must be imported here to be registered
 from .cpp import CppRender
@@ -10,6 +11,7 @@ from .jinja import JinjaRender
 from .jsonschema import JsonSchemaRender
 from .lang import LANGUAGES
 from .python import PythonRender
+from .rust import RustRender
 
 __all__ = [
     "LANGUAGES",
@@ -18,4 +20,5 @@ __all__ = [
     "JinjaRender",
     "JsonSchemaRender",
     "PythonRender",
+    "RustRender",
 ]

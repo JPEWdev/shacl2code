@@ -11,5 +11,8 @@ from .model import *  # noqa: F401, F403
 {%- if include_main %}
 from .cmd import main  # noqa: F401, I100, I202
 {%- endif %}
+{%- if protocols %}
+from . import protocols  # noqa: F401, I100, I202
+{%- endif %}
 {{ '"' }}{{ '"' }}{{ '"' }}Format Guard"""
 # fmt on

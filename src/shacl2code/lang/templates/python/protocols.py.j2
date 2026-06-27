@@ -1,0 +1,107 @@
+# {{ disclaimer }}
+#
+# SPDX-License-Identifier: {{ spdx_license }}
+"""Version-agnostic Protocol types, one per generated class.
+
+Each Protocol is satisfied by the corresponding concrete class of any model
+version that is backward-compatible with the baseline from which these Protocols
+were generated. Use these types to write functions and classes that work across
+multiple model versions and still pass strict static type checking.
+
+Object-reference and list properties expose a typed getter (covariant read) and
+an ``Any`` setter (version-agnostic write). Scalar properties are plain
+read-write attributes.
+
+Construct objects with a concrete version module; use these Protocols only for
+annotations.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Any, Iterable, Iterator, Optional, Protocol, Set, Tuple
+
+
+class SHACLObjectProtocol(Protocol):
+    """Version-agnostic view of the SHACLObject machinery base."""
+
+    def get_id(self) -> Optional[str]: ...
+    def set_id(self, value: Optional[str]) -> None: ...
+    def get_type(self) -> str: ...
+    def get_compact_type(self) -> Optional[str]: ...
+    def property_keys(self) -> Iterator[Tuple[Optional[str], str, Optional[str]]]: ...
+    def __getitem__(self, iri: str) -> Any: ...
+    def __setitem__(self, iri: str, value: Any) -> None: ...
+
+
+class SHACLObjectSetProtocol(Protocol):
+    """Version-agnostic view of the SHACLObjectSet collection.
+
+    Raw index attributes (``objects``, ``obj_by_id``, etc.) and version-coupled
+    methods (``encode``/``decode``, ``merge``) are omitted; use a concrete
+    version type for those.
+    """
+
+    def foreach(self) -> Iterable[SHACLObjectProtocol]: ...
+
+    def foreach_type(
+        self, typ: str, *, match_subclass: bool = True
+    ) -> Iterable[SHACLObjectProtocol]: ...
+
+    def find_by_id(
+        self, _id: str, default: Any = None
+    ) -> Optional[SHACLObjectProtocol]: ...
+
+    def link(self) -> Set[str]: ...
+    def add(self, obj: Any) -> Any: ...
+    def remove(self, obj: Any) -> None: ...
+    def update(self, *others: Iterable[Any]) -> None: ...
+    def __contains__(self, item: Any) -> bool: ...
+
+
+# fmt: off
+"""Format Guard{{ '"' }}{{ '"' }}{{ '"' }}
+# DOMAIN CLASSES
+{% for class in classes %}
+
+class {{ protocol_name(class) }}(
+{%- if class.parent_ids %}
+    {%- for id in class.parent_ids -%}
+        {{- protocol_name(classes.get(id)) }}{%- if not loop.last -%}, {% endif -%}
+    {%- endfor -%}
+{%- else -%}
+    SHACLObjectProtocol
+{%- endif -%}
+, Protocol):
+{%- if class.comment %}
+    {{ '"' }}{{ '"' }}{{ '"' }}
+    {%- for l in class.comment.split("\n") %}
+    {{ l.rstrip() }}
+    {%- endfor %}
+    {{ '"' }}{{ '"' }}{{ '"' }}
+{%- endif %}
+
+    def _protocol_{{ protocol_name(class) }}(self) -> None: ...
+    {%- if class.id_property %}
+    {{ class.id_property }}: Optional[str]
+    {%- endif %}
+    {%- for prop in class.properties %}
+        {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
+        {%- set has_ref = prop.class_id and not prop.enum_values %}
+        {%- if prop.enum_values %}
+            {%- set ptype = "str" %}
+        {%- elif prop.class_id %}
+            {%- set ptype = "Any" %}
+        {%- else %}
+            {%- set ptype = DATATYPE_PYTHON_TYPES[prop.datatype] %}
+        {%- endif %}
+        {%- if is_list or has_ref %}
+    {{ varname(prop.varname) }}: Any
+        {%- else %}
+    {{ varname(prop.varname) }}: Optional[{{ ptype }}]
+        {%- endif %}
+    {%- endfor %}
+{% endfor %}
+
+{{ '"' }}{{ '"' }}{{ '"' }}Format Guard"""
+# fmt: on

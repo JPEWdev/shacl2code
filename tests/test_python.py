@@ -2276,3 +2276,261 @@ def test_version(model):
 
     assert model.VERSION_STRING == MODEL_VERSION
     assert model.VERSION == convert_version_string(MODEL_VERSION)
+
+
+# ---------------------------------------------------------------------------
+# Protocol generation tests
+# ---------------------------------------------------------------------------
+
+TEST_V2_MODEL = THIS_DIR / "data" / "model" / "test-v2.ttl"
+
+
+@pytest.fixture(scope="module")
+def python_model_v1_protocols(tmp_path_factory, model_context_url):
+    """v1 model generated with --protocols yes."""
+    tmp_directory = tmp_path_factory.mktemp("protocols_v1")
+    module_name = "pymodel_v1"
+    output_dir = tmp_directory / module_name
+    shacl2code_generate(
+        ["--input", TEST_MODEL, "--context", model_context_url],
+        ["--use-protocols", "yes"],
+        output_dir,
+    )
+    (output_dir / "py.typed").touch()
+    return tmp_directory, module_name
+
+
+@pytest.fixture(scope="module")
+def python_model_v2_protocols(tmp_path_factory, model_context_url):
+    """v2 model (backward-compatible extension) generated with --protocols yes."""
+    tmp_directory = tmp_path_factory.mktemp("protocols_v2")
+    module_name = "pymodel_v2"
+    output_dir = tmp_directory / module_name
+    shacl2code_generate(
+        ["--input", TEST_V2_MODEL, "--context", model_context_url],
+        ["--use-protocols", "yes"],
+        output_dir,
+    )
+    (output_dir / "py.typed").touch()
+    return tmp_directory, module_name
+
+
+class TestProtocolOutput:
+    """
+    Tests for generated protocols.py — syntax, typing, and flake8.
+    """
+
+    def test_protocols_file_generated(self, tmp_path, model_context_url):
+        output_dir = tmp_path / "pymodel"
+        shacl2code_generate(
+            ["--input", TEST_MODEL, "--context", model_context_url],
+            ["--use-protocols", "yes"],
+            output_dir,
+        )
+        assert (output_dir / "protocols.py").exists()
+
+    def test_protocols_file_not_generated_by_default(self, tmp_path, model_context_url):
+        output_dir = tmp_path / "pymodel"
+        shacl2code_generate(
+            ["--input", TEST_MODEL, "--context", model_context_url],
+            [],
+            output_dir,
+        )
+        assert not (output_dir / "protocols.py").exists()
+
+    def test_mypy(self, tmp_path, model_context_url):
+        output_dir = tmp_path / "pymodel"
+        shacl2code_generate(
+            ["--input", TEST_MODEL, "--context", model_context_url],
+            ["--use-protocols", "yes"],
+            output_dir,
+        )
+        (output_dir / "py.typed").touch()
+        subprocess.run(["mypy", output_dir], encoding="utf-8", check=True)
+
+    def test_flake8(self, tmp_path, model_context_url):
+        output_dir = tmp_path / "pymodel"
+        shacl2code_generate(
+            ["--input", TEST_MODEL, "--context", model_context_url],
+            ["--use-protocols", "yes"],
+            output_dir,
+        )
+        subprocess.run(
+            ["flake8", "--config", TOP_DIR / ".flake8", output_dir / "protocols.py"],
+            encoding="utf-8",
+            check=True,
+        )
+
+
+class TestProtocolConformance:
+    """
+    Type-checked usage tests: concrete classes satisfy their protocols,
+    and the discriminator keeps structurally-identical classes distinct.
+    """
+
+    def test_conformance_mypy(self, python_model_v1_protocols, tmp_path):
+        """
+        Every concrete class must satisfy its generated Protocol under mypy strict.
+        Verifies scalar read/write, object-ref typed read, Any-setter write.
+        """
+        module_path, module_name = python_model_v1_protocols
+        env = os.environ.copy()
+        env["PYTHONPATH"] = str(module_path)
+
+        script = tmp_path / "conformance.py"
+        script.write_text(textwrap.dedent(f"""\
+            from typing import Any, Optional
+            import {module_name}
+            from {module_name} import protocols
+
+            # Protocol conformance: assignment forces the static check.
+            a: protocols.test_class = {module_name}.test_class()
+            b: protocols.parent_class = {module_name}.parent_class()
+
+            # Scalar read + write through protocol.
+            def set_scalar(o: protocols.test_class, v: Optional[str]) -> None:
+                o.test_class_string_scalar_prop = v
+
+            # Object-ref Any read + Any-setter write through protocol.
+            def get_ref(o: protocols.test_class) -> Any:
+                return o.test_class_class_prop
+
+            def set_ref(o: protocols.test_class, v: {module_name}.test_class) -> None:
+                o.test_class_class_prop = v
+
+            # Version-agnostic function accepts any conforming class.
+            def get_scalar(o: protocols.test_class) -> Optional[str]:
+                result: Optional[str] = o.test_class_string_scalar_prop
+                return result
+
+            get_scalar(a)
+        """))
+
+        r = subprocess.run(
+            ["mypy", "--strict", str(script)],
+            encoding="utf-8",
+            env=env,
+            capture_output=True,
+        )
+        assert r.returncode == 0, r.stdout + r.stderr
+
+    def test_discriminator_mypy(self, python_model_v1_protocols, tmp_path):
+        """
+        The discriminator marker must prevent structurally-identical classes
+        (test_class and another_class share no own properties in v1) from
+        satisfying each other's protocol.
+        """
+        module_path, module_name = python_model_v1_protocols
+        env = os.environ.copy()
+        env["PYTHONPATH"] = str(module_path)
+
+        # test_another_class has no properties in v1 — structurally a subset of
+        # test_class. Without the discriminator, it would satisfy protocols.test_class.
+        script = tmp_path / "discriminator.py"
+        script.write_text(textwrap.dedent(f"""\
+            import {module_name}
+            from {module_name} import protocols
+
+            # This must be a type error: test_another_class != protocols.test_class
+            bad: protocols.test_class = {module_name}.test_another_class()  # type: ignore[assignment]
+        """))
+
+        result = subprocess.run(
+            ["mypy", "--strict", str(script)],
+            encoding="utf-8",
+            env=env,
+            capture_output=True,
+        )
+        # mypy must flag the assignment despite the type: ignore — we check that
+        # removing the ignore would produce an error by running without it.
+        script2 = tmp_path / "discriminator_no_ignore.py"
+        script2.write_text(textwrap.dedent(f"""\
+            import {module_name}
+            from {module_name} import protocols
+
+            bad: protocols.test_class = {module_name}.test_another_class()
+        """))
+        result2 = subprocess.run(
+            ["mypy", "--strict", str(script2)],
+            encoding="utf-8",
+            env=env,
+            capture_output=True,
+        )
+        assert result2.returncode != 0, (
+            "Expected mypy to reject test_another_class as protocols.test_class "
+            "(discriminator should prevent it)"
+        )
+
+
+class TestProtocolCrossVersion:
+    """
+    Cross-version: v2 concrete classes must satisfy v1-generated Protocols,
+    and the discriminator still prevents wrong-type assignments across versions.
+    """
+
+    def test_cross_version_mypy(
+        self, python_model_v1_protocols, python_model_v2_protocols, tmp_path
+    ):
+        """
+        v2.test_class() satisfies v1.protocols.test_class (backward-compat).
+        v2.another_class() does NOT satisfy v1.protocols.test_class (discriminator).
+        """
+        v1_path, v1_name = python_model_v1_protocols
+        v2_path, v2_name = python_model_v2_protocols
+        env = os.environ.copy()
+        env["PYTHONPATH"] = os.pathsep.join([str(v1_path), str(v2_path)])
+
+        script = tmp_path / "cross_version.py"
+        script.write_text(textwrap.dedent(f"""\
+            from typing import Any, Optional
+            import {v1_name}, {v2_name}
+            from {v1_name} import protocols as v1p
+
+            # v2 concrete satisfies v1 Protocol (additive-only minor version).
+            a: v1p.test_class = {v2_name}.test_class()
+            b: v1p.parent_class = {v2_name}.parent_class()
+
+            # Scalar read through v1 protocol on v2 object.
+            def get_scalar(o: v1p.test_class) -> Optional[str]:
+                result: Optional[str] = o.test_class_string_scalar_prop
+                return result
+
+            get_scalar(a)
+
+            # Object-ref typed read through v1 protocol on v2 object.
+            def get_ref(o: v1p.test_class) -> Any:
+                return o.test_class_class_prop
+
+            # Any-setter write through v1 protocol on v2 object.
+            def set_ref(o: v1p.test_class, v: {v2_name}.test_class) -> None:
+                o.test_class_class_prop = v
+
+            # Discriminator: v2.another_class must NOT satisfy v1.protocols.test_class.
+            bad: v1p.test_class = {v2_name}.test_another_class()  # type: ignore[assignment]
+        """))
+
+        subprocess.run(
+            ["mypy", "--strict", str(script)],
+            encoding="utf-8",
+            env=env,
+            check=True,
+        )
+
+        # Confirm the discriminator actually works (without the ignore).
+        script2 = tmp_path / "cross_version_bad.py"
+        script2.write_text(textwrap.dedent(f"""\
+            import {v1_name}, {v2_name}
+            from {v1_name} import protocols as v1p
+
+            bad: v1p.test_class = {v2_name}.test_another_class()
+        """))
+        result = subprocess.run(
+            ["mypy", "--strict", str(script2)],
+            encoding="utf-8",
+            env=env,
+            capture_output=True,
+        )
+        assert result.returncode != 0, (
+            "Expected mypy to reject v2.another_class as v1.protocols.test_class "
+            "across versions"
+        )

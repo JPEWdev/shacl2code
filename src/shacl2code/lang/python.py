@@ -60,6 +60,11 @@ SHACLOBJECT_RESERVED_WORDS = {
 }
 
 
+def protocol_name(cls):
+    """Protocol name for a class — same as the class name (identity mapping)."""
+    return varname(*cls.clsname)
+
+
 def varname(*name):
     """Make a valid Python variable name."""
     name = "_".join(name)
@@ -92,6 +97,7 @@ class PythonRender(JinjaTemplateRender):
         self.__output = args.output
         self.__use_slots = args.use_slots
         self.__include_main = args.include_main == "yes"
+        self.__protocols = args.use_protocols == "yes"
         self.__version_str = args.version
         if args.version:
             self.__version = repr(convert_version_string(args.version))
@@ -126,6 +132,15 @@ class PythonRender(JinjaTemplateRender):
             "--version",
             help="Specify model version",
         )
+        parser.add_argument(
+            "--use-protocols",
+            choices=("yes", "no"),
+            default="no",
+            help=(
+                "Generate a protocols.py module with version-agnostic Protocol "
+                "types for every class. Default is '%(default)s'"
+            ),
+        )
 
     def get_outputs(self):
         t = TEMPLATE_DIR / "python"
@@ -141,9 +156,13 @@ class PythonRender(JinjaTemplateRender):
             yield get_file("cmd.py")
             yield get_file("__main__.py")
 
+        if self.__protocols:
+            yield get_file("protocols.py")
+
     def get_extra_env(self):
         return {
             "varname": varname,
+            "protocol_name": protocol_name,
             "DATATYPE_CLASSES": DATATYPE_CLASSES,
             "DATATYPE_PYTHON_TYPES": DATATYPE_PYTHON_TYPES,
         }
@@ -158,6 +177,7 @@ class PythonRender(JinjaTemplateRender):
         return {
             "use_slots": use_slots,
             "include_main": self.__include_main,
+            "protocols": self.__protocols,
             "version_str": self.__version_str,
             "version": self.__version,
         }

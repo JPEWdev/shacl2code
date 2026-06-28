@@ -10,13 +10,14 @@ import importlib
 from typing import Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
-{%- if use_protocols %}
-    from . import protocols  # noqa: F401
-{%- endif %}
-{%- if include_main %}
-    from .cmd import main  # noqa: F401
-{%- endif %}
     from .model import *  # noqa: F401, F403
+
+# fmt: off
+"""Format Guard{{ '"' }}{{ '"' }}{{ '"' }}
+{%- if use_protocols %}
+if TYPE_CHECKING:
+    from . import protocols  # noqa: F401, I202
+{%- endif %}
 
 
 def __getattr__(name: str) -> Any:
@@ -34,3 +35,7 @@ def __getattr__(name: str) -> Any:
         return getattr(mod, name)
     except AttributeError:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+{{ '"' }}{{ '"' }}{{ '"' }}Format Guard"""
+# fmt: on

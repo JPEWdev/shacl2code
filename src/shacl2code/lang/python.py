@@ -94,8 +94,8 @@ class PythonRender(JinjaTemplateRender):
 
     def __init__(self, args):
         super().__init__(args)
-        self.__include_main = args.include_main == "yes"
         self.__output = args.output
+        self.__include_main = args.include_main == "yes"
         self.__use_protocols = args.use_protocols == "yes"
         self.__use_slots = args.use_slots
         self.__version_str = args.version

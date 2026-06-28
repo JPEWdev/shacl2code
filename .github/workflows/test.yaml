@@ -65,7 +65,8 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
-          python-version: "3.14" # must match the latest in Black's target-version (see: pyproject.toml)
+          # Black in this Python version must support all target-versions listed in pyproject.toml
+          python-version: "3.14"
       - uses: psf/black@87928e6d6761a4a6d22250e1fee5601b3998086e # 26.5.1
       - uses: py-actions/flake8@84ec6726560b6d5bd68f2a5bed83d62b52bb50ba # v2.3.0
       - name: Install dependencies

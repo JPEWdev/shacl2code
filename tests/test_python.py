@@ -2287,13 +2287,13 @@ TEST_V2_MODEL = THIS_DIR / "data" / "model" / "test-v2.ttl"
 
 @pytest.fixture(scope="module")
 def python_model_v1_protocols(tmp_path_factory, model_context_url):
-    """v1 model generated with --protocols yes."""
+    """v1 model generated with --include-protocols yes."""
     tmp_directory = tmp_path_factory.mktemp("protocols_v1")
     module_name = "pymodel_v1"
     output_dir = tmp_directory / module_name
     shacl2code_generate(
         ["--input", TEST_MODEL, "--context", model_context_url],
-        ["--use-protocols", "yes"],
+        ["--include-protocols", "yes"],
         output_dir,
     )
     (output_dir / "py.typed").touch()
@@ -2302,13 +2302,13 @@ def python_model_v1_protocols(tmp_path_factory, model_context_url):
 
 @pytest.fixture(scope="module")
 def python_model_v2_protocols(tmp_path_factory, model_context_url):
-    """v2 model (backward-compatible extension) generated with --protocols yes."""
+    """v2 model (backward-compatible extension) generated with --include-protocols yes."""
     tmp_directory = tmp_path_factory.mktemp("protocols_v2")
     module_name = "pymodel_v2"
     output_dir = tmp_directory / module_name
     shacl2code_generate(
         ["--input", TEST_V2_MODEL, "--context", model_context_url],
-        ["--use-protocols", "yes"],
+        ["--include-protocols", "yes"],
         output_dir,
     )
     (output_dir / "py.typed").touch()
@@ -2324,7 +2324,7 @@ class TestProtocolOutput:
         output_dir = tmp_path / "pymodel"
         shacl2code_generate(
             ["--input", TEST_MODEL, "--context", model_context_url],
-            ["--use-protocols", "yes"],
+            ["--include-protocols", "yes"],
             output_dir,
         )
         assert (output_dir / "protocols.py").exists()
@@ -2342,7 +2342,7 @@ class TestProtocolOutput:
         output_dir = tmp_path / "pymodel"
         shacl2code_generate(
             ["--input", TEST_MODEL, "--context", model_context_url],
-            ["--use-protocols", "yes"],
+            ["--include-protocols", "yes"],
             output_dir,
         )
         (output_dir / "py.typed").touch()
@@ -2352,7 +2352,7 @@ class TestProtocolOutput:
         output_dir = tmp_path / "pymodel"
         shacl2code_generate(
             ["--input", TEST_MODEL, "--context", model_context_url],
-            ["--use-protocols", "yes"],
+            ["--include-protocols", "yes"],
             output_dir,
         )
         subprocess.run(

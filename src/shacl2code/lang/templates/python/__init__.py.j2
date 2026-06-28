@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 # fmt: off
 """Format Guard{{ '"' }}{{ '"' }}{{ '"' }}
-{%- if use_protocols %}
+{%- if include_protocols %}
 if TYPE_CHECKING:
     from . import protocols  # noqa: F401, I202
 {%- endif %}
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 def __getattr__(name: str) -> Any:
     # Lazy attribute access: submodules and model content loaded on first use (PEP 562).
-{%- if use_protocols %}
+{%- if include_protocols %}
     if name == "protocols":
         return importlib.import_module(f"{__name__}.protocols")
 {%- endif %}

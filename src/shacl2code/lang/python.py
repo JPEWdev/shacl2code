@@ -96,7 +96,7 @@ class PythonRender(JinjaTemplateRender):
         super().__init__(args)
         self.__output = args.output
         self.__include_main = args.include_main == "yes"
-        self.__use_protocols = args.use_protocols == "yes"
+        self.__include_protocols = args.include_protocols == "yes"
         self.__use_slots = args.use_slots
         self.__version_str = args.version
         if args.version:
@@ -120,11 +120,11 @@ class PythonRender(JinjaTemplateRender):
             help="Generate a main function for the module. Default is '%(default)s'",
         )
         parser.add_argument(
-            "--use-protocols",
+            "--include-protocols",
             choices=("yes", "no"),
             default="no",
             help=(
-                "Generate a protocols.py module with version-agnostic Protocol "
+                "Include a protocols.py module with version-agnostic Protocol "
                 "types for every class. Default is '%(default)s'"
             ),
         )
@@ -156,7 +156,7 @@ class PythonRender(JinjaTemplateRender):
             yield get_file("cmd.py")
             yield get_file("__main__.py")
 
-        if self.__use_protocols:
+        if self.__include_protocols:
             yield get_file("protocols.py")
 
     def get_extra_env(self):
@@ -176,7 +176,7 @@ class PythonRender(JinjaTemplateRender):
             use_slots = False
         return {
             "include_main": self.__include_main,
-            "use_protocols": self.__use_protocols,
+            "include_protocols": self.__include_protocols,
             "use_slots": use_slots,
             "version": self.__version,
             "version_str": self.__version_str,

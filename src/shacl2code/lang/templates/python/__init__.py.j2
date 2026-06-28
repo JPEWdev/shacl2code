@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 
 def __getattr__(name: str) -> Any:
-    """Lazily load model content or submodules on first attribute access (PEP 562)."""
+    # Lazy attribute access: submodules and model content loaded on first use (PEP 562).
 {%- if use_protocols %}
     if name == "protocols":
         return importlib.import_module(f"{__name__}.protocols")

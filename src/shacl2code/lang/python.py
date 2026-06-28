@@ -61,7 +61,7 @@ SHACLOBJECT_RESERVED_WORDS = {
 
 
 def protocol_name(cls):
-    """Protocol name for a class — same as the class name (identity mapping)."""
+    """Protocol name for a class - same as the class name (identity mapping)."""
     return varname(*cls.clsname)
 
 

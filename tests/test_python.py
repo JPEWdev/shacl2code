@@ -2317,7 +2317,7 @@ def python_model_v2_protocols(tmp_path_factory, model_context_url):
 
 class TestProtocolOutput:
     """
-    Tests for generated protocols.py — syntax, typing, and flake8.
+    Tests for generated protocols.py - syntax, typing, and flake8.
     """
 
     def test_protocols_file_generated(self, tmp_path, model_context_url):
@@ -2424,39 +2424,23 @@ class TestProtocolConformance:
         env = os.environ.copy()
         env["PYTHONPATH"] = str(module_path)
 
-        # test_another_class has no properties in v1 — structurally a subset of
-        # test_class. Without the discriminator, it would satisfy protocols.test_class.
+        # test_another_class has no own properties in v1, making it structurally
+        # identical to test_class. Without the discriminator both would satisfy
+        # each other's protocol.
         script = tmp_path / "discriminator.py"
         script.write_text(textwrap.dedent(f"""\
             import {module_name}
             from {module_name} import protocols
 
-            # This must be a type error: test_another_class != protocols.test_class
-            bad: protocols.test_class = {module_name}.test_another_class()  # type: ignore[assignment]
+            bad: protocols.test_class = {module_name}.test_another_class()
         """))
-
         result = subprocess.run(
             ["mypy", "--strict", str(script)],
             encoding="utf-8",
             env=env,
             capture_output=True,
         )
-        # mypy must flag the assignment despite the type: ignore — we check that
-        # removing the ignore would produce an error by running without it.
-        script2 = tmp_path / "discriminator_no_ignore.py"
-        script2.write_text(textwrap.dedent(f"""\
-            import {module_name}
-            from {module_name} import protocols
-
-            bad: protocols.test_class = {module_name}.test_another_class()
-        """))
-        result2 = subprocess.run(
-            ["mypy", "--strict", str(script2)],
-            encoding="utf-8",
-            env=env,
-            capture_output=True,
-        )
-        assert result2.returncode != 0, (
+        assert result.returncode != 0, (
             "Expected mypy to reject test_another_class as protocols.test_class "
             "(discriminator should prevent it)"
         )

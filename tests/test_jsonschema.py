@@ -240,6 +240,93 @@ def test_no_unevaluated_properties():
     _assert_no_unevaluated_properties(schema)
 
 
+# ---------------------------------------------------------------------------
+# get_all_properties coverage: structural assertions on --use-additional-properties schema
+# ---------------------------------------------------------------------------
+
+# $defs keys are varname-processed (slashes/dots -> underscores, scheme stripped)
+_TEST_CLASS = "http_exampleorgtestclass"
+_TEST_DERIVED = "http_exampleorgtestderivedclass"
+_EXTENSIBLE_CLASS = "http_exampleorgextensibleclass"
+
+# Property path IRIs as they appear in then.properties (full form: no context URL supplied)
+_PARENT_PROP = "http://example.org/test-class/string-scalar-prop"
+_OWN_PROP = "http://example.org/test-derived-class/string-prop"
+
+
+@pytest.fixture(scope="module")
+def additional_props_schema() -> Dict[str, Any]:
+    return json.loads(
+        _run_jsonschema_generate(
+            ["--input", TEST_MODEL], ["--use-additional-properties"]
+        )
+    )
+
+
+def test_additional_props_no_props_defs(
+    additional_props_schema: Dict[str, Any],
+) -> None:
+    """--use-additional-properties removes _props entries; all properties are inlined."""
+    props_keys = [k for k in additional_props_schema["$defs"] if k.endswith("_props")]
+    assert props_keys == [], f"unexpected _props entries: {props_keys}"
+
+
+def test_additional_props_root_class_has_context_and_additional_properties(
+    additional_props_schema: Dict[str, Any],
+) -> None:
+    """Root class then block has @context and additionalProperties: false."""
+    then = additional_props_schema["$defs"][_TEST_CLASS]["then"]
+    assert "@context" in then["properties"]
+    assert then["additionalProperties"] is False
+
+
+def test_additional_props_derived_class_has_parent_prop(
+    additional_props_schema: Dict[str, Any],
+) -> None:
+    """Derived class then block contains properties inherited from the parent class."""
+    props = additional_props_schema["$defs"][_TEST_DERIVED]["then"]["properties"]
+    assert _PARENT_PROP in props, "parent property missing from derived class"
+
+
+def test_additional_props_derived_class_has_own_prop(
+    additional_props_schema: Dict[str, Any],
+) -> None:
+    """Derived class then block contains the class's own properties."""
+    props = additional_props_schema["$defs"][_TEST_DERIVED]["then"]["properties"]
+    assert _OWN_PROP in props, "own property missing from derived class"
+
+
+def test_additional_props_derived_class_parent_props_come_first(
+    additional_props_schema: Dict[str, Any],
+) -> None:
+    """Parent properties appear before the class's own properties (parent-first order)."""
+    prop_keys = list(
+        additional_props_schema["$defs"][_TEST_DERIVED]["then"]["properties"].keys()
+    )
+    assert prop_keys.index(_PARENT_PROP) < prop_keys.index(_OWN_PROP)
+
+
+def test_additional_props_prop_refs_attributed_to_defining_class(
+    additional_props_schema: Dict[str, Any],
+) -> None:
+    """Each property's $ref points to the class that originally defines it."""
+    props = additional_props_schema["$defs"][_TEST_DERIVED]["then"]["properties"]
+    assert (
+        "prop_http_exampleorgtestclass" in props[_PARENT_PROP]["$ref"]
+    ), "parent prop ref should point to test-class prop definition"
+    assert (
+        "prop_http_exampleorgtestderivedclass" in props[_OWN_PROP]["$ref"]
+    ), "own prop ref should point to test-derived-class prop definition"
+
+
+def test_additional_props_extensible_class_allows_additional_properties(
+    additional_props_schema: Dict[str, Any],
+) -> None:
+    """Extensible class has additionalProperties: true with --use-additional-properties."""
+    then = additional_props_schema["$defs"][_EXTENSIBLE_CLASS]["then"]
+    assert then["additionalProperties"] is True
+
+
 @jsonvalidation.validation_tests()
 def test_schema_validation_additional_props(
     test_jsonschema_additional_props, test_context_url, passes, data

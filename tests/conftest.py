@@ -87,6 +87,29 @@ def test_timezone():
 
 
 @pytest.fixture(scope="session")
+def test_jsonschema_additional_props(model_server, test_context_url):
+    p = subprocess.run(
+        [
+            "shacl2code",
+            "generate",
+            "--input",
+            MODEL_DIR / "test.ttl",
+            "--context",
+            test_context_url,
+            "jsonschema",
+            "--use-additional-properties",
+            "--output",
+            "-",
+        ],
+        check=True,
+        stdout=subprocess.PIPE,
+        encoding="utf-8",
+    )
+
+    yield json.loads(p.stdout)
+
+
+@pytest.fixture(scope="session")
 def roundtrip(tmp_path_factory, model_server):
     outfile = tmp_path_factory.mktemp("roundtrip") / "roundtrip.json"
     with (DATA_DIR / "roundtrip.json").open("r") as f:

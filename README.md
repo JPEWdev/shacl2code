@@ -86,9 +86,11 @@ composing them via `$ref` chains.
 
 **Trade-off:**
 
-- The generated schema is larger because every class includes its full set of
-  inherited property definitions inline. For load-once/validate-many use cases
-  the size cost is amortized over many validation runs.
+- The generated schema is larger because every class inlines its full inherited
+  property list; size grows with the number of inherited properties per class
+  (SPDX 3.0: 253 KB --> 336 KB, +33%; SPDX 3.1-dev: 452 KB --> 712 KB, +58%).
+  For load-once/validate-many use cases the size cost is amortized over many
+  validation runs.
 - Validation semantics are equivalent for well-formed documents. For malformed
   documents, one known difference: `@context` is permitted on embedded objects
   (it is added to every class's inlined property list so that root-level

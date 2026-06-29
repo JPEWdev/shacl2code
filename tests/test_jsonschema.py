@@ -1,7 +1,10 @@
-#
-# Copyright (c) 2024 Joshua Watt
-#
+# SPDX-FileContributor: Joshua Watt
+# SPDX-FileContributor: Arthit Suriyawongkul
+# SPDX-FileCopyrightText: 2024-present Joshua Watt
+# SPDX-FileType: SOURCE
 # SPDX-License-Identifier: MIT
+
+from __future__ import annotations
 
 import json
 import os

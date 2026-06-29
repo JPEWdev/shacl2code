@@ -4,9 +4,11 @@
 # SPDX-License-Identifier: MIT
 
 import json
+import os
 import re
 import subprocess
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
 import jsonschema
 
@@ -26,7 +28,7 @@ TEST_CONTEXT = THIS_DIR / "data" / "model" / "test-context.json"
 SPDX3_CONTEXT_URL = "https://spdx.github.io/spdx-3-model/context.json"
 
 
-def _check_schema_refs(schema):
+def _check_schema_refs(schema: Dict[str, Any]) -> None:
     """Assert every $ref in the schema points to a valid $defs entry."""
     DEF_PREFIX = "#/$defs/"
 
@@ -130,7 +132,10 @@ def test_schema_type_validation(test_jsonschema, test_context_url, passes, data)
             jsonschema.validate(data, schema=test_jsonschema)
 
 
-def _run_jsonschema_generate(generate_args, schema_args=None):
+def _run_jsonschema_generate(
+    generate_args: List[Union[str, os.PathLike[str]]],
+    schema_args: Optional[List[str]] = None,
+) -> str:
     """Run shacl2code generate jsonschema; return raw stdout string."""
     p = subprocess.run(
         ["shacl2code", "generate"]
@@ -145,11 +150,11 @@ def _run_jsonschema_generate(generate_args, schema_args=None):
     return p.stdout
 
 
-def _assert_no_unevaluated_properties(schema):
+def _assert_no_unevaluated_properties(schema: Any) -> None:
     if isinstance(schema, dict):
-        assert "unevaluatedProperties" not in schema, (
-            f"unevaluatedProperties found: {schema}"
-        )
+        assert (
+            "unevaluatedProperties" not in schema
+        ), f"unevaluatedProperties found: {schema}"
         for v in schema.values():
             _assert_no_unevaluated_properties(v)
     elif isinstance(schema, list):
@@ -163,7 +168,9 @@ def test_schema_references(test_jsonschema):
 
 def test_schema_references_additional_props():
     schema = json.loads(
-        _run_jsonschema_generate(["--input", TEST_MODEL], ["--use-additional-properties"])
+        _run_jsonschema_generate(
+            ["--input", TEST_MODEL], ["--use-additional-properties"]
+        )
     )
     _check_schema_refs(schema)
 
@@ -177,15 +184,55 @@ def test_schema_version_default():
 def test_schema_version_additional_props():
     """--use-additional-properties mode declares Draft 2019-09 (accurate minimum, no unevaluatedProperties)."""
     schema = json.loads(
-        _run_jsonschema_generate(["--input", TEST_MODEL], ["--use-additional-properties"])
+        _run_jsonschema_generate(
+            ["--input", TEST_MODEL], ["--use-additional-properties"]
+        )
     )
     assert schema["$schema"] == "https://json-schema.org/draft/2019-09/schema"
+
+
+def test_context_on_embedded_object_default_rejects():
+    """Default mode rejects @context on an embedded object (unevaluatedProperties catches it)."""
+    schema = json.loads(_run_jsonschema_generate(["--input", TEST_MODEL]))
+    doc = {
+        "@type": "http://example.org/link-class",
+        "http://example.org/link-class-link-prop": {
+            "@type": "http://example.org/link-class",
+            "@context": "http://example.org/ctx",
+        },
+    }
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(doc, schema=schema)
+
+
+def test_context_on_embedded_object_additional_props_accepts():
+    """--use-additional-properties mode permits @context on embedded objects.
+
+    @context is added to every class's inlined property list so that root-level
+    documents (which carry @context) pass additionalProperties: false. As a
+    known side-effect, @context is also accepted on embedded objects.
+    """
+    schema = json.loads(
+        _run_jsonschema_generate(
+            ["--input", TEST_MODEL], ["--use-additional-properties"]
+        )
+    )
+    doc = {
+        "@type": "http://example.org/link-class",
+        "http://example.org/link-class-link-prop": {
+            "@type": "http://example.org/link-class",
+            "@context": "http://example.org/ctx",
+        },
+    }
+    jsonschema.validate(doc, schema=schema)
 
 
 def test_no_unevaluated_properties():
     """--use-additional-properties output must not contain unevaluatedProperties."""
     schema = json.loads(
-        _run_jsonschema_generate(["--input", TEST_MODEL], ["--use-additional-properties"])
+        _run_jsonschema_generate(
+            ["--input", TEST_MODEL], ["--use-additional-properties"]
+        )
     )
     _assert_no_unevaluated_properties(schema)
 
@@ -246,9 +293,13 @@ SPDX31_ARGS = [
     "spdx_args,schema_args",
     [
         pytest.param(SPDX30_ARGS, [], id="spdx30-default"),
-        pytest.param(SPDX30_ARGS, ["--use-additional-properties"], id="spdx30-additional-props"),
+        pytest.param(
+            SPDX30_ARGS, ["--use-additional-properties"], id="spdx30-additional-props"
+        ),
         pytest.param(SPDX31_ARGS, [], id="spdx31-default"),
-        pytest.param(SPDX31_ARGS, ["--use-additional-properties"], id="spdx31-additional-props"),
+        pytest.param(
+            SPDX31_ARGS, ["--use-additional-properties"], id="spdx31-additional-props"
+        ),
     ],
 )
 class TestSPDXOutput:

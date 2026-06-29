@@ -6,13 +6,35 @@
 import json
 import os
 import shutil
+import socket
 import subprocess
 import time
 from pathlib import Path
+from typing import List
 
 import pytest
 
 from testfixtures.httpserver import HTTPTestServer
+
+
+def _network_available() -> bool:
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(3)
+            s.connect(("8.8.8.8", 53))
+        return True
+    except OSError:
+        return False
+
+
+def pytest_collection_modifyitems(items: List[pytest.Item]) -> None:
+    if _network_available():
+        return
+    skip = pytest.mark.skip(reason="no network connection")
+    for item in items:
+        if item.get_closest_marker("network"):
+            item.add_marker(skip)
+
 
 THIS_FILE = Path(__file__)
 THIS_DIR = THIS_FILE.parent

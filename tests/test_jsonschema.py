@@ -75,7 +75,12 @@ class TestOutput:
             check=True,
         )
         subprocess.run(
-            ["node", THIS_DIR.parent / "scripts" / "ajv-compile.js", str(schema_file), "2020-12"],
+            [
+                "node",
+                THIS_DIR.parent / "scripts" / "ajv-compile.js",
+                str(schema_file),
+                "2020-12",
+            ],
             check=True,
         )
 

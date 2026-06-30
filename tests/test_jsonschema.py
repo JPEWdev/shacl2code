@@ -56,6 +56,29 @@ class TestOutput:
 
         json.loads(p.stdout)
 
+    def test_ajv_compile(self, tmp_path, args):
+        """
+        Validates the generated schema against the JSON Schema meta-schema using ajv
+        """
+        schema_file = tmp_path / "schema.json"
+        subprocess.run(
+            [
+                "shacl2code",
+                "generate",
+            ]
+            + args
+            + [
+                "jsonschema",
+                "--output",
+                schema_file,
+            ],
+            check=True,
+        )
+        subprocess.run(
+            ["node", THIS_DIR.parent / "scripts" / "ajv-compile.js", str(schema_file), "2020-12"],
+            check=True,
+        )
+
     def test_trailing_whitespace(self, args):
         """
         Tests that the generated file does not have trailing whitespace

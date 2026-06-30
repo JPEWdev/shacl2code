@@ -15,49 +15,101 @@ on:
   workflow_call:
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
-        include:
-          - os: macos-latest
-            python-version: "3.10"
+  # Check which language bindings are affected by the change
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      cpp: ${{ steps.filter.outputs.cpp }}
+      golang: ${{ steps.filter.outputs.golang }}
+      jsonschema: ${{ steps.filter.outputs.jsonschema }}
+      python: ${{ steps.filter.outputs.python }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - name: Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
+        id: filter
         with:
-          python-version: ${{ matrix.python-version }}
-      - name: Setup Node
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
-        with:
-          node-version: 24
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install build
-          npm install -g jsonld-cli
-      - name: Install Linux packages
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt update
-          sudo apt install -y build-essential doxygen graphviz
-      - name: Install macOS packages
-        if: runner.os == 'macOS'
-        run: |
-          brew update
-          brew install doxygen gcc go graphviz
-      - name: Build package
-        run: |
-          python -m build
-      - name: Install package
-        run: |
-          pip install -e .[dev]
-      - name: Run tests
-        run: |
-          pytest -v
+          filters: |
+            core: &core
+              - 'src/shacl2code/*.py'
+              - 'src/shacl2code/lang/__init__.py'
+              - 'src/shacl2code/lang/common.py'
+              - 'src/shacl2code/lang/jinja.py'
+              - 'src/shacl2code/lang/lang.py'
+              - 'pyproject.toml'
+              - 'tests/conftest.py'
+              - 'tests/data/**'
+              - 'testfixtures/**'
+            cpp:
+              - *core
+              - 'src/shacl2code/lang/cpp.py'
+              - 'src/shacl2code/lang/sources/cpp/**'
+              - 'src/shacl2code/lang/templates/cpp/**'
+              - 'tests/test_cpp.py'
+            golang:
+              - *core
+              - 'src/shacl2code/lang/golang.py'
+              - 'src/shacl2code/lang/sources/golang/**'
+              - 'src/shacl2code/lang/templates/golang/**'
+              - 'tests/test_golang.py'
+            jsonschema:
+              - *core
+              - 'src/shacl2code/lang/jsonschema.py'
+              - 'src/shacl2code/lang/sources/jsonschema/**'
+              - 'src/shacl2code/lang/templates/jsonschema.j2'
+              - 'tests/test_jsonschema.py'
+            python:
+              - *core
+              - 'src/shacl2code/lang/python.py'
+              - 'src/shacl2code/lang/sources/python/**'
+              - 'src/shacl2code/lang/templates/python/**'
+              - 'tests/test_python.py'
+
+  # Always run core
+  core:
+    uses: ./.github/workflows/_pytest.yaml
+    with:
+      install-native-toolchains: false
+      test-files: >-
+        tests/test_cli.py
+        tests/test_context.py
+        tests/test_common_jinja.py
+        tests/test_common_prefix.py
+        tests/test_convert_version_string.py
+        tests/test_model_source.py
+
+  cpp:
+    needs: changes
+    if: needs.changes.outputs.cpp == 'true'
+    uses: ./.github/workflows/_pytest.yaml
+    with:
+      install-native-toolchains: true
+      test-files: tests/test_cpp.py
+
+  golang:
+    needs: changes
+    if: needs.changes.outputs.golang == 'true'
+    uses: ./.github/workflows/_pytest.yaml
+    with:
+      # `go` preinstalled on runners
+      install-native-toolchains: false
+      test-files: tests/test_golang.py
+
+  jsonschema:
+    needs: changes
+    if: needs.changes.outputs.jsonschema == 'true'
+    uses: ./.github/workflows/_pytest.yaml
+    with:
+      install-native-toolchains: false
+      test-files: tests/test_jsonschema.py
+
+  python:
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
+    uses: ./.github/workflows/_pytest.yaml
+    with:
+      install-native-toolchains: false
+      test-files: tests/test_python.py
+
   lint:
     runs-on: ubuntu-latest
     steps:

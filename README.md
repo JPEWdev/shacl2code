@@ -87,18 +87,17 @@ shacl2code generate \
     --output spdx-json-schema.json
 ```
 
-### Example 2: Generating with a local context document
+#### Example 2: Generating with a local context document
 
 To generate a schema using a local context file while embedding its future
 public URL:
 
 ```shell
 shacl2code generate \
-    --input spdx-model.ttl \
-    --input jsonld-annotations.ttl \
-    --context-url spdx-context.jsonld https://spdx.org/rdf/3.1/spdx-context.jsonld \
+    --input model-draft.ttl \
+    --context-url context-draft.jsonld https://example.com/context.jsonld \
     jsonschema \
-   --output spdx-json-schema.json
+   --output schema.json
 ```
 
 ## Developing

@@ -3,8 +3,6 @@
 // Usage: ajv-compile.js <schema.json> [draft-version]
 // draft-version: 2020-12 (default), 2019-09
 const fs = require("fs");
-const { execSync } = require("child_process");
-const path = require("path");
 
 const schemaFile = process.argv[2];
 const draft = process.argv[3] || "2020-12";
@@ -25,16 +23,7 @@ if (!ajvModule) {
     process.exit(2);
 }
 
-function requireAjv(moduleName) {
-    try {
-        return require(moduleName);
-    } catch (e) {
-        const globalRoot = execSync("npm root -g").toString().trim();
-        return require(path.join(globalRoot, ...moduleName.split("/")));
-    }
-}
-
-const Ajv = requireAjv(ajvModule);
+const Ajv = require(ajvModule);
 const ajv = new Ajv();
 const schema = JSON.parse(fs.readFileSync(schemaFile, "utf8"));
 try {

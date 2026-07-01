@@ -6,9 +6,11 @@
 import keyword
 import re
 from pathlib import Path
+from typing import Iterable
 
 from .common import JinjaTemplateRender
 from .lang import TEMPLATE_DIR, language
+from ..model import Class
 from ..util import convert_version_string
 
 DATATYPE_CLASSES = {
@@ -60,11 +62,6 @@ SHACLOBJECT_RESERVED_WORDS = {
 }
 
 
-def protocol_name(cls):
-    """Protocol name for a class - same as the class name (identity mapping)."""
-    return varname(*cls.clsname)
-
-
 def varname(*name):
     """Make a valid Python variable name."""
     name = "_".join(name)
@@ -78,6 +75,23 @@ def varname(*name):
     while keyword.iskeyword(name) or name in SHACLOBJECT_RESERVED_WORDS:
         name = name + "_"
     return name
+
+
+def protocols_use_datetime(classes: Iterable[Class]) -> bool:
+    """Whether any class has a plain (non-list, non-ref) datetime-typed property.
+
+    Determines if protocols.py.j2 needs to import ``datetime`` -- mirrors the
+    scalar-property branch in that template exactly, so the import is only
+    emitted when it will actually be referenced (avoids flake8 F401).
+    """
+    for cls in classes:
+        for prop in cls.properties:
+            is_list = prop.max_count is None or prop.max_count != 1
+            has_ref = bool(prop.class_id) and not prop.enum_values
+            is_scalar = not (is_list or has_ref or prop.enum_values)
+            if is_scalar and DATATYPE_PYTHON_TYPES[prop.datatype] == "datetime":
+                return True
+    return False
 
 
 @language("python")
@@ -162,7 +176,7 @@ class PythonRender(JinjaTemplateRender):
     def get_extra_env(self):
         return {
             "varname": varname,
-            "protocol_name": protocol_name,
+            "protocols_use_datetime": protocols_use_datetime,
             "DATATYPE_CLASSES": DATATYPE_CLASSES,
             "DATATYPE_PYTHON_TYPES": DATATYPE_PYTHON_TYPES,
         }

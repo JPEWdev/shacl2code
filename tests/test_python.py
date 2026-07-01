@@ -13,6 +13,7 @@ import sys
 import textwrap
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Iterable, Tuple
 
 import jsonschema
 
@@ -21,6 +22,10 @@ import pyshacl
 import pytest
 
 import rdflib
+
+from shacl2code.lang.python import protocols_use_datetime
+from shacl2code.model import Class, Model
+from shacl2code.urlcontext import UrlContext
 
 from testfixtures import jsonvalidation, timetests
 
@@ -2283,10 +2288,40 @@ def test_version(model):
 # ---------------------------------------------------------------------------
 
 TEST_V2_MODEL = THIS_DIR / "data" / "model" / "test-v2.ttl"
+NO_DATETIME_MODEL = DATA_DIR / "no-datetime.ttl"
+
+
+def _load_classes(ttl_path: Path) -> Iterable[Class]:
+    """Parse a .ttl file in-process into Model.classes (no --context needed)."""
+    graph = rdflib.Graph()
+    graph.parse(ttl_path)
+    return Model(graph, UrlContext()).classes
+
+
+class TestProtocolsUseDatetime:
+    """
+    Direct, in-process unit tests for protocols_use_datetime(). Exercises both
+    branches without going through code generation, so coverage doesn't depend
+    on incidental property ordering in a generated model.
+    """
+
+    def test_true_when_datetime_property_present(self) -> None:
+        """
+        TEST_MODEL has scalar datetime properties (and list/enum/ref properties
+        that sort before them), so this also exercises the "skip" continue
+        branch on the way to the True return.
+        """
+        assert protocols_use_datetime(_load_classes(TEST_MODEL)) is True
+
+    def test_false_when_no_datetime_property(self) -> None:
+        """NO_DATETIME_MODEL has only a plain string property."""
+        assert protocols_use_datetime(_load_classes(NO_DATETIME_MODEL)) is False
 
 
 @pytest.fixture(scope="module")
-def python_model_v1_protocols(tmp_path_factory, model_context_url):
+def python_model_v1_protocols(
+    tmp_path_factory: pytest.TempPathFactory, model_context_url: str
+) -> Tuple[Path, str]:
     """v1 model generated with --include-protocols yes."""
     tmp_directory = tmp_path_factory.mktemp("protocols_v1")
     module_name = "pymodel_v1"
@@ -2301,7 +2336,9 @@ def python_model_v1_protocols(tmp_path_factory, model_context_url):
 
 
 @pytest.fixture(scope="module")
-def python_model_v2_protocols(tmp_path_factory, model_context_url):
+def python_model_v2_protocols(
+    tmp_path_factory: pytest.TempPathFactory, model_context_url: str
+) -> Tuple[Path, str]:
     """v2 model (backward-compatible extension) generated with --include-protocols yes."""
     tmp_directory = tmp_path_factory.mktemp("protocols_v2")
     module_name = "pymodel_v2"
@@ -2320,7 +2357,9 @@ class TestProtocolOutput:
     Tests for generated protocols.py - syntax, typing, and flake8.
     """
 
-    def test_protocols_file_generated(self, tmp_path, model_context_url):
+    def test_protocols_file_generated(
+        self, tmp_path: Path, model_context_url: str
+    ) -> None:
         output_dir = tmp_path / "pymodel"
         shacl2code_generate(
             ["--input", TEST_MODEL, "--context", model_context_url],
@@ -2329,7 +2368,9 @@ class TestProtocolOutput:
         )
         assert (output_dir / "protocols.py").exists()
 
-    def test_protocols_file_not_generated_by_default(self, tmp_path, model_context_url):
+    def test_protocols_file_not_generated_by_default(
+        self, tmp_path: Path, model_context_url: str
+    ) -> None:
         output_dir = tmp_path / "pymodel"
         shacl2code_generate(
             ["--input", TEST_MODEL, "--context", model_context_url],
@@ -2338,7 +2379,7 @@ class TestProtocolOutput:
         )
         assert not (output_dir / "protocols.py").exists()
 
-    def test_mypy(self, tmp_path, model_context_url):
+    def test_mypy(self, tmp_path: Path, model_context_url: str) -> None:
         output_dir = tmp_path / "pymodel"
         shacl2code_generate(
             ["--input", TEST_MODEL, "--context", model_context_url],
@@ -2348,7 +2389,7 @@ class TestProtocolOutput:
         (output_dir / "py.typed").touch()
         subprocess.run(["mypy", output_dir], encoding="utf-8", check=True)
 
-    def test_flake8(self, tmp_path, model_context_url):
+    def test_flake8(self, tmp_path: Path, model_context_url: str) -> None:
         output_dir = tmp_path / "pymodel"
         shacl2code_generate(
             ["--input", TEST_MODEL, "--context", model_context_url],
@@ -2361,6 +2402,38 @@ class TestProtocolOutput:
             check=True,
         )
 
+    def test_flake8_no_datetime_properties(self, tmp_path: Path) -> None:
+        """
+        protocols.py must not unconditionally import `datetime`. A model with
+        no datetime-typed property must not produce an unused import (F401).
+        """
+        output_dir = tmp_path / "pymodel"
+        shacl2code_generate(
+            ["--input", NO_DATETIME_MODEL],
+            ["--include-protocols", "yes"],
+            output_dir,
+        )
+        assert "import datetime" not in (output_dir / "protocols.py").read_text()
+        subprocess.run(
+            ["flake8", "--config", TOP_DIR / ".flake8", output_dir / "protocols.py"],
+            encoding="utf-8",
+            check=True,
+        )
+
+    def test_mypy_no_datetime_properties(self, tmp_path: Path) -> None:
+        """
+        The generated package must still type-check when protocols.py omits
+        the `datetime` import.
+        """
+        output_dir = tmp_path / "pymodel"
+        shacl2code_generate(
+            ["--input", NO_DATETIME_MODEL],
+            ["--include-protocols", "yes"],
+            output_dir,
+        )
+        (output_dir / "py.typed").touch()
+        subprocess.run(["mypy", output_dir], encoding="utf-8", check=True)
+
 
 class TestProtocolConformance:
     """
@@ -2368,7 +2441,9 @@ class TestProtocolConformance:
     and the discriminator keeps structurally-identical classes distinct.
     """
 
-    def test_conformance_mypy(self, python_model_v1_protocols, tmp_path):
+    def test_conformance_mypy(
+        self, python_model_v1_protocols: Tuple[Path, str], tmp_path: Path
+    ) -> None:
         """
         Every concrete class must satisfy its generated Protocol under mypy strict.
         Verifies scalar read/write, object-ref typed read, Any-setter write.
@@ -2414,7 +2489,55 @@ class TestProtocolConformance:
         )
         assert r.returncode == 0, r.stdout + r.stderr
 
-    def test_discriminator_mypy(self, python_model_v1_protocols, tmp_path):
+    def test_base_protocol_conformance_mypy(
+        self, python_model_v1_protocols: Tuple[Path, str], tmp_path: Path
+    ) -> None:
+        """
+        The hand-written SHACLObjectProtocol/SHACLObjectSetProtocol must be
+        satisfied by the real generated SHACLObject/SHACLObjectSet, not just by
+        per-class domain protocols. Guards against model.py.j2 changes to
+        SHACLObject/SHACLObjectSet (e.g. renaming property_keys, retyping
+        find_by_id's default, altering __contains__) silently breaking the
+        base protocols with no test catching it.
+        """
+        module_path, module_name = python_model_v1_protocols
+        env = os.environ.copy()
+        env["PYTHONPATH"] = str(module_path)
+
+        script = tmp_path / "base_conformance.py"
+        script.write_text(textwrap.dedent(f"""\
+            from typing import Iterable
+            import {module_name}
+            from {module_name} import protocols
+
+            # Protocol conformance: assignment forces the static check.
+            o: protocols.SHACLObjectProtocol = {module_name}.test_class()
+            s: protocols.SHACLObjectSetProtocol = {module_name}.SHACLObjectSet()
+
+            # Version-agnostic function accepts any conforming object/set.
+            def get_id(obj: protocols.SHACLObjectProtocol) -> str:
+                return obj.get_type()
+
+            def iter_objects(
+                objset: protocols.SHACLObjectSetProtocol,
+            ) -> Iterable[protocols.SHACLObjectProtocol]:
+                return objset.foreach()
+
+            get_id(o)
+            iter_objects(s)
+        """))
+
+        r = subprocess.run(
+            ["mypy", "--strict", str(script)],
+            encoding="utf-8",
+            env=env,
+            capture_output=True,
+        )
+        assert r.returncode == 0, r.stdout + r.stderr
+
+    def test_discriminator_mypy(
+        self, python_model_v1_protocols: Tuple[Path, str], tmp_path: Path
+    ) -> None:
         """
         The discriminator marker must prevent structurally-identical classes
         (test_class and another_class share no own properties in v1) from
@@ -2453,8 +2576,11 @@ class TestProtocolCrossVersion:
     """
 
     def test_cross_version_mypy(
-        self, python_model_v1_protocols, python_model_v2_protocols, tmp_path
-    ):
+        self,
+        python_model_v1_protocols: Tuple[Path, str],
+        python_model_v2_protocols: Tuple[Path, str],
+        tmp_path: Path,
+    ) -> None:
         """
         v2.test_class() satisfies v1.protocols.test_class (backward-compat).
         v2.another_class() does NOT satisfy v1.protocols.test_class (discriminator).

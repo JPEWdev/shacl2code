@@ -8,9 +8,12 @@ version that is backward-compatible with the baseline from which these Protocols
 were generated. Use these types to write functions and classes that work across
 multiple model versions and still pass strict static type checking.
 
-Object-reference and list properties expose a typed getter (covariant read) and
-an ``Any`` setter (version-agnostic write). Scalar properties are plain
-read-write attributes.
+Scalar properties are typed precisely and are plain read-write attributes.
+Object-reference and list properties are typed ``Any`` for both read and write:
+cross-module structural typing cannot resolve the circular reference between a
+protocol class and the sibling protocol type its property would otherwise
+return, so these properties fall back to ``Any``. Read them through the
+concrete version type when a typed value is needed.
 
 Construct objects with a concrete version module; use these Protocols only for
 annotations.
@@ -18,7 +21,7 @@ annotations.
 
 from __future__ import annotations
 
-from datetime import datetime
+{{"from datetime import datetime" if protocols_use_datetime(classes) else ""}}
 from typing import Any, Iterable, Iterator, Optional, Protocol, Set, Tuple
 
 
@@ -64,10 +67,10 @@ class SHACLObjectSetProtocol(Protocol):
 # DOMAIN CLASSES
 {% for class in classes %}
 
-class {{ protocol_name(class) }}(
+class {{ varname(*class.clsname) }}(
 {%- if class.parent_ids %}
     {%- for id in class.parent_ids -%}
-        {{- protocol_name(classes.get(id)) }}{%- if not loop.last -%}, {% endif -%}
+        {{- varname(*classes.get(id).clsname) }}{%- if not loop.last -%}, {% endif -%}
     {%- endfor -%}
 {%- else -%}
     SHACLObjectProtocol
@@ -81,7 +84,7 @@ class {{ protocol_name(class) }}(
     {{ '"' }}{{ '"' }}{{ '"' }}
 {%- endif %}
 
-    def _protocol_{{ protocol_name(class) }}(self) -> None: ...
+    def _protocol_{{ varname(*class.clsname) }}(self) -> None: ...
     {%- if class.id_property %}
     {{ class.id_property }}: Optional[str]
     {%- endif %}

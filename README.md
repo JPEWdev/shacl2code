@@ -47,15 +47,59 @@ The available language bindings can be viewed by running:
 shacl2code list
 ```
 
+### Using JSON-LD contexts
+
+When using JSON-LD contexts, the context document shall align with the model.
+
+During model development, there may be cases where the context URL is known
+but not yet live or resolvable. In these situations, you can use the
+`--context-url` option to map your local context file to its future public home.
+
+The `--context-url` option accepts two arguments:
+
+1. `CONTEXT_LOCATION`: The actual path to the local or temporary file
+   containing the context.
+2. `CONTEXT_URL`: The official public URL. While temporarily unresolvable
+   during development, this is the URL that production JSON-LD processors will
+   eventually rely on, so it must be recorded inside the generated JSON Schema.
+
 ### Generating the JSON Schema file
 
-`shacl2code` can generate a JSON schema with the following command:
+`shacl2code` can generate a JSON Schema directly from a model.
+
+To view all options specific to JSON Schema generation, run:
 
 ```shell
-shacl2code generate -i spdx-model.json-ld -u spdx-context.jsonld https://spdx.org/rdf/3.0.1/spdx-context.jsonld jsonschema -o json-schema-3.0.1.json
+shacl2code generate jsonschema -h
 ```
 
-Note that the spdx-context.jsonld file should match the model described in the spdx-model.json-ld file.
+#### Example 1: Generating from publicly available URLs
+
+To generate a schema using remote, publicly accessible assets
+(such as SPDX 3.0.1):
+
+```shell
+shacl2code generate \
+    --input https://spdx.org/rdf/3.0.1/spdx-model.ttl \
+    --input https://spdx.org/rdf/3.0.1/spdx-json-serialize-annotations.ttl \
+    --context https://spdx.org/rdf/3.0.1/spdx-context.jsonld \
+    jsonschema \
+    --output spdx-json-schema.json
+```
+
+### Example 2: Generating with a local context document
+
+To generate a schema using a local context file while embedding its future
+public URL:
+
+```shell
+shacl2code generate \
+    --input spdx-model.ttl \
+    --input jsonld-annotations.ttl \
+    --context-url spdx-context.jsonld https://spdx.org/rdf/3.1/spdx-context.jsonld \
+    jsonschema \
+   --output spdx-json-schema.json
+```
 
 ## Developing
 

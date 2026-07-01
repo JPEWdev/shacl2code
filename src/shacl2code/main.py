@@ -100,16 +100,17 @@ def main(args=None):
     generate_parser.add_argument(
         "--context",
         "-x",
-        help="Require context for output (URL). Specified multiple times for multiple contexts",
+        help="Require context from CONTEXT_URL. Specified multiple times for multiple contexts",
+        metavar="CONTEXT_URL",
         action="append",
         default=[],
     )
     generate_parser.add_argument(
         "--context-url",
         "-u",
-        help="Require context from LOCATION (path or URL), but report as URL in generated code. Specified multiple times for multiple contexts",
+        help="Require context from CONTEXT_LOCATION (path or URL), but report as CONTEXT_URL in generated code. Specified multiple times for multiple contexts",
         nargs=2,
-        metavar=("LOCATION", "URL"),
+        metavar=("CONTEXT_LOCATION", "CONTEXT_URL"),
         action="append",
         default=[],
     )

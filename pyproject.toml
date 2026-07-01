@@ -6,7 +6,7 @@ dependencies = [
     "jinja2 >= 3.1.2",
     "rdflib >= 7.0.0",
 ]
-requires-python = ">= 3.8"
+requires-python = ">= 3.9"
 authors = [
     {name = "Joshua Watt", email = "JPEWhacker@gmail.com"},
 ]
@@ -16,7 +16,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "Topic :: Software Development :: Build Tools",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -95,7 +94,5 @@ relative_files = true
 patch = ["subprocess"]
 
 [tool.black]
-# Note: "py314" can't be used as a target-version because Black 24.8.0 (latest
-# supported version for Python 3.8) doesn't recognize it.
-target-version = ["py38", "py39", "py310", "py311", "py312", "py313"]
+target-version = ["py39", "py310", "py311", "py312", "py313", "py14"]
 include = '(\.pyi?(\.j2)?$)|(main\.py\.j2$)'

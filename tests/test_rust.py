@@ -1,6 +1,8 @@
-#
-# Copyright (c) 2024 Joshua Watt
-#
+# SPDX-FileContributor: Stefano Tondo
+# SPDX-FileContributor: Joshua Watt
+# SPDX-FileContributor: Arthit Suriyawongkul
+# SPDX-FileCopyrightText: 2026 Joshua Watt
+# SPDX-FileType: SOURCE
 # SPDX-License-Identifier: MIT
 
 import json
@@ -12,6 +14,13 @@ from pathlib import Path
 import pytest
 
 from testfixtures import jsonvalidation, timetests
+from shacl2code.lang.rust import (
+    is_effectively_extensible,
+    prop_ctx_name,
+    prop_defining_class,
+    type_name,
+    varname,
+)
 
 THIS_FILE = Path(__file__)
 THIS_DIR = THIS_FILE.parent
@@ -709,3 +718,71 @@ def test_extensible_context(compile_test, roundtrip):
             "Missing extension property");
         """,
     )
+
+
+# --- Unit tests for shacl2code.lang.rust helper functions ---
+
+
+class _Prop:
+    def __init__(self, path, varname=None):
+        self.path = path
+        self.varname = varname if varname is not None else path
+
+
+class _Class:
+    def __init__(self, cid, prop_paths=(), parent_ids=(), is_extensible=False):
+        self.clsname = [cid]
+        self.properties = [_Prop(p) for p in prop_paths]
+        self.parent_ids = list(parent_ids)
+        self.is_extensible = is_extensible
+
+
+class _Classes:
+    def __init__(self, *classes):
+        self._map = {c.clsname[0]: c for c in classes}
+
+    def get(self, cid):
+        return self._map[cid]
+
+
+def test_varname_empty_becomes_field():
+    assert varname("") == "field"
+
+
+def test_varname_rust_keyword_gets_raw_prefix():
+    assert varname("type") == "r#type"
+    assert varname("self") == "r#self"
+
+
+def test_type_name_empty_becomes_type():
+    assert type_name("") == "Type"
+    assert type_name("_") == "Type"
+
+
+def test_prop_defining_class_returns_none_when_not_found():
+    cls_a = _Class("A", prop_paths=["prop1"])
+    cls_b = _Class("B", parent_ids=["A"])
+    classes = _Classes(cls_a, cls_b)
+    # prop2 is not defined in A or B
+    result = prop_defining_class(cls_b, _Prop("prop2"), classes)
+    assert result is None
+
+
+def test_is_effectively_extensible_false_when_no_ancestor_extensible():
+    cls_a = _Class("A", is_extensible=False)
+    cls_b = _Class("B", parent_ids=["A"], is_extensible=False)
+    classes = _Classes(cls_a, cls_b)
+    assert is_effectively_extensible(cls_b, classes) is False
+
+
+def test_is_effectively_extensible_true_via_ancestor():
+    cls_a = _Class("A", is_extensible=True)
+    cls_b = _Class("B", parent_ids=["A"], is_extensible=False)
+    classes = _Classes(cls_a, cls_b)
+    assert is_effectively_extensible(cls_b, classes) is True
+
+
+def test_prop_ctx_name():
+    cls_a = _Class("A")
+    prop = _Prop("prop1", varname="prop1")
+    assert prop_ctx_name(cls_a, prop) == "a_prop1_ctx"

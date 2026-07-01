@@ -1,6 +1,6 @@
-#
-# Copyright (c) 2024 Joshua Watt
-#
+# SPDX-FileContributor: Stefano Tondo
+# SPDX-FileCopyrightText: 2026 Joshua Watt
+# SPDX-FileType: SOURCE
 # SPDX-License-Identifier: MIT
 """Rust language binding renderer"""
 

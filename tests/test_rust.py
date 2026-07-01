@@ -16,6 +16,7 @@ import pytest
 from testfixtures import jsonvalidation, timetests
 from shacl2code.lang.rust import (
     is_effectively_extensible,
+    prop_ctx_name,
     prop_defining_class,
     type_name,
     varname,
@@ -723,8 +724,9 @@ def test_extensible_context(compile_test, roundtrip):
 
 
 class _Prop:
-    def __init__(self, path):
+    def __init__(self, path, varname=None):
         self.path = path
+        self.varname = varname if varname is not None else path
 
 
 class _Class:
@@ -778,3 +780,9 @@ def test_is_effectively_extensible_true_via_ancestor():
     cls_b = _Class("B", parent_ids=["A"], is_extensible=False)
     classes = _Classes(cls_a, cls_b)
     assert is_effectively_extensible(cls_b, classes) is True
+
+
+def test_prop_ctx_name():
+    cls_a = _Class("A")
+    prop = _Prop("prop1", varname="prop1")
+    assert prop_ctx_name(cls_a, prop) == "a_prop1_ctx"

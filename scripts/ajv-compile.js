@@ -23,7 +23,17 @@ if (!ajvModule) {
     process.exit(2);
 }
 
-const Ajv = require(ajvModule);
+let Ajv;
+try {
+    Ajv = require(ajvModule);
+} catch (e) {
+    console.error(
+        `Failed to load "${ajvModule}": ${e.message}\n` +
+            'Run "npm --prefix scripts install" to install dependencies.',
+    );
+    process.exit(2);
+}
+
 const ajv = new Ajv();
 const schema = JSON.parse(fs.readFileSync(schemaFile, "utf8"));
 try {

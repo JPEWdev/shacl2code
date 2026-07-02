@@ -36,7 +36,7 @@ jobs:
         run: |
           sudo apt install -y build-essential doxygen graphviz
           npm install -g jsonld-cli
-          npm --prefix scripts install
+          npm --prefix scripts ci
       - name: Install package
         run: |
           pip install -e .[dev]

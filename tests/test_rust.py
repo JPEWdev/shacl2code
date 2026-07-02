@@ -555,8 +555,8 @@ RUST_STRING = '"string".to_string()'
         # Enumerated value
         (
             "test_class_enum_prop",
-            '"http://example.org/enumType/foo".to_string()',
-            "http://example.org/enumType/foo",
+            '"http://example.org/shacl2code-test/enumType/foo".to_string()',
+            "http://example.org/shacl2code-test/enumType/foo",
         ),
         ("test_class_enum_prop", RUST_STRING, Progress.VALIDATION_FAILS),
         # Integer value

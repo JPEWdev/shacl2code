@@ -1,7 +1,7 @@
 {
   "@context": {
-    "@base": "http://example.org/",
-    "test": "http://example.org/",
+    "@base": "http://example.org/shacl2code-test/",
+    "test": "http://example.org/shacl2code-test/",
     "xsd": "http://www.w3.org/2001/XMLSchema#",
     "aaa-derived-class": "test:aaa-derived-class",
     "abstract-class": "test:abstract-class",

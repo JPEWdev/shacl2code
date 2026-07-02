@@ -1,6 +1,7 @@
-#
-# Copyright (c) 2024 Joshua Watt
-#
+# SPDX-FileContributor: Arthit Suriyawongkul
+# SPDX-FileContributor: Joshua Watt
+# SPDX-FileCopyrightText: 2024 Joshua Watt
+# SPDX-FileType: SOURCE
 # SPDX-License-Identifier: MIT
 
 import json
@@ -55,6 +56,33 @@ class TestOutput:
         )
 
         json.loads(p.stdout)
+
+    def test_ajv_compile(self, tmp_path, args):
+        """
+        Validates the generated schema against the JSON Schema meta-schema using ajv
+        """
+        schema_file = tmp_path / "schema.json"
+        subprocess.run(
+            [
+                "shacl2code",
+                "generate",
+            ]
+            + args
+            + [
+                "jsonschema",
+                "--output",
+                schema_file,
+            ],
+            check=True,
+        )
+        subprocess.run(
+            [
+                "node",
+                THIS_DIR.parent / "scripts" / "ajv-compile.js",
+                str(schema_file),
+            ],
+            check=True,
+        )
 
     def test_trailing_whitespace(self, args):
         """

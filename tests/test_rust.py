@@ -48,7 +48,9 @@ def _build_rust_prog(test_lib, tmp_path, name, code):
     (tmp_path / "src").mkdir(exist_ok=True)
 
     cargo_toml = tmp_path / "Cargo.toml"
-    cargo_toml.write_text(textwrap.dedent(f"""\
+    cargo_toml.write_text(
+        textwrap.dedent(
+            f"""\
             [package]
             name = "{name}"
             version = "0.1.0"
@@ -57,7 +59,9 @@ def _build_rust_prog(test_lib, tmp_path, name, code):
             [dependencies]
             shacl_model = {{ path = "{test_lib}" }}
             serde_json = "1"
-            """))
+            """
+        )
+    )
 
     src = tmp_path / "src" / "main.rs"
     src.write_text(code)
@@ -110,7 +114,9 @@ def compile_test(test_lib, tmp_path):
         (tmp_path / "src").mkdir(exist_ok=True)
 
         cargo_toml = tmp_path / "Cargo.toml"
-        cargo_toml.write_text(textwrap.dedent(f"""\
+        cargo_toml.write_text(
+            textwrap.dedent(
+                f"""\
                 [package]
                 name = "test_prog"
                 version = "0.1.0"
@@ -120,18 +126,23 @@ def compile_test(test_lib, tmp_path):
                 shacl_model = {{ path = "{test_lib}" }}
                 serde_json = "1"
                 chrono = {{ version = "0.4.31", features = ["serde"] }}
-                """))
+                """
+            )
+        )
 
         src = tmp_path / "src" / "main.rs"
         src.write_text(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 use shacl_model::*;
                 use std::process;
 
                 fn test_func() -> Result<(), shacl_model::Error> {
-                """)
+                """
+            )
             + textwrap.dedent(code_fragment)
-            + textwrap.dedent("""\
+            + textwrap.dedent(
+                """\
 
                     Ok(())
                 }
@@ -152,7 +163,8 @@ def compile_test(test_lib, tmp_path):
                         }
                     }
                 }
-                """)
+                """
+            )
         )
 
         p = subprocess.run(
@@ -210,7 +222,8 @@ def validate_test(test_lib, tmp_path_factory):
         test_lib,
         tmp_path,
         "validate",
-        textwrap.dedent("""\
+        textwrap.dedent(
+            """\
             use shacl_model::*;
             use std::fs::File;
             use std::io::BufReader;
@@ -231,7 +244,8 @@ def validate_test(test_lib, tmp_path_factory):
                     std::process::exit(1);
                 }
             }
-            """),
+            """
+        ),
     )
 
     def f(path, passes):
@@ -259,7 +273,8 @@ def roundtrip_test(test_lib, tmp_path_factory):
         test_lib,
         tmp_path,
         "roundtrip",
-        textwrap.dedent("""\
+        textwrap.dedent(
+            """\
             use shacl_model::*;
             use std::fs::File;
             use std::io::{BufReader, BufWriter};
@@ -278,7 +293,8 @@ def roundtrip_test(test_lib, tmp_path_factory):
 
                 objset.encode(writer).expect("Failed to encode");
             }
-            """),
+            """
+        ),
     )
 
     def f(in_path, out_path):
@@ -300,7 +316,8 @@ def link_test(test_lib, tmp_path_factory):
         test_lib,
         tmp_path,
         "link",
-        textwrap.dedent("""\
+        textwrap.dedent(
+            """\
             use shacl_model::*;
             use std::fs::File;
             use std::io::BufReader;
@@ -395,7 +412,8 @@ def link_test(test_lib, tmp_path_factory):
                     std::process::exit(1);
                 }
             }
-            """),
+            """
+        ),
     )
 
     def f(path, name, tag, **kwargs):

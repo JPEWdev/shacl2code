@@ -106,7 +106,9 @@ def model_script(tmp_path_factory, python_model):
     module_path, module_name = python_model
 
     script = tmp_directory / "script.py"
-    script.write_text(textwrap.dedent(f"""\
+    script.write_text(
+        textwrap.dedent(
+            f"""\
         #! /usr/bin/env python3
         import sys
         sys.path.append("{module_path}")
@@ -114,7 +116,9 @@ def model_script(tmp_path_factory, python_model):
         import {module_name}
 
         sys.exit({module_name}.main())
-        """))
+        """
+        )
+    )
     script.chmod(0o755)
     yield script
 
@@ -262,7 +266,9 @@ def python_usage_script(python_model_env, tmp_path):
     env, module_name = python_model_env
 
     script_path = tmp_path / "script.py"
-    script_path.write_text(textwrap.dedent(f"""
+    script_path.write_text(
+        textwrap.dedent(
+            f"""
             #! /usr/bin/env python3
             from typing import ClassVar, Iterable, List, Union
             import {module_name}
@@ -292,7 +298,9 @@ def python_usage_script(python_model_env, tmp_path):
 
             def test4(lst: Iterable[{module_name}.SHACLObject]) -> List[{module_name}.SHACLObject]:
                 return sorted(lst)
-            """))
+            """
+        )
+    )
 
     # Validate the script runs
     subprocess.run([sys.executable, script_path], env=env, check=True)

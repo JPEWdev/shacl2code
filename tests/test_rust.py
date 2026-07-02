@@ -13,7 +13,6 @@ from pathlib import Path
 
 import pytest
 
-from testfixtures import jsonvalidation, timetests
 from shacl2code.lang.rust import (
     is_effectively_extensible,
     prop_ctx_name,
@@ -21,6 +20,8 @@ from shacl2code.lang.rust import (
     type_name,
     varname,
 )
+
+from testfixtures import jsonvalidation, timetests
 
 THIS_FILE = Path(__file__)
 THIS_DIR = THIS_FILE.parent

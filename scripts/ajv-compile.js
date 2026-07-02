@@ -1,11 +1,16 @@
 #!/usr/bin/env node
-// Validate a JSON Schema file against a JSON Schema meta-schema using ajv v8
+// SPDX-FileContributor: Arthit Suriyawongkul
+// SPDX-FileCopyrightText: 2026 Joshua Watt
+// SPDX-FileType: SOURCE
+// SPDX-License-Identifier: MIT
+//
+// Validate a JSON Schema file against its meta-schema using ajv v8.
 // Usage: ajv-compile.js <schema.json> [draft-version]
-// draft-version: 2020-12 (default), 2019-09
+// draft-version: 2020-12 or 2019-09 (default: inferred from "$schema")
 const fs = require("fs");
 
 const schemaFile = process.argv[2];
-const draft = process.argv[3] || "2020-12";
+const draftArg = process.argv[3];
 
 if (!schemaFile) {
     console.error("Usage: ajv-compile.js <schema.json> [draft-version]");
@@ -16,6 +21,33 @@ const draftMap = {
     "2020-12": "ajv/dist/2020",
     "2019-09": "ajv/dist/2019",
 };
+
+const schemaUriMap = {
+    "https://json-schema.org/draft/2020-12/schema": "2020-12",
+    "http://json-schema.org/draft/2020-12/schema": "2020-12",
+    "https://json-schema.org/draft/2019-09/schema": "2019-09",
+    "http://json-schema.org/draft/2019-09/schema": "2019-09",
+};
+
+let schema;
+try {
+    schema = JSON.parse(fs.readFileSync(schemaFile, "utf8"));
+} catch (e) {
+    console.error(`Failed to read/parse "${schemaFile}": ${e.message}`);
+    process.exit(2);
+}
+
+let draft = draftArg;
+if (!draft) {
+    draft = schemaUriMap[schema.$schema?.replace(/#$/, "")];
+    if (!draft) {
+        console.error(
+            `Unable to infer draft version from "$schema": ${schema.$schema}. ` +
+                "Pass the draft version explicitly as the second argument.",
+        );
+        process.exit(2);
+    }
+}
 
 const ajvModule = draftMap[draft];
 if (!ajvModule) {
@@ -35,7 +67,6 @@ try {
 }
 
 const ajv = new Ajv();
-const schema = JSON.parse(fs.readFileSync(schemaFile, "utf8"));
 try {
     ajv.compile(schema);
     console.log("schema is valid");

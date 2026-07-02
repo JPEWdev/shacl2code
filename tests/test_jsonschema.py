@@ -1,6 +1,7 @@
-#
-# Copyright (c) 2024 Joshua Watt
-#
+# SPDX-FileContributor: Arthit Suriyawongkul
+# SPDX-FileContributor: Joshua Watt
+# SPDX-FileCopyrightText: 2024 Joshua Watt
+# SPDX-FileType: SOURCE
 # SPDX-License-Identifier: MIT
 
 import json
@@ -79,7 +80,6 @@ class TestOutput:
                 "node",
                 THIS_DIR.parent / "scripts" / "ajv-compile.js",
                 str(schema_file),
-                "2020-12",
             ],
             check=True,
         )

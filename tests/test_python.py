@@ -2379,6 +2379,46 @@ class TestProtocolOutput:
         )
         assert not (output_dir / "protocols.py").exists()
 
+    def test_dir_includes_lazy_names(
+        self, tmp_path: Path, model_context_url: str
+    ) -> None:
+        """
+        __dir__() must expose model classes, "protocols", and "main" for
+        dir()/tab-completion even though they are loaded lazily via
+        __getattr__ (PEP 562). Without a custom __dir__, Python falls back
+        to only the raw module internals (imports, dunders) -- see
+        PLAN-python-protocols.md Lesson 7.
+        """
+        module_name = "pymodel_dir_check"
+        output_dir = tmp_path / module_name
+        shacl2code_generate(
+            ["--input", TEST_MODEL, "--context", model_context_url],
+            ["--include-protocols", "yes"],
+            output_dir,
+        )
+
+        sys.path.insert(0, str(tmp_path))
+        try:
+            pkg = importlib.import_module(module_name)
+            names = dir(pkg)
+
+            assert "test_class" in names
+            assert "parent_class" in names
+            assert "protocols" in names
+            assert "main" in names
+
+            # protocols.py is not itself lazily loaded, so dir() on the
+            # lazy .protocols entry point must show its domain classes too --
+            # confirms tab-completion works end to end through __getattr__.
+            proto_names = dir(pkg.protocols)
+            assert "SHACLObjectProtocol" in proto_names
+            assert "test_class" in proto_names
+        finally:
+            sys.path.remove(str(tmp_path))
+            for m in list(sys.modules):
+                if m == module_name or m.startswith(module_name + "."):
+                    del sys.modules[m]
+
     def test_mypy(self, tmp_path: Path, model_context_url: str) -> None:
         output_dir = tmp_path / "pymodel"
         shacl2code_generate(
@@ -2398,6 +2438,26 @@ class TestProtocolOutput:
         )
         subprocess.run(
             ["flake8", "--config", TOP_DIR / ".flake8", output_dir / "protocols.py"],
+            encoding="utf-8",
+            check=True,
+        )
+
+    def test_flake8_all_files(self, tmp_path: Path, model_context_url: str) -> None:
+        """
+        flake8 over the whole output directory with --include-protocols yes,
+        not just protocols.py -- catches issues in the conditional protocols
+        import inside __init__.py (e.g. the I100 ordering regression fixed in
+        PLAN-python-protocols.md Lesson 7) that a protocols.py-only check
+        would miss.
+        """
+        output_dir = tmp_path / "pymodel"
+        shacl2code_generate(
+            ["--input", TEST_MODEL, "--context", model_context_url],
+            ["--include-protocols", "yes"],
+            output_dir,
+        )
+        subprocess.run(
+            ["flake8", "--config", TOP_DIR / ".flake8"] + list(output_dir.iterdir()),
             encoding="utf-8",
             check=True,
         )

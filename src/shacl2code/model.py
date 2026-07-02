@@ -106,7 +106,6 @@ class Model(object):
         self.context = context
         self.compact_ids = {}
         self.objects = {}
-        self.enums = []
         self.classes = []
         class_iris = set()
         classes_by_iri = {}
@@ -289,7 +288,6 @@ class Model(object):
         for c in self.classes:
             c.derived_ids.sort()
 
-        self.enums.sort(key=lambda e: e._id)
         self.classes.sort(key=lambda c: c._id)
 
         tmp_classes = self.classes

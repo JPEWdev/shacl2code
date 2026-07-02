@@ -2299,3 +2299,10 @@ def test_ontology(model):
     assert classes
     for c in classes:
         assert c.ONTOLOGY is not None
+
+
+def test_prerelease_warning(model):
+    model.SHACL2CODE_TEST.is_prerelease = True
+
+    with pytest.warns(FutureWarning):
+        model.test_class()

@@ -345,6 +345,8 @@ class Model(object):
         object with the context applied
         """
         _id = str(_id)
+        if not self.context:
+            return _id
         if _id not in self.compact_ids:
             self.compact_ids[_id] = self.context.compact_iri(_id)
 

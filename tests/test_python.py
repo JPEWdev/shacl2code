@@ -1950,9 +1950,9 @@ def test_deprecated_class(model):
         model.test_deprecated_class()
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_deprecated_property(model):
-    c = model.test_deprecated_class()
+    with pytest.warns(DeprecationWarning):
+        c = model.test_deprecated_class()
 
     with pytest.deprecated_call():
         c.test_deprecated_class_deprecated_string_prop = "foo"

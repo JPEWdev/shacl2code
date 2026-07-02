@@ -6,9 +6,11 @@
 import keyword
 import re
 from pathlib import Path
+from typing import Iterable
 
 from .common import JinjaTemplateRender
 from .lang import TEMPLATE_DIR, language
+from ..model import Class
 from ..util import convert_version_string
 
 DATATYPE_CLASSES = {
@@ -75,6 +77,23 @@ def varname(*name):
     return name
 
 
+def protocols_use_datetime(classes: Iterable[Class]) -> bool:
+    """Whether any class has a plain (non-list, non-ref) datetime-typed property.
+
+    Determines if protocols.py.j2 needs to import ``datetime`` -- mirrors the
+    scalar-property branch in that template exactly, so the import is only
+    emitted when it will actually be referenced (avoids flake8 F401).
+    """
+    for cls in classes:
+        for prop in cls.properties:
+            is_list = prop.max_count is None or prop.max_count != 1
+            has_ref = bool(prop.class_id) and not prop.enum_values
+            is_scalar = not (is_list or has_ref or prop.enum_values)
+            if is_scalar and DATATYPE_PYTHON_TYPES[prop.datatype] == "datetime":
+                return True
+    return False
+
+
 @language("python")
 class PythonRender(JinjaTemplateRender):
     """Render Python Language Bindings."""
@@ -90,8 +109,9 @@ class PythonRender(JinjaTemplateRender):
     def __init__(self, args):
         super().__init__(args)
         self.__output = args.output
-        self.__use_slots = args.use_slots
         self.__include_main = args.include_main == "yes"
+        self.__include_protocols = args.include_protocols == "yes"
+        self.__use_slots = args.use_slots
         self.__version_str = args.version
         if args.version:
             self.__version = repr(convert_version_string(args.version))
@@ -112,6 +132,15 @@ class PythonRender(JinjaTemplateRender):
             choices=("yes", "no"),
             default="yes",
             help="Generate a main function for the module. Default is '%(default)s'",
+        )
+        parser.add_argument(
+            "--include-protocols",
+            choices=("yes", "no"),
+            default="no",
+            help=(
+                "Include a protocols.py module with version-agnostic Protocol "
+                "types for every class. Default is '%(default)s'"
+            ),
         )
         parser.add_argument(
             "--use-slots",
@@ -141,9 +170,13 @@ class PythonRender(JinjaTemplateRender):
             yield get_file("cmd.py")
             yield get_file("__main__.py")
 
+        if self.__include_protocols:
+            yield get_file("protocols.py")
+
     def get_extra_env(self):
         return {
             "varname": varname,
+            "protocols_use_datetime": protocols_use_datetime,
             "DATATYPE_CLASSES": DATATYPE_CLASSES,
             "DATATYPE_PYTHON_TYPES": DATATYPE_PYTHON_TYPES,
         }
@@ -156,8 +189,9 @@ class PythonRender(JinjaTemplateRender):
         else:
             use_slots = False
         return {
-            "use_slots": use_slots,
             "include_main": self.__include_main,
-            "version_str": self.__version_str,
+            "include_protocols": self.__include_protocols,
+            "use_slots": use_slots,
             "version": self.__version,
+            "version_str": self.__version_str,
         }

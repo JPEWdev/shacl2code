@@ -4,12 +4,52 @@
 #
 # SPDX-License-Identifier: {{ spdx_license }}
 
-from .model import *  # noqa: F401, F403
+from __future__ import annotations
+
+import importlib
+from typing import Any, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .model import *  # noqa: F401, F403
 
 # fmt: off
 """Format Guard{{ '"' }}{{ '"' }}{{ '"' }}
-{%- if include_main %}
-from .cmd import main  # noqa: F401, I100, I202
+{%- if include_protocols %}
+if TYPE_CHECKING:
+    from . import protocols  # noqa: F401, I100, I202
 {%- endif %}
+
+
+def __getattr__(name: str) -> Any:
+    # Lazy attribute access: submodules and model content loaded on first use (PEP 562).
+{%- if include_protocols %}
+    if name == "protocols":
+        return importlib.import_module(f"{__name__}.protocols")
+{%- endif %}
+{%- if include_main %}
+    if name == "main":
+        return importlib.import_module(f"{__name__}.cmd").main
+{%- endif %}
+    mod = importlib.import_module(f"{__name__}.model")
+    try:
+        return getattr(mod, name)
+    except AttributeError:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__() -> List[str]:
+    # Import model here (not at module scope) so dir() stays opt-in: it costs
+    # a model load only when introspection is actually requested (PEP 562).
+    mod = importlib.import_module(f"{__name__}.model")
+    names = set(globals()) | set(dir(mod))
+{%- if include_protocols %}
+    names.add("protocols")
+{%- endif %}
+{%- if include_main %}
+    names.add("main")
+{%- endif %}
+    return sorted(names)
+
+
 {{ '"' }}{{ '"' }}{{ '"' }}Format Guard"""
-# fmt on
+# fmt: on

@@ -270,13 +270,13 @@ def python_usage_script(python_model_env, tmp_path):
             print({module_name}.enumType.foo)
 
             class OERecipeExtension({module_name}.extensible_abstract_class):
-                TYPE: ClassVar[str] = "http://example.org/recipe-extension"
+                TYPE: ClassVar[str] = "http://example.org/shacl2code-test/recipe-extension"
                 NODE_KIND: ClassVar[{module_name}.NodeKind] = {module_name}.NodeKind.BlankNodeOrIRI
                 PROPERTIES: ClassVar[List[{module_name}.ClassProp]] = [
                     {module_name}.ClassProp(
                         "is_native",
                         lambda: {module_name}.BooleanProp(),
-                        iri="http://example.org/is-native",
+                        iri="http://example.org/shacl2code-test/is-native",
                         max_count=1,
                     ),
                 ]
@@ -964,8 +964,8 @@ def type_tests(name, *typ):
         # Enumerated value
         (
             "test_class_enum_prop",
-            "http://example.org/enumType/foo",
-            "http://example.org/enumType/foo",
+            "http://example.org/shacl2code-test/enumType/foo",
+            "http://example.org/shacl2code-test/enumType/foo",
         ),
         ("test_class_enum_prop", "foo", ValueError),
         *type_tests("test_class_enum_prop", str),
@@ -1181,20 +1181,20 @@ def list_type_tests(name, *typ):
         (
             "test_class_enum_list_prop",
             [
-                "http://example.org/enumType/foo",
-                "http://example.org/enumType/bar",
-                "http://example.org/enumType/nolabel",
+                "http://example.org/shacl2code-test/enumType/foo",
+                "http://example.org/shacl2code-test/enumType/bar",
+                "http://example.org/shacl2code-test/enumType/nolabel",
             ],
             [
-                "http://example.org/enumType/foo",
-                "http://example.org/enumType/bar",
-                "http://example.org/enumType/nolabel",
+                "http://example.org/shacl2code-test/enumType/foo",
+                "http://example.org/shacl2code-test/enumType/bar",
+                "http://example.org/shacl2code-test/enumType/nolabel",
             ],
         ),
         (
             "test_class_enum_list_prop",
             [
-                "http://example.org/enumType/foo",
+                "http://example.org/shacl2code-test/enumType/foo",
                 "foo",
             ],
             ValueError,
@@ -1350,8 +1350,8 @@ def test_datetime_to_string(model, value, expect):
             "foo",
         ),
         (
-            "http://example.org/extensible-test-prop",
-            "http://example.org/extensible-test-prop",
+            "http://example.org/shacl2code-test/extensible-test-prop",
+            "http://example.org/shacl2code-test/extensible-test-prop",
             "foo",
             AttributeError,
         ),
@@ -1392,42 +1392,42 @@ def test_extensible_prop(model, test_context_url, prop, serkey, value, expect):
             None,
         ),
         (
-            "http://example.org/extensible-test-prop",
+            "http://example.org/shacl2code-test/extensible-test-prop",
             "foo",
             SAME_AS_VALUE,
             ["foo"],
             ["foo"],
         ),
         (
-            "http://example.org/extensible-test-prop",
+            "http://example.org/shacl2code-test/extensible-test-prop",
             1,
             SAME_AS_VALUE,
             [1],
             [1],
         ),
         (
-            "http://example.org/extensible-test-prop",
+            "http://example.org/shacl2code-test/extensible-test-prop",
             1.123,
             SAME_AS_VALUE,
             ["1.123"],
             [1.123],
         ),
         (
-            "http://example.org/extensible-test-prop",
+            "http://example.org/shacl2code-test/extensible-test-prop",
             object(),
             SAME_AS_VALUE,
             TypeError,
             None,
         ),
         (
-            "http://example.org/extensible-test-prop",
+            "http://example.org/shacl2code-test/extensible-test-prop",
             [1, "foo", 1.123],
             SAME_AS_VALUE,
             [1, "foo", "1.123"],
             [1, "foo", 1.123],
         ),
         (
-            "http://example.org/extensible-test-prop",
+            "http://example.org/shacl2code-test/extensible-test-prop",
             [object()],
             SAME_AS_VALUE,
             TypeError,
@@ -1501,14 +1501,14 @@ def test_extensible_deserialize(model, test_context_url):
 
     class ClosedExtension(model.extensible_class):
         CLOSED = True
-        TYPE = "http://example.org/closed-class"
+        TYPE = "http://example.org/shacl2code-test/closed-class"
 
     class OpenExtension(model.extensible_class):
-        TYPE = "http://example.org/open-class"
+        TYPE = "http://example.org/shacl2code-test/open-class"
 
-    TEST_TYPE = "http://example.org/test-extensible"
-    TEST_IRI = "http://example.org/test-key"
-    TEST_ID = "http://example.org/test-id"
+    TEST_TYPE = "http://example.org/shacl2code-test/test-extensible"
+    TEST_IRI = "http://example.org/shacl2code-test/test-key"
+    TEST_ID = "http://example.org/shacl2code-test/test-id"
 
     objset = deserialize_extension(
         {
@@ -1546,14 +1546,14 @@ def test_extensible_deserialize(model, test_context_url):
 
     objset = deserialize_extension(
         {
-            "@type": "http://example.org/closed-class",
+            "@type": "http://example.org/shacl2code-test/closed-class",
             "@id": TEST_ID,
         }
     )
     obj = objset.find_by_id(TEST_ID)
     assert obj is not None
     assert isinstance(obj, ClosedExtension)
-    assert obj.get_type() == "http://example.org/closed-class"
+    assert obj.get_type() == "http://example.org/shacl2code-test/closed-class"
     assert obj.get_compact_type() is None
 
     # Derived object is closed and cannot have arbitrary IRI assignment
@@ -1562,14 +1562,14 @@ def test_extensible_deserialize(model, test_context_url):
 
     objset = deserialize_extension(
         {
-            "@type": "http://example.org/open-class",
+            "@type": "http://example.org/shacl2code-test/open-class",
             "@id": TEST_ID,
         }
     )
     obj = objset.find_by_id(TEST_ID)
     assert obj is not None
     assert isinstance(obj, OpenExtension)
-    assert obj.get_type() == "http://example.org/open-class"
+    assert obj.get_type() == "http://example.org/shacl2code-test/open-class"
     assert obj.get_compact_type() is None
 
     # Derived object is open and can have arbitrary assignments
@@ -1578,14 +1578,14 @@ def test_extensible_deserialize(model, test_context_url):
 
 def test_enum_named_individuals(model):
     assert type(model.enumType.foo) is str
-    assert model.enumType.foo == "http://example.org/enumType/foo"
+    assert model.enumType.foo == "http://example.org/shacl2code-test/enumType/foo"
 
     c = model.test_class()
 
     assert model.enumType.NAMED_INDIVIDUALS == {
-        "foo": "http://example.org/enumType/foo",
-        "bar": "http://example.org/enumType/bar",
-        "nolabel": "http://example.org/enumType/nolabel",
+        "foo": "http://example.org/shacl2code-test/enumType/foo",
+        "bar": "http://example.org/shacl2code-test/enumType/bar",
+        "nolabel": "http://example.org/shacl2code-test/enumType/nolabel",
     }
 
     for name, value in model.enumType.NAMED_INDIVIDUALS.items():
@@ -1651,7 +1651,10 @@ def test_iri(model, roundtrip):
     assert isinstance(c, model.test_class)
 
     assert c._IRI["_id"] == "@id"
-    assert c._IRI["named_property"] == "http://example.org/test-class/named-property"
+    assert (
+        c._IRI["named_property"]
+        == "http://example.org/shacl2code-test/test-class/named-property"
+    )
 
     for name, iri in c._IRI.items():
         assert c[iri] == getattr(c, name)
@@ -1674,7 +1677,7 @@ def test_shacl(roundtrip):
         (
             URIRef("http://serialize.example.com/non-shape"),
             RDF.type,
-            URIRef("http://example.org/non-shape-class"),
+            URIRef("http://example.org/shacl2code-test/non-shape-class"),
         )
     )
 
@@ -1712,10 +1715,10 @@ def test_single_register(model):
 def test_objset_foreach_type(model, roundtrip):
     objset = model.SHACLObjectSet()
 
-    EXTENSION_ID = "http://example.org/custom-extension"
+    EXTENSION_ID = "http://example.org/shacl2code-test/custom-extension"
 
     class Extension(model.extensible_class):
-        TYPE = "http://example.org/custom-extension-class"
+        TYPE = "http://example.org/shacl2code-test/custom-extension-class"
 
     with roundtrip.open("r") as f:
         model.JSONLDDeserializer().read(f, objset)
@@ -1742,7 +1745,11 @@ def test_objset_foreach_type(model, roundtrip):
     assert set(objset.foreach_type(model.test_class, match_subclass=False)) == expect
     assert set(objset.foreach_type("test-class", match_subclass=False)) == expect
     assert (
-        set(objset.foreach_type("http://example.org/test-class", match_subclass=False))
+        set(
+            objset.foreach_type(
+                "http://example.org/shacl2code-test/test-class", match_subclass=False
+            )
+        )
         == expect
     )
 
@@ -1753,7 +1760,11 @@ def test_objset_foreach_type(model, roundtrip):
     assert set(objset.foreach_type(model.test_class, match_subclass=True)) == expect
     assert set(objset.foreach_type("test-class", match_subclass=True)) == expect
     assert (
-        set(objset.foreach_type("http://example.org/test-class", match_subclass=True))
+        set(
+            objset.foreach_type(
+                "http://example.org/shacl2code-test/test-class", match_subclass=True
+            )
+        )
         == expect
     )
 
@@ -1765,7 +1776,8 @@ def test_objset_foreach_type(model, roundtrip):
     assert (
         set(
             objset.foreach_type(
-                "http://example.org/extensible-class", match_subclass=False
+                "http://example.org/shacl2code-test/extensible-class",
+                match_subclass=False,
             )
         )
         == expect
@@ -1781,7 +1793,8 @@ def test_objset_foreach_type(model, roundtrip):
     assert (
         set(
             objset.foreach_type(
-                "http://example.org/extensible-class", match_subclass=True
+                "http://example.org/shacl2code-test/extensible-class",
+                match_subclass=True,
             )
         )
         == expect
@@ -1791,7 +1804,8 @@ def test_objset_foreach_type(model, roundtrip):
     assert (
         set(
             objset.foreach_type(
-                "http://example.org/custom-extension-class", match_subclass=False
+                "http://example.org/shacl2code-test/custom-extension-class",
+                match_subclass=False,
             )
         )
         == expect
@@ -1894,7 +1908,7 @@ def test_required_abstract_class_property(model, tmp_path):
 
 def test_extensible_abstract_class(model):
     class Extension(model.extensible_abstract_class):
-        TYPE = "http://example.org/custom-extension-class"
+        TYPE = "http://example.org/shacl2code-test/custom-extension-class"
 
     # Test that an extensible abstract class cannot be created
     with pytest.raises(NotImplementedError):
@@ -1936,9 +1950,9 @@ def test_deprecated_class(model):
         model.test_deprecated_class()
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_deprecated_property(model):
-    c = model.test_deprecated_class()
+    with pytest.warns(DeprecationWarning):
+        c = model.test_deprecated_class()
 
     with pytest.deprecated_call():
         c.test_deprecated_class_deprecated_string_prop = "foo"
@@ -2000,7 +2014,7 @@ def test_varname_reserved_words(tmp_path):
     try:
         import temp_rwmodel as m  # noqa: PLC0415
 
-        cls = m.SHACLObject.CLASSES["http://example.org/test-rw-class"]
+        cls = m.SHACLObject.CLASSES["http://example.org/shacl2code-test/test-rw-class"]
 
         # Renamed kwargs must work at construction time
         obj = cls(get_id_="a", set_id_="b", encode_="c", class_="d")
@@ -2012,8 +2026,8 @@ def test_varname_reserved_words(tmp_path):
         # SHACLObject.get_id() must still return the object IRI,
         # not the value of the prop (get_id_)
         assert obj.get_id() is None
-        obj.set_id("http://example.org/obj")
-        assert obj.get_id() == "http://example.org/obj"
+        obj.set_id("http://example.org/shacl2code-test/obj")
+        assert obj.get_id() == "http://example.org/shacl2code-test/obj"
     finally:
         sys.path = old_path
         for mod in list(sys.modules):
@@ -2024,12 +2038,12 @@ def test_varname_reserved_words(tmp_path):
 def test_extensible_properties(model, model_context_url):
 
     class Extension(model.extensible_class):
-        TYPE = "http://example.org/extension"
+        TYPE = "http://example.org/shacl2code-test/extension"
         PROPERTIES = [
             model.ClassProp(
                 "string_prop",
                 lambda: model.StringProp(),
-                "http://example.org/string-prop",
+                "http://example.org/shacl2code-test/string-prop",
                 min_count=1,
             ),
         ]
@@ -2038,7 +2052,7 @@ def test_extensible_properties(model, model_context_url):
         "@context": [
             model_context_url,
             {
-                "prefix": "http://example.org/",
+                "prefix": "http://example.org/shacl2code-test/",
             },
         ],
         "@graph": [
@@ -2056,13 +2070,13 @@ def test_extensible_properties(model, model_context_url):
     d = model.JSONLDDeserializer()
     d.deserialize_data(DATA, objset)
 
-    e = objset.find_by_id("http://example.org/e")
+    e = objset.find_by_id("http://example.org/shacl2code-test/e")
     assert e
     assert isinstance(e, Extension)
     assert e.string_prop == "foo"
-    assert e["http://example.org/string-prop"] == "foo"
-    assert e._id == "http://example.org/e"
-    assert e["http://example.org/extra-data"] == ["bar"]
+    assert e["http://example.org/shacl2code-test/string-prop"] == "foo"
+    assert e._id == "http://example.org/shacl2code-test/e"
+    assert e["http://example.org/shacl2code-test/extra-data"] == ["bar"]
 
     # Ensure the context is preserved
     s = model.JSONLDSerializer()
@@ -2145,33 +2159,33 @@ def test_object_iter(model):
 
     assert data == {
         "@id": "http://example.com/link-class",
-        "http://example.org/encode": None,
-        "http://example.org/import": None,
-        "http://example.org/test-class/anyuri-prop": None,
-        "http://example.org/test-class/boolean-prop": True,
-        "http://example.org/test-class/class-list-prop": [],
-        "http://example.org/test-class/class-prop": None,
-        "http://example.org/test-class/class-prop-no-class": None,
-        "http://example.org/test-class/datetime-list-prop": [],
-        "http://example.org/test-class/datetime-scalar-prop": None,
-        "http://example.org/test-class/datetimestamp-scalar-prop": None,
-        "http://example.org/test-class/enum-list-prop": [],
-        "http://example.org/test-class/enum-prop": None,
-        "http://example.org/test-class/enum-prop-no-class": None,
-        "http://example.org/test-class/float-prop": None,
-        "http://example.org/test-class/integer-prop": None,
-        "http://example.org/test-class/named-property": None,
-        "http://example.org/test-class/non-shape": None,
-        "http://example.org/test-class/nonnegative-integer-prop": None,
-        "http://example.org/test-class/positive-integer-prop": None,
-        "http://example.org/test-class/regex": None,
-        "http://example.org/test-class/regex-datetime": None,
-        "http://example.org/test-class/regex-datetimestamp": None,
-        "http://example.org/test-class/regex-list": [],
-        "http://example.org/test-class/split-string-prop": None,
-        "http://example.org/test-class/string-list-no-datatype": [],
-        "http://example.org/test-class/string-list-prop": ["a", "b"],
-        "http://example.org/test-class/string-scalar-prop": "foo",
+        "http://example.org/shacl2code-test/encode": None,
+        "http://example.org/shacl2code-test/import": None,
+        "http://example.org/shacl2code-test/test-class/anyuri-prop": None,
+        "http://example.org/shacl2code-test/test-class/boolean-prop": True,
+        "http://example.org/shacl2code-test/test-class/class-list-prop": [],
+        "http://example.org/shacl2code-test/test-class/class-prop": None,
+        "http://example.org/shacl2code-test/test-class/class-prop-no-class": None,
+        "http://example.org/shacl2code-test/test-class/datetime-list-prop": [],
+        "http://example.org/shacl2code-test/test-class/datetime-scalar-prop": None,
+        "http://example.org/shacl2code-test/test-class/datetimestamp-scalar-prop": None,
+        "http://example.org/shacl2code-test/test-class/enum-list-prop": [],
+        "http://example.org/shacl2code-test/test-class/enum-prop": None,
+        "http://example.org/shacl2code-test/test-class/enum-prop-no-class": None,
+        "http://example.org/shacl2code-test/test-class/float-prop": None,
+        "http://example.org/shacl2code-test/test-class/integer-prop": None,
+        "http://example.org/shacl2code-test/test-class/named-property": None,
+        "http://example.org/shacl2code-test/test-class/non-shape": None,
+        "http://example.org/shacl2code-test/test-class/nonnegative-integer-prop": None,
+        "http://example.org/shacl2code-test/test-class/positive-integer-prop": None,
+        "http://example.org/shacl2code-test/test-class/regex": None,
+        "http://example.org/shacl2code-test/test-class/regex-datetime": None,
+        "http://example.org/shacl2code-test/test-class/regex-datetimestamp": None,
+        "http://example.org/shacl2code-test/test-class/regex-list": [],
+        "http://example.org/shacl2code-test/test-class/split-string-prop": None,
+        "http://example.org/shacl2code-test/test-class/string-list-no-datatype": [],
+        "http://example.org/shacl2code-test/test-class/string-list-prop": ["a", "b"],
+        "http://example.org/shacl2code-test/test-class/string-scalar-prop": "foo",
     }
 
 
@@ -2204,12 +2218,14 @@ def test_object_prop_set_coercion(model):
     c = model.test_class()
 
     # Assigning string should remain string
-    c.test_class_class_prop = "http://example.org/assigned-iri"
+    c.test_class_class_prop = "http://example.org/shacl2code-test/assigned-iri"
     assert isinstance(c.test_class_class_prop, str)
-    assert c.test_class_class_prop == "http://example.org/assigned-iri"
+    assert c.test_class_class_prop == "http://example.org/shacl2code-test/assigned-iri"
 
     # Assigning an object should preserve the object instance without str() coercion
-    embedded_obj = model.test_class(_id="http://example.org/embedded-obj")
+    embedded_obj = model.test_class(
+        _id="http://example.org/shacl2code-test/embedded-obj"
+    )
     c.test_class_class_prop = embedded_obj
     assert isinstance(c.test_class_class_prop, model.test_class)  # check if same class
     assert c.test_class_class_prop is embedded_obj  # check if same object
@@ -2264,8 +2280,8 @@ def test_introspection_extensible(model):
     assert "extensible_class_required" in props
 
     # IRI-keyed extensible properties must NOT appear in dir()
-    c["http://example.org/extensible-test-prop"] = "test-value"
-    assert "http://example.org/extensible-test-prop" not in dir(c)
+    c["http://example.org/shacl2code-test/extensible-test-prop"] = "test-value"
+    assert "http://example.org/shacl2code-test/extensible-test-prop" not in dir(c)
 
 
 def test_version(model):
@@ -2276,3 +2292,17 @@ def test_version(model):
 
     assert model.VERSION_STRING == MODEL_VERSION
     assert model.VERSION == convert_version_string(MODEL_VERSION)
+
+
+def test_ontology(model):
+    classes = list(model.SHACLObject.CLASSES.values())
+    assert classes
+    for c in classes:
+        assert c.ONTOLOGY is not None
+
+
+def test_prerelease_warning(model):
+    model.SHACL2CODE_TEST.is_prerelease = True
+
+    with pytest.warns(FutureWarning):
+        model.test_class()

@@ -2292,3 +2292,10 @@ def test_version(model):
 
     assert model.VERSION_STRING == MODEL_VERSION
     assert model.VERSION == convert_version_string(MODEL_VERSION)
+
+
+def test_ontology(model):
+    classes = list(model.SHACLObject.CLASSES.values())
+    assert classes
+    for c in classes:
+        assert c.ONTOLOGY is not None

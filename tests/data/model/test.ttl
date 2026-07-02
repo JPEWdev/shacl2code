@@ -6,6 +6,12 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix sh-to-code: <https://jpewdev.github.io/shacl2code/schema#> .
 
+<http://example.org/shacl2code-test> a owl:Ontology ;
+    rdfs:comment "A test ontology" ;
+    rdfs:label "shacl2code-test" ;
+    owl:versionInfo "1.0.0"
+    .
+
 <aaa-derived-class> a sh:NodeShape, owl:Class ;
     rdfs:subClassOf <parent-class> ;
     rdfs:comment "Derived class that sorts before the parent to test ordering"

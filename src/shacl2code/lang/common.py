@@ -119,6 +119,7 @@ class JinjaTemplateRender(object):
             return ni
 
         classes = ObjectList(model.classes)
+        ontologies = ObjectList(model.ontologies)
         concrete_classes = ObjectList(
             list(c for c in model.classes if not c.is_abstract)
         )
@@ -126,6 +127,7 @@ class JinjaTemplateRender(object):
 
         render_args = {
             "classes": classes,
+            "ontologies": ontologies,
             "concrete_classes": concrete_classes,
             "abstract_classes": abstract_classes,
             "context": model.context,

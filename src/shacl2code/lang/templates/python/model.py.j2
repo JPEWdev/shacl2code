@@ -729,10 +729,23 @@ VERSION = {{ version }}
 _DC_KWARGS = {"slots": True} if _USE_SLOTS and sys.version_info >= (3, 10) else {}
 
 
+__WARNED_ONTOLOGIES: set[str] = set()
+
+
+def _warn_ontology(o: Ontology) -> None:
+    if o.is_prerelease and o.iri not in __WARNED_ONTOLOGIES:
+        warnings.warn(
+            f"Ontology '{o.iri}' is a pre-release version and may change in the future",
+            FutureWarning,
+        )
+        __WARNED_ONTOLOGIES.add(o.iri)
+
+
 @dataclass(**_DC_KWARGS)
 class Ontology:
     iri: str
     version: Optional[str] = None
+    is_prerelease: bool = False
 
 
 @dataclass(**_DC_KWARGS)
@@ -985,6 +998,9 @@ class SHACLObject(metaclass=SHACLObjectMeta):
             warnings.warn(
                 f"{self.__class__.__name__} is deprecated", DeprecationWarning
             )
+
+        if self.ONTOLOGY:
+            _warn_ontology(self.ONTOLOGY)
 
         with register_lock:
             cls = self.__class__
@@ -2976,6 +2992,7 @@ CONTEXT_URLS: List[str] = [
 {% endif %}
 {{ varname(o.name).upper() }} = Ontology(
     iri="{{ o._id }}",
+    is_prerelease={{ o.is_prerelease }},
 {%- if o.version %}
     version="{{ o.version }}",
 {%- endif %}

@@ -31,6 +31,7 @@ class SHACL2CODE(DefinedNamespace):
     idPropertyName: URIRef
     isExtensible: URIRef
     isAbstract: URIRef
+    isPreRelease: URIRef
 
     _NS = Namespace("https://jpewdev.github.io/shacl2code/schema#")
 
@@ -70,6 +71,7 @@ class Ontology:
     comment: str = ""
     label: str = ""
     version: str = ""
+    is_prerelease: bool = False
 
 
 @dataclass
@@ -203,6 +205,9 @@ class Model(object):
                 label=label,
                 comment=str(self.model.value(onto_iri, RDFS.comment, default="")),
                 version=str(self.model.value(onto_iri, OWL.versionInfo, default="")),
+                is_prerelease=bool(
+                    self.model.value(onto_iri, SHACL2CODE.isPreRelease, default=False)
+                ),
             )
             self.ontologies.append(o)
 

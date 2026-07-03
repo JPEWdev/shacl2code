@@ -69,7 +69,7 @@ class TestOutput:
             stdout=subprocess.PIPE,
             encoding="utf-8",
         )
-        
+
         json.loads(p.stdout)
 
     def test_ajv_compile(self, tmp_path, generate_args, schema_args):
@@ -78,11 +78,19 @@ class TestOutput:
         """
         schema_file = tmp_path / "schema.json"
         subprocess.run(
-            ["shacl2code", "generate"]
+            [
+                "shacl2code",
+                "generate",
+            ]
             + generate_args
-            + ["jsonschema"]
+            + [
+                "jsonschema",
+              ]
             + schema_args
-            + ["--output", schema_file],
+            + [
+                "--output",
+                schema_file,
+            ],
             check=True,
         )
         subprocess.run(
@@ -99,11 +107,19 @@ class TestOutput:
         Tests that the generated file does not have trailing whitespace
         """
         p = subprocess.run(
-            ["shacl2code", "generate"]
+            [
+                "shacl2code",
+                "generate",
+            ]
             + generate_args
-            + ["jsonschema"]
+            + [
+                "jsonschema",
+            ]
             + schema_args
-            + ["--output", "-"],
+            + [
+                "--output",
+                "-",
+            ],
             check=True,
             stdout=subprocess.PIPE,
             encoding="utf-8",
@@ -119,11 +135,19 @@ class TestOutput:
         Tests that the output file doesn't contain tabs
         """
         p = subprocess.run(
-            ["shacl2code", "generate"]
+            [
+                "shacl2code",
+                "generate",
+            ]
             + generate_args
-            + ["jsonschema"]
+            + [
+                "jsonschema",
+            ]
             + schema_args
-            + ["--output", "-"],
+            + [
+                "--output",
+                "-",
+            ],
             check=True,
             stdout=subprocess.PIPE,
             encoding="utf-8",
@@ -161,11 +185,19 @@ def _run_jsonschema_generate(
 ) -> str:
     """Run shacl2code generate jsonschema; return raw stdout string."""
     p = subprocess.run(
-        ["shacl2code", "generate"]
+        [
+            "shacl2code",
+            "generate",
+        ]
         + generate_args
-        + ["jsonschema"]
+        + [
+            "jsonschema",
+          ]
         + (schema_args or [])
-        + ["--output", "-"],
+        + [
+            "--output",
+            "-",
+        ],
         check=True,
         stdout=subprocess.PIPE,
         encoding="utf-8",

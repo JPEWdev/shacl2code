@@ -85,7 +85,7 @@ class TestOutput:
             + generate_args
             + [
                 "jsonschema",
-              ]
+            ]
             + schema_args
             + [
                 "--output",
@@ -192,7 +192,7 @@ def _run_jsonschema_generate(
         + generate_args
         + [
             "jsonschema",
-          ]
+        ]
         + (schema_args or [])
         + [
             "--output",

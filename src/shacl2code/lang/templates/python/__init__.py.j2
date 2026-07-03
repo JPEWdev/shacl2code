@@ -7,7 +7,8 @@
 from __future__ import annotations
 
 import importlib
-from typing import Any, List, TYPE_CHECKING
+from types import ModuleType
+from typing import Any, List, TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
     from .model import *  # noqa: F401, F403
@@ -21,7 +22,21 @@ if TYPE_CHECKING:
 
 
 def __getattr__(name: str) -> Any:
-    # Lazy attribute access: submodules and model content loaded on first use (PEP 562).
+    # PEP 562 lazy access: each branch imports only what it needs.
+    if name == "__all__":
+        # Only "import *" needs this; it must load the model to compute it.
+        mod = importlib.import_module(f"{__name__}.model")
+        return sorted(
+            n
+            for n, o in vars(mod).items()
+            if not n.startswith("_")
+            and n != "TYPE_CHECKING"  # imported flag, not model content
+            and not isinstance(o, (TypeVar, ModuleType))
+            and (
+                getattr(o, "__module__", None) == mod.__name__
+                or getattr(o, "__module__", None) is None  # plain constants
+            )
+        )
 {%- if include_protocols %}
     if name == "protocols":
         return importlib.import_module(f"{__name__}.protocols")

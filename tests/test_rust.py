@@ -10,6 +10,7 @@ import subprocess
 import textwrap
 from enum import Enum
 from pathlib import Path
+from typing import Callable, Optional
 
 import pytest
 
@@ -117,7 +118,7 @@ def compile_test(test_lib, tmp_path):
                 [dependencies]
                 shacl_model = {{ path = "{test_lib}" }}
                 serde_json = "1"
-                chrono = {{ version = "0.4", features = ["serde"] }}
+                chrono = {{ version = "0.4.31", features = ["serde"] }}
                 """))
 
         src = tmp_path / "src" / "main.rs"
@@ -643,6 +644,32 @@ def test_datetime_decode(compile_test, value, expect):
         ), f"Test failed. Expected {s!r}, got {output.rstrip()!r}"
 
 
+def test_datetime_decode_dst_transition(
+    compile_test: Callable[..., Optional[str]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Offset must reflect the daylight saving time (DST) rule of the
+    parsed date, not of "now"."""
+    monkeypatch.setenv("TZ", "America/New_York")
+
+    # Winter and summer require different offsets, so both must be resolved per-date, not from "now".
+    output = compile_test(
+        """\
+        let path = Path::new();
+
+        let winter = decode_date_time("2024-01-15T12:00:00", &path)?;
+        println!("{}", encode_date_time(&winter));
+
+        let summer = decode_date_time("2024-07-15T12:00:00", &path)?;
+        println!("{}", encode_date_time(&summer));
+        """,
+    )
+    assert output is not None
+
+    lines = output.splitlines()
+    assert lines[0] == "2024-01-15T12:00:00-05:00", "EST (no DST) offset expected"
+    assert lines[1] == "2024-07-15T12:00:00-04:00", "EDT (DST) offset expected"
+
+
 @timetests.datetimestamp_decode_tests()
 def test_datetimestamp_decode(compile_test, value, expect):
     output = compile_test(
@@ -724,7 +751,7 @@ def test_extensible_context(compile_test, roundtrip):
 
 
 class _Prop:
-    def __init__(self, path, varname=None):
+    def __init__(self, path: str, varname: Optional[str] = None) -> None:
         self.path = path
         self.varname = varname if varname is not None else path
 

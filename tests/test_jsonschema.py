@@ -31,31 +31,6 @@ TEST_CONTEXT = THIS_DIR / "data" / "model" / "test-context.json"
 SPDX3_CONTEXT_URL = "https://spdx.github.io/spdx-3-model/context.json"
 
 
-def _check_schema_refs(schema: Dict[str, Any]) -> None:
-    """Assert every $ref in the schema points to a valid $defs entry."""
-    DEF_PREFIX = "#/$defs/"
-
-    def check_refs(d, path):
-        if isinstance(d, dict):
-            if "$ref" in d:
-                assert d["$ref"].startswith(
-                    DEF_PREFIX
-                ), f"{''.join(path)} must start with '{DEF_PREFIX}'"
-                name = d["$ref"][len(DEF_PREFIX) :]
-                assert (
-                    name in schema["$defs"]
-                ), f"{''.join(path)}: {name} is not in $defs"
-
-            for k, v in d.items():
-                check_refs(v, path + [f".{k}"])
-
-        if isinstance(d, list):
-            for idx, v in enumerate(d):
-                check_refs(v, path + [f"[{idx}]"])
-
-    check_refs(schema, [])
-
-
 @pytest.mark.parametrize(
     "generate_args,schema_args",
     [
@@ -72,8 +47,11 @@ def _check_schema_refs(schema: Dict[str, Any]) -> None:
     ],
 )
 class TestOutput:
-    def _run(self, generate_args, schema_args):
-        return subprocess.run(
+    def test_output_syntax(self, generate_args, schema_args):
+        """
+        Checks that the output file is valid json syntax by parsing it with Python
+        """
+        p = subprocess.run(
             ["shacl2code", "generate"]
             + generate_args
             + ["jsonschema"]
@@ -84,19 +62,22 @@ class TestOutput:
             encoding="utf-8",
         )
 
-    def test_output_syntax(self, generate_args, schema_args):
-        """
-        Checks that the output file is valid json syntax by parsing it with Python
-        """
-        p = self._run(generate_args, schema_args)
-
         json.loads(p.stdout)
 
     def test_trailing_whitespace(self, generate_args, schema_args):
         """
         Tests that the generated file does not have trailing whitespace
         """
-        p = self._run(generate_args, schema_args)
+        p = subprocess.run(
+            ["shacl2code", "generate"]
+            + generate_args
+            + ["jsonschema"]
+            + schema_args
+            + ["--output", "-"],
+            check=True,
+            stdout=subprocess.PIPE,
+            encoding="utf-8",
+        )
 
         for num, line in enumerate(p.stdout.splitlines()):
             assert (
@@ -107,27 +88,31 @@ class TestOutput:
         """
         Tests that the output file doesn't contain tabs
         """
-        p = self._run(generate_args, schema_args)
+        p = subprocess.run(
+            ["shacl2code", "generate"]
+            + generate_args
+            + ["jsonschema"]
+            + schema_args
+            + ["--output", "-"],
+            check=True,
+            stdout=subprocess.PIPE,
+            encoding="utf-8",
+        )
 
         for num, line in enumerate(p.stdout.splitlines()):
             assert "\t" not in line, f"Line {num + 1} has tabs"
 
-    def test_ajv_compile(self, tmp_path, args):
+    def test_ajv_compile(self, tmp_path, generate_args, schema_args):
         """
         Validates the generated schema against the JSON Schema meta-schema using ajv
         """
         schema_file = tmp_path / "schema.json"
         subprocess.run(
-            [
-                "shacl2code",
-                "generate",
-            ]
-            + args
-            + [
-                "jsonschema",
-                "--output",
-                schema_file,
-            ],
+            ["shacl2code", "generate"]
+            + generate_args
+            + ["jsonschema"]
+            + schema_args
+            + ["--output", schema_file],
             check=True,
         )
         subprocess.run(
@@ -138,6 +123,7 @@ class TestOutput:
             ],
             check=True,
         )
+
 
 @jsonvalidation.validation_tests()
 def test_schema_validation(test_jsonschema, test_context_url, passes, data):
@@ -192,7 +178,27 @@ def _assert_no_unevaluated_properties(schema: Any) -> None:
 
 
 def test_schema_references(test_jsonschema):
-    _check_schema_refs(test_jsonschema)
+    DEF_PREFIX = "#/$defs/"
+
+    def check_refs(d, path):
+        if isinstance(d, dict):
+            if "$ref" in d:
+                assert d["$ref"].startswith(
+                    DEF_PREFIX
+                ), f"{''.join(path)} must start with '{DEF_PREFIX}'"
+                name = d["$ref"][len(DEF_PREFIX) :]
+                assert (
+                    name in test_jsonschema["$defs"]
+                ), f"{''.join(path)}: {name} is not in $defs"
+
+            for k, v in d.items():
+                check_refs(v, path + [f".{k}"])
+
+        if isinstance(d, list):
+            for idx, v in enumerate(d):
+                check_refs(v, path + [f"[{idx}]"])
+
+    check_refs(test_jsonschema, [])
 
 
 def test_schema_references_additional_props():
@@ -201,7 +207,28 @@ def test_schema_references_additional_props():
             ["--input", TEST_MODEL], ["--use-additional-properties"]
         )
     )
-    _check_schema_refs(schema)
+
+    DEF_PREFIX = "#/$defs/"
+
+    def check_refs(d, path):
+        if isinstance(d, dict):
+            if "$ref" in d:
+                assert d["$ref"].startswith(
+                    DEF_PREFIX
+                ), f"{''.join(path)} must start with '{DEF_PREFIX}'"
+                name = d["$ref"][len(DEF_PREFIX) :]
+                assert (
+                    name in schema["$defs"]
+                ), f"{''.join(path)}: {name} is not in $defs"
+
+            for k, v in d.items():
+                check_refs(v, path + [f".{k}"])
+
+        if isinstance(d, list):
+            for idx, v in enumerate(d):
+                check_refs(v, path + [f"[{idx}]"])
+
+    check_refs(schema, [])
 
 
 def test_schema_version_default():
@@ -442,7 +469,28 @@ class TestSPDXOutput:
         """All $refs in the generated SPDX schema resolve to $defs entries."""
         output = _run_jsonschema_generate(spdx_args, schema_args)
         schema = json.loads(output)
-        _check_schema_refs(schema)
+
+        DEF_PREFIX = "#/$defs/"
+
+        def check_refs(d, path):
+            if isinstance(d, dict):
+                if "$ref" in d:
+                    assert d["$ref"].startswith(
+                        DEF_PREFIX
+                    ), f"{''.join(path)} must start with '{DEF_PREFIX}'"
+                    name = d["$ref"][len(DEF_PREFIX) :]
+                    assert (
+                        name in schema["$defs"]
+                    ), f"{''.join(path)}: {name} is not in $defs"
+
+                for k, v in d.items():
+                    check_refs(v, path + [f".{k}"])
+
+            if isinstance(d, list):
+                for idx, v in enumerate(d):
+                    check_refs(v, path + [f"[{idx}]"])
+
+        check_refs(schema, [])
 
     def test_no_unevaluated_properties(self, spdx_args, schema_args):
         """--use-additional-properties schema has no unevaluatedProperties."""

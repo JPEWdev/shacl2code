@@ -52,17 +52,47 @@ class TestOutput:
         Checks that the output file is valid json syntax by parsing it with Python
         """
         p = subprocess.run(
-            ["shacl2code", "generate"]
+            [
+                "shacl2code",
+                "generate",
+            ]
             + generate_args
-            + ["jsonschema"]
+            + [
+                "jsonschema",
+            ]
             + schema_args
-            + ["--output", "-"],
+            + [
+                "--output",
+                "-",
+            ],
             check=True,
             stdout=subprocess.PIPE,
             encoding="utf-8",
         )
-
+        
         json.loads(p.stdout)
+
+    def test_ajv_compile(self, tmp_path, generate_args, schema_args):
+        """
+        Validates the generated schema against the JSON Schema meta-schema using ajv
+        """
+        schema_file = tmp_path / "schema.json"
+        subprocess.run(
+            ["shacl2code", "generate"]
+            + generate_args
+            + ["jsonschema"]
+            + schema_args
+            + ["--output", schema_file],
+            check=True,
+        )
+        subprocess.run(
+            [
+                "node",
+                THIS_DIR.parent / "scripts" / "ajv-compile.js",
+                str(schema_file),
+            ],
+            check=True,
+        )
 
     def test_trailing_whitespace(self, generate_args, schema_args):
         """
@@ -101,28 +131,6 @@ class TestOutput:
 
         for num, line in enumerate(p.stdout.splitlines()):
             assert "\t" not in line, f"Line {num + 1} has tabs"
-
-    def test_ajv_compile(self, tmp_path, generate_args, schema_args):
-        """
-        Validates the generated schema against the JSON Schema meta-schema using ajv
-        """
-        schema_file = tmp_path / "schema.json"
-        subprocess.run(
-            ["shacl2code", "generate"]
-            + generate_args
-            + ["jsonschema"]
-            + schema_args
-            + ["--output", schema_file],
-            check=True,
-        )
-        subprocess.run(
-            [
-                "node",
-                THIS_DIR.parent / "scripts" / "ajv-compile.js",
-                str(schema_file),
-            ],
-            check=True,
-        )
 
 
 @jsonvalidation.validation_tests()

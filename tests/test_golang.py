@@ -543,7 +543,7 @@ class TestOutput:
 
 
 @pytest.mark.parametrize(*GOLANG_MODEL_TESTS)
-class TestCheckType:
+class TestStaticAnalysis:
     """
     Static analysis checks for the generated Go code
     """

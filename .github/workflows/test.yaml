@@ -10,6 +10,7 @@ on:
       - "!.github/ISSUE_TEMPLATE/**"
       - "!.github/workflows/**"
       - ".github/workflows/test.yaml"
+      - ".github/workflows/_pytest.yaml"
   pull_request:
     paths: *trigger-paths
   workflow_call:
@@ -26,11 +27,13 @@ jobs:
       rust: ${{ steps.filter.outputs.rust }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
+      - uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4.0.2
         id: filter
         with:
           filters: |
             core: &core
+              - '.github/workflows/_pytest.yaml'
+              - '.github/workflows/test.yaml'
               - 'src/shacl2code/*.py'
               - 'src/shacl2code/lang/__init__.py'
               - 'src/shacl2code/lang/common.py'
@@ -132,7 +135,7 @@ jobs:
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Setup Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           # Black in this Python version must support all target-versions listed in pyproject.toml
           python-version: "3.14"

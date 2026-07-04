@@ -408,33 +408,59 @@ def link_test(test_lib, tmp_path_factory):
     yield f
 
 
-@pytest.mark.parametrize(
+RUST_MODEL_TESTS = (
     "args",
     [
         ["--input", TEST_MODEL],
         ["--input", TEST_MODEL, "--context-url", TEST_CONTEXT, SPDX3_CONTEXT_URL],
     ],
 )
+
+
+def _build_rust_module(tmp_path, model_server, args):
+    subprocess.run(
+        [
+            "shacl2code",
+            "generate",
+            "--context",
+            model_server + "/test-context.json",
+        ]
+        + args
+        + [
+            "rust",
+            "--output",
+            tmp_path / "shacl_model",
+        ],
+        check=True,
+    )
+
+
+@pytest.mark.parametrize(*RUST_MODEL_TESTS)
 class TestOutput:
     def test_output_compile(self, tmp_path, model_server, args):
-        subprocess.run(
-            [
-                "shacl2code",
-                "generate",
-                "--context",
-                model_server + "/test-context.json",
-            ]
-            + args
-            + [
-                "rust",
-                "--output",
-                tmp_path / "shacl_model",
-            ],
-            check=True,
-        )
+        _build_rust_module(tmp_path, model_server, args)
 
         subprocess.run(
             ["cargo", "build"],
+            cwd=tmp_path / "shacl_model",
+            check=True,
+        )
+
+
+@pytest.mark.parametrize(*RUST_MODEL_TESTS)
+class TestCheckType:
+    """
+    Static analysis checks for the generated Rust code
+    """
+
+    def test_clippy(self, tmp_path, model_server, args):
+        """
+        cargo clippy static analysis
+        """
+        _build_rust_module(tmp_path, model_server, args)
+
+        subprocess.run(
+            ["cargo", "clippy", "--all-targets", "--", "-D", "warnings"],
             cwd=tmp_path / "shacl_model",
             check=True,
         )

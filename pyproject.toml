@@ -79,7 +79,6 @@ addopts = [
     "-n",
     "auto",
     "--dist=loadfile",
-    "-ra",
 ]
 # Suppress 3rd-party warnings to reduce log noise. Remove after libraries get updated.
 filterwarnings = [

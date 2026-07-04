@@ -50,6 +50,10 @@ jobs:
         run: |
           brew update
           brew install doxygen gcc go graphviz
+      - name: Install Go static analysis tools
+        run: |
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+          go install honnef.co/go/tools/cmd/staticcheck@latest
       - name: Build package
         run: |
           python -m build

@@ -1,6 +1,10 @@
 #
 # Copyright (c) 2024 Joshua Watt
 #
+# SPDX-FileContributor: Joshua Watt
+# SPDX-FileContributor: Arthit Suriyawongkul
+# SPDX-FileCopyrightText: 2024 Joshua Watt
+# SPDX-FileType: SOURCE
 # SPDX-License-Identifier: MIT
 
 import json
@@ -275,7 +279,7 @@ def compile_test(test_lib, tmp_path):
     yield f
 
 
-@pytest.mark.parametrize(
+CPP_MODEL_TESTS = (
     "args,basename",
     [
         (
@@ -288,25 +292,32 @@ def compile_test(test_lib, tmp_path):
         ),
     ],
 )
+
+
+def _generate_cpp(tmp_path, args, basename):
+    subprocess.run(
+        [
+            "shacl2code",
+            "generate",
+        ]
+        + args
+        + [
+            "cpp",
+            "--output",
+            tmp_path / basename,
+            "--version=0.0.1",
+        ],
+        check=True,
+    )
+
+
+@pytest.mark.parametrize(*CPP_MODEL_TESTS)
 class TestOutput:
     def test_trailing_whitespace(self, tmp_path, args, basename):
         """
         Tests that the generated file does not have trailing whitespace
         """
-        subprocess.run(
-            [
-                "shacl2code",
-                "generate",
-            ]
-            + args
-            + [
-                "cpp",
-                "--output",
-                tmp_path / basename,
-                "--version=0.0.1",
-            ],
-            check=True,
-        )
+        _generate_cpp(tmp_path, args, basename)
 
         for fn in tmp_path.iterdir():
             with fn.open("r") as f:
@@ -320,20 +331,7 @@ class TestOutput:
         """
         Tests that the output file doesn't contain tabs
         """
-        subprocess.run(
-            [
-                "shacl2code",
-                "generate",
-            ]
-            + args
-            + [
-                "cpp",
-                "--output",
-                tmp_path / basename,
-                "--version=0.0.1",
-            ],
-            check=True,
-        )
+        _generate_cpp(tmp_path, args, basename)
 
         for fn in tmp_path.iterdir():
             if fn.name == "Makefile":
@@ -346,20 +344,7 @@ class TestOutput:
                     ), f"{fn}: Line {lineno + 1} has tabs: {line!r}"
 
     def test_output_compile(self, tmp_path, args, basename):
-        subprocess.run(
-            [
-                "shacl2code",
-                "generate",
-            ]
-            + args
-            + [
-                "cpp",
-                "--output",
-                tmp_path / basename,
-                "--version=0.0.1",
-            ],
-            check=True,
-        )
+        _generate_cpp(tmp_path, args, basename)
 
         make_args = [
             "make",
@@ -378,6 +363,42 @@ class TestOutput:
         install_dir = tmp_path / "install"
         subprocess.run(
             ["make", "install", "PREFIX=" + str(install_dir)],
+            check=True,
+            cwd=tmp_path,
+        )
+
+
+@pytest.mark.parametrize(*CPP_MODEL_TESTS)
+class TestStaticAnalysis:
+    """
+    Static analysis checks for the generated C++ code
+    """
+
+    def test_cppcheck(self, tmp_path, args, basename):
+        """
+        cppcheck static analysis.
+
+        Excludes the bundled "-jsonld" source, not generated code.
+
+        duplInheritedMember is suppressed: every generated class
+        deliberately redeclares its own static Type descriptor.
+        """
+        _generate_cpp(tmp_path, args, basename)
+
+        sources = sorted(
+            p
+            for p in tmp_path.iterdir()
+            if p.suffix in (".c", ".cpp", ".h", ".hpp") and "-jsonld" not in p.name
+        )
+
+        subprocess.run(
+            [
+                "cppcheck",
+                "--enable=performance,portability,warning",
+                "--error-exitcode=1",
+                "--suppress=duplInheritedMember",
+            ]
+            + sources,
             check=True,
             cwd=tmp_path,
         )

@@ -447,7 +447,7 @@ class TestOutput:
 
 
 @pytest.mark.parametrize(*RUST_MODEL_TESTS)
-class TestCheckType:
+class TestStaticAnalysis:
     """
     Static analysis checks for the generated Rust code
     """

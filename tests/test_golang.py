@@ -565,22 +565,15 @@ class TestCheckType:
         - ST1006 ("self" receiver name): generated methods use "self" to
           match other language bindings.
 
-        Any other finding is reported as an xfail so it's visible
-        in the test report.
+        Any other finding fails the test so it shows up as a failed check on
+        the PR.
         """
         _build_golang_module(tmp_path, args)
-        p = subprocess.run(
+        subprocess.run(
             ["staticcheck", "-checks=all,-ST1003,-ST1006", "./..."],
             cwd=tmp_path,
-            capture_output=True,
-            encoding="utf-8",
+            check=True,
         )
-        if p.returncode != 0:
-            pytest.xfail(
-                "staticcheck reported findings against the generated code "
-                "(see golang templates in src/shacl2code/lang/templates/"
-                "golang/):\n" + p.stdout + p.stderr
-            )
 
 
 def test_compile(compile_test):

@@ -411,8 +411,7 @@ def test_additional_props_prop_refs_attributed_to_defining_class(
         "prop_http_exampleorgshacl2codetesttestclass" in props[_PARENT_PROP]["$ref"]
     ), "parent prop ref should point to test-class prop definition"
     assert (
-        "prop_http_exampleorgshacl2codetesttestderivedclass"
-        in props[_OWN_PROP]["$ref"]
+        "prop_http_exampleorgshacl2codetesttestderivedclass" in props[_OWN_PROP]["$ref"]
     ), "own prop ref should point to test-derived-class prop definition"
 
 

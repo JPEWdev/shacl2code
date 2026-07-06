@@ -31,6 +31,7 @@ class SHACL2CODE(DefinedNamespace):
     idPropertyName: URIRef
     isExtensible: URIRef
     isAbstract: URIRef
+    isPreRelease: URIRef
 
     _NS = Namespace("https://jpewdev.github.io/shacl2code/schema#")
 
@@ -64,10 +65,21 @@ def remove_common_prefix(val, *cmp):
 
 
 @dataclass
+class Ontology:
+    _id: str
+    name: str
+    comment: str = ""
+    label: str = ""
+    version: str = ""
+    is_prerelease: bool = False
+
+
+@dataclass
 class Individual:
     _id: str
     varname: str
     comment: str = ""
+    ontology: Optional[Ontology] = None
 
 
 @dataclass
@@ -98,6 +110,7 @@ class Class:
     is_abstract: bool = False
     named_individuals: Optional[List[Individual]] = None
     deprecated: bool = False
+    ontology: Optional[Ontology] = None
 
 
 class Model(object):
@@ -106,8 +119,8 @@ class Model(object):
         self.context = context
         self.compact_ids = {}
         self.objects = {}
-        self.enums = []
         self.classes = []
+        self.ontologies = []
         class_iris = set()
         classes_by_iri = {}
 
@@ -120,6 +133,12 @@ class Model(object):
             if v is None:
                 return v
             return str(v)
+
+        def get_ontology(_id):
+            for o in self.ontologies:
+                if str(_id).startswith(o._id):
+                    return o
+            return None
 
         def get_inherited_value(subject, predicate, default=None):
             def get_value(subject, predicate):
@@ -159,6 +178,7 @@ class Model(object):
                         comment=str(
                             self.model.value(member_iri, RDFS.comment, default="")
                         ),
+                        ontology=get_ontology(member_iri),
                     )
                 )
             members.sort(key=lambda i: i._id)
@@ -176,6 +196,20 @@ class Model(object):
                 return True
 
             return False
+
+        for onto_iri in self.model.subjects(RDF.type, OWL.Ontology):
+            label = str(self.model.value(onto_iri, RDFS.label, default=""))
+            o = Ontology(
+                _id=str(onto_iri),
+                name=label or str(onto_iri),
+                label=label,
+                comment=str(self.model.value(onto_iri, RDFS.comment, default="")),
+                version=str(self.model.value(onto_iri, OWL.versionInfo, default="")),
+                is_prerelease=bool(
+                    self.model.value(onto_iri, SHACL2CODE.isPreRelease, default=False)
+                ),
+            )
+            self.ontologies.append(o)
 
         class_iris = set(self.model.subjects(RDF.type, OWL.Class)) | set(
             self.model.subjects(RDF.type, OWL.DeprecatedClass)
@@ -200,6 +234,7 @@ class Model(object):
                 is_abstract=is_abstract(cls_iri),
                 named_individuals=get_named_individuals(cls_iri),
                 deprecated=(cls_iri, RDF.type, OWL.DeprecatedClass) in self.model,
+                ontology=get_ontology(cls_iri),
             )
 
             if c.node_kind not in (SH.IRI, SH.BlankNode, SH.BlankNodeOrIRI):
@@ -289,8 +324,8 @@ class Model(object):
         for c in self.classes:
             c.derived_ids.sort()
 
-        self.enums.sort(key=lambda e: e._id)
         self.classes.sort(key=lambda c: c._id)
+        self.ontologies.sort(key=lambda o: o._id)
 
         tmp_classes = self.classes
         done_ids = set()
@@ -315,6 +350,8 @@ class Model(object):
         object with the context applied
         """
         _id = str(_id)
+        if not self.context:
+            return _id
         if _id not in self.compact_ids:
             self.compact_ids[_id] = self.context.compact_iri(_id)
 

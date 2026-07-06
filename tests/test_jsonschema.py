@@ -291,9 +291,9 @@ def test_context_on_embedded_object_default_rejects():
     """Default mode rejects @context on an embedded object (unevaluatedProperties catches it)."""
     schema = json.loads(_run_jsonschema_generate(["--input", TEST_MODEL]))
     doc = {
-        "@type": "http://example.org/link-class",
-        "http://example.org/link-class-link-prop": {
-            "@type": "http://example.org/link-class",
+        "@type": "http://example.org/shacl2code-test/link-class",
+        "http://example.org/shacl2code-test/link-class-link-prop": {
+            "@type": "http://example.org/shacl2code-test/link-class",
             "@context": "http://example.org/ctx",
         },
     }
@@ -314,9 +314,9 @@ def test_context_on_embedded_object_additional_props_accepts():
         )
     )
     doc = {
-        "@type": "http://example.org/link-class",
-        "http://example.org/link-class-link-prop": {
-            "@type": "http://example.org/link-class",
+        "@type": "http://example.org/shacl2code-test/link-class",
+        "http://example.org/shacl2code-test/link-class-link-prop": {
+            "@type": "http://example.org/shacl2code-test/link-class",
             "@context": "http://example.org/ctx",
         },
     }
@@ -337,14 +337,17 @@ def test_no_unevaluated_properties():
 # get_all_properties coverage: structural assertions on --use-additional-properties schema
 # ---------------------------------------------------------------------------
 
-# $defs keys are varname-processed (slashes/dots -> underscores, scheme stripped)
-_TEST_CLASS = "http_exampleorgtestclass"
-_TEST_DERIVED = "http_exampleorgtestderivedclass"
-_EXTENSIBLE_CLASS = "http_exampleorgextensibleclass"
+# $defs keys are varname-processed (slashes/dots -> underscores, scheme stripped).
+# No --context is passed to _run_jsonschema_generate here, so names fall back to
+# the full model IRI (base http://example.org/shacl2code-test/) rather than a
+# context-compacted form.
+_TEST_CLASS = "http_exampleorgshacl2codetesttestclass"
+_TEST_DERIVED = "http_exampleorgshacl2codetesttestderivedclass"
+_EXTENSIBLE_CLASS = "http_exampleorgshacl2codetestextensibleclass"
 
 # Property path IRIs as they appear in then.properties (full form: no context URL supplied)
-_PARENT_PROP = "http://example.org/test-class/string-scalar-prop"
-_OWN_PROP = "http://example.org/test-derived-class/string-prop"
+_PARENT_PROP = "http://example.org/shacl2code-test/test-class/string-scalar-prop"
+_OWN_PROP = "http://example.org/shacl2code-test/test-derived-class/string-prop"
 
 
 @pytest.fixture(scope="module")
@@ -405,10 +408,11 @@ def test_additional_props_prop_refs_attributed_to_defining_class(
     """Each property's $ref points to the class that originally defines it."""
     props = additional_props_schema["$defs"][_TEST_DERIVED]["then"]["properties"]
     assert (
-        "prop_http_exampleorgtestclass" in props[_PARENT_PROP]["$ref"]
+        "prop_http_exampleorgshacl2codetesttestclass" in props[_PARENT_PROP]["$ref"]
     ), "parent prop ref should point to test-class prop definition"
     assert (
-        "prop_http_exampleorgtestderivedclass" in props[_OWN_PROP]["$ref"]
+        "prop_http_exampleorgshacl2codetesttestderivedclass"
+        in props[_OWN_PROP]["$ref"]
     ), "own prop ref should point to test-derived-class prop definition"
 
 

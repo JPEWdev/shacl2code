@@ -267,5 +267,23 @@ classes are automatically concrete unless they indicate otherwise.
 It is also possible to define a class as abstract by declaring it to be of
 type: `http://spdx.invalid./AbstractClass`, but this is not preferred.
 
+### Pre-Release models
+
+`shacl2code` has a custom annotation that can be used to mark an entire
+ontology as "pre-release" meaning it is still subject to break changes. In the
+python bindings, this will cause a `FutureWarning` to be emitted. In order to
+do this, you must declare your ontology, and then use the custom annotation to
+mark it as pre-release:
+
+```ttl
+
+<http://example.org/my-ontology> a ow:Ontology ;
+    sh-to-code:isPreRelease true
+    .
+```
+
+Note that the IRI of the ontology must be the prefix of all IRIs that belong to
+that ontology.
+
 [pytest]: https://www.pytest.org
 [pytest-cov]: https://pytest-cov.readthedocs.io/en/latest/

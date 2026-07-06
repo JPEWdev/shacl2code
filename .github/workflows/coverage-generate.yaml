@@ -37,6 +37,9 @@ jobs:
           sudo apt install -y build-essential cppcheck doxygen graphviz
           npm install -g jsonld-cli
           npm --prefix scripts ci
+      - name: Install Rust static analysis tools
+        run: |
+          rustup component add clippy
       - name: Install package
         run: |
           pip install -e .[dev]

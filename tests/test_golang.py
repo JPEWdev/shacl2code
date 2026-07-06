@@ -672,14 +672,14 @@ GO_STRING = '"string"'
         # Enumerated value
         (
             "TestClassEnumProp",
-            '"http://example.org/enumType/foo"',
-            "http://example.org/enumType/foo",
+            '"http://example.org/shacl2code-test/enumType/foo"',
+            "http://example.org/shacl2code-test/enumType/foo",
             [],
         ),
         (
             "TestClassEnumProp",
             "model.EnumTypeFoo",
-            "http://example.org/enumType/foo",
+            "http://example.org/shacl2code-test/enumType/foo",
             [],
         ),
         ("TestClassEnumProp", GO_STRING, Progress.VALIDATION_FAILS, []),
@@ -802,7 +802,7 @@ def test_scalar_prop_validation(compile_test, prop, value, expect, imports):
         (
             "TestClassClassProp",
             "model.MakeIRIRef[model.TestClass](model.TestClassNamed)",
-            "IRI http://example.org/test-class/named",
+            "IRI http://example.org/shacl2code-test/test-class/named",
         ),
         # Self assignment
         (
@@ -894,7 +894,7 @@ def test_ref_prop_validation(compile_test, prop, value, expect):
         (
             "TestClassClassProp",
             "model.TestClassNamed",
-            "IRI http://example.org/test-class/named",
+            "IRI http://example.org/shacl2code-test/test-class/named",
         ),
         # Self assignment by string
         (

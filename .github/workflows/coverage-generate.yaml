@@ -41,6 +41,9 @@ jobs:
         run: |
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
           go install honnef.co/go/tools/cmd/staticcheck@latest
+      - name: Install Rust static analysis tools
+        run: |
+          rustup component add clippy
       - name: Install package
         run: |
           pip install -e .[dev]

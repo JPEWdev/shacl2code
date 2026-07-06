@@ -546,15 +546,19 @@ CPP_STRING_VAL = 'std::string("string")'
         # Enumerated value
         (
             "_test_class_enum_prop",
-            '"http://example.org/enumType/foo"',
-            "http://example.org/enumType/foo",
+            '"http://example.org/shacl2code-test/enumType/foo"',
+            "http://example.org/shacl2code-test/enumType/foo",
         ),
         (
             "_test_class_enum_prop",
-            'std::string("http://example.org/enumType/foo")',
-            "http://example.org/enumType/foo",
+            'std::string("http://example.org/shacl2code-test/enumType/foo")',
+            "http://example.org/shacl2code-test/enumType/foo",
         ),
-        ("_test_class_enum_prop", "enumType::foo", "http://example.org/enumType/foo"),
+        (
+            "_test_class_enum_prop",
+            "enumType::foo",
+            "http://example.org/shacl2code-test/enumType/foo",
+        ),
         ("_test_class_enum_prop", C_STRING_VAL, Progress.VALIDATION_FAILS),
         ("_test_class_enum_prop", CPP_STRING_VAL, Progress.VALIDATION_FAILS),
         ("_test_class_enum_prop", "0", Progress.RUN_FAILS),
@@ -670,7 +674,7 @@ def test_scalar_prop_validation(compile_test, prop, value, expect):
         (
             "_test_class_class_prop",
             "test_class::named",
-            "IRI http://example.org/test-class/named",
+            "IRI http://example.org/shacl2code-test/test-class/named",
         ),
         # Named individual, but wrong type
         (

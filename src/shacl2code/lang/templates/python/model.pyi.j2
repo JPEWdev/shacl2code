@@ -222,6 +222,14 @@ class NodeKind(Enum):
 
 def is_IRI(s: Any) -> bool: ...
 def is_blank_node(s: Any) -> bool: ...
+
+
+@dataclass
+class Ontology:
+    iri: str
+    version: Optional[str] = ...
+
+
 @dataclass
 class ClassProp:
     pyname: str
@@ -256,6 +264,7 @@ class SHACLObject:
     ID_ALIAS: ClassVar[Optional[str]]
     IS_ABSTRACT: ClassVar[bool]
     IS_DEPRECATED: ClassVar[bool]
+    ONTOLOGY: ClassVar[Optional[Ontology]]
     TYPE: ClassVar[str]
     COMPACT_TYPE: ClassVar[Optional[str]]
     PROPERTIES: ClassVar[List[ClassProp]]
@@ -424,6 +433,7 @@ class {{ varname(*class.clsname) }}(
     {%- if class.deprecated %}
     IS_DEPRECATED: ClassVar[bool]
     {%- endif %}
+    ONTOLOGY: ClassVar[Optional[Ontology]]
     {%- if class.named_individuals %}
     NAMED_INDIVIDUALS: ClassVar[Dict[str, str]]
 

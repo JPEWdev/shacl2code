@@ -2766,8 +2766,8 @@ class TestModelAll:
             imported = {k for k in ns if not k.startswith("__")}
 
             # Domain classes, from the test fixture model.
-            assert "http_example_org_test_class" in imported
-            assert "http_example_org_parent_class" in imported
+            assert "http_example_org_shacl2code_test_test_class" in imported
+            assert "http_example_org_shacl2code_test_parent_class" in imported
 
             # Generator infrastructure: constants, base/encoder/decoder classes.
             assert "CONTEXT_URLS" in imported

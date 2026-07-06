@@ -1,7 +1,7 @@
 # Backward-compatible extension of test.ttl for cross-version Protocol tests.
 # Adds: parent-class/v2-new-prop (new optional scalar) and test-another-class
 # (same property set as test-class, for discriminator testing).
-@base <http://example.org/#> .
+@base <http://example.org/shacl2code-test/> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix sh: <http://www.w3.org/ns/shacl#> .

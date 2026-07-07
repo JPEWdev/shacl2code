@@ -2298,6 +2298,7 @@ def test_version(model):
     assert model.VERSION_STRING == MODEL_VERSION
     assert model.VERSION == convert_version_string(MODEL_VERSION)
 
+
 # ---------------------------------------------------------------------------
 # Ontology metadata tests
 # ---------------------------------------------------------------------------
@@ -2345,6 +2346,7 @@ def test_is_prerelease_constant(tmp_path: Path) -> None:
         for m in list(sys.modules):
             if m == "pymodel_prerelease" or m.startswith("pymodel_prerelease."):
                 del sys.modules[m]
+
 
 # ---------------------------------------------------------------------------
 # Protocol generation tests

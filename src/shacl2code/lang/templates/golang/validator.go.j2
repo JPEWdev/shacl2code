@@ -36,7 +36,7 @@ func ValueToString(val any, name string) (string, error) {
 	return "", &ValidationError{name, "Value is of unsupported type " + reflect.TypeOf(val).Name()}
 }
 
-// ID Validator
+// IDValidator validates that a value is an IRI or a blank node.
 type IDValidator struct{}
 
 func (self IDValidator) Check(val string, name string) error {
@@ -46,7 +46,7 @@ func (self IDValidator) Check(val string, name string) error {
 	return nil
 }
 
-// Regex Validator
+// RegexValidator validates a value against a regex pattern.
 type RegexValidator[T any] struct {
 	Regex string
 }
@@ -67,7 +67,7 @@ func (self RegexValidator[T]) Check(val T, name string) error {
 	return nil
 }
 
-// Integer Min Validator
+// IntegerMinValidator validates that a value is >= a minimum.
 type IntegerMinValidator struct {
 	Min int
 }
@@ -79,7 +79,7 @@ func (self IntegerMinValidator) Check(val int, name string) error {
 	return nil
 }
 
-// Integer Max Validator
+// IntegerMaxValidator validates that a value is <= a maximum.
 type IntegerMaxValidator struct {
 	Max int
 }
@@ -91,7 +91,7 @@ func (self IntegerMaxValidator) Check(val int, name string) error {
 	return nil
 }
 
-// Enum Validator
+// EnumValidator validates that a value is one of a fixed set.
 type EnumValidator struct {
 	Values []string
 }

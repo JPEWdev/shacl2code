@@ -21,7 +21,7 @@ import (
 // {{ l }}
 {%- endfor %}
 {%- else %}
-// {{ struct_name(class) }} is a generated SHACL object type
+// {{ struct_name(class) }} is a generated SHACL object type.
 {%- endif %}
 {%- if class.deprecated %}
 //
@@ -59,7 +59,7 @@ type {{ struct_name(class) }} struct {
 // {{ l }}
 {%- endfor %}
 {% else %}
-// {{ constname }} is a generated named individual value
+// {{ constname }} is a generated named individual value.
 {% endif -%}
 const {{ constname }} = "{{ member._id }}"
 {%- endfor %}

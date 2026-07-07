@@ -10,7 +10,7 @@ SPDX-License-Identifier: {{ spdx_license }}
 
 type Visit func(Path, any)
 
-// Base SHACL Object
+// SHACLObjectBase is the base type embedded by all SHACL objects.
 type SHACLObjectBase struct {
 	// Object ID
 	id      Property[string]

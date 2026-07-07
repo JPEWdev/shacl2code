@@ -13,6 +13,11 @@ from typing import Any, List, TYPE_CHECKING, TypeVar
 if TYPE_CHECKING:
     from .model import *  # noqa: F401, F403
 
+# True if any ontology behind this version's model is pre-release
+# (a model can merge multiple --input files, each with its own owl:Ontology).
+# Cheap check -- does not import model.py.
+IS_PRERELEASE = {{ontologies | selectattr("is_prerelease") | list | length > 0}}
+
 # fmt: off
 """Format Guard{{ '"' }}{{ '"' }}{{ '"' }}
 {%- if include_protocols %}

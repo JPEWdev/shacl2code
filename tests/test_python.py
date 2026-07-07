@@ -2315,6 +2315,37 @@ def test_prerelease_warning(model):
     with pytest.warns(FutureWarning):
         model.test_class()
 
+
+PRERELEASE_MODEL = DATA_DIR / "prerelease.ttl"
+
+
+def test_is_prerelease_constant(tmp_path: Path) -> None:
+    """
+    IS_PRERELEASE is a version-level constant a consumer can read without
+    loading model.py -- True when any ontology in the source TTL carries
+    sh-to-code:isPreRelease, False otherwise.
+    """
+    prerelease_dir = tmp_path / "pymodel_prerelease"
+    shacl2code_generate(["--input", PRERELEASE_MODEL], [], prerelease_dir)
+
+    stable_dir = tmp_path / "pymodel_stable"
+    shacl2code_generate(["--input", TEST_MODEL], [], stable_dir)
+
+    assert "IS_PRERELEASE = True" in (prerelease_dir / "__init__.py").read_text()
+    assert "IS_PRERELEASE = False" in (stable_dir / "__init__.py").read_text()
+
+    sys.path.insert(0, str(tmp_path))
+    try:
+        pkg = importlib.import_module("pymodel_prerelease")
+        assert pkg.IS_PRERELEASE is True
+        # Reading the constant must not have loaded model.py.
+        assert "pymodel_prerelease.model" not in sys.modules
+    finally:
+        sys.path.remove(str(tmp_path))
+        for m in list(sys.modules):
+            if m == "pymodel_prerelease" or m.startswith("pymodel_prerelease."):
+                del sys.modules[m]
+
 # ---------------------------------------------------------------------------
 # Protocol generation tests
 # ---------------------------------------------------------------------------
@@ -2417,9 +2448,7 @@ class TestProtocolOutput:
         """
         __dir__() must expose model classes, "protocols", and "main" for
         dir()/tab-completion even though they are loaded lazily via
-        __getattr__ (PEP 562). Without a custom __dir__, Python falls back
-        to only the raw module internals (imports, dunders) -- see
-        PLAN-python-protocols.md Lesson 7.
+        __getattr__ (PEP 562).
         """
         module_name = "pymodel_dir_check"
         output_dir = tmp_path / module_name
@@ -2478,9 +2507,7 @@ class TestProtocolOutput:
         """
         flake8 over the whole output directory with --include-protocols yes,
         not just protocols.py -- catches issues in the conditional protocols
-        import inside __init__.py (e.g. the I100 ordering regression fixed in
-        PLAN-python-protocols.md Lesson 7) that a protocols.py-only check
-        would miss.
+        import inside __init__.py that a protocols.py-only check would miss.
         """
         output_dir = tmp_path / "pymodel"
         shacl2code_generate(

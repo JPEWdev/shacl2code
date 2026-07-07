@@ -3,7 +3,7 @@ vim: ft=go
 */                 // This line keeps gofmt happy
 package shacl2code /*
 #}
-{{ disclaimer }}
+Package {{ package_name }}: {{ disclaimer }}
 
 SPDX-License-Identifier: {{ spdx_license }}
 {{ go_package }} */
@@ -22,17 +22,16 @@ type Validator[T any] interface {
 }
 
 func ValueToString(val any, name string) (string, error) {
-	switch val.(type) {
+	switch v := val.(type) {
 	case string:
-		return val.(string), nil
+		return v, nil
 	case int:
-		return strconv.Itoa(val.(int)), nil
+		return strconv.Itoa(v), nil
 	case time.Time:
-		t := val.(time.Time)
-		if t.Location() == time.UTC {
-			return strftime.Format(UtcFormatStr, t), nil
+		if v.Location() == time.UTC {
+			return strftime.Format(UtcFormatStr, v), nil
 		}
-		return strftime.Format(TzFormatStr, t), nil
+		return strftime.Format(TzFormatStr, v), nil
 	}
 	return "", &ValidationError{name, "Value is of unsupported type " + reflect.TypeOf(val).Name()}
 }

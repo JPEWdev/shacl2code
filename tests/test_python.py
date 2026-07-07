@@ -11,6 +11,7 @@ import re
 import subprocess
 import sys
 import textwrap
+import warnings
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Iterable, Tuple
@@ -2303,6 +2304,7 @@ def test_version(model):
 # Ontology metadata tests
 # ---------------------------------------------------------------------------
 
+
 def test_ontology(model):
     classes = list(model.SHACLObject.CLASSES.values())
     assert classes
@@ -2321,11 +2323,7 @@ PRERELEASE_MODEL = DATA_DIR / "prerelease.ttl"
 
 
 def test_is_prerelease_constant(tmp_path: Path) -> None:
-    """
-    IS_PRERELEASE is a version-level constant a consumer can read without
-    loading model.py -- True when any ontology in the source TTL carries
-    sh-to-code:isPreRelease, False otherwise.
-    """
+    """IS_PRERELEASE reflects sh-to-code:isPreRelease without loading model.py."""
     prerelease_dir = tmp_path / "pymodel_prerelease"
     shacl2code_generate(["--input", PRERELEASE_MODEL], [], prerelease_dir)
 
@@ -2337,7 +2335,8 @@ def test_is_prerelease_constant(tmp_path: Path) -> None:
 
     sys.path.insert(0, str(tmp_path))
     try:
-        pkg = importlib.import_module("pymodel_prerelease")
+        with pytest.warns(FutureWarning):
+            pkg = importlib.import_module("pymodel_prerelease")
         assert pkg.IS_PRERELEASE is True
         # Reading the constant must not have loaded model.py.
         assert "pymodel_prerelease.model" not in sys.modules
@@ -2346,6 +2345,35 @@ def test_is_prerelease_constant(tmp_path: Path) -> None:
         for m in list(sys.modules):
             if m == "pymodel_prerelease" or m.startswith("pymodel_prerelease."):
                 del sys.modules[m]
+
+
+def test_prerelease_import_warning(tmp_path: Path) -> None:
+    """Pre-release package warns FutureWarning on first import, any form; stable doesn't."""
+    prerelease_dir = tmp_path / "pymodel_prerelease_import"
+    shacl2code_generate(["--input", PRERELEASE_MODEL], [], prerelease_dir)
+
+    stable_dir = tmp_path / "pymodel_stable_import"
+    shacl2code_generate(["--input", TEST_MODEL], [], stable_dir)
+
+    sys.path.insert(0, str(tmp_path))
+    try:
+        with pytest.warns(FutureWarning):
+            import pymodel_prerelease_import  # noqa: F401
+
+        # Second import of an already-loaded module must not re-warn.
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", FutureWarning)
+            importlib.import_module("pymodel_prerelease_import")
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", FutureWarning)
+            import pymodel_stable_import  # noqa: F401
+    finally:
+        sys.path.remove(str(tmp_path))
+        for prefix in ("pymodel_prerelease_import", "pymodel_stable_import"):
+            for m in list(sys.modules):
+                if m == prefix or m.startswith(prefix + "."):
+                    del sys.modules[m]
 
 
 # ---------------------------------------------------------------------------

@@ -7,16 +7,22 @@
 from __future__ import annotations
 
 import importlib
+import warnings
 from types import ModuleType
 from typing import Any, List, TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
     from .model import *  # noqa: F401, F403
 
-# True if any ontology behind this version's model is pre-release
-# (a model can merge multiple --input files, each with its own owl:Ontology).
-# Cheap check -- does not import model.py.
+# True if any ontology behind this model is pre-release.
 IS_PRERELEASE = {{ontologies | selectattr("is_prerelease") | list | length > 0}}
+
+if IS_PRERELEASE:
+    # Fires once on first import, regardless of import form.
+    warnings.warn(
+        f"{__name__!r} is a pre-release model version and may change without notice.",
+        FutureWarning,
+    )
 
 # fmt: off
 """Format Guard{{ '"' }}{{ '"' }}{{ '"' }}
@@ -58,8 +64,7 @@ def __getattr__(name: str) -> Any:
 
 
 def __dir__() -> List[str]:
-    # Import model here (not at module scope) so dir() stays opt-in: it costs
-    # a model load only when introspection is actually requested (PEP 562).
+    # Opt-in: model loads only when dir() is actually called.
     mod = importlib.import_module(f"{__name__}.model")
     names = set(globals()) | set(dir(mod))
 {%- if include_protocols %}

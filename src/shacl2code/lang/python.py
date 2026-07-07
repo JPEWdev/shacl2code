@@ -78,12 +78,7 @@ def varname(*name):
 
 
 def protocols_use_datetime(classes: Iterable[Class]) -> bool:
-    """Whether any class has a plain (non-list, non-ref) datetime-typed property.
-
-    Determines if protocols.py.j2 needs to import ``datetime`` -- mirrors the
-    scalar-property branch in that template exactly, so the import is only
-    emitted when it will actually be referenced (avoids flake8 F401).
-    """
+    """Whether any class has a plain datetime-typed scalar property."""
     for cls in classes:
         for prop in cls.properties:
             is_list = prop.max_count is None or prop.max_count != 1

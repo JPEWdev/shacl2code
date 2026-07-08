@@ -34,7 +34,7 @@ jobs:
           node-version: 24
       - name: Install dependencies
         run: |
-          sudo apt install -y build-essential doxygen graphviz
+          sudo apt install -y build-essential cppcheck doxygen graphviz
           npm install -g jsonld-cli
           npm --prefix scripts ci
       - name: Install Go static analysis tools

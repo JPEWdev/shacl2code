@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: MIT
 """SHACL model parsing and data class definitions"""
 
+import re
 from dataclasses import dataclass, field
 from typing import List, Optional
 
@@ -18,6 +19,8 @@ from rdflib.namespace import (
     SH,
     XSD,
 )
+
+from .util import convert_version_string
 
 PATTERN_DATATYPES = [
     str(XSD.string),
@@ -197,6 +200,78 @@ class Model(object):
 
             return False
 
+        def is_semver_prerelease(version_str):
+            if re.search(r"-[0-9a-zA-Z]", version_str):
+                return True
+            if re.search(
+                r"\b(alpha|beta|rc|snapshot|dev)\b", version_str, re.IGNORECASE
+            ):
+                return True
+            return False
+
+        def get_is_prerelease(onto_iri):
+            # 1) --pre-release command line option
+            if is_prerelease is not None:
+                return is_prerelease
+
+            # 2) sh-to-code:isPreRelease
+            val = self.model.value(onto_iri, SHACL2CODE.isPreRelease)
+            if val is not None:
+                return bool(val)
+
+            # 3) & 4) adms:status
+            adms_status = self.model.value(
+                onto_iri, URIRef("http://www.w3.org/ns/adms#status")
+            )
+            if adms_status is not None:
+                adms_status_str = str(adms_status)
+                # 3) adms:status (EU SEMIC vocab)
+                if adms_status_str.startswith(
+                    "http://publications.europa.eu/resource/authority/dataset-status/"
+                ):
+                    return (
+                        adms_status_str
+                        == "http://publications.europa.eu/resource/authority/dataset-status/DEVELOP"
+                    )
+                # 4) adms:status (Original ADMS vocab)
+                if adms_status_str.startswith("http://purl.org/adms/status/"):
+                    return (
+                        adms_status_str
+                        == "http://purl.org/adms/status/UnderDevelopment"
+                    )
+
+            # 5) schema:creativeWorkStatus
+            schema_status = self.model.value(
+                onto_iri, URIRef("http://schema.org/creativeWorkStatus")
+            ) or self.model.value(
+                onto_iri, URIRef("https://schema.org/creativeWorkStatus")
+            )
+            if schema_status is not None:
+                return str(schema_status) in ("Draft", "Incomplete")
+
+            # 6) vs:term_status
+            vs_status = self.model.value(
+                onto_iri,
+                URIRef("http://www.w3.org/2003/06/sw-vocab-status/ns#term_status"),
+            )
+            if vs_status is not None:
+                return str(vs_status) in ("unstable", "testing")
+
+            # 7) & 8) owl:versionInfo
+            version = self.model.value(onto_iri, OWL.versionInfo)
+            if version is not None:
+                version_str = str(version)
+                # 7) owl:versionInfo (pre-release extension e.g., "-beta", "-alpha", "-rc" etc)
+                if is_semver_prerelease(version_str):
+                    return True
+                # 8) owl:versionInfo (major version zero)
+                parts = convert_version_string(version_str)
+                if parts and parts[0] == 0:
+                    return True
+                return False
+
+            return False
+
         for onto_iri in self.model.subjects(RDF.type, OWL.Ontology):
             label = str(self.model.value(onto_iri, RDFS.label, default=""))
             o = Ontology(
@@ -205,15 +280,7 @@ class Model(object):
                 label=label,
                 comment=str(self.model.value(onto_iri, RDFS.comment, default="")),
                 version=str(self.model.value(onto_iri, OWL.versionInfo, default="")),
-                is_prerelease=(
-                    is_prerelease
-                    if is_prerelease is not None
-                    else bool(
-                        self.model.value(
-                            onto_iri, SHACL2CODE.isPreRelease, default=False
-                        )
-                    )
-                ),
+                is_prerelease=get_is_prerelease(onto_iri),
             )
             self.ontologies.append(o)
 

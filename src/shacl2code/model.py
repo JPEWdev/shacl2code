@@ -204,7 +204,7 @@ class Model(object):
             if re.search(r"-[0-9a-zA-Z]", version_str):
                 return True
             if re.search(
-                r"\b(alpha|beta|rc|snapshot|dev)\b", version_str, re.IGNORECASE
+                r"\b(alpha|beta|dev|pre|rc|snapshot|test)\b", version_str, re.IGNORECASE
             ):
                 return True
             return False

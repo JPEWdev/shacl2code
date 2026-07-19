@@ -269,18 +269,32 @@ type: `http://spdx.invalid./AbstractClass`, but this is not preferred.
 
 ### Pre-Release models
 
-`shacl2code` has a custom annotation that can be used to mark an entire
-ontology as "pre-release" meaning it is still subject to break changes. In the
-python bindings, this will cause a `FutureWarning` to be emitted. In order to
-do this, you must declare your ontology, and then use the custom annotation to
-mark it as pre-release:
+`shacl2code` can detect if an ontology is a "pre-release" version (still subject to breaking changes). For language bindings that support it (such as Python), importing a pre-release ontology binding will emit a warning (e.g. `FutureWarning`).
 
-```ttl
+Pre-release status can be specified explicitly via command-line options, or inferred automatically from various ontology annotations.
 
-<http://example.org/my-ontology> a ow:Ontology ;
-    sh-to-code:isPreRelease true
-    .
-```
+#### Order of Precedence
+
+In the event of conflicting annotations, `shacl2code` evaluates pre-release status using the following order of precedence (highest priority first):
+
+1. **`--pre-release` or `--no-pre-release` command-line options**:
+   Explicitly marks the generated bindings as pre-release or stable, overriding any annotations in the input ontology.
+2. **`sh-to-code:isPreRelease`**:
+   The custom boolean annotation (`sh-to-code:isPreRelease true` or `false`).
+3. **`adms:status` (EU SEMIC Vocabulary)**:
+   If the status is `<http://publications.europa.eu/resource/authority/dataset-status/DEVELOP>`, it is considered a pre-release. Other values in the dataset-status vocabulary space (e.g. `COMPLETED`) indicate a stable release.
+4. **`adms:status` (Original ADMS Vocabulary)**:
+   If the status is `<http://purl.org/adms/status/UnderDevelopment>`, it is considered a pre-release. Other values in the ADMS status namespace (e.g. `Completed`) indicate a stable release.
+5. **`schema:creativeWorkStatus`**:
+   If set to `"Draft"` or `"Incomplete"`, it is considered a pre-release. Other values (e.g. `"Published"`) indicate a stable release.
+6. **`vs:term_status`**:
+   If set to `"unstable"` or `"testing"`, it is considered a pre-release. Other values (e.g. `"stable"`) indicate a stable release.
+7. **`owl:versionInfo` (pre-release extension)**:
+   If the version string contains a pre-release extension suffix (e.g., `-beta`, `-alpha`, `-rc`, `-SNAPSHOT`, `.alpha`, etc.).
+8. **`owl:versionInfo` (major version zero)**:
+   If the version string corresponds to a major version zero in semantic versioning (e.g., `0.7.1`).
+9. **Default Fallback**:
+   If none of the above are present, the ontology is assumed to be a stable release (`false`).
 
 Note that the IRI of the ontology must be the prefix of all IRIs that belong to
 that ontology.

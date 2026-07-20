@@ -2407,7 +2407,7 @@ def test_pre_release_annotations_cases(tmp_path, model_context_url):
         # 2) sh-to-code:isPreRelease
         ("sh-to-code:isPreRelease true .", True),
         ("sh-to-code:isPreRelease false .", False),
-        # 3.1) adms:status (EU SEMIC vocab)
+        # 3) adms:status (EU SEMIC vocab)
         (
             "adms:status <http://publications.europa.eu/resource/authority/dataset-status/DEVELOP> .",
             True,
@@ -2416,27 +2416,27 @@ def test_pre_release_annotations_cases(tmp_path, model_context_url):
             "adms:status <http://publications.europa.eu/resource/authority/dataset-status/COMPLETED> .",
             False,
         ),
-        # 3.2) adms:status (Original ADMS vocab)
+        # 4) adms:status (Original ADMS vocab)
         ("adms:status <http://purl.org/adms/status/UnderDevelopment> .", True),
         ("adms:status <http://purl.org/adms/status/Completed> .", False),
-        # 4) bibo:status (Bibliographic Ontology)
+        # 5) bibo:status (Bibliographic Ontology)
         ("bibo:status <http://purl.org/ontology/bibo/status/draft> .", True),
         ("bibo:status <http://purl.org/ontology/bibo/status/published> .", False),
         ("bibo:status <http://purl.org/ontology/bibo/status/legal> .", False),
-        # 5) schema:creativeWorkStatus
+        # 6) schema:creativeWorkStatus
         ('schema:creativeWorkStatus "Draft" .', True),
         ('schema:creativeWorkStatus "Incomplete" .', True),
         ('schema:creativeWorkStatus "Published" .', False),
-        # 6) vs:term_status
+        # 7) vs:term_status
         ('vs:term_status "testing" .', True),
         ('vs:term_status "unstable" .', True),
         ('vs:term_status "stable" .', False),
-        # 7) owl:versionInfo (pre-release extension)
+        # 8) owl:versionInfo (pre-release extension)
         ('owl:versionInfo "3.1.0-rc2" .', True),
         ('owl:versionInfo "1.2.1-SNAPSHOT" .', True),
         ('owl:versionInfo "1.0.0.alpha" .', True),
         ('owl:versionInfo "1.0.0" .', False),
-        # 8) owl:versionInfo (major version zero)
+        # 9) owl:versionInfo (major version zero)
         ('owl:versionInfo "0.7.1" .', True),
         ('owl:versionInfo "0.0.1" .', True),
         # date-like version must not be mistaken for a semver pre-release
@@ -2537,8 +2537,8 @@ def test_pre_release_precedence(tmp_path, model_context_url):
         sys.path.remove(str(tmp_path))
 
     # Example 2:
-    # 5) schema:creativeWorkStatus "Published" (False)
-    # 6) vs:term_status "testing" (True)
+    # 6) schema:creativeWorkStatus "Published" (False)
+    # 7) vs:term_status "testing" (True)
     # Expected: False (creativeWorkStatus has higher precedence)
     ttl_content_2 = """
 @base <http://example.org/shacl2code-test/> .
@@ -2580,8 +2580,8 @@ def test_pre_release_precedence(tmp_path, model_context_url):
         sys.path.remove(str(tmp_path))
 
     # Example 3:
-    # 3.1) adms:status EU SEMIC DEVELOP (True)
-    # 5) schema:creativeWorkStatus "Published" (False)
+    # 3) adms:status EU SEMIC DEVELOP (True)
+    # 6) schema:creativeWorkStatus "Published" (False)
     # Expected: True (adms:status has higher precedence)
     ttl_content_3 = """
 @base <http://example.org/shacl2code-test/> .
@@ -2623,8 +2623,8 @@ def test_pre_release_precedence(tmp_path, model_context_url):
         sys.path.remove(str(tmp_path))
 
     # Example 4:
-    # 3.2) adms:status Original ADMS status Completed (False)
-    # 4) bibo:status draft (True)
+    # 4) adms:status Original ADMS status Completed (False)
+    # 5) bibo:status draft (True)
     # Expected: False (adms:status has higher precedence)
     ttl_content_4 = """
 @base <http://example.org/shacl2code-test/> .
@@ -2666,8 +2666,8 @@ def test_pre_release_precedence(tmp_path, model_context_url):
         sys.path.remove(str(tmp_path))
 
     # Example 5:
-    # 4) bibo:status published (False)
-    # 5) schema:creativeWorkStatus Draft (True)
+    # 5) bibo:status published (False)
+    # 6) schema:creativeWorkStatus Draft (True)
     # Expected: False (bibo:status has higher precedence)
     ttl_content_5 = """
 @base <http://example.org/shacl2code-test/> .

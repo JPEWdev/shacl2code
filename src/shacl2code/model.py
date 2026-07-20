@@ -222,7 +222,6 @@ class Model(object):
             if val is not None:
                 return bool(val)
 
-            # 3) adms:status
             adms_statuses = list(
                 self.model.objects(onto_iri, URIRef("http://www.w3.org/ns/adms#status"))
             )
@@ -234,7 +233,7 @@ class Model(object):
                         "http://publications.europa.eu/resource/authority/dataset-status/"
                     )
                 ]
-                # 3.1) adms:status (EU SEMIC vocab)
+                # 3) adms:status (EU SEMIC vocab)
                 if semic:
                     return any(
                         s
@@ -246,31 +245,26 @@ class Model(object):
                     for s in adms_statuses
                     if str(s).startswith("http://purl.org/adms/status/")
                 ]
-                # 3.2) adms:status (Original ADMS vocab)
+                # 4) adms:status (Original ADMS vocab)
                 if original:
                     return any(
                         s == "http://purl.org/adms/status/UnderDevelopment"
                         for s in original
                     )
 
-            # 4) bibo:status (Bibliographic Ontology)
+            # 5) bibo:status (Bibliographic Ontology)
             bibo_statuses = list(
                 self.model.objects(
                     onto_iri, URIRef("http://purl.org/ontology/bibo/status")
                 )
             )
             if bibo_statuses:
-                bibo = [
-                    str(s)
+                return any(
+                    str(s) == "http://purl.org/ontology/bibo/status/draft"
                     for s in bibo_statuses
-                    if str(s).startswith("http://purl.org/ontology/bibo/status/")
-                ]
-                if bibo:
-                    return any(
-                        s == "http://purl.org/ontology/bibo/status/draft" for s in bibo
-                    )
+                )
 
-            # 5) schema:creativeWorkStatus
+            # 6) schema:creativeWorkStatus
             schema_statuses = list(
                 self.model.objects(
                     onto_iri, URIRef("http://schema.org/creativeWorkStatus")
@@ -283,7 +277,7 @@ class Model(object):
             if schema_statuses:
                 return any(str(s) in ("Draft", "Incomplete") for s in schema_statuses)
 
-            # 6) vs:term_status
+            # 7) vs:term_status
             vs_statuses = list(
                 self.model.objects(
                     onto_iri,
@@ -293,15 +287,15 @@ class Model(object):
             if vs_statuses:
                 return any(str(s) in ("unstable", "testing") for s in vs_statuses)
 
-            # 7) & 8) owl:versionInfo
+            # 8) & 9) owl:versionInfo
             versions = list(self.model.objects(onto_iri, OWL.versionInfo))
             if versions:
                 for version in versions:
                     version_str = str(version)
-                    # 7) owl:versionInfo (pre-release extension e.g., "-beta", "-alpha", "-rc" etc)
+                    # 8) owl:versionInfo (pre-release extension e.g., "-beta", "-alpha", "-rc" etc)
                     if is_semver_prerelease(version_str):
                         return True
-                    # 8) owl:versionInfo (major version zero)
+                    # 9) owl:versionInfo (major version zero)
                     parts = convert_version_string(version_str)
                     if parts and parts[0] == 0:
                         return True

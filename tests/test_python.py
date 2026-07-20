@@ -2401,6 +2401,8 @@ def test_no_pre_release_cli_option(tmp_path, model_context_url):
 
 
 def test_pre_release_annotations_cases(tmp_path, model_context_url):
+    # The number in the comment indicates the precedence of the annotation.
+    # 1 is the highest precedence (force by command line option)
     cases = [
         # 2) sh-to-code:isPreRelease
         ("sh-to-code:isPreRelease true .", True),
@@ -2433,6 +2435,9 @@ def test_pre_release_annotations_cases(tmp_path, model_context_url):
         # 8) owl:versionInfo (major version zero)
         ('owl:versionInfo "0.7.1" .', True),
         ('owl:versionInfo "0.0.1" .', True),
+        # date-like version must not be mistaken for a semver pre-release
+        # suffix (no dotted numeric core precedes the hyphen)
+        ('owl:versionInfo "2024-01-15" .', False),
         # Fallback (no annotations or versionInfo at all)
         ('rdfs:comment "A test ontology" .', False),
     ]
@@ -2611,3 +2616,87 @@ def test_pre_release_precedence(tmp_path, model_context_url):
         assert m.SHACL2CODE_TEST.is_prerelease is True
     finally:
         sys.path.remove(str(tmp_path))
+
+
+def test_pre_release_multi_valued_annotations(tmp_path, model_context_url):
+    # Each of these predicates can legally repeat.
+    # A stable-looking value listed first must not hide
+    # a pre-release-indicating value listed after it.
+    cases = [
+        # owl:versionInfo: first value stable, second is a semver
+        # pre-release extension.
+        (
+            """
+owl:versionInfo "1.0.0" ;
+owl:versionInfo "2.0.0-beta" .
+""",
+            True,
+        ),
+        # adms:status (EU SEMIC vocab): first value stable, second under
+        # development.
+        (
+            """
+adms:status <http://publications.europa.eu/resource/authority/dataset-status/COMPLETED> ;
+adms:status <http://publications.europa.eu/resource/authority/dataset-status/DEVELOP> .
+""",
+            True,
+        ),
+        # schema:creativeWorkStatus: first value stable, second draft.
+        (
+            """
+schema:creativeWorkStatus "Published" ;
+schema:creativeWorkStatus "Draft" .
+""",
+            True,
+        ),
+        # vs:term_status: first value stable, second testing.
+        (
+            """
+vs:term_status "stable" ;
+vs:term_status "testing" .
+""",
+            True,
+        ),
+    ]
+
+    for idx, (annotations, expected) in enumerate(cases):
+        ttl_content = f"""
+@base <http://example.org/shacl2code-test/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix adms: <http://www.w3.org/ns/adms#> .
+@prefix schema: <http://schema.org/> .
+@prefix vs: <http://www.w3.org/2003/06/sw-vocab-status/ns#> .
+
+<http://example.org/shacl2code-test> a owl:Ontology ;
+    rdfs:label "shacl2code-test" ;
+    {annotations}
+"""
+        ttl_file = tmp_path / f"multi_{idx}.ttl"
+        ttl_file.write_text(ttl_content)
+
+        module_name = f"pymodel_multi_{idx}"
+        output_dir = tmp_path / module_name
+        shacl2code_generate(
+            [
+                "--input",
+                str(ttl_file),
+                "--context",
+                model_context_url,
+            ],
+            [
+                "--version",
+                MODEL_VERSION,
+            ],
+            output_dir,
+        )
+
+        sys.path.append(str(tmp_path))
+        try:
+            m = importlib.import_module(module_name)
+            assert (
+                m.SHACL2CODE_TEST.is_prerelease is expected
+            ), f"Failed for case {idx}: {annotations}"
+        finally:
+            sys.path.remove(str(tmp_path))

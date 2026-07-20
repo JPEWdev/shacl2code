@@ -201,7 +201,10 @@ class Model(object):
             return False
 
         def is_semver_prerelease(version_str):
-            if re.search(r"-[0-9a-zA-Z]", version_str):
+            # Only treat a hyphen as a semver pre-release marker when it
+            # directly follows a dotted numeric core (e.g. "1.2.3-beta"),
+            # not e.g. a date-like version such as "2024-01-15".
+            if re.match(r"^\d+\.\d+(?:\.\d+)?-[0-9A-Za-z]", version_str):
                 return True
             if re.search(
                 r"\b(alpha|beta|dev|pre|rc|snapshot|test)\b", version_str, re.IGNORECASE
@@ -220,54 +223,71 @@ class Model(object):
                 return bool(val)
 
             # 3) & 4) adms:status
-            adms_status = self.model.value(
-                onto_iri, URIRef("http://www.w3.org/ns/adms#status")
+            adms_statuses = list(
+                self.model.objects(onto_iri, URIRef("http://www.w3.org/ns/adms#status"))
             )
-            if adms_status is not None:
-                adms_status_str = str(adms_status)
-                # 3) adms:status (EU SEMIC vocab)
-                if adms_status_str.startswith(
-                    "http://publications.europa.eu/resource/authority/dataset-status/"
-                ):
-                    return (
-                        adms_status_str
-                        == "http://publications.europa.eu/resource/authority/dataset-status/DEVELOP"
+            if adms_statuses:
+                semic = [
+                    str(s)
+                    for s in adms_statuses
+                    if str(s).startswith(
+                        "http://publications.europa.eu/resource/authority/dataset-status/"
                     )
+                ]
+                # 3) adms:status (EU SEMIC vocab)
+                if semic:
+                    return any(
+                        s
+                        == "http://publications.europa.eu/resource/authority/dataset-status/DEVELOP"
+                        for s in semic
+                    )
+                original = [
+                    str(s)
+                    for s in adms_statuses
+                    if str(s).startswith("http://purl.org/adms/status/")
+                ]
                 # 4) adms:status (Original ADMS vocab)
-                if adms_status_str.startswith("http://purl.org/adms/status/"):
-                    return (
-                        adms_status_str
-                        == "http://purl.org/adms/status/UnderDevelopment"
+                if original:
+                    return any(
+                        s == "http://purl.org/adms/status/UnderDevelopment"
+                        for s in original
                     )
 
             # 5) schema:creativeWorkStatus
-            schema_status = self.model.value(
-                onto_iri, URIRef("http://schema.org/creativeWorkStatus")
-            ) or self.model.value(
-                onto_iri, URIRef("https://schema.org/creativeWorkStatus")
+            schema_statuses = list(
+                self.model.objects(
+                    onto_iri, URIRef("http://schema.org/creativeWorkStatus")
+                )
+            ) or list(
+                self.model.objects(
+                    onto_iri, URIRef("https://schema.org/creativeWorkStatus")
+                )
             )
-            if schema_status is not None:
-                return str(schema_status) in ("Draft", "Incomplete")
+            if schema_statuses:
+                return any(str(s) in ("Draft", "Incomplete") for s in schema_statuses)
 
             # 6) vs:term_status
-            vs_status = self.model.value(
-                onto_iri,
-                URIRef("http://www.w3.org/2003/06/sw-vocab-status/ns#term_status"),
+            vs_statuses = list(
+                self.model.objects(
+                    onto_iri,
+                    URIRef("http://www.w3.org/2003/06/sw-vocab-status/ns#term_status"),
+                )
             )
-            if vs_status is not None:
-                return str(vs_status) in ("unstable", "testing")
+            if vs_statuses:
+                return any(str(s) in ("unstable", "testing") for s in vs_statuses)
 
             # 7) & 8) owl:versionInfo
-            version = self.model.value(onto_iri, OWL.versionInfo)
-            if version is not None:
-                version_str = str(version)
-                # 7) owl:versionInfo (pre-release extension e.g., "-beta", "-alpha", "-rc" etc)
-                if is_semver_prerelease(version_str):
-                    return True
-                # 8) owl:versionInfo (major version zero)
-                parts = convert_version_string(version_str)
-                if parts and parts[0] == 0:
-                    return True
+            versions = list(self.model.objects(onto_iri, OWL.versionInfo))
+            if versions:
+                for version in versions:
+                    version_str = str(version)
+                    # 7) owl:versionInfo (pre-release extension e.g., "-beta", "-alpha", "-rc" etc)
+                    if is_semver_prerelease(version_str):
+                        return True
+                    # 8) owl:versionInfo (major version zero)
+                    parts = convert_version_string(version_str)
+                    if parts and parts[0] == 0:
+                        return True
                 return False
 
             return False

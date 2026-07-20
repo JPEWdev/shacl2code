@@ -2433,6 +2433,8 @@ def test_pre_release_annotations_cases(tmp_path, model_context_url):
         # 8) owl:versionInfo (major version zero)
         ('owl:versionInfo "0.7.1" .', True),
         ('owl:versionInfo "0.0.1" .', True),
+        # Fallback (no annotations or versionInfo at all)
+        ('rdfs:comment "A test ontology" .', False),
     ]
 
     for idx, (annotations, expected) in enumerate(cases):

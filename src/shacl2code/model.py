@@ -222,7 +222,7 @@ class Model(object):
             if val is not None:
                 return bool(val)
 
-            # 3) & 4) adms:status
+            # 3) adms:status
             adms_statuses = list(
                 self.model.objects(onto_iri, URIRef("http://www.w3.org/ns/adms#status"))
             )
@@ -234,7 +234,7 @@ class Model(object):
                         "http://publications.europa.eu/resource/authority/dataset-status/"
                     )
                 ]
-                # 3) adms:status (EU SEMIC vocab)
+                # 3.1) adms:status (EU SEMIC vocab)
                 if semic:
                     return any(
                         s
@@ -246,11 +246,28 @@ class Model(object):
                     for s in adms_statuses
                     if str(s).startswith("http://purl.org/adms/status/")
                 ]
-                # 4) adms:status (Original ADMS vocab)
+                # 3.2) adms:status (Original ADMS vocab)
                 if original:
                     return any(
                         s == "http://purl.org/adms/status/UnderDevelopment"
                         for s in original
+                    )
+
+            # 4) bibo:status (Bibliographic Ontology)
+            bibo_statuses = list(
+                self.model.objects(
+                    onto_iri, URIRef("http://purl.org/ontology/bibo/status")
+                )
+            )
+            if bibo_statuses:
+                bibo = [
+                    str(s)
+                    for s in bibo_statuses
+                    if str(s).startswith("http://purl.org/ontology/bibo/status/")
+                ]
+                if bibo:
+                    return any(
+                        s == "http://purl.org/ontology/bibo/status/draft" for s in bibo
                     )
 
             # 5) schema:creativeWorkStatus

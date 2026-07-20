@@ -2407,7 +2407,7 @@ def test_pre_release_annotations_cases(tmp_path, model_context_url):
         # 2) sh-to-code:isPreRelease
         ("sh-to-code:isPreRelease true .", True),
         ("sh-to-code:isPreRelease false .", False),
-        # 3) adms:status (EU SEMIC vocab)
+        # 3.1) adms:status (EU SEMIC vocab)
         (
             "adms:status <http://publications.europa.eu/resource/authority/dataset-status/DEVELOP> .",
             True,
@@ -2416,9 +2416,13 @@ def test_pre_release_annotations_cases(tmp_path, model_context_url):
             "adms:status <http://publications.europa.eu/resource/authority/dataset-status/COMPLETED> .",
             False,
         ),
-        # 4) adms:status (Original ADMS vocab)
+        # 3.2) adms:status (Original ADMS vocab)
         ("adms:status <http://purl.org/adms/status/UnderDevelopment> .", True),
         ("adms:status <http://purl.org/adms/status/Completed> .", False),
+        # 4) bibo:status (Bibliographic Ontology)
+        ("bibo:status <http://purl.org/ontology/bibo/status/draft> .", True),
+        ("bibo:status <http://purl.org/ontology/bibo/status/published> .", False),
+        ("bibo:status <http://purl.org/ontology/bibo/status/legal> .", False),
         # 5) schema:creativeWorkStatus
         ('schema:creativeWorkStatus "Draft" .', True),
         ('schema:creativeWorkStatus "Incomplete" .', True),
@@ -2452,6 +2456,7 @@ def test_pre_release_annotations_cases(tmp_path, model_context_url):
 @prefix adms: <http://www.w3.org/ns/adms#> .
 @prefix schema: <http://schema.org/> .
 @prefix vs: <http://www.w3.org/2003/06/sw-vocab-status/ns#> .
+@prefix bibo: <http://purl.org/ontology/bibo/> .
 
 <http://example.org/shacl2code-test> a owl:Ontology ;
     rdfs:comment "A test ontology" ;
@@ -2575,7 +2580,7 @@ def test_pre_release_precedence(tmp_path, model_context_url):
         sys.path.remove(str(tmp_path))
 
     # Example 3:
-    # 3) adms:status EU SEMIC DEVELOP (True)
+    # 3.1) adms:status EU SEMIC DEVELOP (True)
     # 5) schema:creativeWorkStatus "Published" (False)
     # Expected: True (adms:status has higher precedence)
     ttl_content_3 = """
@@ -2614,6 +2619,92 @@ def test_pre_release_precedence(tmp_path, model_context_url):
     try:
         m = importlib.import_module(module_name_3)
         assert m.SHACL2CODE_TEST.is_prerelease is True
+    finally:
+        sys.path.remove(str(tmp_path))
+
+    # Example 4:
+    # 3.2) adms:status Original ADMS status Completed (False)
+    # 4) bibo:status draft (True)
+    # Expected: False (adms:status has higher precedence)
+    ttl_content_4 = """
+@base <http://example.org/shacl2code-test/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix adms: <http://www.w3.org/ns/adms#> .
+@prefix bibo: <http://purl.org/ontology/bibo/> .
+
+<http://example.org/shacl2code-test> a owl:Ontology ;
+    rdfs:label "shacl2code-test" ;
+    adms:status <http://purl.org/adms/status/Completed> ;
+    bibo:status <http://purl.org/ontology/bibo/status/draft> .
+"""
+    ttl_file_4 = tmp_path / "prec_4.ttl"
+    ttl_file_4.write_text(ttl_content_4)
+
+    module_name_4 = "pymodel_prec_4"
+    output_dir_4 = tmp_path / module_name_4
+    shacl2code_generate(
+        [
+            "--input",
+            str(ttl_file_4),
+            "--context",
+            model_context_url,
+        ],
+        [
+            "--version",
+            MODEL_VERSION,
+        ],
+        output_dir_4,
+    )
+
+    sys.path.append(str(tmp_path))
+    try:
+        m = importlib.import_module(module_name_4)
+        assert m.SHACL2CODE_TEST.is_prerelease is False
+    finally:
+        sys.path.remove(str(tmp_path))
+
+    # Example 5:
+    # 4) bibo:status published (False)
+    # 5) schema:creativeWorkStatus Draft (True)
+    # Expected: False (bibo:status has higher precedence)
+    ttl_content_5 = """
+@base <http://example.org/shacl2code-test/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix schema: <http://schema.org/> .
+@prefix bibo: <http://purl.org/ontology/bibo/> .
+
+<http://example.org/shacl2code-test> a owl:Ontology ;
+    rdfs:label "shacl2code-test" ;
+    bibo:status <http://purl.org/ontology/bibo/status/published> ;
+    schema:creativeWorkStatus "Draft" .
+"""
+    ttl_file_5 = tmp_path / "prec_5.ttl"
+    ttl_file_5.write_text(ttl_content_5)
+
+    module_name_5 = "pymodel_prec_5"
+    output_dir_5 = tmp_path / module_name_5
+    shacl2code_generate(
+        [
+            "--input",
+            str(ttl_file_5),
+            "--context",
+            model_context_url,
+        ],
+        [
+            "--version",
+            MODEL_VERSION,
+        ],
+        output_dir_5,
+    )
+
+    sys.path.append(str(tmp_path))
+    try:
+        m = importlib.import_module(module_name_5)
+        assert m.SHACL2CODE_TEST.is_prerelease is False
     finally:
         sys.path.remove(str(tmp_path))
 
@@ -2657,6 +2748,14 @@ vs:term_status "testing" .
 """,
             True,
         ),
+        # bibo:status: first value published, second draft.
+        (
+            """
+bibo:status <http://purl.org/ontology/bibo/status/published> ;
+bibo:status <http://purl.org/ontology/bibo/status/draft> .
+""",
+            True,
+        ),
     ]
 
     for idx, (annotations, expected) in enumerate(cases):
@@ -2668,6 +2767,7 @@ vs:term_status "testing" .
 @prefix adms: <http://www.w3.org/ns/adms#> .
 @prefix schema: <http://schema.org/> .
 @prefix vs: <http://www.w3.org/2003/06/sw-vocab-status/ns#> .
+@prefix bibo: <http://purl.org/ontology/bibo/> .
 
 <http://example.org/shacl2code-test> a owl:Ontology ;
     rdfs:label "shacl2code-test" ;

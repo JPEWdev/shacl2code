@@ -284,7 +284,7 @@ or inferred automatically from various ontology annotations. For example,
 ```
 
 In the event of conflicting annotations, `shacl2code` evaluates pre-release
-status using the following order of precedence (highest priority first):
+status using the following order of precedence (1 = the highest priority):
 
 1. **`--pre-release` or `--no-pre-release` command-line options**:
    Explicitly marks the generated bindings as pre-release or stable,
@@ -303,21 +303,26 @@ status using the following order of precedence (highest priority first):
    it is considered a pre-release.
    Other values in the ADMS status namespace (e.g. `Completed`)
    indicate a stable release.
-5. **`schema:creativeWorkStatus`**:
+5. **`bibo:status` (Bibliographic Ontology)**:
+   If set to `<http://purl.org/ontology/bibo/status/draft>`, it is
+   considered a pre-release.
+   Other values in the BIBO status namespace (e.g. `published`, `legal`)
+   indicate a stable release.
+6. **`schema:creativeWorkStatus`**:
    If set to `"Draft"` or `"Incomplete"`, it is considered a pre-release.
    Other values (e.g. `"Published"`) indicate a stable release.
-6. **`vs:term_status`**:
+7. **`vs:term_status`**:
    If set to `"unstable"` or `"testing"`, it is considered a pre-release.
    Other values (e.g. `"stable"`) indicate a stable release.
-7. **`owl:versionInfo` (pre-release extension)**:
+8. **`owl:versionInfo` (pre-release extension)**:
    If the version string contains a pre-release extension suffix
    (e.g., `-alpha`, `-beta`, `-dev`, `-rc`, `-SNAPSHOT`, `.alpha`, etc.).
-8. **`owl:versionInfo` (major version zero)**:
+9. **`owl:versionInfo` (major version zero)**:
    If the version string corresponds to a major version zero in
    [Semantic Versioning][semver] (e.g., `0.7.1`).
-9. **Default Fallback**:
-   If none of the above are present, the ontology is assumed to be a stable
-   release (`false`).
+10. **Default Fallback**:
+    If none of the above are present, the ontology is assumed to be a stable
+    release (`false`).
 
 Note that the IRI of the ontology must be the prefix of all IRIs that belong to
 that ontology.

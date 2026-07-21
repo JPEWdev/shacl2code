@@ -45,8 +45,7 @@ void SHACLObjectSet::add(Ref<SHACLObject> const &ref) {
   }
   auto p = ref.obj();
 
-  if (mObjects.find(p) == mObjects.end()) {
-    mObjects.insert(p);
+  if (mObjects.insert(p).second) {
     addIndex(p);
   }
 }

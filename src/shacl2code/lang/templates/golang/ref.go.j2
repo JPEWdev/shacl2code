@@ -3,6 +3,7 @@ vim: ft=go
 */                 // This line keeps gofmt happy
 package shacl2code /*
 #}
+Package {{ package_name }}:
 {{ disclaimer }}
 
 SPDX-License-Identifier: {{ spdx_license }}
@@ -12,7 +13,7 @@ import (
 	"reflect"
 )
 
-// Reference
+// Ref is a reference to a SHACL object.
 type Ref[T SHACLObject] interface {
 	GetIRI() string
 	GetObj() T
@@ -79,8 +80,9 @@ func MakeIRIRef[T SHACLObject](iri string) Ref[T] {
 	return &ref[T]{nil, iri}
 }
 
-// Convert one reference to another. Note that the output type is first so it
-// can be specified, while the input type is generally inferred from the argument
+// ConvertRef converts a reference from one type to another.
+// Note that the output type is first so it can be specified,
+// while the input type is generally inferred from the argument.
 func ConvertRef[TO SHACLObject, FROM SHACLObject](in Ref[FROM]) (Ref[TO], error) {
 	if in.IsObj() {
 		out_obj, ok := any(in.GetObj()).(TO)

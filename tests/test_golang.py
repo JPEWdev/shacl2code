@@ -1,6 +1,10 @@
 #
 # Copyright (c) 2024 Joshua Watt
 #
+# SPDX-FileContributor: Joshua Watt
+# SPDX-FileContributor: Arthit Suriyawongkul
+# SPDX-FileCopyrightText: 2024 Joshua Watt
+# SPDX-FileType: SOURCE
 # SPDX-License-Identifier: MIT
 
 import json
@@ -474,13 +478,35 @@ def link_test(test_lib, tmp_path_factory):
     )
 
 
-@pytest.mark.parametrize(
+GOLANG_MODEL_TESTS = (
     "args",
     [
         ["--input", TEST_MODEL],
         ["--input", TEST_MODEL, "--context-url", TEST_CONTEXT, SPDX3_CONTEXT_URL],
     ],
 )
+
+
+def _build_golang_module(tmp_path, args):
+    subprocess.run(
+        [
+            "shacl2code",
+            "generate",
+        ]
+        + args
+        + [
+            "golang",
+            "--output",
+            tmp_path,
+        ],
+        check=True,
+    )
+
+    subprocess.run(["go", "mod", "init", "model"], cwd=tmp_path, check=True)
+    subprocess.run(["go", "mod", "tidy"], cwd=tmp_path, check=True)
+
+
+@pytest.mark.parametrize(*GOLANG_MODEL_TESTS)
 class TestOutput:
     def test_trailing_whitespace(self, tmp_path, args):
         """
@@ -509,27 +535,46 @@ class TestOutput:
                         ), f"{fn}: Line {num + 1} has trailing whitespace: {line!r}"
 
     def test_output_compile(self, tmp_path, args):
-        subprocess.run(
-            [
-                "shacl2code",
-                "generate",
-            ]
-            + args
-            + [
-                "golang",
-                "--output",
-                tmp_path,
-            ],
-            check=True,
-        )
-
-        subprocess.run(["go", "mod", "init", "model"], cwd=tmp_path, check=True)
-        subprocess.run(["go", "mod", "tidy"], cwd=tmp_path, check=True)
+        _build_golang_module(tmp_path, args)
 
         model_output = tmp_path / "model.a"
 
         subprocess.run(
             ["go", "build", "-o", model_output, "."],
+            cwd=tmp_path,
+            check=True,
+        )
+
+
+@pytest.mark.parametrize(*GOLANG_MODEL_TESTS)
+class TestStaticAnalysis:
+    """
+    Static analysis checks for the generated Go code
+    """
+
+    def test_vet(self, tmp_path, args):
+        """
+        go vet static analysis
+        """
+        _build_golang_module(tmp_path, args)
+        subprocess.run(["go", "vet", "./..."], cwd=tmp_path, check=True)
+
+    def test_staticcheck(self, tmp_path, args):
+        """
+        staticcheck static analysis.
+
+        Disabled:
+        - ST1003 (snake_case names): generated identifiers mirror the SHACL
+          model's own naming.
+        - ST1006 ("self" receiver name): generated methods use "self" to
+          match other language bindings.
+
+        Any other finding fails the test so it shows up as a failed check on
+        the PR.
+        """
+        _build_golang_module(tmp_path, args)
+        subprocess.run(
+            ["staticcheck", "-checks=all,-ST1003,-ST1006", "./..."],
             cwd=tmp_path,
             check=True,
         )

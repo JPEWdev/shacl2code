@@ -3,6 +3,7 @@ vim: ft=go
 */                 // This line keeps gofmt happy
 package shacl2code /*
 #}
+Package {{ package_name }}:
 {{ disclaimer }}
 
 SPDX-License-Identifier: {{ spdx_license }}
@@ -14,10 +15,17 @@ import (
 
 /*{{ '*' }}{{ '/' }}
 {% for class in classes %}
-{%- for l in class.comment.splitlines() %}
-{{ ("// " + l).rstrip() }}
-{% endfor -%}
+{%- set class_comment_lines = class.comment.splitlines() %}
+{%- if class_comment_lines %}
+// {{ (struct_name(class) + " " + class_comment_lines[0]).rstrip() }}
+{%- for l in class_comment_lines[1:] %}
+// {{ l }}
+{%- endfor %}
+{%- else %}
+// {{ struct_name(class) }} is a generated SHACL object type.
+{%- endif %}
 {%- if class.deprecated %}
+//
 // Deprecated: This class is deprecated
 {%- endif %}
 {% set is_public = not class.is_abstract or class.is_extensible -%}
@@ -44,10 +52,17 @@ type {{ struct_name(class) }} struct {
 {%- endfor %}
 }
 {% for member in class.named_individuals %}
-{%- for l in member.comment.splitlines() %}
-{{ ("// " + l).rstrip() }}
-{% endfor -%}
-const {{ varname(*class.clsname) }}{{ varname(member.varname) }} = "{{ member._id }}"
+{%- set constname = varname(*class.clsname) + varname(member.varname) %}
+{%- set comment_lines = member.comment.splitlines() %}
+{%- if comment_lines %}
+// {{ (constname + " " + comment_lines[0]).rstrip() }}
+{%- for l in comment_lines[1:] %}
+// {{ l }}
+{%- endfor %}
+{% else %}
+// {{ constname }} is a generated named individual value.
+{% endif -%}
+const {{ constname }} = "{{ member._id }}"
 {%- endfor %}
 
 type {{ struct_name(class) }}Type struct {
@@ -184,7 +199,7 @@ func Make{{ varname(*class.clsname) }}Ref() Ref[{{ interface_name(class) }}] {
 {%- endif %}
 
 func (self *{{ struct_name(class) }}) Validate(path Path, handler ErrorHandler) bool {
-    var valid bool = true
+    var valid = true
 {%- if class.parent_ids %}
 {%- for p in class.parent_ids %}
     if ! self.{{ struct_name(classes.get(p)) }}.Validate(path, handler) {

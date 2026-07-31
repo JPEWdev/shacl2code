@@ -3,6 +3,7 @@ vim: ft=go
 */                 // This line keeps gofmt happy
 package shacl2code /*
 #}
+Package {{ package_name }}:
 {{ disclaimer }}
 
 SPDX-License-Identifier: {{ spdx_license }}
@@ -173,7 +174,7 @@ func (self *SHACLObjectSetObject) Decode(decoder *json.Decoder) error {
 		}
 
 		// Check context strings. Using maps.Equal() would be much better, but requires go >= 1.21
-		sort.Sort(sort.StringSlice(context_urls))
+		sort.Strings(context_urls)
 
 		if !reflect.DeepEqual(context_urls, CONTEXT_URLS) {
 			return &DecodeError{sub_path, "Wrong context URL(s)"}
@@ -304,7 +305,7 @@ func (self *SHACLObjectSetObject) Encode(encoder *json.Encoder) error {
 
 	// Convert to a list and sort
 	top_list := []SHACLObject{}
-	for o, _ := range top_objects {
+	for o := range top_objects {
 		top_list = append(top_list, o)
 	}
 
@@ -348,9 +349,8 @@ func (self *SHACLObjectSetObject) Walk(visit Visit) {
 	visited := map[SHACLObject]bool{}
 
 	visit_proxy := func(path Path, v any) {
-		switch v.(type) {
+		switch r := v.(type) {
 		case Ref[SHACLObject]:
-			r := v.(Ref[SHACLObject])
 			if !r.IsObj() {
 				visit(path, v)
 				return

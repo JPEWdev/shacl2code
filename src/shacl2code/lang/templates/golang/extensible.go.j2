@@ -3,6 +3,7 @@ vim: ft=go
 */                 // This line keeps gofmt happy
 package shacl2code /*
 #}
+Package {{ package_name }}:
 {{ disclaimer }}
 
 SPDX-License-Identifier: {{ spdx_license }}
@@ -34,9 +35,7 @@ func (self *SHACLExtensibleBase) EncodeExtProperties(data map[string]any, path P
 		}
 
 		lst := []any{}
-		for _, v := range values {
-			lst = append(lst, v)
-		}
+		lst = append(lst, values...)
 		data[state.CompactIRI(k)] = lst
 	}
 	return nil

@@ -114,7 +114,7 @@ class Class:
 
 
 class Model(object):
-    def __init__(self, graph, context=None):
+    def __init__(self, graph, context=None, is_prerelease=None):
         self.model = graph
         self.context = context
         self.compact_ids = {}
@@ -205,8 +205,14 @@ class Model(object):
                 label=label,
                 comment=str(self.model.value(onto_iri, RDFS.comment, default="")),
                 version=str(self.model.value(onto_iri, OWL.versionInfo, default="")),
-                is_prerelease=bool(
-                    self.model.value(onto_iri, SHACL2CODE.isPreRelease, default=False)
+                is_prerelease=(
+                    is_prerelease
+                    if is_prerelease is not None
+                    else bool(
+                        self.model.value(
+                            onto_iri, SHACL2CODE.isPreRelease, default=False
+                        )
+                    )
                 ),
             )
             self.ontologies.append(o)

@@ -2306,3 +2306,95 @@ def test_prerelease_warning(model):
 
     with pytest.warns(FutureWarning):
         model.test_class()
+
+
+def test_pre_release_cli_option(tmp_path_factory, model_context_url):
+    tmp_directory = tmp_path_factory.mktemp("prerelease_test")
+    module_name = "pymodel_prerelease"
+    output_dir = tmp_directory / module_name
+    shacl2code_generate(
+        [
+            "--input",
+            str(TEST_MODEL),
+            "--context",
+            model_context_url,
+            "--pre-release",
+        ],
+        [
+            "--version",
+            MODEL_VERSION,
+        ],
+        output_dir,
+    )
+
+    sys.path.append(str(tmp_directory))
+    try:
+        m = importlib.import_module(module_name)
+        assert m.SHACL2CODE_TEST.is_prerelease is True
+    finally:
+        sys.path.remove(str(tmp_directory))
+
+
+def test_no_pre_release_cli_option(tmp_path, model_context_url):
+    ttl_content = """
+@base <http://example.org/shacl2code-test/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix sh-to-code: <https://jpewdev.github.io/shacl2code/schema#> .
+
+<http://example.org/shacl2code-test> a owl:Ontology ;
+    rdfs:comment "A test ontology" ;
+    rdfs:label "shacl2code-test" ;
+    owl:versionInfo "1.0.0" ;
+    sh-to-code:isPreRelease true .
+"""
+    ttl_file = tmp_path / "prerelease.ttl"
+    ttl_file.write_text(ttl_content)
+
+    module_name = "pymodel_default_true"
+    output_dir = tmp_path / module_name
+    shacl2code_generate(
+        [
+            "--input",
+            str(ttl_file),
+            "--context",
+            model_context_url,
+        ],
+        [
+            "--version",
+            MODEL_VERSION,
+        ],
+        output_dir,
+    )
+
+    sys.path.append(str(tmp_path))
+    try:
+        m = importlib.import_module(module_name)
+        assert m.SHACL2CODE_TEST.is_prerelease is True
+    finally:
+        sys.path.remove(str(tmp_path))
+
+    module_name_no = "pymodel_no_prerelease"
+    output_dir_no = tmp_path / module_name_no
+    shacl2code_generate(
+        [
+            "--input",
+            str(ttl_file),
+            "--context",
+            model_context_url,
+            "--no-pre-release",
+        ],
+        [
+            "--version",
+            MODEL_VERSION,
+        ],
+        output_dir_no,
+    )
+
+    sys.path.append(str(tmp_path))
+    try:
+        m = importlib.import_module(module_name_no)
+        assert m.SHACL2CODE_TEST.is_prerelease is False
+    finally:
+        sys.path.remove(str(tmp_path))

@@ -3,6 +3,7 @@ vim: ft=go
 */                 // This line keeps gofmt happy
 package shacl2code /*
 #}
+Package {{ package_name }}:
 {{ disclaimer }}
 
 SPDX-License-Identifier: {{ spdx_license }}
@@ -230,11 +231,10 @@ func DecodeInteger(data any, path Path, context map[string]string, check DecodeC
 		return 0, err
 	}
 
-	switch data.(type) {
+	switch v := data.(type) {
 	case int:
-		return data.(int), nil
+		return v, nil
 	case float64:
-		v := data.(float64)
 		if v == float64(int64(v)) {
 			return int(v), nil
 		}
@@ -249,15 +249,15 @@ func DecodeFloat(data any, path Path, context map[string]string, check DecodeChe
 		return 0, err
 	}
 
-	switch data.(type) {
+	switch v := data.(type) {
 	case float64:
-		return data.(float64), nil
+		return v, nil
 	case string:
-		v, err := strconv.ParseFloat(data.(string), 64)
+		f, err := strconv.ParseFloat(v, 64)
 		if err != nil {
 			return 0, err
 		}
-		return v, nil
+		return f, nil
 	default:
 		return 0, &DecodeError{path, "Float expected. Got " + reflect.TypeOf(data).Name()}
 	}

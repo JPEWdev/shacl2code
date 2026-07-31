@@ -242,9 +242,9 @@ class GoLangRender(JinjaTemplateRender):
             # template
             "go_package": textwrap.dedent(f"""
                 */
-
                 package {args.package}
                 /*"""),
+            "package_name": args.package,
         }
 
     @classmethod

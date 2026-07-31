@@ -3,6 +3,7 @@ vim: ft=go
 */                 // This line keeps gofmt happy
 package shacl2code /*
 #}
+Package {{ package_name }}:
 {{ disclaimer }}
 
 SPDX-License-Identifier: {{ spdx_license }}
@@ -10,7 +11,7 @@ SPDX-License-Identifier: {{ spdx_license }}
 
 type Visit func(Path, any)
 
-// Base SHACL Object
+// SHACLObjectBase is the base type embedded by all SHACL objects.
 type SHACLObjectBase struct {
 	// Object ID
 	id      Property[string]
@@ -21,7 +22,7 @@ type SHACLObjectBase struct {
 func (self *SHACLObjectBase) ID() PropertyInterface[string] { return &self.id }
 
 func (self *SHACLObjectBase) Validate(path Path, handler ErrorHandler) bool {
-	var valid bool = true
+	var valid = true
 
 	switch self.typ.GetNodeKind() {
 	case NodeKindBlankNode:

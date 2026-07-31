@@ -283,6 +283,9 @@ or inferred automatically from various ontology annotations. For example,
    .
 ```
 
+Note that the IRI of the ontology must be the prefix of all IRIs that belong to
+that ontology.
+
 In the event of conflicting annotations, `shacl2code` evaluates pre-release
 status using the following order of precedence (1 = the highest priority):
 
@@ -322,10 +325,7 @@ status using the following order of precedence (1 = the highest priority):
    [Semantic Versioning][semver] (e.g., `0.7.1`).
 10. **Default Fallback**:
     If none of the above are present, the ontology is assumed to be a stable
-    release (`false`).
-
-Note that the IRI of the ontology must be the prefix of all IRIs that belong to
-that ontology.
+    release.
 
 [pytest]: https://www.pytest.org
 [pytest-cov]: https://pytest-cov.readthedocs.io/en/latest/

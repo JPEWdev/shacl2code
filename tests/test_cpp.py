@@ -868,7 +868,8 @@ def test_ref_explicit_cast(compile_test, A, B, progress):
         auto b = make_obj<{B}>();
         """)
 
-    output = compile_test(f"""\
+    output = compile_test(
+        f"""\
         auto a = make_obj<{A}>();
         a->_id = "_:foo";
         auto b = a.asTypeRef<{B}>();
@@ -880,7 +881,8 @@ def test_ref_explicit_cast(compile_test, A, B, progress):
     if progress == Progress.RUNS:
         assert output.rstrip() == "_:foo"
 
-    output = compile_test(f"""\
+    output = compile_test(
+        f"""\
         auto a = make_obj<{A}>();
         a->_id = "_:foo";
         Ref<{B}> b = make_obj<{B}>();
@@ -1033,7 +1035,8 @@ def test_DateTime_fromString(compile_test, s, valid, time, tzoffset):
 
 
 def test_abstract_class(compile_test):
-    compile_test("""\
+    compile_test(
+        """\
         auto r = make_obj<abstract_class>();
         """,
         progress=Progress.COMPILE_FAILS,
@@ -1267,16 +1270,14 @@ class TestListIterators:
         )
 
     def test_std_find(self, compile_test):
-        output = compile_test(
-            """\
+        output = compile_test("""\
             auto c = make_obj<test_class>();
             auto& p = c->_test_class_string_list_prop;
 
             p.insert(p.begin(), {"A", "B", "C"});
             auto it = std::find(p.begin(), p.end(), "A");
             std::cout << *it << std::endl;
-            """
-        )
+            """)
         assert output.splitlines() + ["A"]
 
     def test_std_remove(self, iterator_test):

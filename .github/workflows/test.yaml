@@ -57,6 +57,7 @@ jobs:
               - 'tests/test_golang.py'
             jsonschema:
               - *core
+              - 'scripts/**'
               - 'src/shacl2code/lang/jsonschema.py'
               - 'src/shacl2code/lang/sources/jsonschema/**'
               - 'src/shacl2code/lang/templates/jsonschema.j2'
@@ -73,18 +74,18 @@ jobs:
               - 'src/shacl2code/lang/templates/rust/**'
               - 'tests/test_rust.py'
 
-  # Always run core
+  # Always run core (ignores language-specific test suites)
   core:
     uses: ./.github/workflows/_pytest.yaml
     with:
       install-native-toolchains: false
       test-files: >-
-        tests/test_cli.py
-        tests/test_context.py
-        tests/test_common_jinja.py
-        tests/test_common_prefix.py
-        tests/test_convert_version_string.py
-        tests/test_model_source.py
+        tests
+        --ignore=tests/test_cpp.py
+        --ignore=tests/test_golang.py
+        --ignore=tests/test_jsonschema.py
+        --ignore=tests/test_python.py
+        --ignore=tests/test_rust.py
 
   cpp:
     needs: changes

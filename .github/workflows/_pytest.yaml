@@ -6,7 +6,7 @@ on:
   workflow_call:
     inputs:
       test-files:
-        description: "Space-separated pytest paths (empty = whole suite)"
+        description: "Space-separated pytest paths or options/arguments (empty = whole suite)"
         type: string
         default: ""
       python-versions:

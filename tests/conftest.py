@@ -54,6 +54,8 @@ def test_jsonschema(model_server, test_context_url):
             MODEL_DIR / "test.ttl",
             "--context",
             test_context_url,
+            "--jss-signature",
+            "signatures",
             "jsonschema",
             "--output",
             "-",

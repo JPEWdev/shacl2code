@@ -1275,19 +1275,27 @@ class SHACLObject(metaclass=SHACLObjectMeta):
         if key in ("@id", self.ID_ALIAS):
             return True
 
-        expanded_key = state.expand_iri(key)
-        if expanded_key and expanded_key in self._OBJ_IRI_PROPS:
-            p = self._OBJ_IRI_PROPS[expanded_key]
-        elif key in self._OBJ_IRI_PROPS:
-            p = self._OBJ_IRI_PROPS[key]
-        elif key in self._OBJ_COMPACT_PROPS:
-            p = self._OBJ_COMPACT_PROPS[key]
-        else:
-            return False
-
         with decoder.read_property(key) as prop_d:
             if prop_d is None:
                 raise TypeError(f"Property decoder for key '{key}' cannot be None")
+
+            if _JSS_SIGNATURE and key == _JSS_SIGNATURE:
+                if not prop_d.is_list():
+                    raise TypeError(
+                        f"Property '{key}' must be a list with signature information",
+                    )
+                return True
+
+            expanded_key = state.expand_iri(key)
+            if expanded_key and expanded_key in self._OBJ_IRI_PROPS:
+                p = self._OBJ_IRI_PROPS[expanded_key]
+            elif key in self._OBJ_IRI_PROPS:
+                p = self._OBJ_IRI_PROPS[key]
+            elif key in self._OBJ_COMPACT_PROPS:
+                p = self._OBJ_COMPACT_PROPS[key]
+            else:
+                return False
+
             v = p.prop.decode(prop_d, state)
             self.__set(p, v)
         return True
@@ -2215,9 +2223,23 @@ class JSONLDDeserializer(object):
             if context_prop:
                 decode_context(context_prop, objectset)
 
+        if _JSS_SIGNATURE:
+            with h.read_property(_JSS_SIGNATURE) as signature_prop:
+                if signature_prop and not signature_prop.is_list():
+                    raise ValueError(
+                        f"Expected signature property '{_JSS_SIGNATURE}' to be an list, got {type(signature_prop.data)}"
+                    )
+
         state = DecodeState(objectset)
         with h.read_property("@graph") as graph_prop:
-            objectset.decode(graph_prop if graph_prop else h, state)
+            if graph_prop:
+                for k in h.object_keys():
+                    if k in {"@graph", "@context", _JSS_SIGNATURE}:
+                        continue
+                    raise KeyError(f"Unexpected property '{k}'")
+                objectset.decode(graph_prop, state)
+            else:
+                objectset.decode(h, state)
 
     def read(self, f: BinaryIO, objectset: SHACLObjectSet) -> None:
         """Parse a JSON-LD file and deserialize its objects into the given object set."""
@@ -2979,6 +3001,8 @@ except ImportError:
 
 # fmt: off
 """Format Guard{{ '"' }}{{ '"' }}{{ '"' }}
+_JSS_SIGNATURE: Optional[str] = {% if jss_signature %}"{{ jss_signature }}"{% else %}None{% endif %}
+
 CONTEXT_URLS: List[str] = [
 {%- for url in context.urls %}
     "{{ url }}",

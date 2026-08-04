@@ -32,14 +32,17 @@ SPDX3_CONTEXT_URL = "https://spdx.github.io/spdx-3-model/context.json"
     [
         ["--input", TEST_MODEL],
         ["--input", TEST_MODEL, "--context-url", TEST_CONTEXT, SPDX3_CONTEXT_URL],
+        ["--input", TEST_MODEL, "--jss-signature", "signatures"],
     ],
 )
 class TestOutput:
-    def test_output_syntax(self, args):
+    def test_output_syntax(self, args, tmp_path):
         """
         Checks that the output file is valid json syntax by parsing it with Python
         """
-        p = subprocess.run(
+        schema_file = tmp_path / "schema.json"
+
+        subprocess.run(
             [
                 "shacl2code",
                 "generate",
@@ -48,14 +51,15 @@ class TestOutput:
             + [
                 "jsonschema",
                 "--output",
-                "-",
+                schema_file,
             ],
             check=True,
             stdout=subprocess.PIPE,
             encoding="utf-8",
         )
 
-        json.loads(p.stdout)
+        with schema_file.open("r") as f:
+            json.load(f)
 
     def test_ajv_compile(self, tmp_path, args):
         """

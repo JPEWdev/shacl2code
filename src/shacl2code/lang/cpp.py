@@ -193,7 +193,7 @@ class CppRender(JinjaTemplateRender):
                     #define LOCAL  {self.macro_prefix}_LOCAL
                     #endif // DOXYGEN_SKIP
                     """)),
-            "api_def_end": comment_wrap(textwrap.dedent(f"""\
+            "api_def_end": comment_wrap(textwrap.dedent("""\
                     #undef EXPORT
                     #undef LOCAL
                     """)),

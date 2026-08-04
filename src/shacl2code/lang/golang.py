@@ -240,12 +240,10 @@ class GoLangRender(JinjaTemplateRender):
             # This variable adds as many lines are get commented out in jinja,
             # to keep the line numbers in the generated code the same as the
             # template
-            "go_package": textwrap.dedent(
-                f"""
+            "go_package": textwrap.dedent(f"""
                 */
                 package {args.package}
-                /*"""
-            ),
+                /*"""),
             "package_name": args.package,
         }
 

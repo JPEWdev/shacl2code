@@ -149,8 +149,7 @@ def compile_test(test_lib, tmp_path):
     def f(code_fragment, *, progress=Progress.RUNS, static=False):
         src = tmp_path / "test.cpp"
         src.write_text(
-            textwrap.dedent(
-                f"""\
+            textwrap.dedent(f"""\
                 #include "{test_lib.basename}/{test_lib.basename}.hpp"
                 #include "{test_lib.basename}/{test_lib.basename}-jsonld.hpp"
                 #include <iostream>
@@ -161,8 +160,7 @@ def compile_test(test_lib, tmp_path):
 
                 int main(int argc, char** argv) {{
                     try {{
-                """
-            )
+                """)
             + textwrap.dedent(code_fragment)
             + "".join(
                 textwrap.dedent(f"""\
@@ -632,8 +630,7 @@ CPP_STRING_VAL = 'std::string("string")'
     ],
 )
 def test_scalar_prop_validation(compile_test, prop, value, expect):
-    output = compile_test(
-        f"""\
+    output = compile_test(f"""\
         // Set precision in case we output a floating point number
         std::cout << std::fixed << std::setprecision(1);
 
@@ -763,15 +760,12 @@ def test_class_prop_validation(compile_test, prop, value, expect):
 )
 def test_ref_implicit_cast(compile_test, A, B, progress):
     # Check types are valid
-    compile_test(
-        f"""\
+    compile_test(f"""\
         auto a = make_obj<{A}>();
         auto b = make_obj<{B}>();
-        """
-    )
+        """)
 
-    output = compile_test(
-        f"""\
+    output = compile_test(f"""\
         auto a = make_obj<{A}>();
         a->_id = "_:foo";
         Ref<{B}> b(a);
@@ -783,8 +777,7 @@ def test_ref_implicit_cast(compile_test, A, B, progress):
     if progress == Progress.RUNS:
         assert output.rstrip() == "_:foo"
 
-    output = compile_test(
-        f"""\
+    output = compile_test(f"""\
         auto a = make_obj<{A}>();
         a->_id = "_:foo";
 

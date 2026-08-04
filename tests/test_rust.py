@@ -123,7 +123,8 @@ def compile_test(test_lib, tmp_path):
                 """))
 
         src = tmp_path / "src" / "main.rs"
-        src.write_text(textwrap.dedent("""\
+        src.write_text(
+            textwrap.dedent("""\
                 use shacl_model::*;
                 use std::process;
 

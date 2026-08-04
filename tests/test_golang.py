@@ -44,6 +44,8 @@ def test_lib(tmp_path_factory, model_server):
             TEST_MODEL,
             "--context",
             model_server + "/test-context.json",
+            "--jss-signature",
+            "signatures",
             "golang",
             "--output",
             libdir,
@@ -483,6 +485,7 @@ GOLANG_MODEL_TESTS = (
     [
         ["--input", TEST_MODEL],
         ["--input", TEST_MODEL, "--context-url", TEST_CONTEXT, SPDX3_CONTEXT_URL],
+        ["--input", TEST_MODEL, "--jss-signature", "signatures"],
     ],
 )
 

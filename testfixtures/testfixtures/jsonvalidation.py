@@ -732,6 +732,67 @@ def validation_tests():
                 BASE_OBJ,
                 id="Base object",
             ),
+            param(
+                True,
+                {
+                    "@context": CONTEXT,
+                    "@graph": [
+                        {
+                            "@type": "test-class",
+                        },
+                    ],
+                    "signatures": [],
+                },
+                id="JSS Signature",
+            ),
+            param(
+                False,
+                {
+                    "@context": CONTEXT,
+                    "@graph": [
+                        {
+                            "@type": "test-class",
+                        },
+                    ],
+                    "unknown": {},
+                },
+                id="Unknown top level property with @graph",
+            ),
+            param(
+                True,
+                {
+                    "@context": CONTEXT,
+                    "@type": "test-class",
+                    "signatures": [],
+                },
+                id="Inline with signature",
+            ),
+            param(
+                False,
+                {
+                    "@context": CONTEXT,
+                    "@graph": [
+                        {
+                            "@type": "test-class",
+                        },
+                    ],
+                    "signatures": "string",
+                },
+                id="Signature with wrong type (scalar)",
+            ),
+            param(
+                False,
+                {
+                    "@context": CONTEXT,
+                    "@graph": [
+                        {
+                            "@type": "test-class",
+                        },
+                    ],
+                    "signatures": {},
+                },
+                id="Signature with wrong type (object)",
+            ),
         ],
     )
 

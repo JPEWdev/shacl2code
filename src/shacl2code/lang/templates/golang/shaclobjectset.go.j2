@@ -53,6 +53,8 @@ var CONTEXT_URLS = []string{
 	  {{ '/' }}{{ '*' }}*/
 }
 
+var JSS_SIGNATURE = "{{ jss_signature or '' }}"
+
 func makeshaclObjectList(lst []SHACLObject) shaclObjectList {
 	idx := make(map[SHACLObject]int)
 	for i, o := range lst {
@@ -185,6 +187,16 @@ func (self *SHACLObjectSetObject) Decode(decoder *json.Decoder) error {
 
 	decodeProxy := func(data any, path Path, context map[string]string, check DecodeCheckType, state *DecodeState) (SHACLObject, error) {
 		return DecodeSHACLObject[SHACLObject](data, path, context, nil, state)
+	}
+
+	if JSS_SIGNATURE != "" {
+		if signature, found := data[JSS_SIGNATURE]; found {
+			_, ok := signature.([]interface{})
+			if !ok {
+				return &DecodeError{path, "Bad type for signature '" + JSS_SIGNATURE + "'"}
+			}
+		}
+		delete(data, JSS_SIGNATURE)
 	}
 
 	_, has_graph := data["@graph"]

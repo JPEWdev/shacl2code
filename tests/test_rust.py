@@ -69,6 +69,8 @@ def test_lib(tmp_path_factory, model_server, cargo_run):
             TEST_MODEL,
             "--context",
             model_server + "/test-context.json",
+            "--jss-signature",
+            "signatures",
             "rust",
             "--output",
             libdir / "shacl_model",

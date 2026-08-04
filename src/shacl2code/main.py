@@ -51,7 +51,12 @@ def main(args=None):
                     data = json.load(f)
             contexts.append(ContextData(data, url))
 
-        m = Model(graph, UrlContext(contexts), is_prerelease=args.pre_release)
+        m = Model(
+            graph,
+            UrlContext(contexts),
+            is_prerelease=args.pre_release,
+            jss_signature=args.jss_signature,
+        )
 
         render = args.lang(args)
         render.output(m)
@@ -124,6 +129,11 @@ def main(args=None):
         "--pre-release",
         action=argparse.BooleanOptionalAction,
         help="Mark the generated binding as pre-release. Overrides any ontology annotations",
+    )
+    generate_parser.add_argument(
+        "--jss-signature",
+        metavar="NAME",
+        help="Allow ITU-T X.590 JSON Signature Schema (JSS) property with name 'NAME'. Recommended name is 'signatures'",
     )
     generate_parser.set_defaults(func=handle_generate)
 

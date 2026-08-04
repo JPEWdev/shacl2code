@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: MIT
 """SHACL model parsing and data class definitions"""
 
+import re
 from dataclasses import dataclass, field
 from typing import List, Optional
 
@@ -18,6 +19,8 @@ from rdflib.namespace import (
     SH,
     XSD,
 )
+
+from .util import convert_version_string
 
 PATTERN_DATATYPES = [
     str(XSD.string),
@@ -114,7 +117,7 @@ class Class:
 
 
 class Model(object):
-    def __init__(self, graph, context=None):
+    def __init__(self, graph, context=None, is_prerelease=None):
         self.model = graph
         self.context = context
         self.compact_ids = {}
@@ -197,6 +200,109 @@ class Model(object):
 
             return False
 
+        def is_semver_prerelease(version_str):
+            # Only treat a hyphen as a semver pre-release marker when it
+            # directly follows a dotted numeric core (e.g. "1.2.3-beta"),
+            # not e.g. a date-like version such as "2024-01-15".
+            if re.match(r"^\d+\.\d+(?:\.\d+)?-[0-9A-Za-z]", version_str):
+                return True
+            if re.search(
+                r"\b(alpha|beta|dev|pre|rc|snapshot|test)\b", version_str, re.IGNORECASE
+            ):
+                return True
+            return False
+
+        def get_is_prerelease(onto_iri):
+            # 1) --pre-release command line option
+            if is_prerelease is not None:
+                return is_prerelease
+
+            # 2) sh-to-code:isPreRelease
+            val = self.model.value(onto_iri, SHACL2CODE.isPreRelease)
+            if val is not None:
+                return bool(val)
+
+            adms_statuses = list(
+                self.model.objects(onto_iri, URIRef("http://www.w3.org/ns/adms#status"))
+            )
+            if adms_statuses:
+                semic = [
+                    str(s)
+                    for s in adms_statuses
+                    if str(s).startswith(
+                        "http://publications.europa.eu/resource/authority/dataset-status/"
+                    )
+                ]
+                # 3) adms:status (EU SEMIC vocab)
+                if semic:
+                    return any(
+                        s
+                        == "http://publications.europa.eu/resource/authority/dataset-status/DEVELOP"
+                        for s in semic
+                    )
+                original = [
+                    str(s)
+                    for s in adms_statuses
+                    if str(s).startswith("http://purl.org/adms/status/")
+                ]
+                # 4) adms:status (Original ADMS vocab)
+                if original:
+                    return any(
+                        s == "http://purl.org/adms/status/UnderDevelopment"
+                        for s in original
+                    )
+
+            # 5) bibo:status (Bibliographic Ontology)
+            bibo_statuses = list(
+                self.model.objects(
+                    onto_iri, URIRef("http://purl.org/ontology/bibo/status")
+                )
+            )
+            if bibo_statuses:
+                return any(
+                    str(s) == "http://purl.org/ontology/bibo/status/draft"
+                    for s in bibo_statuses
+                )
+
+            # 6) schema:creativeWorkStatus
+            schema_statuses = list(
+                self.model.objects(
+                    onto_iri, URIRef("http://schema.org/creativeWorkStatus")
+                )
+            ) or list(
+                self.model.objects(
+                    onto_iri, URIRef("https://schema.org/creativeWorkStatus")
+                )
+            )
+            if schema_statuses:
+                return any(str(s) in ("Draft", "Incomplete") for s in schema_statuses)
+
+            # 7) vs:term_status
+            vs_statuses = list(
+                self.model.objects(
+                    onto_iri,
+                    URIRef("http://www.w3.org/2003/06/sw-vocab-status/ns#term_status"),
+                )
+            )
+            if vs_statuses:
+                return any(str(s) in ("unstable", "testing") for s in vs_statuses)
+
+            # 8) & 9) owl:versionInfo
+            versions = list(self.model.objects(onto_iri, OWL.versionInfo))
+            if versions:
+                for version in versions:
+                    version_str = str(version)
+                    # 8) owl:versionInfo (pre-release extension e.g., "-beta", "-alpha", "-rc" etc)
+                    if is_semver_prerelease(version_str):
+                        return True
+                    # 9) owl:versionInfo (major version zero)
+                    parts = convert_version_string(version_str)
+                    if parts and parts[0] == 0:
+                        return True
+                return False
+
+            return False
+
         for onto_iri in self.model.subjects(RDF.type, OWL.Ontology):
             label = str(self.model.value(onto_iri, RDFS.label, default=""))
             o = Ontology(
@@ -205,9 +311,7 @@ class Model(object):
                 label=label,
                 comment=str(self.model.value(onto_iri, RDFS.comment, default="")),
                 version=str(self.model.value(onto_iri, OWL.versionInfo, default="")),
-                is_prerelease=bool(
-                    self.model.value(onto_iri, SHACL2CODE.isPreRelease, default=False)
-                ),
+                is_prerelease=get_is_prerelease(onto_iri),
             )
             self.ontologies.append(o)
 

@@ -37,6 +37,10 @@ jobs:
           sudo apt install -y build-essential cppcheck doxygen graphviz
           npm install -g jsonld-cli
           npm --prefix scripts ci
+      - name: Install Go static analysis tools
+        run: |
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+          go install honnef.co/go/tools/cmd/staticcheck@latest
       - name: Install Rust static analysis tools
         run: |
           rustup component add clippy

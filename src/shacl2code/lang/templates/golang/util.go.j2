@@ -3,6 +3,7 @@ vim: ft=go
 */                 // This line keeps gofmt happy
 package shacl2code /*
 #}
+Package {{ package_name }}:
 {{ disclaimer }}
 
 SPDX-License-Identifier: {{ spdx_license }}
@@ -12,7 +13,7 @@ import (
 	"strings"
 )
 
-// IRI Validation
+// IsIRI reports whether iri is a valid IRI, not a blank node.
 func IsIRI(iri string) bool {
 	if strings.HasPrefix(iri, "_:") {
 		return false

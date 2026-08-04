@@ -51,7 +51,7 @@ def main(args=None):
                     data = json.load(f)
             contexts.append(ContextData(data, url))
 
-        m = Model(graph, UrlContext(contexts))
+        m = Model(graph, UrlContext(contexts), is_prerelease=args.pre_release)
 
         render = args.lang(args)
         render.output(m)
@@ -119,6 +119,11 @@ def main(args=None):
         "-l",
         help="SPDX License Identifier to use for generated source code. Default is %(default)s",
         default="0BSD",
+    )
+    generate_parser.add_argument(
+        "--pre-release",
+        action=argparse.BooleanOptionalAction,
+        help="Mark the generated binding as pre-release. Overrides any ontology annotations",
     )
     generate_parser.set_defaults(func=handle_generate)
 

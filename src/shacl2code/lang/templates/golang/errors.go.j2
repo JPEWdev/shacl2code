@@ -3,12 +3,13 @@ vim: ft=go
 */                 // This line keeps gofmt happy
 package shacl2code /*
 #}
+Package {{ package_name }}:
 {{ disclaimer }}
 
 SPDX-License-Identifier: {{ spdx_license }}
 {{ go_package }} */
 
-// Validation Error
+// ValidationError reports a SHACL validation failure.
 type ValidationError struct {
 	Property string
 	Err      string
@@ -16,7 +17,7 @@ type ValidationError struct {
 
 func (e *ValidationError) Error() string { return e.Property + ": " + e.Err }
 
-// Conversion Error
+// ConversionError reports a failed reference conversion.
 type ConversionError struct {
 	From string
 	To   string
@@ -26,7 +27,7 @@ func (e *ConversionError) Error() string {
 	return "Unable to convert from " + e.From + " to " + e.To
 }
 
-// Decode Error
+// DecodeError reports a SHACL decode failure.
 type DecodeError struct {
 	Path Path
 	Err  string

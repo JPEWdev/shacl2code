@@ -2321,6 +2321,7 @@ def test_ontology(model):
 # Pre-release metadata tests
 # ---------------------------------------------------------------------------
 
+
 def test_prerelease_warning(model):
     model.SHACL2CODE_TEST.is_prerelease = True
 

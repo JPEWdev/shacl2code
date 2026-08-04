@@ -630,7 +630,8 @@ CPP_STRING_VAL = 'std::string("string")'
     ],
 )
 def test_scalar_prop_validation(compile_test, prop, value, expect):
-    output = compile_test(f"""\
+    output = compile_test(
+        f"""\
         // Set precision in case we output a floating point number
         std::cout << std::fixed << std::setprecision(1);
 
@@ -765,7 +766,8 @@ def test_ref_implicit_cast(compile_test, A, B, progress):
         auto b = make_obj<{B}>();
         """)
 
-    output = compile_test(f"""\
+    output = compile_test(
+        f"""\
         auto a = make_obj<{A}>();
         a->_id = "_:foo";
         Ref<{B}> b(a);
@@ -777,7 +779,8 @@ def test_ref_implicit_cast(compile_test, A, B, progress):
     if progress == Progress.RUNS:
         assert output.rstrip() == "_:foo"
 
-    output = compile_test(f"""\
+    output = compile_test(
+        f"""\
         auto a = make_obj<{A}>();
         a->_id = "_:foo";
 
@@ -909,7 +912,8 @@ def test_ref_explicit_cast(compile_test, A, B, progress):
 
 
 def test_ref_explicit_cast_to_derived(compile_test):
-    compile_test("""\
+    compile_test(
+        """\
         auto r = make_obj<test_class>();
         auto p = r.asTypeRef<test_derived_class>();
         """,
@@ -1352,7 +1356,8 @@ def test_roundtrip(compile_test, tmp_path, roundtrip):
 def test_static(compile_test, tmp_path, roundtrip):
     out_file = tmp_path / "out.json"
 
-    compile_test(f"""\
+    compile_test(
+        f"""\
         SHACLObjectSet objs;
         {{
             std::ifstream infile;
@@ -1483,8 +1488,7 @@ def test_objset_context(compile_test, context, expanded, compacted):
 
 def test_extensible_context(compile_test, roundtrip):
     # Test that extensible object IDs and properties account for the context
-    compile_test(
-        f"""\
+    compile_test(f"""\
         SHACLObjectSet objset;
         {{
             std::ifstream infile;
@@ -1524,5 +1528,4 @@ def test_extensible_context(compile_test, roundtrip):
             std::cout << "Unable to find property value" << std::endl;
             return 1;
         }}
-        """
-    )
+        """)

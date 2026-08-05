@@ -31,7 +31,7 @@ jobs:
         id: filter
         with:
           filters: |
-            core: &core
+            common: &common
               - '.github/workflows/_pytest.yaml'
               - '.github/workflows/test.yaml'
               - 'src/shacl2code/*.py'
@@ -44,32 +44,32 @@ jobs:
               - 'tests/data/**'
               - 'testfixtures/**'
             cpp:
-              - *core
+              - *common
               - 'src/shacl2code/lang/cpp.py'
               - 'src/shacl2code/lang/sources/cpp/**'
               - 'src/shacl2code/lang/templates/cpp/**'
               - 'tests/test_cpp.py'
             golang:
-              - *core
+              - *common
               - 'src/shacl2code/lang/golang.py'
               - 'src/shacl2code/lang/sources/golang/**'
               - 'src/shacl2code/lang/templates/golang/**'
               - 'tests/test_golang.py'
             jsonschema:
-              - *core
+              - *common
               - 'scripts/**'
               - 'src/shacl2code/lang/jsonschema.py'
               - 'src/shacl2code/lang/sources/jsonschema/**'
               - 'src/shacl2code/lang/templates/jsonschema.j2'
               - 'tests/test_jsonschema.py'
             python:
-              - *core
+              - *common
               - 'src/shacl2code/lang/python.py'
               - 'src/shacl2code/lang/sources/python/**'
               - 'src/shacl2code/lang/templates/python/**'
               - 'tests/test_python.py'
             rust:
-              - *core
+              - *common
               - 'src/shacl2code/lang/rust.py'
               - 'src/shacl2code/lang/templates/rust/**'
               - 'tests/test_rust.py'

@@ -1,5 +1,7 @@
 # Node
 node_modules/
+package.json
+package-lock.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

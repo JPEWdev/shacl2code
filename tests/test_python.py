@@ -256,6 +256,18 @@ class TestCheckType:
             check=True,
         )
 
+    def test_bandit(self, tmp_path, args, python_args):
+        """
+        Bandit security linting
+        """
+        output_dir = tmp_path / "pymodel"
+        shacl2code_generate(args, python_args, output_dir)
+        subprocess.run(
+            ["bandit", "-r", output_dir],
+            encoding="utf-8",
+            check=True,
+        )
+
 
 @pytest.fixture
 def python_usage_script(python_model_env, tmp_path):

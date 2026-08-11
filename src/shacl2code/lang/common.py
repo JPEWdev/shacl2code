@@ -38,7 +38,9 @@ class OutputFile(object):
 @jinja2.pass_context
 def include_file(ctx, name):
     env = ctx.environment
-    return Markup(env.loader.get_source(env, name)[0])
+    # Reads this repo's own template source (not user-controlled input) to
+    # embed verbatim into generated source code, never rendered as HTML.
+    return Markup(env.loader.get_source(env, name)[0])  # nosec B704
 
 
 class JinjaTemplateRender(object):
@@ -63,7 +65,11 @@ class JinjaTemplateRender(object):
         def abort_helper(msg: str) -> None:
             raise TemplateRuntimeError(msg)
 
-        env = Environment(loader=FileSystemLoader([template.parent, THIS_DIR.parent]))
+        # Templates render source code (C++/Go/Python/Rust), not HTML;
+        # autoescape would corrupt generated code by escaping <, >, & etc.
+        env = Environment(
+            loader=FileSystemLoader([template.parent, THIS_DIR.parent])
+        )  # nosec B701
         for k, v in extra_env.items():
             env.globals[k] = v
         env.globals["abort"] = abort_helper

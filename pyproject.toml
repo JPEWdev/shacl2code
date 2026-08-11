@@ -55,7 +55,7 @@ Issues = "https://github.com/JPEWdev/shacl2code/issues"
 shacl2code = "shacl2code:main"
 
 [build-system]
-requires = ["hatchling>=1.28.0", "pitloom>=0.13.3"]
+requires = ["hatchling>=1.29.0", "pitloom>=0.13.3"]
 build-backend = "hatchling.build"
 
 [tool.hatch.version]

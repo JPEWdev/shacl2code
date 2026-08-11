@@ -1417,7 +1417,8 @@ class SHACLExtensibleObject(SHACLObject):
                 )
 
             with decoder.read_property(key) as prop_d:
-                assert prop_d is not None
+                if prop_d is None:
+                    raise KeyError(f"Property '{key}' has no value")
                 self._ext_data[expanded_key] = decode_value(prop_d)
 
     def _encode_properties(self, encoder: Encoder, state: EncodeState) -> None:
@@ -2518,7 +2519,7 @@ class JSONLDSerializer(object):
 
         args = {**self.args, **kwargs}
 
-        sha1 = hashlib.sha1()
+        sha1 = hashlib.sha1(usedforsecurity=False)
         for chunk in json.JSONEncoder(**args).iterencode(data):
             chunk_bytes = chunk.encode("utf-8")
             f.write(chunk_bytes)
@@ -2651,7 +2652,7 @@ class JSONLDInlineSerializer(object):
         Note: force_at_graph is included for compatibility, but ignored. This
         serializer always writes out a graph
         """
-        sha1 = hashlib.sha1()
+        sha1 = hashlib.sha1(usedforsecurity=False)
         h = JSONLDInlineEncoder(f, sha1)
         state = EncodeState(objectset)
         with h.write_dict() as doc_s:

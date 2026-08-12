@@ -572,7 +572,7 @@ def validation_tests():
                     "@context": CONTEXT,
                     "@type": "http://example.com/extended",
                     "extensible-class/required": "foo",
-                    "unknown-prop": "foo",
+                    "http://unknown-prop": "foo",
                 },
                 id="Extensible class with unknown property",
             ),
@@ -581,7 +581,7 @@ def validation_tests():
                 {
                     "@context": CONTEXT,
                     "@type": "http://example.com/extended",
-                    "unknown-prop": "foo",
+                    "http://unknown-prop": "foo",
                 },
                 id="Extensible class with missing required property",
             ),
@@ -629,7 +629,7 @@ def validation_tests():
                     "link-class-link-prop": {
                         "@type": "http://example.com/extended",
                         "extensible-class/required": "foo",
-                        "unknown-prop": "foo",
+                        "http://unknown-prop": "foo",
                     },
                 },
                 id="Nested extensible class with custom unknown property",

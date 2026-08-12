@@ -288,12 +288,12 @@ class SHACLObject:
         self, *, recursive: bool = False, visited: Optional[Set[SHACLObject]] = None
     ) -> Iterable[SHACLObject]: ...
     def encode(self, encoder: "Encoder", state: "EncodeState") -> None: ...
-    @classmethod
-    def _make_object(cls: Type[T_SHACLObject], typ: str) -> SHACLObject: ...
-    @classmethod
+    @staticmethod
     def decode(
-        cls: Type[T_SHACLObject], decoder: "Decoder", state: "DecodeState"
-    ) -> SHACLObject: ...
+        decoder: Decoder,
+        state: DecodeState,
+        target_type: Optional[Type["SHACLObject"]] = None,
+    ) -> "SHACLObject": ...
     def link_helper(
         self,
         objectset: SHACLObjectSet,

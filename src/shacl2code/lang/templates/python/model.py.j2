@@ -414,7 +414,7 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
 
     def decode(self, decoder: Decoder, state: DecodeState) -> Union[str, "SHACLObject"]:
         if decoder.is_object():
-            return self.cls.decode(decoder, state)
+            return SHACLObject.decode(decoder, state, self.cls)
 
         iri = decoder.read_iri()
         if iri is None:
@@ -1230,23 +1230,58 @@ class SHACLObject(metaclass=SHACLObjectMeta):
             ) as prop_s:
                 p.prop.encode(prop_s, value, state)
 
-    @classmethod
-    def _make_object(cls: Type["SHACLObject"], typ: str) -> "SHACLObject":
-        if typ not in cls.CLASSES:
-            raise TypeError(f"Unknown type {typ}")
-
-        return cls.CLASSES[typ]()
-
-    @classmethod
+    @staticmethod
     def decode(
-        cls: Type[T_SHACLObject], decoder: Decoder, state: DecodeState
+        decoder: Decoder,
+        state: DecodeState,
+        target_type: Optional[Type["SHACLObject"]] = None,
     ) -> "SHACLObject":
-        typ, obj_d = decoder.read_object()
-        if typ is None:
-            raise TypeError("Unable to determine type for object")
-        typ = state.objectset.expand_iri(typ) or typ
+        if not decoder.is_object():
+            raise TypeError("Object expected")
 
-        obj = cls._make_object(typ)
+        typ_iri, obj_d = decoder.read_object()
+        if typ_iri is None:
+            raise TypeError("Unable to determine type for object")
+        typ_iri = state.objectset.expand_iri(typ_iri) or typ_iri
+
+        if typ := SHACLObject.CLASSES.get(typ_iri):
+            if target_type and not issubclass(typ, target_type):
+                raise TypeError(
+                    f"Type {typ_iri} is not valid where {target_type._TYPE} is expected"
+                )
+
+            if typ.IS_ABSTRACT:
+                raise NotImplementedError(
+                    f"{typ._TYPE} is abstract and cannot be implemented"
+                )
+
+            obj = typ()
+        elif target_type and issubclass(target_type, SHACLExtensibleObject):
+            obj = target_type(typ_iri)
+        else:
+            if is_IRI(typ_iri):
+                possible = []
+                for v in SHACLObject.CLASSES.values():
+                    if not issubclass(v, SHACLExtensibleObject):
+                        continue
+
+                    if v.IS_ABSTRACT:
+                        continue
+
+                    possible.append(v)
+
+                possible.sort(key=lambda k: k._TYPE)
+
+                for t in possible:
+                    try:
+                        return SHACLObject.decode(decoder, state, t)
+                    except TypeError:
+                        pass
+
+            raise TypeError(
+                f"Unable to create object of type '{typ_iri}'. No matching extensible class"
+            )
+
         _id = obj_d.read_object_id(obj.ID_ALIAS)
         if _id is not None:
             obj._id = state.expand_iri(_id) or _id
@@ -1272,7 +1307,13 @@ class SHACLObject(metaclass=SHACLObjectMeta):
                 raise KeyError(f"Unknown property '{key}'")
 
     def _decode_prop(self, decoder: Decoder, key: str, state: DecodeState) -> bool:
-        if key in ("@id", self.ID_ALIAS):
+        if key == self.ID_ALIAS:
+            return True
+
+        if self.ID_ALIAS and key == "@id":
+            raise KeyError("'@id' not allowed for class with ID alias")
+
+        if key == "@id":
             return True
 
         with decoder.read_property(key) as prop_d:
@@ -1389,15 +1430,6 @@ class SHACLExtensibleObject(SHACLObject):
     @property
     def _ext_data(self) -> Dict[str, Any]:
         return self._extensible["data"]
-
-    @classmethod
-    def _make_object(cls: Type["SHACLExtensibleObject"], typ: str) -> "SHACLObject":
-        # Check for a known type, and if so, deserialize as that instead
-        if typ in cls.CLASSES:
-            return cls.CLASSES[typ]()
-
-        obj = cls(typ)
-        return obj
 
     def _decode_properties(self, decoder: Decoder, state: DecodeState) -> None:
         def decode_value(d: Decoder) -> Any:
@@ -1859,7 +1891,7 @@ class SHACLObjectSet(object):
         """Decode objects from the decoder and add them to this set, then link all references."""
         self.create_index()
         for obj_d in decoder.read_list():
-            o = SHACLExtensibleObject.decode(obj_d, state)
+            o = SHACLObject.decode(obj_d, state)
             self.objects.add(o)
 
         self._link()

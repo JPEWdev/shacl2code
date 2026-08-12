@@ -480,60 +480,7 @@ def test_jsonschema_validation(roundtrip, test_jsonschema):
     jsonschema.validate(data, schema=test_jsonschema)
 
 
-# TODO: Make python bindings pass the other JSON validation tests
-@pytest.mark.parametrize(
-    "passes,data",
-    [
-        pytest.param(
-            True,
-            {
-                "@context": jsonvalidation.CONTEXT,
-                "@graph": [
-                    {
-                        "@type": "test-class",
-                    },
-                ],
-                "signatures": [],
-            },
-            id="JSS Signature",
-        ),
-        pytest.param(
-            False,
-            {
-                "@context": jsonvalidation.CONTEXT,
-                "@graph": [
-                    {
-                        "@type": "test-class",
-                    },
-                ],
-                "unknown": {},
-            },
-            id="Unknown top level property with @graph",
-        ),
-        pytest.param(
-            True,
-            {
-                "@context": jsonvalidation.CONTEXT,
-                "@type": "test-class",
-                "signatures": [],
-            },
-            id="Inline with signature",
-        ),
-        pytest.param(
-            False,
-            {
-                "@context": jsonvalidation.CONTEXT,
-                "@graph": [
-                    {
-                        "@type": "test-class",
-                    },
-                ],
-                "signatures": "string",
-            },
-            id="Signature with wrong type",
-        ),
-    ],
-)
+@jsonvalidation.validation_tests()
 def test_json_validation(passes, data, tmp_path, test_context_url, model_script):
     jsonvalidation.replace_context(data, test_context_url)
 

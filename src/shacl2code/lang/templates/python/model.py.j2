@@ -2219,9 +2219,15 @@ class JSONLDDeserializer(object):
         """Decode SHACL objects from a pre-parsed JSON-LD data structure into the given object set."""
         h = JSONLDDecoder(data, True)
 
+        ctx = []
         with h.read_property("@context") as context_prop:
             if context_prop:
-                decode_context(context_prop, objectset)
+                ctx = decode_context(context_prop, objectset)
+
+        if sorted(ctx) != sorted(CONTEXT_URLS):
+            raise ValueError(
+                f"Missing @context in JSON-LD data, expected one of {CONTEXT_URLS}"
+            )
 
         if _JSS_SIGNATURE:
             with h.read_property(_JSS_SIGNATURE) as signature_prop:
@@ -2714,8 +2720,14 @@ def encode_context(encoder: Encoder, objectset: SHACLObjectSet) -> None:
                         write_context(context_list_item, ctx)
 
 
-def decode_context(decoder: Decoder, objectset: SHACLObjectSet) -> None:
+def decode_context(decoder: Decoder, objectset: SHACLObjectSet) -> List[str]:
+    static_context = []
+
     def _decode_ctx(d: Decoder) -> None:
+        if s := d.read_string():
+            static_context.append(s)
+            return
+
         if not d.is_object():
             return
 
@@ -2730,6 +2742,8 @@ def decode_context(decoder: Decoder, objectset: SHACLObjectSet) -> None:
             _decode_ctx(ctx_d)
     else:
         _decode_ctx(decoder)
+
+    return static_context
 
 
 try:

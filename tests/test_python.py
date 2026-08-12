@@ -578,15 +578,17 @@ def test_links(filename, name, expect_tag, model, tmp_path, test_context_url):
         ("bad-object-type-ref-after.json", TypeError),
     ],
 )
-def test_deserialize(model, filename, expect):
+def test_deserialize(filename, expect, model, test_context_url):
     objset = model.SHACLObjectSet()
     deserializer = model.JSONLDDeserializer()
     with (DATA_DIR / "python" / filename).open("r") as f:
-        if issubclass(expect, Exception):
-            with pytest.raises(expect):
-                deserializer.read(f, objset)
-        else:
-            deserializer.read(f, objset)
+        d = json.loads(f.read().replace("@CONTEXT_URL@", test_context_url))
+
+    if issubclass(expect, Exception):
+        with pytest.raises(expect):
+            deserializer.deserialize_data(d, objset)
+    else:
+        deserializer.deserialize_data(d, objset)
 
 
 def test_node_kind_blank(model, test_context_url):

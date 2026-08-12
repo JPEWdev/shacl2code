@@ -45,16 +45,70 @@ from typing import (
 T_PropV = TypeVar("T_PropV")
 
 
-def check_type(obj: Any, types: Union[Type[Any], Tuple[Type[Any], ...]]) -> None:
+class DataPath(object):
+    def __init__(self, p: Optional[List[str]] = None):
+        if p is None:
+            self.path = []
+        else:
+            self.path = p
+
+    @contextmanager
+    def push_path(self, s: str) -> Iterator[DataPath]:
+        yield DataPath(self.path + [s])
+
+    @contextmanager
+    def push_index(self, idx: int) -> Iterator[DataPath]:
+        yield DataPath(self.path + [f"[{idx}]"])
+
+    def __str__(self) -> str:
+        return ".".join(self.path)
+
+    def __len__(self) -> int:
+        return len(self.path)
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.path)
+
+    def __getitem__(self, idx: int) -> str:
+        return self.path[idx]
+
+
+class PathError(Exception):
+    def __init__(self, path, message):
+        self.path = path
+        self.message = message
+
+    def __str__(self):
+        return f"{self.path}: {self.message}"
+
+
+class ValidationError(PathError):
+    pass
+
+
+class DecodeError(PathError):
+    pass
+
+
+class EncodeError(PathError):
+    pass
+
+
+def check_type(
+    path: DataPath,
+    obj: Any,
+    types: Union[Type[Any], Tuple[Type[Any], ...]],
+) -> None:
     """Check if an object is an instance of a type or one of types.
     Raise a TypeError if not."""
     if not isinstance(obj, types):
         if isinstance(types, (list, tuple)):
-            raise TypeError(
-                f"Value must be one of type: {', '.join(t.__name__ for t in types)}. Got {type(obj).__name__}"
+            raise ValidationError(
+                path,
+                f"Value must be one of type: {', '.join(t.__name__ for t in types)}. Got {type(obj).__name__}",
             )
-        raise TypeError(
-            f"Value must be of type {types.__name__}. Got {type(obj).__name__}"
+        raise ValidationError(
+            path, f"Value must be of type {types.__name__}. Got {type(obj).__name__}"
         )
 
 
@@ -74,32 +128,33 @@ class Property(ABC, Generic[T_PropV]):
     def init(self) -> Optional[T_PropV]:
         return None
 
-    def validate(self, value: Any) -> None:
-        check_type(value, self.VALID_TYPES)
+    def validate(self, path: DataPath, value: Any) -> None:
+        check_type(path, value, self.VALID_TYPES)
         if self.pattern is not None and not re.search(
-            self.pattern, self.to_string(value)
+            self.pattern, self.to_string(path, value)
         ):
-            raise ValueError(
-                f"Value is not correctly formatted. Got '{self.to_string(value)}'"
+            raise ValidationError(
+                path,
+                f"Value is not correctly formatted. Got '{self.to_string(path, value)}'",
             )
 
     def set(self, value: Any) -> T_PropV:
         return cast(T_PropV, value)
 
-    def check_min_count(self, value: T_PropV, min_count: int) -> bool:
+    def check_min_count(self, path: DataPath, value: T_PropV, min_count: int) -> bool:
         return min_count == 1
 
-    def check_max_count(self, value: T_PropV, max_count: int) -> bool:
+    def check_max_count(self, path: DataPath, value: T_PropV, max_count: int) -> bool:
         return max_count == 1
 
-    def elide(self, value: T_PropV) -> bool:
+    def elide(self, path: DataPath, value: T_PropV) -> bool:
         return value is None
 
     def walk(
         self,
         value: T_PropV,
-        callback: Callable[[Any, List[str]], bool],
-        path: List[str],
+        callback: Callable[[Any, DataPath], bool],
+        path: DataPath,
     ) -> None:
         callback(value, path)
 
@@ -114,18 +169,23 @@ class Property(ABC, Generic[T_PropV]):
         objectset: "SHACLObjectSet",
         missing: Optional[Set[str]],
         visited: Set["SHACLObject"],
+        path: DataPath,
     ) -> Optional[T_PropV]:
         return value
 
-    def to_string(self, value: T_PropV) -> str:
+    def to_string(self, path: DataPath, value: T_PropV) -> str:
         return str(value)
 
     @abstractmethod
-    def encode(self, encoder: "Encoder", value: T_PropV, state: "EncodeState") -> None:
+    def encode(
+        self, encoder: "Encoder", value: T_PropV, state: "EncodeState", path: DataPath
+    ) -> None:
         raise NotImplementedError("Subclasses must implement encode method")
 
     @abstractmethod
-    def decode(self, decoder: "Decoder", state: "DecodeState") -> Optional[T_PropV]:
+    def decode(
+        self, decoder: "Decoder", state: "DecodeState", path: DataPath
+    ) -> Optional[T_PropV]:
         raise NotImplementedError("Subclasses must implement decode method")
 
 
@@ -139,20 +199,28 @@ class StringProp(Property[str]):
     def set(self, value: Any) -> str:
         return str(value)
 
-    def encode(self, encoder: Encoder, value: str, state: EncodeState) -> None:
+    def encode(
+        self, encoder: Encoder, value: str, state: EncodeState, path: DataPath
+    ) -> None:
         encoder.write_string(value)
 
-    def decode(self, decoder: Decoder, state: DecodeState) -> Optional[str]:
+    def decode(
+        self, decoder: Decoder, state: DecodeState, path: DataPath
+    ) -> Optional[str]:
         return decoder.read_string()
 
 
 class AnyURIProp(StringProp):
     """A string property whose value is encoded as an IRI rather than a plain string."""
 
-    def encode(self, encoder: Encoder, value: str, state: EncodeState) -> None:
+    def encode(
+        self, encoder: Encoder, value: str, state: EncodeState, path: DataPath
+    ) -> None:
         encoder.write_iri(value)
 
-    def decode(self, decoder: Decoder, state: DecodeState) -> Optional[str]:
+    def decode(
+        self, decoder: Decoder, state: DecodeState, path: DataPath
+    ) -> Optional[str]:
         return decoder.read_iri()
 
 
@@ -170,16 +238,20 @@ class DateTimeProp(Property[datetime]):
     def set(self, value: datetime) -> datetime:
         return self._normalize(value)
 
-    def encode(self, encoder: Encoder, value: datetime, state: EncodeState) -> None:
-        encoder.write_datetime(self.to_string(value))
+    def encode(
+        self, encoder: Encoder, value: datetime, state: EncodeState, path: DataPath
+    ) -> None:
+        encoder.write_datetime(self.to_string(path, value))
 
-    def decode(self, decoder: Decoder, state: DecodeState) -> Optional[datetime]:
+    def decode(
+        self, decoder: Decoder, state: DecodeState, path: DataPath
+    ) -> Optional[datetime]:
         s = decoder.read_datetime()
         if s is None:
             return None
         if isinstance(s, datetime):
             return self._normalize(s)
-        v = self.from_string(s)
+        v = self.from_string(path, s)
         return self._normalize(v)
 
     def _normalize(self, value: datetime) -> datetime:
@@ -204,15 +276,17 @@ class DateTimeProp(Property[datetime]):
         value = value.replace(microsecond=0)
         return value
 
-    def to_string(self, value: datetime) -> str:
+    def to_string(self, path: DataPath, value: datetime) -> str:
         value = self._normalize(value)
         if value.tzinfo == timezone.utc:
             return value.strftime(self.UTC_FORMAT_STR)
         return value.isoformat()
 
-    def from_string(self, value: str) -> datetime:
+    def from_string(self, path: DataPath, value: str) -> datetime:
         if not re.match(self.REGEX, value):
-            raise ValueError(f"'{value}' is not a correctly formatted datetime")
+            raise ValidationError(
+                path, f"'{value}' is not a correctly formatted datetime"
+            )
         if "Z" in value:
             d = datetime(
                 *(time.strptime(value, self.UTC_FORMAT_STR)[0:6]),
@@ -244,10 +318,14 @@ class IntegerProp(Property[int]):
     def set(self, value: Any) -> int:
         return int(value)
 
-    def encode(self, encoder: Encoder, value: int, state: EncodeState) -> None:
+    def encode(
+        self, encoder: Encoder, value: int, state: EncodeState, path: DataPath
+    ) -> None:
         encoder.write_integer(value)
 
-    def decode(self, decoder: Decoder, state: DecodeState) -> Optional[int]:
+    def decode(
+        self, decoder: Decoder, state: DecodeState, path: DataPath
+    ) -> Optional[int]:
         return decoder.read_integer()
 
 
@@ -256,10 +334,10 @@ class PositiveIntegerProp(IntegerProp):
 
     __slots__ = ()
 
-    def validate(self, value: Any) -> None:
-        super().validate(value)
+    def validate(self, path: DataPath, value: Any) -> None:
+        super().validate(path, value)
         if value < 1:
-            raise ValueError(f"Value must be >= 1. Got {value}")
+            raise ValidationError(path, f"Value must be >= 1. Got {value}")
 
 
 class NonNegativeIntegerProp(IntegerProp):
@@ -267,10 +345,10 @@ class NonNegativeIntegerProp(IntegerProp):
 
     __slots__ = ()
 
-    def validate(self, value: Any) -> None:
-        super().validate(value)
+    def validate(self, path: DataPath, value: Any) -> None:
+        super().validate(path, value)
         if value < 0:
-            raise ValueError(f"Value must be >= 0. Got {value}")
+            raise ValidationError(path, f"Value must be >= 0. Got {value}")
 
 
 class BooleanProp(Property[bool]):
@@ -283,10 +361,14 @@ class BooleanProp(Property[bool]):
     def set(self, value: Any) -> bool:
         return bool(value)
 
-    def encode(self, encoder: Encoder, value: bool, state: EncodeState) -> None:
+    def encode(
+        self, encoder: Encoder, value: bool, state: EncodeState, path: DataPath
+    ) -> None:
         encoder.write_bool(value)
 
-    def decode(self, decoder: Decoder, state: DecodeState) -> Optional[bool]:
+    def decode(
+        self, decoder: Decoder, state: DecodeState, path: DataPath
+    ) -> Optional[bool]:
         return decoder.read_bool()
 
 
@@ -301,11 +383,17 @@ class FloatProp(Property[float]):
         return float(value)
 
     def encode(
-        self, encoder: Encoder, value: Union[float, int], state: EncodeState
+        self,
+        encoder: Encoder,
+        value: Union[float, int],
+        state: EncodeState,
+        path: DataPath,
     ) -> None:
         encoder.write_float(value)
 
-    def decode(self, decoder: Decoder, state: DecodeState) -> Optional[float]:
+    def decode(
+        self, decoder: Decoder, state: DecodeState, path: DataPath
+    ) -> Optional[float]:
         return decoder.read_float()
 
 
@@ -361,8 +449,8 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
         self.cls = cls
         self.required = required
 
-    def validate(self, value: Any) -> None:
-        check_type(value, (self.cls, str))
+    def validate(self, path: DataPath, value: Any) -> None:
+        check_type(path, value, (self.cls, str))
 
     def set(self, value: Any) -> Union[str, "SHACLObject"]:
         if isinstance(value, SHACLObject):
@@ -372,8 +460,8 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
     def walk(
         self,
         value: Optional[Union[str, "SHACLObject"]],
-        callback: Callable[[Any, List[str]], bool],
-        path: List[str],
+        callback: Callable[[Any, DataPath], bool],
+        path: DataPath,
     ) -> None:
         if value is None:
             return
@@ -401,24 +489,30 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
                     yield c
 
     def encode(
-        self, encoder: Encoder, value: Union[str, "SHACLObject"], state: EncodeState
+        self,
+        encoder: Encoder,
+        value: Union[str, "SHACLObject"],
+        state: EncodeState,
+        path: DataPath,
     ) -> None:
         if value is None:
-            raise ValueError("Object cannot be None")
+            raise EncodeError(path, "Object cannot be None")
 
         if isinstance(value, str):
             encoder.write_iri(value, self.compact(value) or state.compact_iri(value))
             return
 
-        return value.encode(encoder, state)
+        return value.encode(encoder, state, path)
 
-    def decode(self, decoder: Decoder, state: DecodeState) -> Union[str, "SHACLObject"]:
+    def decode(
+        self, decoder: Decoder, state: DecodeState, path: DataPath
+    ) -> Union[str, "SHACLObject"]:
         if decoder.is_object():
-            return SHACLObject.decode(decoder, state, self.cls)
+            return SHACLObject.decode(decoder, state, path, self.cls)
 
         iri = decoder.read_iri()
         if iri is None:
-            raise TypeError("IRI cannot be None")
+            raise DecodeError(path, "IRI cannot be None")
 
         iri = self.expand(iri) or state.expand_iri(iri) or iri
 
@@ -429,7 +523,7 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
         if obj is None:
             return iri
 
-        self.validate(obj)
+        self.validate(path, obj)
         return obj
 
     def link_prop(
@@ -438,6 +532,7 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
         objectset: "SHACLObjectSet",
         missing: Optional[Set[str]],
         visited: Set["SHACLObject"],
+        path: DataPath,
     ) -> Optional[Union[str, "SHACLObject"]]:
         if value is None:
             return value
@@ -445,7 +540,7 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
         if isinstance(value, str):
             o = objectset.find_by_id(value)
             if o is not None:
-                self.validate(o)
+                self.validate(path, o)
                 return o
 
             if missing is not None:
@@ -459,9 +554,9 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
             # find_by_id will always return a SHACLObject because we pass value as default.
             # So we can safely cast here to allow subsequent value.link_helper call to work.
             value = cast("SHACLObject", objectset.find_by_id(value._id, value))
-            self.validate(value)
+            self.validate(path, value)
 
-        value.link_helper(objectset, missing, visited)
+        value.link_helper(objectset, missing, visited, path)
         return value
 
 
@@ -480,11 +575,13 @@ class ListProxy(Generic[T_PropV]):
         self._prop: Property[T_PropV] = prop
 
     def append(self, value: T_PropV) -> None:
-        self._prop.validate(value)
+        with DataPath().push_index(len(self._data)) as p:
+            self._prop.validate(p, value)
         self._data.append(self._prop.set(value))
 
     def insert(self, idx: int, value: T_PropV) -> None:
-        self._prop.validate(value)
+        with DataPath().push_index(idx) as p:
+            self._prop.validate(p, value)
         self._data.insert(idx, self._prop.set(value))
 
     def extend(self, items: Iterable[T_PropV]) -> None:
@@ -512,13 +609,15 @@ class ListProxy(Generic[T_PropV]):
     def __setitem__(
         self, key: Union[int, slice], value: Union[T_PropV, Iterable[T_PropV]]
     ) -> None:
+        path = DataPath()
         if isinstance(key, slice):
             val_iter = cast(Iterable[T_PropV], value)
-            for v in val_iter:
-                self._prop.validate(v)
+            for idx, v in enumerate(val_iter):
+                with path.push_index(idx) as p:
+                    self._prop.validate(p, v)
             self._data[key] = [self._prop.set(v) for v in val_iter]
         elif isinstance(key, int):
-            self._prop.validate(value)
+            self._prop.validate(path, value)
             self._data[key] = self._prop.set(value)
         else:
             raise TypeError(
@@ -566,11 +665,12 @@ class ListProp(Property[ListProxy[T_PropV]]):
     def init(self) -> ListProxy[T_PropV]:
         return ListProxy(self.prop)
 
-    def validate(self, value: Any) -> None:
-        super().validate(value)
+    def validate(self, path: DataPath, value: Any) -> None:
+        super().validate(path, value)
 
-        for i in value:
-            self.prop.validate(i)
+        for idx, i in enumerate(value):
+            with path.push_index(idx) as p:
+                self.prop.validate(p, i)
 
     def set(
         self,
@@ -581,29 +681,34 @@ class ListProp(Property[ListProxy[T_PropV]]):
 
         return ListProxy(self.prop, [self.prop.set(d) for d in value])
 
-    def check_min_count(self, value: ListProxy[T_PropV], min_count: int) -> bool:
-        check_type(value, ListProxy)
+    def check_min_count(
+        self, path: DataPath, value: ListProxy[T_PropV], min_count: int
+    ) -> bool:
+        check_type(path, value, ListProxy)
         return len(value) >= min_count
 
-    def check_max_count(self, value: ListProxy[T_PropV], max_count: int) -> bool:
-        check_type(value, ListProxy)
+    def check_max_count(
+        self, path: DataPath, value: ListProxy[T_PropV], max_count: int
+    ) -> bool:
+        check_type(path, value, ListProxy)
         return len(value) <= max_count
 
-    def elide(self, value: ListProxy[T_PropV]) -> bool:
-        check_type(value, ListProxy)
+    def elide(self, path: DataPath, value: ListProxy[T_PropV]) -> bool:
+        check_type(path, value, ListProxy)
         return len(value) == 0
 
     def walk(
         self,
         value: ListProxy[T_PropV],
-        callback: Callable[[Any, List[str]], bool],
-        path: List[str],
+        callback: Callable[[Any, DataPath], bool],
+        path: DataPath,
     ) -> None:
         if value is None:
             return
         callback(value, path)
         for idx, v in enumerate(value):
-            self.prop.walk(v, callback, path + [f"[{idx}]"])
+            with path.push_index(idx) as p:
+                self.prop.walk(v, callback, p)
 
     def iter_objects(
         self,
@@ -623,34 +728,46 @@ class ListProp(Property[ListProxy[T_PropV]]):
         objectset: "SHACLObjectSet",
         missing: Optional[Set[str]],
         visited: Set["SHACLObject"],
+        path: DataPath,
     ) -> ListProxy[T_PropV]:
         if value is None:
             return ListProxy(self.prop)
 
-        data: List[T_PropV] = [
-            cast(T_PropV, self.prop.link_prop(v, objectset, missing, visited))
-            for v in value
-        ]
+        data: List[T_PropV] = []
+        for idx, v in enumerate(value):
+            with path.push_index(idx) as p:
+                data.append(
+                    cast(
+                        T_PropV, self.prop.link_prop(v, objectset, missing, visited, p)
+                    )
+                )
 
         return ListProxy(self.prop, data=data)
 
     def encode(
-        self, encoder: Encoder, value: ListProxy[T_PropV], state: EncodeState
+        self,
+        encoder: Encoder,
+        value: ListProxy[T_PropV],
+        state: EncodeState,
+        path: DataPath,
     ) -> None:
-        check_type(value, ListProxy)
+        check_type(path, value, ListProxy)
 
         with encoder.write_list() as list_s:
-            for v in value:
-                with list_s.write_list_item() as item_s:
-                    self.prop.encode(item_s, v, state)
+            for idx, v in enumerate(value):
+                with list_s.write_list_item() as item_s, path.push_index(idx) as p:
+                    self.prop.encode(item_s, v, state, p)
 
-    def decode(self, decoder: Decoder, state: DecodeState) -> ListProxy[T_PropV]:
+    def decode(
+        self, decoder: Decoder, state: DecodeState, path: DataPath
+    ) -> ListProxy[T_PropV]:
         data: List[T_PropV] = []
-        for val_d in decoder.read_list():
-            v = self.prop.decode(val_d, state)
-            if v is not None:
-                self.prop.validate(v)
-                data.append(v)
+        for idx, val_d in enumerate(decoder.read_list()):
+            with path.push_index(idx) as p:
+                v = self.prop.decode(val_d, state, p)
+                if v is not None:
+                    self.prop.validate(p, v)
+                    data.append(v)
 
         return ListProxy(self.prop, data=data)
 
@@ -670,21 +787,24 @@ class EnumProp(IRIProp[str]):
     ) -> None:
         super().__init__(values, pattern=pattern)
 
-    def validate(self, value: Any) -> None:
-        super().validate(value)
+    def validate(self, path: DataPath, value: Any) -> None:
+        super().validate(path, value)
 
         if value not in self.iri_values():
-            raise ValueError(
-                f"'{value}' is not a valid value. Choose one of {' '.join(self.iri_values())}"
+            raise ValidationError(
+                path,
+                f"'{value}' is not a valid value. Choose one of {' '.join(self.iri_values())}",
             )
 
-    def encode(self, encoder: Encoder, value: str, state: EncodeState) -> None:
+    def encode(
+        self, encoder: Encoder, value: str, state: EncodeState, path: DataPath
+    ) -> None:
         encoder.write_enum(value, self, self.compact(value))
 
-    def decode(self, decoder: Decoder, state: DecodeState) -> str:
+    def decode(self, decoder: Decoder, state: DecodeState, path: DataPath) -> str:
         v = decoder.read_enum(self)
         if v is None:
-            raise TypeError("Enum IRI cannot be None")
+            raise DecodeError(path, "Enum IRI cannot be None")
         return self.expand(v) or v
 
 
@@ -1050,25 +1170,28 @@ class SHACLObject(metaclass=SHACLObjectMeta):
     def _is_abstract(self) -> bool:
         return self.__class__.IS_ABSTRACT
 
-    def __set(self, p: ClassProp, value: Any) -> None:
+    def __set(self, p: ClassProp, path: DataPath, value: Any) -> None:
         if p.iri == "@id":
             if self.NODE_KIND == NodeKind.BlankNode:
                 if not is_blank_node(value):
-                    raise ValueError(
-                        f"{self.__class__.__name__} ({id(self)}) can only have local reference. Property '{p.iri}' cannot be set to {value!r} and must start with '_:'"
+                    raise ValidationError(
+                        path,
+                        f"{self.__class__.__name__} ({id(self)}) can only have local reference. Property '{p.iri}' cannot be set to {value!r} and must start with '_:'",
                     )
             elif self.NODE_KIND == NodeKind.IRI:
                 if not is_IRI(value):
-                    raise ValueError(
-                        f"{self.__class__.__name__} ({id(self)}) can only have an IRI value. Property '{p.iri}' cannot be set to {value!r}"
+                    raise ValidationError(
+                        path,
+                        f"{self.__class__.__name__} ({id(self)}) can only have an IRI value. Property '{p.iri}' cannot be set to {value!r}",
                     )
             else:
                 if not is_blank_node(value) and not is_IRI(value):
-                    raise ValueError(
-                        f"{self.__class__.__name__} ({id(self)}) Has invalid Property '{p.iri}' {value!r}. Must be a blank node or IRI"
+                    raise ValidationError(
+                        path,
+                        f"{self.__class__.__name__} ({id(self)}) Has invalid Property '{p.iri}' {value!r}. Must be a blank node or IRI",
                     )
 
-        p.prop.validate(value)
+        p.prop.validate(path, value)
         if p.deprecated:
             warnings.warn(
                 f"{self.__class__.__name__}.{p.pyname} is deprecated",
@@ -1095,7 +1218,9 @@ class SHACLObject(metaclass=SHACLObjectMeta):
             object.__setattr__(self, name, value)
             return
 
-        self.__set(self.__get_attr(name), value)
+        prop = self.__get_attr(name)
+        with DataPath().push_path(prop.pyname) as path:
+            self.__set(prop, path, value)
 
     def __getattr__(self, name: str) -> Any:
         if name == self.ID_ALIAS:
@@ -1119,7 +1244,9 @@ class SHACLObject(metaclass=SHACLObjectMeta):
         return getattr(self, self.__get_key(iri).pyname)
 
     def __setitem__(self, iri: str, value: Any) -> None:
-        self.__set(self.__get_key(iri), value)
+        key = self.__get_key(iri)
+        with DataPath().push_path(key.pyname) as path:
+            self.__set(key, path, value)
 
     def __delitem__(self, iri: str) -> None:
         self.__del(self.__get_key(iri))
@@ -1129,23 +1256,21 @@ class SHACLObject(metaclass=SHACLObjectMeta):
 
     def walk(
         self,
-        callback: Callable[[Any, List[str]], bool],
-        path: Optional[List[str]] = None,
+        callback: Callable[[Any, DataPath], bool],
+        path: DataPath,
     ) -> None:
         """
         Walk object tree, invoking the callback for each item
 
         Callback has the form:
 
-        def walk_callback(object: Any, path: List[str]) -> bool:
+        def walk_callback(object: Any, path: DataPath) -> bool:
             ...
         """
-        if path is None:
-            path = ["."]
-
         if callback(self, path):
             for p in self._OBJ_PY_PROPS.values():
-                p.prop.walk(getattr(self, p.pyname), callback, path + [f".{p.iri}"])
+                with path.push_path(p.pyname) as prop_path:
+                    p.prop.walk(getattr(self, p.pyname), callback, prop_path)
 
     def property_keys(self) -> Iterator[Tuple[Optional[str], str, Optional[str]]]:
         """Yield (python_name, iri, compact_iri) tuples for each property defined on this object."""
@@ -1171,12 +1296,13 @@ class SHACLObject(metaclass=SHACLObjectMeta):
             ):
                 yield c
 
-    def encode(self, encoder: Encoder, state: EncodeState) -> None:
+    def encode(self, encoder: Encoder, state: EncodeState, path: DataPath) -> None:
         """Encode this object to the given encoder, writing its type, ID, and properties."""
         idname = self.ID_ALIAS or "@id"
         if not self._id and self.NODE_KIND == NodeKind.IRI:
-            raise ValueError(
-                f"{self.__class__.__name__} ({id(self)}) must have a IRI for property '{idname}'"
+            raise EncodeError(
+                path,
+                f"{self.__class__.__name__} ({id(self)}) must have a IRI for property '{idname}'",
             )
 
         _id = state.get_object_id(self)
@@ -1195,61 +1321,69 @@ class SHACLObject(metaclass=SHACLObjectMeta):
             state.compact_iri(_id),
             bool(self._id) or state.is_refed(self),
         ) as obj_s:
-            self._encode_properties(obj_s, state)
+            self._encode_properties(obj_s, state, path)
 
-    def _encode_properties(self, encoder: Encoder, state: EncodeState) -> None:
+    def _encode_properties(
+        self, encoder: Encoder, state: EncodeState, path: DataPath
+    ) -> None:
         for p in self._OBJ_PY_PROPS.values():
-            value = getattr(self, p.pyname)
-            if p.prop.elide(value):
-                if p.min_count:
-                    raise ValueError(
-                        f"Property '{p.pyname}' in {self.__class__.__name__} ({id(self)}) is required (currently {value!r})"
-                    )
-                continue
+            with path.push_path(p.pyname) as prop_path:
+                value = getattr(self, p.pyname)
+                if p.prop.elide(prop_path, value):
+                    if p.min_count:
+                        raise ValidationError(
+                            prop_path,
+                            f"Property '{p.pyname}' in {self.__class__.__name__} ({id(self)}) is required (currently {value!r})",
+                        )
+                    continue
 
-            if p.min_count is not None:
-                if not p.prop.check_min_count(value, p.min_count):
-                    raise ValueError(
-                        f"Property '{p.pyname}' in {self.__class__.__name__} ({id(self)}) requires a minimum of {p.min_count} elements"
-                    )
+                if p.min_count is not None:
+                    if not p.prop.check_min_count(prop_path, value, p.min_count):
+                        raise ValidationError(
+                            prop_path,
+                            f"Property '{p.pyname}' in {self.__class__.__name__} ({id(self)}) requires a minimum of {p.min_count} elements",
+                        )
 
-            if p.max_count is not None:
-                if not p.prop.check_max_count(value, p.max_count):
-                    raise ValueError(
-                        f"Property '{p.pyname}' in {self.__class__.__name__} ({id(self)}) requires a maximum of {p.max_count} elements"
-                    )
+                if p.max_count is not None:
+                    if not p.prop.check_max_count(prop_path, value, p.max_count):
+                        raise ValidationError(
+                            prop_path,
+                            f"Property '{p.pyname}' in {self.__class__.__name__} ({id(self)}) requires a maximum of {p.max_count} elements",
+                        )
 
-            if p.iri == "@id":
-                continue
+                if p.iri == "@id":
+                    continue
 
-            with encoder.write_property(
-                p.iri, p.compact or state.compact_iri(p.iri)
-            ) as prop_s:
-                p.prop.encode(prop_s, value, state)
+                with encoder.write_property(
+                    p.iri, p.compact or state.compact_iri(p.iri)
+                ) as prop_s:
+                    p.prop.encode(prop_s, value, state, prop_path)
 
     @staticmethod
     def decode(
         decoder: Decoder,
         state: DecodeState,
+        path: DataPath,
         target_type: Optional[Type["SHACLObject"]] = None,
     ) -> "SHACLObject":
         if not decoder.is_object():
-            raise TypeError("Object expected")
+            raise DecodeError(path, "Object expected")
 
         typ_iri, obj_d = decoder.read_object()
         if typ_iri is None:
-            raise TypeError("Unable to determine type for object")
+            raise DecodeError(path, "Unable to determine type for object")
         typ_iri = state.objectset.expand_iri(typ_iri) or typ_iri
 
         if typ := SHACLObject.CLASSES.get(typ_iri):
             if target_type and not issubclass(typ, target_type):
-                raise TypeError(
-                    f"Type {typ_iri} is not valid where {target_type._TYPE} is expected"
+                raise ValidationError(
+                    path,
+                    f"Type {typ_iri} is not valid where {target_type._TYPE} is expected",
                 )
 
             if typ.IS_ABSTRACT:
-                raise NotImplementedError(
-                    f"{typ._TYPE} is abstract and cannot be implemented"
+                raise DecodeError(
+                    path, f"{typ._TYPE} is abstract and cannot be implemented"
                 )
 
             obj = typ()
@@ -1271,12 +1405,13 @@ class SHACLObject(metaclass=SHACLObjectMeta):
 
                 for t in possible:
                     try:
-                        return SHACLObject.decode(decoder, state, t)
-                    except TypeError:
+                        return SHACLObject.decode(decoder, state, path, t)
+                    except (ValidationError, DecodeError):
                         pass
 
-            raise TypeError(
-                f"Unable to create object of type '{typ_iri}'. No matching extensible class"
+            raise DecodeError(
+                path,
+                f"Unable to create object of type '{typ_iri}'. No matching extensible class",
             )
 
         _id = obj_d.read_object_id(obj.ID_ALIAS)
@@ -1284,43 +1419,50 @@ class SHACLObject(metaclass=SHACLObjectMeta):
             obj._id = state.expand_iri(_id) or _id
 
         if obj.NODE_KIND == NodeKind.IRI and not obj._id:
-            raise ValueError("Object is missing required IRI")
+            raise DecodeError(path, "Object is missing required IRI")
 
         if obj._id:
             if obj._id in state.read_objs:
                 return state.read_objs[obj._id]
             state.read_objs[obj._id] = obj
 
-        obj._decode_properties(obj_d, state)
+        obj._decode_properties(obj_d, state, path)
 
         if state.objectset is not None:
             state.objectset.add_index(obj)
 
         return obj
 
-    def _decode_properties(self, decoder: Decoder, state: DecodeState) -> None:
+    def _decode_properties(
+        self, decoder: Decoder, state: DecodeState, path: DataPath
+    ) -> None:
         for key in decoder.object_keys():
-            if not self._decode_prop(decoder, key, state):
-                raise KeyError(f"Unknown property '{key}'")
+            if not self._decode_prop(decoder, key, state, path):
+                raise DecodeError(path, f"Unknown property '{key}'")
 
-    def _decode_prop(self, decoder: Decoder, key: str, state: DecodeState) -> bool:
+    def _decode_prop(
+        self, decoder: Decoder, key: str, state: DecodeState, path: DataPath
+    ) -> bool:
         if key == self.ID_ALIAS:
             return True
 
         if self.ID_ALIAS and key == "@id":
-            raise KeyError("'@id' not allowed for class with ID alias")
+            raise DecodeError(path, "'@id' not allowed for class with ID alias")
 
         if key == "@id":
             return True
 
         with decoder.read_property(key) as prop_d:
             if prop_d is None:
-                raise TypeError(f"Property decoder for key '{key}' cannot be None")
+                raise DecodeError(
+                    path, f"Property decoder for key '{key}' cannot be None"
+                )
 
             if _JSS_SIGNATURE and key == _JSS_SIGNATURE:
                 if not prop_d.is_list():
-                    raise TypeError(
-                        f"Property '{key}' must be a list with signature information",
+                    raise DecodeError(
+                        path,
+                        f"Property '{key}' must be an object with signature information",
                     )
                 return True
 
@@ -1334,8 +1476,9 @@ class SHACLObject(metaclass=SHACLObjectMeta):
             else:
                 return False
 
-            v = p.prop.decode(prop_d, state)
-            self.__set(p, v)
+            with path.push_path(p.pyname) as prop_path:
+                v = p.prop.decode(prop_d, state, prop_path)
+                self.__set(p, prop_path, v)
         return True
 
     def link_helper(
@@ -1343,6 +1486,7 @@ class SHACLObject(metaclass=SHACLObjectMeta):
         objectset: SHACLObjectSet,
         missing: Optional[Set[str]],
         visited: Set["SHACLObject"],
+        path: DataPath,
     ) -> None:
         """Resolve string IRI references in this object's properties to actual SHACLObject instances."""
         if self in visited:
@@ -1351,16 +1495,18 @@ class SHACLObject(metaclass=SHACLObjectMeta):
         visited.add(self)
 
         for p in self._OBJ_PY_PROPS.values():
-            object.__setattr__(
-                self,
-                p.pyname,
-                p.prop.link_prop(
-                    getattr(self, p.pyname),
-                    objectset,
-                    missing,
-                    visited,
-                ),
-            )
+            with path.push_path(p.pyname) as prop_path:
+                object.__setattr__(
+                    self,
+                    p.pyname,
+                    p.prop.link_prop(
+                        getattr(self, p.pyname),
+                        objectset,
+                        missing,
+                        visited,
+                        prop_path,
+                    ),
+                )
 
     def __str__(self) -> str:
         parts = [
@@ -1428,38 +1574,51 @@ class SHACLExtensibleObject(SHACLObject):
     def _ext_data(self) -> Dict[str, Any]:
         return self._extensible["data"]
 
-    def _decode_properties(self, decoder: Decoder, state: DecodeState) -> None:
-        def decode_value(d: Decoder) -> Any:
+    def _decode_properties(
+        self, decoder: Decoder, state: DecodeState, path: DataPath
+    ) -> None:
+        def decode_value(d: Decoder, path: DataPath) -> Any:
             if not d.is_list():
-                return d.read_value()
+                try:
+                    return d.read_value()
+                except TypeError as e:
+                    raise DecodeError(path, str(e))
 
-            return [decode_value(val_d) for val_d in d.read_list()]
+            result = []
+            for idx, val_d in enumerate(d.read_list()):
+                with path.push_index(idx) as p:
+                    result.append(decode_value(val_d, p))
+
+            return result
 
         if self.CLOSED:
-            super()._decode_properties(decoder, state)
+            super()._decode_properties(decoder, state, path)
             return
 
         for key in decoder.object_keys():
-            if self._decode_prop(decoder, key, state):
+            if self._decode_prop(decoder, key, state, path):
                 continue
 
             if key is None:
-                raise KeyError("Property key cannot be None")
+                raise DecodeError(path, "Property key cannot be None")
 
             expanded_key = state.expand_iri(key) or key
 
             if not is_IRI(expanded_key):
-                raise KeyError(
-                    f"Extensible object properties must be IRIs. Got '{key}' (expanded to '{expanded_key}')"
+                raise DecodeError(
+                    path,
+                    f"Extensible object properties must be IRIs. Got '{key}' (expanded to '{expanded_key}')",
                 )
 
-            with decoder.read_property(key) as prop_d:
+            with decoder.read_property(key) as prop_d, path.push_path(key) as prop_path:
                 if prop_d is None:
-                    raise KeyError(f"Property '{key}' has no value")
-                self._ext_data[expanded_key] = decode_value(prop_d)
+                    raise DecodeError(path, f"Property '{key}' has no value")
+                self._ext_data[expanded_key] = decode_value(prop_d, prop_path)
 
-    def _encode_properties(self, encoder: Encoder, state: EncodeState) -> None:
-        super()._encode_properties(encoder, state)
+    def _encode_properties(
+        self, encoder: Encoder, state: EncodeState, path: DataPath
+    ) -> None:
+        super()._encode_properties(encoder, state, path)
         if self.CLOSED:
             return
 
@@ -1467,7 +1626,10 @@ class SHACLExtensibleObject(SHACLObject):
             if iri in self._OBJ_IRI_PROPS:
                 continue
 
-            with encoder.write_property(iri, state.compact_iri(iri)) as prop_s:
+            with (
+                encoder.write_property(iri, state.compact_iri(iri)) as prop_s,
+                path.push_path(iri) as prop_path,
+            ):
                 if isinstance(value, list):
                     v = value
                 else:
@@ -1484,8 +1646,9 @@ class SHACLExtensibleObject(SHACLObject):
                             elif isinstance(i, float):
                                 item_s.write_float(i)
                             else:
-                                raise TypeError(
-                                    f"Unsupported serialized type {type(i)} with value {i!r}"
+                                raise EncodeError(
+                                    prop_path,
+                                    f"Unsupported serialized type {type(i)} with value {i!r}",
                                 )
 
     def __getitem__(self, iri: str) -> Any:
@@ -1670,11 +1833,14 @@ class SHACLObjectSet(object):
         visited: Set[SHACLObject] = set()
         new_objects: Set[SHACLObject] = set()
 
-        for o in self.objects:
-            if o._id:
-                o = cast(SHACLObject, self.find_by_id(o._id, o))
-            o.link_helper(self, self.missing_ids, visited)
-            new_objects.add(o)
+        path = DataPath()
+
+        for idx, o in enumerate(self.objects):
+            with path.push_index(idx) as p:
+                if o._id:
+                    o = cast(SHACLObject, self.find_by_id(o._id, o))
+                o.link_helper(self, self.missing_ids, visited, p)
+                new_objects.add(o)
 
         self.objects = new_objects
 
@@ -1766,6 +1932,14 @@ class SHACLObjectSet(object):
 
         return SHACLObjectSet(new_objects, link=True)
 
+    def walk(self, callback: Callable[[Any, DataPath], bool]) -> None:
+        path = DataPath()
+        for idx, o in enumerate(self.objects):
+            # Note that every object in the root object set gets at least one
+            # reference
+            with path.push_index(idx) as p:
+                o.walk(callback, p)
+
     def inline_blank_nodes(self) -> None:
         """
         Removes (inlines) blank node objects from the root object set if they
@@ -1777,7 +1951,7 @@ class SHACLObjectSet(object):
         """
         ref_counts: Dict[SHACLObject, int] = {}
 
-        def walk_callback(value: SHACLObject, path: List[str]) -> bool:
+        def walk_callback(value: SHACLObject, path: DataPath) -> bool:
             if not isinstance(value, SHACLObject):
                 return True
 
@@ -1788,10 +1962,9 @@ class SHACLObjectSet(object):
 
             return True
 
-        for o in self.objects:
-            # Note that every object in the root object set gets at least one
-            # reference
-            o.walk(walk_callback)
+        # Note that every object in the root object set gets at least one
+        # reference
+        self.walk(walk_callback)
 
         new_objects: Set[SHACLObject] = set()
         for o in self.objects:
@@ -1822,7 +1995,7 @@ class SHACLObjectSet(object):
         """
         ref_counts: Dict[SHACLObject, int] = {}
 
-        def walk_callback(value: SHACLObject, path: List[str]) -> bool:
+        def walk_callback(value: SHACLObject, path: DataPath) -> bool:
             if not isinstance(value, SHACLObject):
                 return True
 
@@ -1846,7 +2019,8 @@ class SHACLObjectSet(object):
         for o in self.objects:
             if o._id:
                 state.add_refed(o)
-            o.walk(walk_callback)
+
+        self.walk(walk_callback)
 
         use_list = force_list or len(self.objects) > 1
 
@@ -1862,6 +2036,7 @@ class SHACLObjectSet(object):
         # getattr, which dominates runtime on large object sets.
         objects.sort(key=key if key is not None else SHACLObject._sort_key)
 
+        path = DataPath()
         if use_list:
             # Ensure top level objects are only written in the top level graph
             # node, and referenced by ID everywhere else. This is done by setting
@@ -1875,20 +2050,25 @@ class SHACLObjectSet(object):
                 state.written_objects.add(o)
 
             with encoder.write_object_list() as list_s:
-                for o in objects:
+                for idx, o in enumerate(objects):
                     # Allow this specific object to be written now
                     state.written_objects.remove(o)
-                    with list_s.write_list_item() as item_s:
-                        o.encode(item_s, state)
+                    with (
+                        list_s.write_list_item() as item_s,
+                        path.push_index(idx) as obj_path,
+                    ):
+                        o.encode(item_s, state, obj_path)
 
         elif objects:
-            objects[0].encode(encoder, state)
+            objects[0].encode(encoder, state, path)
 
     def decode(self, decoder: Decoder, state: DecodeState) -> None:
         """Decode objects from the decoder and add them to this set, then link all references."""
         self.create_index()
-        for obj_d in decoder.read_list():
-            o = SHACLObject.decode(obj_d, state)
+        path = DataPath()
+        for idx, obj_d in enumerate(decoder.read_list()):
+            with path.push_index(idx) as obj_path:
+                o = SHACLObject.decode(obj_d, state, obj_path)
             self.objects.add(o)
 
         self._link()

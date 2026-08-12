@@ -717,11 +717,8 @@ def is_blank_node(s: Any) -> bool:
 # fmt: off
 """Format Guard{{ '"' }}{{ '"' }}{{ '"' }}
 _USE_SLOTS = {{ use_slots }}
-{% if version_str %}
-VERSION_STRING = "{{ version_str }}"
-{% endif %}{% if version %}
-VERSION = {{ version }}
-{% endif %}
+{% if version_str %}VERSION_STRING = "{{ version_str }}"{% endif %}
+{% if version %}VERSION = {{ version }}{% endif %}
 {{ '"' }}{{ '"' }}{{ '"' }}Format Guard"""
 # fmt: on
 

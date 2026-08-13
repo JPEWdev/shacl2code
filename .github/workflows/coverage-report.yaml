@@ -3,7 +3,7 @@ name: Post coverage comment
 
 on:
   workflow_run:
-    workflows: ["Generate coverage"]
+    workflows: ["Test shacl2code"]
     types:
       - completed
 

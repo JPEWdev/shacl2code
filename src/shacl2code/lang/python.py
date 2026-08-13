@@ -77,13 +77,20 @@ def varname(*name):
     return name
 
 
+def prop_shape(prop):
+    """Classify a property's container shape: (is_list, has_ref, is_enum)."""
+    is_list = prop.max_count is None or prop.max_count != 1
+    is_enum = bool(prop.enum_values)
+    has_ref = bool(prop.class_id) and not is_enum
+    return is_list, has_ref, is_enum
+
+
 def protocols_use_datetime(classes: Iterable[Class]) -> bool:
     """Whether any class has a plain datetime-typed scalar property."""
     for cls in classes:
         for prop in cls.properties:
-            is_list = prop.max_count is None or prop.max_count != 1
-            has_ref = bool(prop.class_id) and not prop.enum_values
-            is_scalar = not (is_list or has_ref or prop.enum_values)
+            is_list, has_ref, is_enum = prop_shape(prop)
+            is_scalar = not (is_list or has_ref or is_enum)
             if is_scalar and DATATYPE_PYTHON_TYPES[prop.datatype] == "datetime":
                 return True
     return False
@@ -171,6 +178,7 @@ class PythonRender(JinjaTemplateRender):
     def get_extra_env(self):
         return {
             "varname": varname,
+            "prop_shape": prop_shape,
             "protocols_use_datetime": protocols_use_datetime,
             "DATATYPE_CLASSES": DATATYPE_CLASSES,
             "DATATYPE_PYTHON_TYPES": DATATYPE_PYTHON_TYPES,

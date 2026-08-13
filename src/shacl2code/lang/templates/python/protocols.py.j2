@@ -89,11 +89,10 @@ class {{ varname(*class.clsname) }}(
     {{ class.id_property }}: Optional[str]
     {%- endif %}
     {%- for prop in class.properties %}
-        {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
-        {%- set has_ref = prop.class_id and not prop.enum_values %}
-        {%- if prop.enum_values %}
+        {%- set is_list, has_ref, is_enum = prop_shape(prop) %}
+        {%- if is_enum %}
             {%- set ptype = "str" %}
-        {%- elif prop.class_id %}
+        {%- elif has_ref %}
             {%- set ptype = "Any" %}
         {%- else %}
             {%- set ptype = DATATYPE_PYTHON_TYPES[prop.datatype] %}

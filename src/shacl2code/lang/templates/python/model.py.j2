@@ -899,7 +899,7 @@ class SHACLObjectMeta(type):
         SHACLObject.CLASSES[key] = c
 
 
-register_lock = threading.Lock()
+_register_lock = threading.Lock()
 _ALL_NAMED_INDIVIDUAL_IDS: Set[str] = set()
 T_SHACLObject = TypeVar("T_SHACLObject", bound="SHACLObject")
 
@@ -1002,7 +1002,7 @@ class SHACLObject(metaclass=SHACLObjectMeta):
         if self.ONTOLOGY:
             _warn_ontology(self.ONTOLOGY)
 
-        with register_lock:
+        with _register_lock:
             cls = self.__class__
             if cls._NEEDS_REG:
                 for p in cls._OBJ_PY_PROPS.values():

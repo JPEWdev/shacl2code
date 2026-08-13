@@ -3344,7 +3344,6 @@ class TestModelAll:
 
             # Generator infrastructure: constants, base/encoder/decoder classes.
             assert "CONTEXT_URLS" in imported
-            assert "NAMED_INDIVIDUALS" in imported
             assert "SHACLObject" in imported
             assert "SHACLObjectSet" in imported
             assert "JSONLDDecoder" in imported
@@ -3353,13 +3352,16 @@ class TestModelAll:
             # expected to be included.
             assert "RDFSerializer" in imported
 
-            # Must not leak imports/type-checking machinery from model.py.
+            # Must not leak imports/type-checking machinery from model.py,
+            # nor internal bookkeeping state that isn't part of the public API.
             assert not imported & {
                 "TYPE_CHECKING",
                 "Any",
                 "List",
                 "TypeVar",
                 "json",
+                "NAMED_INDIVIDUALS",
+                "register_lock",
             }
 
             # The model was loaded as a side effect of the wildcard import.

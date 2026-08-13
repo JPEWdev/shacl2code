@@ -30,11 +30,12 @@ LIB_OBJS = {{ lib_obj_files }}
 
 VALIDATE_OBJS = {{ basename }}-validate.o
 ALL_OBJS = $(LIB_OBJS) $(VALIDATE_OBJS)
+ALL_DEPS = $(ALL_OBJS:.o=.d)
 
 all: lib{{ basename }}.so lib{{ basename }}.a {{ basename }}-validate docs
 
 clean:
-	rm -rf *.o *.so *.a {{ basename }}-validate doc/
+	rm -rf *.d *.o *.so *.a {{ basename }}-validate doc/
 
 install: lib{{ basename }}.so lib{{ basename }}.a docs
 	# Library
@@ -72,6 +73,7 @@ install: lib{{ basename }}.so lib{{ basename }}.a docs
 	@echo " [CC]  $<"
 	$(CXX) -c -o $@ $< $(CPPFLAGS) $(CXXFLAGS) \
 		-fPIC \
+		-MMD -MP \
 		-fvisibility=hidden \
 		-fvisibility-inlines-hidden \
 		-D{{ macro_prefix }}_DLL=1 \
@@ -108,6 +110,8 @@ docs:
 $(V).SILENT:
 
 .PHONY: clean all docs
+
+-include $(ALL_DEPS)
 
 {#
 vim: ft=make

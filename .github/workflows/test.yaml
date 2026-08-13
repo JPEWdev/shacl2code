@@ -57,12 +57,12 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt update
-          sudo apt install -y build-essential cppcheck doxygen graphviz
+          sudo apt install -y build-essential cppcheck doxygen graphviz ccache
       - name: Install macOS packages
         if: runner.os == 'macOS'
         run: |
           brew update
-          brew install cppcheck doxygen gcc go graphviz
+          brew install cppcheck doxygen gcc go graphviz ccache
       - name: Install Go static analysis tools
         run: |
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
@@ -70,6 +70,10 @@ jobs:
       - name: Install Rust static analysis tools
         run: |
           rustup component add clippy
+      - name: Configure ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ github.job }}-${{ matrix.os }}-${{ matrix.python-version }}
       - name: Build package
         run: |
           python -m build

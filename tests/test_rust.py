@@ -6,6 +6,7 @@
 # SPDX-License-Identifier: MIT
 
 import json
+import os
 import subprocess
 import textwrap
 from enum import Enum
@@ -43,36 +44,21 @@ class Progress(Enum):
     RUNS = 3
 
 
-def _build_rust_prog(test_lib, tmp_path, name, code):
-    """Build a Rust binary crate that depends on the generated library."""
-    (tmp_path / "src").mkdir(exist_ok=True)
+@pytest.fixture(scope="module")
+def cargo_run(tmp_path_factory):
+    build_path = tmp_path_factory.mktemp("rust-build")
 
-    cargo_toml = tmp_path / "Cargo.toml"
-    cargo_toml.write_text(textwrap.dedent(f"""\
-            [package]
-            name = "{name}"
-            version = "0.1.0"
-            edition = "2021"
+    def f(*args, **kwargs):
+        env = os.environ.copy()
+        env["CARGO_BUILD_BUILD_DIR"] = build_path
 
-            [dependencies]
-            shacl_model = {{ path = "{test_lib}" }}
-            serde_json = "1"
-            """))
+        return subprocess.run(["cargo"] + list(args), env=env, **kwargs)
 
-    src = tmp_path / "src" / "main.rs"
-    src.write_text(code)
-
-    subprocess.run(
-        ["cargo", "build", "--release"],
-        cwd=tmp_path,
-        check=True,
-    )
-
-    return tmp_path / "target" / "release" / name
+    yield f
 
 
 @pytest.fixture(scope="module")
-def test_lib(tmp_path_factory, model_server):
+def test_lib(tmp_path_factory, model_server, cargo_run):
     libdir = tmp_path_factory.mktemp("lib")
 
     subprocess.run(
@@ -90,17 +76,42 @@ def test_lib(tmp_path_factory, model_server):
         check=True,
     )
 
-    subprocess.run(
-        ["cargo", "build"],
-        cwd=libdir / "shacl_model",
-        check=True,
-    )
+    cargo_run("build", cwd=libdir / "shacl_model", check=True)
 
     return libdir / "shacl_model"
 
 
+@pytest.fixture(scope="module")
+def build_rust_prog(test_lib, tmp_path_factory, cargo_run):
+    def f(name, code):
+        """Build a Rust binary crate that depends on the generated library."""
+        tmp_path = tmp_path_factory.mktemp(f"rust-{name}")
+        (tmp_path / "src").mkdir(exist_ok=True)
+
+        cargo_toml = tmp_path / "Cargo.toml"
+        cargo_toml.write_text(textwrap.dedent(f"""\
+                [package]
+                name = "{name}"
+                version = "0.1.0"
+                edition = "2021"
+
+                [dependencies]
+                shacl_model = {{ path = "{test_lib}" }}
+                serde_json = "1"
+                """))
+
+        src = tmp_path / "src" / "main.rs"
+        src.write_text(code)
+
+        cargo_run("build", "--release", cwd=tmp_path, check=True)
+
+        return tmp_path / "target" / "release" / name
+
+    yield f
+
+
 @pytest.fixture
-def compile_test(test_lib, tmp_path):
+def compile_test(test_lib, tmp_path, cargo_run):
     def f(code_fragment, *, passes=True, progress=None):
         # Support both old 'passes' API and new 'progress' API
         if progress is None:
@@ -155,8 +166,9 @@ def compile_test(test_lib, tmp_path):
                 """)
         )
 
-        p = subprocess.run(
-            ["cargo", "build", "--release"],
+        p = cargo_run(
+            "build",
+            "--release",
             cwd=tmp_path,
             capture_output=True,
             encoding="utf-8",
@@ -202,13 +214,9 @@ def compile_test(test_lib, tmp_path):
 
 
 @pytest.fixture(scope="module")
-def validate_test(test_lib, tmp_path_factory):
+def validate_test(build_rust_prog):
     """Build a validation program that reads JSON-LD and validates it."""
-    tmp_path = tmp_path_factory.mktemp("validate")
-
-    prog = _build_rust_prog(
-        test_lib,
-        tmp_path,
+    prog = build_rust_prog(
         "validate",
         textwrap.dedent("""\
             use shacl_model::*;
@@ -251,13 +259,9 @@ def validate_test(test_lib, tmp_path_factory):
 
 
 @pytest.fixture(scope="module")
-def roundtrip_test(test_lib, tmp_path_factory):
+def roundtrip_test(build_rust_prog):
     """Build a roundtrip program that reads JSON-LD, decodes, re-encodes."""
-    tmp_path = tmp_path_factory.mktemp("roundtrip")
-
-    prog = _build_rust_prog(
-        test_lib,
-        tmp_path,
+    prog = build_rust_prog(
         "roundtrip",
         textwrap.dedent("""\
             use shacl_model::*;
@@ -292,13 +296,9 @@ def roundtrip_test(test_lib, tmp_path_factory):
 
 
 @pytest.fixture(scope="module")
-def link_test(test_lib, tmp_path_factory):
+def link_test(build_rust_prog):
     """Build a link test program that checks reference resolution."""
-    tmp_path = tmp_path_factory.mktemp("link")
-
-    prog = _build_rust_prog(
-        test_lib,
-        tmp_path,
+    prog = build_rust_prog(
         "link",
         textwrap.dedent("""\
             use shacl_model::*;
@@ -437,14 +437,10 @@ def _build_rust_module(tmp_path, model_server, args):
 
 @pytest.mark.parametrize(*RUST_MODEL_TESTS)
 class TestOutput:
-    def test_output_compile(self, tmp_path, model_server, args):
+    def test_output_compile(self, cargo_run, tmp_path, model_server, args):
         _build_rust_module(tmp_path, model_server, args)
 
-        subprocess.run(
-            ["cargo", "build"],
-            cwd=tmp_path / "shacl_model",
-            check=True,
-        )
+        cargo_run("build", cwd=tmp_path / "shacl_model", check=True)
 
 
 @pytest.mark.parametrize(*RUST_MODEL_TESTS)
@@ -453,14 +449,18 @@ class TestStaticAnalysis:
     Static analysis checks for the generated Rust code
     """
 
-    def test_clippy(self, tmp_path, model_server, args):
+    def test_clippy(self, cargo_run, tmp_path, model_server, args):
         """
         cargo clippy static analysis
         """
         _build_rust_module(tmp_path, model_server, args)
 
-        subprocess.run(
-            ["cargo", "clippy", "--all-targets", "--", "-D", "warnings"],
+        cargo_run(
+            "clippy",
+            "--all-targets",
+            "--",
+            "-D",
+            "warnings",
             cwd=tmp_path / "shacl_model",
             check=True,
         )

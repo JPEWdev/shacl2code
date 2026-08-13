@@ -1820,7 +1820,10 @@ class SHACLObjectSet(object):
         else:
             objects = list(self.objects)
 
-        objects.sort(key=key)
+        # Default to _sort_key so Timsort computes each key once. Falling back
+        # to __lt__ (key=None) rebuilds the key on every comparison via
+        # getattr, which dominates runtime on large object sets.
+        objects.sort(key=key if key is not None else SHACLObject._sort_key)
 
         if use_list:
             # Ensure top level objects are only written in the top level graph

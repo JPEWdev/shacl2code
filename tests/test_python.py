@@ -16,9 +16,9 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Iterable, Tuple
 
-import jsonschema
-
 from jinja2 import TemplateRuntimeError
+
+import jsonschema
 
 import pyshacl
 

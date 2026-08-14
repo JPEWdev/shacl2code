@@ -18,6 +18,8 @@ from typing import Iterable, Tuple
 
 import jsonschema
 
+from jinja2 import TemplateRuntimeError
+
 import pyshacl
 
 import pytest
@@ -25,7 +27,7 @@ import pytest
 import rdflib
 
 from shacl2code.lang.python import protocols_use_datetime
-from shacl2code.model import Class, Model
+from shacl2code.model import Class, Model, Property
 from shacl2code.urlcontext import UrlContext
 
 from testfixtures import jsonvalidation, timetests
@@ -2926,6 +2928,24 @@ class TestProtocolsUseDatetime:
         """NO_DATETIME_MODEL has only a plain string property."""
         assert protocols_use_datetime(_load_classes(NO_DATETIME_MODEL)) is False
 
+    def test_raises_on_unknown_datatype(self) -> None:
+        """Unmapped datatype raises like model.py.j2's abort(), not KeyError."""
+        bad_prop = Property(
+            path="http://example.org/bad",
+            varname="bad",
+            datatype="http://example.org/not-a-real-datatype",
+            max_count=1,
+        )
+        bad_class = Class(
+            _id="http://example.org/BadClass",
+            clsname="BadClass",
+            parent_ids=[],
+            derived_ids=[],
+            properties=[bad_prop],
+        )
+        with pytest.raises(TemplateRuntimeError, match="Unknown data type"):
+            protocols_use_datetime([bad_class])
+
 
 @pytest.fixture(scope="module")
 def python_model_v1_protocols(
@@ -3352,8 +3372,7 @@ class TestModelAll:
             # expected to be included.
             assert "RDFSerializer" in imported
 
-            # Must not leak imports/type-checking machinery from model.py,
-            # nor internal bookkeeping state that isn't part of the public API.
+            # Must not leak model.py's imports or internal bookkeeping state.
             assert not imported & {
                 "TYPE_CHECKING",
                 "Any",

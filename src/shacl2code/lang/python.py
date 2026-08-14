@@ -8,6 +8,8 @@ import re
 from pathlib import Path
 from typing import Iterable
 
+from jinja2 import TemplateRuntimeError
+
 from .common import JinjaTemplateRender
 from .lang import TEMPLATE_DIR, language
 from ..model import Class
@@ -91,7 +93,12 @@ def protocols_use_datetime(classes: Iterable[Class]) -> bool:
         for prop in cls.properties:
             is_list, has_ref, is_enum = prop_shape(prop)
             is_scalar = not (is_list or has_ref or is_enum)
-            if is_scalar and DATATYPE_PYTHON_TYPES[prop.datatype] == "datetime":
+            if not is_scalar:
+                continue
+            if prop.datatype not in DATATYPE_PYTHON_TYPES:
+                # Same error as model.py.j2's abort()
+                raise TemplateRuntimeError("Unknown data type " + prop.datatype)
+            if DATATYPE_PYTHON_TYPES[prop.datatype] == "datetime":
                 return True
     return False
 

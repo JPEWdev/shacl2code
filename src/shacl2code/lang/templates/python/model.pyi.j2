@@ -475,7 +475,9 @@ class {{ varname(*class.clsname) }}(
         {%- endif %}
         **kwargs: Any
     ) -> None: ...
+    {%- if include_protocols %}
     def _protocol_{{ varname(*class.clsname) }}(self) -> None: ...
+    {%- endif %}
 
     {%- if class.id_property %}
     {{ class.id_property }}: Optional[str]

@@ -3052,9 +3052,11 @@ class {{ varname(*class.clsname) }}(
         {%- endfor %}
     }
     {%- endif %}
+    {%- if include_protocols %}
 
     def _protocol_{{ varname(*class.clsname) }}(self) -> None:
         pass
+    {%- endif %}
 
     {%- if class.properties %}
     PROPERTIES: ClassVar[List[ClassProp]] = [

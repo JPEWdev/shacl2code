@@ -9,7 +9,7 @@ from __future__ import annotations
 import importlib
 import warnings
 from types import ModuleType
-from typing import Any, List, TYPE_CHECKING, TypeVar
+from typing import Any, Callable, Dict, List, TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
     from .model import *  # noqa: F401, F403
@@ -32,6 +32,16 @@ if TYPE_CHECKING:
 {%- endif %}
 
 
+_LAZY_SUBMODULES: Dict[str, Callable[[], Any]] = {
+{%- if include_protocols %}
+    "protocols": lambda: importlib.import_module(f"{__name__}.protocols"),
+{%- endif %}
+{%- if include_main %}
+    "main": lambda: importlib.import_module(f"{__name__}.cmd").main,
+{%- endif %}
+}
+
+
 def __getattr__(name: str) -> Any:
     # PEP 562 lazy access: each branch imports only what it needs.
     if name == "__all__":
@@ -48,14 +58,8 @@ def __getattr__(name: str) -> Any:
                 or getattr(o, "__module__", None) is None  # plain constants
             )
         )
-{%- if include_protocols %}
-    if name == "protocols":
-        return importlib.import_module(f"{__name__}.protocols")
-{%- endif %}
-{%- if include_main %}
-    if name == "main":
-        return importlib.import_module(f"{__name__}.cmd").main
-{%- endif %}
+    if name in _LAZY_SUBMODULES:
+        return _LAZY_SUBMODULES[name]()
     mod = importlib.import_module(f"{__name__}.model")
     try:
         return getattr(mod, name)
@@ -66,13 +70,7 @@ def __getattr__(name: str) -> Any:
 def __dir__() -> List[str]:
     # Opt-in: model loads only when dir() is actually called.
     mod = importlib.import_module(f"{__name__}.model")
-    names = set(globals()) | set(dir(mod))
-{%- if include_protocols %}
-    names.add("protocols")
-{%- endif %}
-{%- if include_main %}
-    names.add("main")
-{%- endif %}
+    names = set(globals()) | set(dir(mod)) | set(_LAZY_SUBMODULES)
     return sorted(names)
 
 

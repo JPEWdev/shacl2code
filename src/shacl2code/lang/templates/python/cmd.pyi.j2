@@ -1,0 +1,21 @@
+# {{ disclaimer }}
+# SPDX-License-Identifier: {{ spdx_license }}
+
+import argparse
+from pathlib import Path
+from typing import Any
+
+from .model import (
+    DataPath,
+    JSONLDDeserializer,
+    JSONLDSerializer,
+    ListProxy,
+    SHACLObject,
+    SHACLObjectSet,
+)
+
+
+def print_tree(objectset: SHACLObjectSet, all_fields: bool = False) -> None: ...
+
+
+def main() -> int: ...

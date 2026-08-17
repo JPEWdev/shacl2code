@@ -225,6 +225,36 @@ class TestCheckType:
             check=True,
         )
 
+    def test_stubtest(self, tmp_path, args, python_args):
+        """
+        Mypy stub checks to ensure pyi stubs are in sync with py code
+        """
+        output_dir = tmp_path / "pymodel"
+        shacl2code_generate(args, python_args, output_dir)
+
+        pythonpath = os.environ.get("PYTHONPATH")
+        if pythonpath:
+            pythonpath = os.pathsep.join(str(tmp_path), pythonpath)
+        else:
+            pythonpath = str(tmp_path)
+
+        env = os.environ.copy()
+        env["PYTHONPATH"] = pythonpath
+
+        subprocess.run(
+            [
+                "stubtest",
+                "pymodel",
+                "--allow",
+                DATA_DIR / "stubtest" / "allow.txt",
+                "--ignore-unused-allowlist",
+                "--ignore-missing-stub",
+            ],
+            encoding="utf-8",
+            check=True,
+            env=env,
+        )
+
     def test_pyrefly(self, tmp_path, args, python_args):
         """
         Pyrefly static type checking

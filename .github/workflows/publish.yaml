@@ -34,7 +34,7 @@ jobs:
         run: python -m build
 
       - name: Embed SBOM into the wheel
-        uses: bact/pitloom@d0379c365f5c3c65c43b8570a639a1abdd1397d4 # v0.16.0
+        uses: bact/pitloom@03a76ceb35f53ebe74891c1d97c6a4021187785e # v0.16.1
         with:
           embed-wheel: "dist/*.whl"
           extras: "content-type"

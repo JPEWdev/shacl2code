@@ -80,6 +80,8 @@ def python_model(tmp_path_factory, model_context_url):
             TEST_MODEL,
             "--context",
             model_context_url,
+            "--jss-signature",
+            "signatures",
         ],
         [
             "--version",
@@ -154,6 +156,11 @@ MODEL_TESTS = (
             id="No main",
         ),
         pytest.param(["--input", TEST_MODEL], ["--version=1.0.0"], id="Version"),
+        pytest.param(
+            ["--input", TEST_MODEL, "--jss-signature", "signatures"],
+            [],
+            id="JSS Signature",
+        ),
     ],
 )
 
@@ -472,6 +479,73 @@ def test_jsonschema_validation(roundtrip, test_jsonschema):
         data = json.load(f)
 
     jsonschema.validate(data, schema=test_jsonschema)
+
+
+# TODO: Make python bindings pass the other JSON validation tests
+@pytest.mark.parametrize(
+    "passes,data",
+    [
+        pytest.param(
+            True,
+            {
+                "@context": jsonvalidation.CONTEXT,
+                "@graph": [
+                    {
+                        "@type": "test-class",
+                    },
+                ],
+                "signatures": [],
+            },
+            id="JSS Signature",
+        ),
+        pytest.param(
+            False,
+            {
+                "@context": jsonvalidation.CONTEXT,
+                "@graph": [
+                    {
+                        "@type": "test-class",
+                    },
+                ],
+                "unknown": {},
+            },
+            id="Unknown top level property with @graph",
+        ),
+        pytest.param(
+            True,
+            {
+                "@context": jsonvalidation.CONTEXT,
+                "@type": "test-class",
+                "signatures": [],
+            },
+            id="Inline with signature",
+        ),
+        pytest.param(
+            False,
+            {
+                "@context": jsonvalidation.CONTEXT,
+                "@graph": [
+                    {
+                        "@type": "test-class",
+                    },
+                ],
+                "signatures": "string",
+            },
+            id="Signature with wrong type",
+        ),
+    ],
+)
+def test_json_validation(passes, data, tmp_path, test_context_url, model_script):
+    jsonvalidation.replace_context(data, test_context_url)
+
+    data_file = tmp_path / "data.json"
+    data_file.write_text(json.dumps(data))
+
+    p = subprocess.run([model_script, data_file, "--outfile", os.devnull], check=False)
+    if passes:
+        assert p.returncode == 0
+    else:
+        assert p.returncode != 0
 
 
 @jsonvalidation.link_tests()

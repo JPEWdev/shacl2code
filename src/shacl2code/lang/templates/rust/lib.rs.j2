@@ -1562,6 +1562,19 @@ fn decode_ref(
     }
 }
 
+//{% if jss_signature %}
+// ============================================================
+// Check a JSS Signature
+// ============================================================
+
+fn check_jss_signature(v: &Value, path: &Path) -> Result<bool, Error> {
+    if v.is_array() {
+        return Ok(true);
+    }
+    return Err(Error::Decode(path.to_string(), "Signature value must be an array".to_string()));
+}
+//{% endif %}
+
 // ============================================================
 // Decode a SHACL object from JSON-LD
 // ============================================================
@@ -1647,6 +1660,12 @@ fn decode_shacl_object(
                             if k == "@type" || k == "@context" {
                                 continue;
                             }
+                            {% if jss_signature %}
+                            if k == "{{ jss_signature }}" {
+                                check_jss_signature(v, &path.push_path(k))?;
+                                continue;
+                            }
+                            {%- endif %}
                             match obj_mut.decode_property(k, v, path, state) {
                                 Ok(true) => {}
                                 _ => {
@@ -1687,6 +1706,12 @@ fn decode_shacl_object(
                         if k == "@type" || k == "@context" {
                             continue;
                         }
+                        {% if jss_signature %}
+                        if k == "{{ jss_signature }}" {
+                            check_jss_signature(v, &path.push_path(k))?;
+                            continue;
+                        }
+                        {%- endif %}
                         match obj_mut.decode_property(k, v, path, state) {
                             Ok(true) => {}
                             _ => {
@@ -1717,6 +1742,12 @@ fn decode_shacl_object(
         if k == "@type" || k == "@context" {
             continue;
         }
+        {% if jss_signature %}
+        if k == "{{ jss_signature }}" {
+            check_jss_signature(v, &path.push_path(k))?;
+            continue;
+        }
+        {%- endif %}
 
         let found = obj.as_shacl_object_mut().decode_property(k, v, path, state)?;
         if !found {
@@ -1908,6 +1939,11 @@ impl SHACLObjectSet {
                 "Wrong context URL(s)".to_string(),
             ));
         }
+        //{% if jss_signature %}
+        if let Some(signature_value) = dict.get("{{ jss_signature }}") {
+            check_jss_signature(signature_value, &path.push_path("{{ jss_signature }}"))?;
+        }
+        //{% endif %}
 
         let state = DecodeState {
             context: self.context.clone(),
@@ -1916,7 +1952,7 @@ impl SHACLObjectSet {
         if let Some(graph_val) = dict.get("@graph") {
             // Check for unknown root fields
             for k in dict.keys() {
-                if k != "@context" && k != "@graph" {
+                if k != "@context" && k != "@graph" {% if jss_signature %}&& k != "{{ jss_signature }}"{% endif %} {
                     return Err(Error::Decode(
                         path.to_string(),
                         format!("Unknown property '{}'", k),

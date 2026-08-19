@@ -15,6 +15,13 @@ on:
     paths: *trigger-paths
   workflow_call:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   # Check which language bindings are affected by the change
   changes:
@@ -140,6 +147,7 @@ jobs:
         with:
           # Black in this Python version must support all target-versions listed in pyproject.toml
           python-version: "3.14"
+          cache: pip
       - uses: psf/black@87928e6d6761a4a6d22250e1fee5601b3998086e # 26.5.1
       - uses: py-actions/flake8@84ec6726560b6d5bd68f2a5bed83d62b52bb50ba # v2.3.0
       - name: Install dependencies

@@ -880,7 +880,7 @@ class SHACLObjectMeta(type):
                     )
                 attrs[k] = v
 
-            NAMED_INDIVIDUALS.add(v)
+            _ALL_NAMED_INDIVIDUAL_IDS.add(v)
 
         attrs["_NEEDS_REG"] = True
 
@@ -900,7 +900,7 @@ class SHACLObjectMeta(type):
 
 
 register_lock = threading.Lock()
-NAMED_INDIVIDUALS: Set[str] = set()
+_ALL_NAMED_INDIVIDUAL_IDS: Set[str] = set()
 T_SHACLObject = TypeVar("T_SHACLObject", bound="SHACLObject")
 
 
@@ -1651,7 +1651,7 @@ class SHACLObjectSet(object):
         self.obj_by_id = obj_by_id
 
         # Named individuals aren't considered missing
-        self.missing_ids -= NAMED_INDIVIDUALS
+        self.missing_ids -= _ALL_NAMED_INDIVIDUAL_IDS
 
         return self.missing_ids
 

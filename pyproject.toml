@@ -32,7 +32,7 @@ license = "MIT"
 
 [project.optional-dependencies]
 dev = [
-    "bandit >= 1.8.6, < 1.9.0",  # latest version for Python 3.9 is 1.8.x
+    "bandit >= 1.8.6, < 1.10.0",  # latest version for Python 3.9 is 1.8.x
     "black >= 25.11.0",
     "flake8 >= 7.0.0",
     "flake8-import-order >= 0.19.2",
@@ -77,6 +77,11 @@ warn_redundant_casts = true
 # warn_return_any = true
 # warn_unreachable = true
 # warn_unused_ignores = true
+
+[[tool.pitloom.creator]]
+name = "Joshua Watt"
+email = "JPEWhacker@gmail.com"
+type = "person"
 
 [tool.pytest.ini_options]
 addopts = [

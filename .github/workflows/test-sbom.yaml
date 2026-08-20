@@ -1,37 +1,42 @@
 ---
-name: Upload Python Package
+# Tests that the SBOM generation and embedding step works correctly on every PR.
+name: Test SBOM generation
+
 on:
-  release:
-    types:
-      - published
+  push:
+    paths-ignore: &ignore-paths
+      - "docs/**"
+      - "**/*.md"
+      - "LICENSE*"
+  pull_request:
+    paths-ignore: *ignore-paths
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
-    uses: ./.github/workflows/test.yaml
-
-  deploy:
-    needs:
-      - test
-
+  test-sbom:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: '3.x'
+          python-version: "3.x"
+          cache: pip
 
-      - name: Install dependencies
+      - name: Install build tooling
         run: |
           python -m pip install --upgrade pip
           pip install build spdx3-validate
 
-      - name: Build package
-        run: python -m build
+      - name: Build wheel
+        run: python -m build --wheel
 
       - name: Embed SBOM into the wheel
         id: pitloom
@@ -66,6 +71,3 @@ jobs:
           mkdir -p extracted-sbom
           unzip -p "${whl}" "${entry}" > "extracted-sbom/${sbom_basename}"
           spdx3-validate --json "extracted-sbom/${sbom_basename}"
-
-      - name: Publish distribution to PyPI
-        uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # release/v1

@@ -1,0 +1,85 @@
+---
+name: Generate coverage
+
+on:
+  pull_request:
+    # Skip docs and edits to other workflows; later patterns override earlier.
+    paths: &trigger-paths
+      - "**"
+      - "!**/*.md"
+      - "!LICENSE"
+      - "!.github/ISSUE_TEMPLATE/**"
+      - "!.github/workflows/**"
+      - ".github/workflows/coverage-generate.yaml"
+  push:
+    branches:
+      - "main"
+    paths: *trigger-paths
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  coverage:
+    name: Generate coverage report
+    runs-on: ubuntu-latest
+    permissions:
+      # Gives the action the necessary permissions for publishing new
+      # comments in pull requests.
+      pull-requests: write
+      # Gives the action the necessary permissions for pushing data to the
+      # python-coverage-comment-action branch, and for editing existing
+      # comments (to avoid publishing multiple comments in the same PR)
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: scripts/package-lock.json
+      - name: Install dependencies
+        run: |
+          sudo apt install -y build-essential ccache cppcheck doxygen graphviz
+          npm install -g jsonld-cli
+          npm --prefix scripts ci
+      - name: Install Go static analysis tools
+        run: |
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+          go install honnef.co/go/tools/cmd/staticcheck@latest
+      - name: Install Rust static analysis tools
+        run: |
+          rustup component add clippy
+      - name: Configure ccache
+        uses: hendrikmuhs/ccache-action@d62db5f07c26379fc4b4e0916f098a92573c3b03 # v1.2.23
+        with:
+          key: ${{ github.job }}
+      - name: Install package
+        run: |
+          pip install -e .[dev]
+      - name: Generate coverage report
+        run: |
+          pytest -v
+      - name: Coverage comment
+        id: coverage_comment
+        uses: py-cov-action/python-coverage-comment-action@a05be3d2e8a6272d3ef5fb2840ab20368bb2eb71 # v4.3
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Store Pull Request comment to be posted
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: steps.coverage_comment.outputs.COMMENT_FILE_WRITTEN == 'true'
+        with:
+          # If you use a different name, update COMMENT_ARTIFACT_NAME accordingly
+          name: python-coverage-comment-action
+          # If you use a different name, update COMMENT_FILENAME accordingly
+          path: python-coverage-comment-action.txt

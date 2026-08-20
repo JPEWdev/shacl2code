@@ -10,6 +10,7 @@ on:
       - "!.github/ISSUE_TEMPLATE/**"
       - "!.github/workflows/**"
       - ".github/workflows/test.yaml"
+      - ".github/workflows/_pytest.yaml"
   pull_request:
     paths: *trigger-paths
   workflow_call:
@@ -22,88 +23,127 @@ permissions:
   contents: read
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    permissions:
-      contents: write # Needed by the coverage-comment step below
-      pull-requests: write # Needed by the coverage-comment step below
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
-        include:
-          - os: macos-latest
-            python-version: "3.10"
+  # Check which language bindings are affected by the change
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      cpp: ${{ steps.filter.outputs.cpp }}
+      golang: ${{ steps.filter.outputs.golang }}
+      jsonschema: ${{ steps.filter.outputs.jsonschema }}
+      python: ${{ steps.filter.outputs.python }}
+      rust: ${{ steps.filter.outputs.rust }}
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - name: Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
         with:
-          python-version: ${{ matrix.python-version }}
-          cache: pip
-      - name: Setup Node
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
-        with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: scripts/package-lock.json
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install build
-          npm install -g jsonld-cli
-          npm --prefix scripts ci
-      - name: Install Linux packages
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt update
-          sudo apt install -y build-essential cppcheck doxygen graphviz ccache
-      - name: Install macOS packages
-        if: runner.os == 'macOS'
-        run: |
-          brew update
-          brew install cppcheck doxygen gcc go graphviz ccache
-      - name: Install Go static analysis tools
-        run: |
-          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
-          go install honnef.co/go/tools/cmd/staticcheck@latest
-      - name: Install Rust static analysis tools
-        run: |
-          rustup component add clippy
-      - name: Configure ccache
-        uses: hendrikmuhs/ccache-action@v1.2
-        with:
-          key: ${{ github.job }}-${{ matrix.os }}-${{ matrix.python-version }}
-      - name: Build package
-        run: |
-          python -m build
-      - name: Install package
-        run: |
-          pip install -e .[dev]
-      - name: Run tests
-        run: |
-          pytest -v
-      - name: Coverage comment
-        id: coverage_comment
-        if: >-
-          matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11' &&
-          (github.event_name == 'pull_request' ||
-           (github.event_name == 'push' && github.ref == 'refs/heads/main'))
-        uses: py-cov-action/python-coverage-comment-action@2b84cfb222691291ba358a586c13606f0a9c172c # v3
-        with:
-          GITHUB_TOKEN: ${{ github.token }}
-      - name: Store Pull Request comment to be posted
-        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
-        if: steps.coverage_comment.outputs.COMMENT_FILE_WRITTEN == 'true'
-        with:
-          name: python-coverage-comment-action
-          path: python-coverage-comment-action.txt
+          filters: |
+            common: &common
+              - '.github/workflows/_pytest.yaml'
+              - '.github/workflows/test.yaml'
+              - 'src/shacl2code/*.py'
+              - 'src/shacl2code/lang/__init__.py'
+              - 'src/shacl2code/lang/common.py'
+              - 'src/shacl2code/lang/jinja.py'
+              - 'src/shacl2code/lang/lang.py'
+              - 'pyproject.toml'
+              - 'tests/conftest.py'
+              - 'tests/data/**'
+              - 'testfixtures/**'
+            cpp:
+              - *common
+              - 'src/shacl2code/lang/cpp.py'
+              - 'src/shacl2code/lang/sources/cpp/**'
+              - 'src/shacl2code/lang/templates/cpp/**'
+              - 'tests/test_cpp.py'
+            golang:
+              - *common
+              - 'src/shacl2code/lang/golang.py'
+              - 'src/shacl2code/lang/sources/golang/**'
+              - 'src/shacl2code/lang/templates/golang/**'
+              - 'tests/test_golang.py'
+            jsonschema:
+              - *common
+              - 'scripts/**'
+              - 'src/shacl2code/lang/jsonschema.py'
+              - 'src/shacl2code/lang/sources/jsonschema/**'
+              - 'src/shacl2code/lang/templates/jsonschema.j2'
+              - 'tests/test_jsonschema.py'
+            python:
+              - *common
+              - 'src/shacl2code/lang/python.py'
+              - 'src/shacl2code/lang/sources/python/**'
+              - 'src/shacl2code/lang/templates/python/**'
+              - 'tests/test_python.py'
+            rust:
+              - *common
+              - 'src/shacl2code/lang/rust.py'
+              - 'src/shacl2code/lang/templates/rust/**'
+              - 'tests/test_rust.py'
+
+  # Always run core (ignores language-specific test suites)
+  core:
+    uses: ./.github/workflows/_pytest.yaml
+    with:
+      install-native-toolchains: false
+      test-files: >-
+        tests
+        --ignore=tests/test_cpp.py
+        --ignore=tests/test_golang.py
+        --ignore=tests/test_jsonschema.py
+        --ignore=tests/test_python.py
+        --ignore=tests/test_rust.py
+
+  cpp:
+    needs: changes
+    if: needs.changes.outputs.cpp == 'true'
+    uses: ./.github/workflows/_pytest.yaml
+    with:
+      install-native-toolchains: true
+      test-files: tests/test_cpp.py
+
+  golang:
+    needs: changes
+    if: needs.changes.outputs.golang == 'true'
+    uses: ./.github/workflows/_pytest.yaml
+    with:
+      install-native-toolchains: false
+      install-go: true
+      install-go-staticcheck: true
+      test-files: tests/test_golang.py
+
+  jsonschema:
+    needs: changes
+    if: needs.changes.outputs.jsonschema == 'true'
+    uses: ./.github/workflows/_pytest.yaml
+    with:
+      install-native-toolchains: false
+      test-files: tests/test_jsonschema.py
+
+  python:
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
+    uses: ./.github/workflows/_pytest.yaml
+    with:
+      install-native-toolchains: false
+      test-files: tests/test_python.py
+
+  rust:
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
+    uses: ./.github/workflows/_pytest.yaml
+    with:
+      # `rust`/`cargo` preinstalled on runners
+      install-native-toolchains: false
+      install-rust-clippy: true
+      test-files: tests/test_rust.py
+
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           # Black in this Python version must support all target-versions listed in pyproject.toml
           python-version: "3.14"

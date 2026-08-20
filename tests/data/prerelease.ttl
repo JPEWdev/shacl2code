@@ -1,0 +1,25 @@
+@base <http://example.org/prerelease#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh-to-code: <https://jpewdev.github.io/shacl2code/schema#> .
+
+# A minimal model whose ontology is marked pre-release.
+# Used to verify IS_PRERELEASE = True is generated for a version whose
+# model TTL carries sh-to-code:isPreRelease true.
+
+<http://example.org/prerelease> a owl:Ontology ;
+    rdfs:comment "A pre-release test ontology" ;
+    rdfs:label "prerelease-test" ;
+    sh-to-code:isPreRelease true
+    .
+
+<prerelease-class> a rdfs:Class, sh:NodeShape, owl:Class ;
+    rdfs:comment "A class in a pre-release ontology" ;
+    sh:property [
+        sh:datatype xsd:string ;
+        sh:path <prop/name> ;
+        sh:maxCount 1
+    ]
+    .

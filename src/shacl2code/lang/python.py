@@ -6,9 +6,13 @@
 import keyword
 import re
 from pathlib import Path
+from typing import Iterable
+
+from jinja2 import TemplateRuntimeError
 
 from .common import JinjaTemplateRender
 from .lang import TEMPLATE_DIR, language
+from ..model import Class
 from ..util import convert_version_string
 
 DATATYPE_CLASSES = {
@@ -75,6 +79,30 @@ def varname(*name):
     return name
 
 
+def prop_shape(prop):
+    """Classify a property's container shape: (is_list, has_ref, is_enum)."""
+    is_list = prop.max_count is None or prop.max_count != 1
+    is_enum = bool(prop.enum_values)
+    has_ref = bool(prop.class_id) and not is_enum
+    return is_list, has_ref, is_enum
+
+
+def protocols_use_datetime(classes: Iterable[Class]) -> bool:
+    """Whether any class has a plain datetime-typed scalar property."""
+    for cls in classes:
+        for prop in cls.properties:
+            is_list, has_ref, is_enum = prop_shape(prop)
+            is_scalar = not (is_list or has_ref or is_enum)
+            if not is_scalar:
+                continue
+            if prop.datatype not in DATATYPE_PYTHON_TYPES:
+                # Same error as model.py.j2's abort()
+                raise TemplateRuntimeError("Unknown data type " + prop.datatype)
+            if DATATYPE_PYTHON_TYPES[prop.datatype] == "datetime":
+                return True
+    return False
+
+
 @language("python")
 class PythonRender(JinjaTemplateRender):
     """Render Python Language Bindings."""
@@ -90,8 +118,9 @@ class PythonRender(JinjaTemplateRender):
     def __init__(self, args):
         super().__init__(args)
         self.__output = args.output
-        self.__use_slots = args.use_slots
         self.__include_main = args.include_main == "yes"
+        self.__include_protocols = args.include_protocols == "yes"
+        self.__use_slots = args.use_slots
         self.__version_str = args.version
         if args.version:
             self.__version = repr(convert_version_string(args.version))
@@ -112,6 +141,15 @@ class PythonRender(JinjaTemplateRender):
             choices=("yes", "no"),
             default="yes",
             help="Generate a main function for the module. Default is '%(default)s'",
+        )
+        parser.add_argument(
+            "--include-protocols",
+            choices=("yes", "no"),
+            default="no",
+            help=(
+                "Include a protocols.py module with version-agnostic Protocol "
+                "types for every class. Default is '%(default)s'"
+            ),
         )
         parser.add_argument(
             "--use-slots",
@@ -141,9 +179,14 @@ class PythonRender(JinjaTemplateRender):
             yield get_file("cmd.py")
             yield get_file("__main__.py")
 
+        if self.__include_protocols:
+            yield get_file("protocols.py")
+
     def get_extra_env(self):
         return {
             "varname": varname,
+            "prop_shape": prop_shape,
+            "protocols_use_datetime": protocols_use_datetime,
             "DATATYPE_CLASSES": DATATYPE_CLASSES,
             "DATATYPE_PYTHON_TYPES": DATATYPE_PYTHON_TYPES,
         }
@@ -156,8 +199,9 @@ class PythonRender(JinjaTemplateRender):
         else:
             use_slots = False
         return {
-            "use_slots": use_slots,
             "include_main": self.__include_main,
-            "version_str": self.__version_str,
+            "include_protocols": self.__include_protocols,
+            "use_slots": use_slots,
             "version": self.__version,
+            "version_str": self.__version_str,
         }

@@ -100,6 +100,48 @@ shacl2code generate \
    --output schema.json
 ```
 
+#### JSON Schema draft version
+
+The default schema targets [Draft 2020-12][json-schema-2020-12] rather than
+[Draft 2019-09][json-schema-2019-09] because the annotation-collection semantics
+of `unevaluatedProperties` across `if/then/else` and `$ref` were underspecified
+in 2019-09 and clarified in 2020-12.
+
+With `--use-additional-properties`, `unevaluatedProperties` is not used,
+so the schema targets [Draft 2019-09][json-schema-2019-09], the minimum for
+the remaining keywords.
+
+#### `--use-additional-properties`
+
+The `--use-additional-properties` flag switches the property-restriction
+keyword from `unevaluatedProperties` to `additionalProperties` by inlining
+all inherited properties directly into each class definition instead of
+composing them via `$ref` chains.
+
+**When to use it:**
+
+- **Performance:** some JSON Schema validators (e.g. [json-schema-validator]
+  2.0.x) have [performance regressions][perf-issue] with `unevaluatedProperties`
+  because it requires tracking annotation state across the full evaluation tree.
+  `additionalProperties` is a simpler local lookup and avoids that cost.
+- **Draft 2020-12 not supported:** use this flag to get a schema that targets
+  [Draft 2019-09][json-schema-2019-09].
+
+**Trade-off:**
+
+- Larger schema: every class inlines its full inherited property list
+  (SPDX 3.0: 253 KB --> 336 KB, +33%; SPDX 3.1-dev: 452 KB --> 712 KB, +58%).
+- More permissive than default mode: `@context` is accepted on embedded
+  (non-root) objects, not just the root, because it's added to every class's
+  inlined property list so root documents can pass `additionalProperties: false`.
+  Default mode rejects `@context` on embedded objects.
+  (see [`test_context_on_embedded_object_*`](tests/test_jsonschema.py)).
+
+[json-schema-2019-09]: https://json-schema.org/draft/2019-09
+[json-schema-2020-12]: https://json-schema.org/draft/2020-12
+[json-schema-validator]: https://github.com/networknt/json-schema-validator
+[perf-issue]: https://github.com/networknt/json-schema-validator/issues/1216
+
 ## Developing
 
 Developing on `shacl2code` is best done using a virtual environment. You can

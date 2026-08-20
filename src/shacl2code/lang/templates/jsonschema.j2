@@ -1,5 +1,5 @@
 {
-    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$schema": "{% if use_additional_properties %}https://json-schema.org/draft/2019-09/schema{% else %}https://json-schema.org/draft/2020-12/schema{% endif %}",
     {%- if schema_id %}
     "$id": "{{ schema_id }}",
     {%- endif %}
@@ -42,35 +42,44 @@
     "then": {
         "type": "object",
         "properties": {
+            {%- if use_additional_properties %}
+            "@context": {},
+            {%- endif %}
             "@graph": {
                 "description": "Top level container for JSON-LD objects",
                 "type": "array",
                 "items": {
                     "type": "object",
-                    "$ref": "#/$defs/AnyClass",
+                    "$ref": "#/$defs/AnyClass"
+                    {%- if not use_additional_properties %},
                     "unevaluatedProperties": false
+                    {%- endif %}
                 }
             }
         },
         "required": ["@graph"]
+        {%- if use_additional_properties %},
+        "additionalProperties": false
+        {%- endif %}
     },
     "else": {
         "$ref": "#/$defs/AnyClass"
     },
+    {%- if not use_additional_properties %}
     "unevaluatedProperties": false,
+    {%- endif %}
 
     "$defs": {
     {%- for class in classes %}
-        {#- Classes are divided into 2 parts. The properties are separated into a separate object #}
-        {#- so that a object can references the properties of its parent without needing the const #}
-        {#- @type tag #}
+        {#- Default: _props splits inherited properties for parent reuse without repeating @type. #}
+        {#- --use-additional-properties: all inherited properties inlined per class. #}
         {%- if not class.is_abstract or class.is_extensible %}
         "{{ varname(*class.clsname) }}": {
             "if": {
                 "type": "object",
                 "properties": {
                     "{{ context.compact_iri("@type") }}": {
-                    {#- Abstract Extensible classes are weird; any type _except_ the specific class type is allowed #}
+                    {#- Abstract extensible: any IRI @type except the class's own is valid #}
                     {%- if class.is_abstract and class.is_extensible %}
                         "allOf":  [
                             { "$ref": "#/$defs/IRI" },
@@ -88,6 +97,68 @@
                 },
                 "required": ["{{ context.compact_iri("@type") }}"]
             },
+            {%- if use_additional_properties %}
+            {%- set all_props = get_all_properties(class) %}
+            {%- set required = [] %}
+            {%- if class.node_kind == SH.IRI %}
+                {{- required.append(class.id_property or "@id") or "" }}
+            {%- endif %}
+            {%- for _, prop in all_props %}
+                {%- if not prop.min_count is none and prop.min_count > 0 %}
+                    {{- required.append(context.compact_vocab(prop.path)) or "" }}
+                {%- endif %}
+            {%- endfor %}
+            "then": {
+                "type": "object",
+                {%- if class.deprecated %}
+                "deprecated": true,
+                {%- endif %}
+                "properties": {
+                    "{{ class.id_property or "@id" }}": { "$ref": "#/$defs/{{ class.node_kind.split("#")[-1] }}" },
+                    "{{ context.compact_iri("@type") }}": { "type": "string" },
+                    "@context": {}{% if all_props %},{% endif %}
+                    {%- for def_class, prop in all_props %}
+                    {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
+                    {%- set prop_ref = "#/$defs/prop_" + varname(*def_class.clsname) + "_" + varname(prop.varname) %}
+                    "{{ context.compact_vocab(prop.path) }}": {
+                    {%- if is_list %}
+                        "anyOf": [
+                            {
+                                "type": "array",
+                                {%- if prop.max_count is not none %}
+                                "maxItems": {{ prop.max_count }},
+                                {%- endif %}
+                                {%- if prop.min_count is not none %}
+                                "minItems": {{ prop.min_count }},
+                                {%- endif %}
+                                "items": {
+                                    "$ref": "{{ prop_ref }}"
+                                }
+                            }{% if allow_elided_lists %},
+                            {
+                                "$ref": "{{ prop_ref }}"
+                            }
+                            {%- endif %}
+                        ]
+                    {%- else %}
+                        "$ref": "{{ prop_ref }}"
+                    {%- endif %}
+                    }{% if not loop.last %},{% endif %}
+                    {%- endfor %}
+                }{% if required %},
+                "required": [
+                    {%- for r in required %}
+                    "{{ r }}"{% if not loop.last %},{% endif %}
+                    {%- endfor %}
+                ]
+                {%- endif %},
+                {%- if class.is_extensible %}
+                "additionalProperties": true
+                {%- else %}
+                "additionalProperties": false
+                {%- endif %}
+            },
+            {%- else %}
             "then": {
                 "allOf": [
                     {
@@ -108,6 +179,7 @@
                     { "$ref": "#/$defs/{{ varname(*class.clsname) }}_props" }
                 ]
             },
+            {%- endif %}
             "else": {
                 "const": "Not a {{ varname(*class.clsname) }}"
             }
@@ -116,10 +188,8 @@
         "{{ varname(*class.clsname) }}_derived": {
             {%- set ns = namespace(json_refs=[], named_individuals=[]) %}
             {%- for d in get_all_derived(class) + [class._id] %}
-                {%- if not classes.get(d).is_abstract %}
+                {%- if not classes.get(d).is_abstract or classes.get(d).is_extensible %}
                     {%- set ns.json_refs = ns.json_refs + ["#/$defs/" + varname(*classes.get(d).clsname)] %}
-                {%- elif classes.get(d).is_extensible %}
-                    {%- set ns.json_refs = ns.json_refs + ["#/$defs/" + varname(*classes.get(d).clsname) + "_props"] %}
                 {%- endif %}
                 {%- for n in classes.get(d).named_individuals %}
                     {%- if context.compact_iri(n._id) != n._id %}
@@ -131,7 +201,7 @@
                 {%- if ns.json_refs %}
                 {
                     "type": "object",
-                    {%- if not class.is_extensible %}
+                    {%- if not class.is_extensible and not use_additional_properties %}
                     "unevaluatedProperties": false,
                     {%- endif %}
                     "anyOf": [
@@ -147,6 +217,7 @@
                 { "$ref": "#/$defs/BlankNodeOrIRI" }
             ]
         },
+        {%- if not use_additional_properties %}
         "{{ varname(*class.clsname) }}_props": {
             "allOf": [
                 {%- if class.parent_ids %}
@@ -201,6 +272,7 @@
                 }
             ]
         },
+        {%- endif %}
         {%- for prop in class.properties %}
         "prop_{{ varname(*class.clsname) }}_{{ varname(prop.varname) }}": {
             {%- if prop.deprecated %}
@@ -291,6 +363,7 @@
         "anyURI": {
             "type": "string"
         },
+        {%- if not use_additional_properties %}
         "SHACLClass": {
             "type": "object",
             "properties": {
@@ -309,6 +382,7 @@
             },
             "required": ["{{ context.compact_iri("@type") }}"]
         },
+        {%- endif %}
         "AnyClass": {
             "anyOf": [
                 {%- for class in concrete_classes %}

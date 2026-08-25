@@ -93,15 +93,18 @@ class JinjaTemplateRender(object):
         class ObjectList(object):
             def __init__(self, objs):
                 self.__objs = objs
+                self.__objs_by_id = {}
+                for o in objs:
+                    self.__objs_by_id.setdefault(o._id, o)
 
             def __iter__(self):
                 return iter(self.__objs)
 
             def get(self, _id):
-                for o in self.__objs:
-                    if o._id == _id:
-                        return o
-                raise KeyError(f"Object with ID {_id} not found")
+                try:
+                    return self.__objs_by_id[_id]
+                except KeyError:
+                    raise KeyError(f"Object with ID {_id} not found") from None
 
         def get_all_derived(cls):
             def _recurse(cls):

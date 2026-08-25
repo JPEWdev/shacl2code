@@ -117,13 +117,14 @@ class Class:
 
 
 class Model(object):
-    def __init__(self, graph, context=None, is_prerelease=None):
+    def __init__(self, graph, context=None, is_prerelease=None, jss_signature=None):
         self.model = graph
         self.context = context
         self.compact_ids = {}
         self.objects = {}
         self.classes = []
         self.ontologies = []
+        self.jss_signature = jss_signature
         class_iris = set()
         classes_by_iri = {}
 

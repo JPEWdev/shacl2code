@@ -106,6 +106,8 @@ def build_lib(tmp_path_factory, model_server, cxx):
                 TEST_MODEL,
                 "--context",
                 model_server + "/test-context.json",
+                "--jss-signature",
+                "signatures",
                 "cpp",
                 "--output",
                 out_basename,
@@ -343,6 +345,10 @@ CPP_MODEL_TESTS = (
         (
             ["--input", TEST_MODEL, "--context-url", TEST_CONTEXT, SPDX3_CONTEXT_URL],
             "test-context",
+        ),
+        (
+            ["--input", TEST_MODEL, "--jss-signature", "signatures"],
+            "test-signature",
         ),
     ],
 )

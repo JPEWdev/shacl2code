@@ -137,6 +137,7 @@ class JinjaTemplateRender(object):
             "concrete_classes": concrete_classes,
             "abstract_classes": abstract_classes,
             "context": model.context,
+            "jss_signature": model.jss_signature,
             **self.get_additional_render_args(model),
         }
 

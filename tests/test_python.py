@@ -3453,8 +3453,8 @@ class TestModelAll:
                 "List",
                 "TypeVar",
                 "json",
-                "NAMED_INDIVIDUALS",
-                "register_lock",
+                "_ALL_NAMED_INDIVIDUAL_IDS",
+                "_register_lock",
             }
 
             # The model was loaded as a side effect of the wildcard import.

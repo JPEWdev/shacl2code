@@ -3,26 +3,28 @@
 # SPDX-License-Identifier: {{ spdx_license }}
 """Version-agnostic Protocol types, one per generated class.
 
-Each Protocol is satisfied by the corresponding concrete class of any model
-version that is backward-compatible with the baseline from which these Protocols
-were generated. Use these types to write functions and classes that work across
-multiple model versions and still pass strict static type checking.
+Satisfied by the corresponding concrete class of any model version
+backward-compatible with the baseline these Protocols were generated from.
+Use them to write functions and classes that work across model versions.
 
-Scalar properties are typed precisely and are plain read-write attributes.
-Object-reference and list properties are typed ``Any`` for both read and write:
-cross-module structural typing cannot resolve the circular reference between a
-protocol class and the sibling protocol type its property would otherwise
-return, so these properties fall back to ``Any``. Read them through the
-concrete version type when a typed value is needed.
+Scalar and list-of-scalar properties are typed precisely. Object-reference
+properties are typed ``Any``: structural typing can't resolve the circular
+reference to the sibling protocol type they'd otherwise return. Read them
+through the concrete version type when a typed value is needed.
 
-Construct objects with a concrete version module; use these Protocols only for
-annotations.
+Construct objects with a concrete version module; use these Protocols only
+for annotations.
 """
 
 from __future__ import annotations
 
-{{"from datetime import datetime" if protocols_use_datetime(classes) else ""}}
+{% if protocols_use_datetime(classes) -%}
+from datetime import datetime
+{% endif -%}
 from typing import Any, Iterable, Iterator, Optional, Protocol, Set, Tuple
+{%- if classes | selectattr("named_individuals") | list | length > 0 %}
+from typing import ClassVar, Dict
+{%- endif %}
 
 
 class SHACLObjectProtocol(Protocol):
@@ -84,21 +86,29 @@ class {{ varname(*class.clsname) }}(
     {{ '"' }}{{ '"' }}{{ '"' }}
 {%- endif %}
 
-    def _protocol_{{ varname(*class.clsname) }}(self) -> None: ...
+    def _protocol_{{ varname(class._id) }}(self) -> None: ...
     {%- if class.id_property %}
     {{ class.id_property }}: Optional[str]
     {%- endif %}
+    {%- if class.named_individuals %}
+    NAMED_INDIVIDUALS: ClassVar[Dict[str, str]]
+    {%- for member in class.named_individuals %}
+    {{ varname(member.varname) }}: str
+    {%- endfor %}
+    {%- endif %}
     {%- for prop in class.properties %}
         {%- set is_list, has_ref, is_enum = prop_shape(prop) %}
-        {%- if is_enum %}
-            {%- set ptype = "str" %}
-        {%- elif has_ref %}
-            {%- set ptype = "Any" %}
-        {%- else %}
-            {%- set ptype = DATATYPE_PYTHON_TYPES[prop.datatype] %}
+        {%- if not has_ref %}
+            {%- if is_enum %}
+                {%- set ptype = "str" %}
+            {%- else %}
+                {%- set ptype = DATATYPE_PYTHON_TYPES[prop.datatype] %}
+            {%- endif %}
         {%- endif %}
-        {%- if is_list or has_ref %}
+        {%- if has_ref %}
     {{ varname(prop.varname) }}: Any
+        {%- elif is_list %}
+    {{ varname(prop.varname) }}: Iterable[{{ ptype }}]
         {%- else %}
     {{ varname(prop.varname) }}: Optional[{{ ptype }}]
         {%- endif %}

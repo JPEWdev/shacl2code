@@ -485,6 +485,21 @@ void JSONLDDeserializer::read(std::istream& input, SHACLObjectSet& objectSet,
         errorHandler.handleDeserializeError("Invalid context URLs", path);
         return;
     }
+    {%- if jss_signature %}
+    {
+        const auto jss_signature = "{{ jss_signature }}";
+
+        if (d.contains(jss_signature)) {
+            path.pushMember(jss_signature, [&] {
+                if (!d[jss_signature].is_array()) {
+                    errorHandler.handleDeserializeError("Signature {{ jss_signature }} must be an array", path);
+                    return;
+                }
+            });
+            d.erase(jss_signature);
+        }
+    }
+    {%- endif %}
 
     if (!d.contains("@graph")) {
         JSONData data;

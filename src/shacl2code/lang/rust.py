@@ -7,7 +7,7 @@
 import re
 from pathlib import Path
 
-from .common import JinjaTemplateRender
+from .common import JinjaTemplateRender, prop_is_list
 from .lang import TEMPLATE_DIR, language
 
 RUST_KEYWORDS = (
@@ -106,11 +106,6 @@ def struct_name(cls):
 def prop_field_name(prop):
     """Get the field name for a property."""
     return varname(prop.varname)
-
-
-def prop_is_list(prop):
-    """Check if a property is a list."""
-    return prop.max_count is None or prop.max_count != 1
 
 
 def prop_rust_type(prop, classes):
@@ -268,7 +263,6 @@ class RustRender(JinjaTemplateRender):
             "type_name": type_name,
             "struct_name": struct_name,
             "prop_field_name": prop_field_name,
-            "prop_is_list": prop_is_list,
             "prop_rust_type": prop_rust_type,
             "prop_full_type": prop_full_type,
             "const_name": const_name,

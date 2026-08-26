@@ -10,7 +10,7 @@ from typing import Iterable
 
 from jinja2 import TemplateRuntimeError
 
-from .common import JinjaTemplateRender
+from .common import JinjaTemplateRender, prop_is_list
 from .lang import TEMPLATE_DIR, language
 from ..model import Class
 from ..util import convert_version_string
@@ -81,10 +81,25 @@ def varname(*name):
 
 def prop_shape(prop):
     """Classify a property's container shape: (is_list, has_ref, is_enum)."""
-    is_list = prop.max_count is None or prop.max_count != 1
     is_enum = bool(prop.enum_values)
     has_ref = bool(prop.class_id) and not is_enum
-    return is_list, has_ref, is_enum
+    return prop_is_list(prop), has_ref, is_enum
+
+
+def prop_element_pytype(prop, classes):
+    """Python type of a single element of prop, ignoring container shape.
+
+    Object-reference properties resolve to ``Union[str, 'ClassName']``, since
+    they may be set from either an id string or the referenced object.
+    """
+    if prop.enum_values:
+        return "str"
+    if prop.class_id:
+        return "Union[str, '" + varname(*classes.get(prop.class_id).clsname) + "']"
+    if prop.datatype not in DATATYPE_PYTHON_TYPES:
+        # Same error as model.py.j2's abort()
+        raise TemplateRuntimeError("Unknown data type " + prop.datatype)
+    return DATATYPE_PYTHON_TYPES[prop.datatype]
 
 
 def protocols_use_datetime(classes: Iterable[Class]) -> bool:
@@ -186,6 +201,7 @@ class PythonRender(JinjaTemplateRender):
         return {
             "varname": varname,
             "prop_shape": prop_shape,
+            "prop_element_pytype": prop_element_pytype,
             "protocols_use_datetime": protocols_use_datetime,
             "DATATYPE_CLASSES": DATATYPE_CLASSES,
             "DATATYPE_PYTHON_TYPES": DATATYPE_PYTHON_TYPES,

@@ -1,3 +1,4 @@
+{%- import "_macros.j2" as pymacros -%}
 # {{ disclaimer }}
 #
 # SPDX-License-Identifier: {{ spdx_license }}
@@ -78,13 +79,7 @@ class {{ varname(*class.clsname) }}(
     SHACLObjectProtocol
 {%- endif -%}
 , Protocol):
-{%- if class.comment %}
-    {{ '"' }}{{ '"' }}{{ '"' }}
-    {%- for l in class.comment.split("\n") %}
-    {{ l.rstrip() }}
-    {%- endfor %}
-    {{ '"' }}{{ '"' }}{{ '"' }}
-{%- endif %}
+{%- if class.comment %}{{ pymacros.class_docstring(class.comment) }}{% endif %}
 
     def _protocol_{{ varname(class._id) }}(self) -> None: ...
     {%- if class.id_property %}
@@ -99,11 +94,7 @@ class {{ varname(*class.clsname) }}(
     {%- for prop in class.properties %}
         {%- set is_list, has_ref, is_enum = prop_shape(prop) %}
         {%- if not has_ref %}
-            {%- if is_enum %}
-                {%- set ptype = "str" %}
-            {%- else %}
-                {%- set ptype = DATATYPE_PYTHON_TYPES[prop.datatype] %}
-            {%- endif %}
+            {%- set ptype = prop_element_pytype(prop, classes) %}
         {%- endif %}
         {%- if has_ref %}
     {{ varname(prop.varname) }}: Any

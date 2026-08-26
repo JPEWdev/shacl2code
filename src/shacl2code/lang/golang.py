@@ -8,7 +8,7 @@ import re
 import textwrap
 from pathlib import Path
 
-from .common import JinjaTemplateRender
+from .common import JinjaTemplateRender, prop_is_list
 from .lang import TEMPLATE_DIR, language
 
 GO_KEYWORDS = (
@@ -73,10 +73,6 @@ def class_type_var(cls):
 
 def prop_name(prop):
     return varname(prop.varname, public=False)
-
-
-def prop_is_list(prop):
-    return prop.max_count is None or prop.max_count != 1
 
 
 def prop_go_type(prop, classes):
@@ -276,7 +272,6 @@ class GoLangRender(JinjaTemplateRender):
             "interface_name": interface_name,
             "class_type_var": class_type_var,
             "prop_name": prop_name,
-            "prop_is_list": prop_is_list,
             "prop_go_type": prop_go_type,
             "prop_ctx_name": prop_ctx_name,
             "prop_decode_func": prop_decode_func,

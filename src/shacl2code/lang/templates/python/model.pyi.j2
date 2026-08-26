@@ -1,3 +1,4 @@
+{%- import "_macros.j2" as pymacros -%}
 # {{ disclaimer }}
 #
 # SPDX-License-Identifier: {{ spdx_license }}
@@ -412,12 +413,7 @@ class {{ varname(*class.clsname) }}(
 {%- else -%}
     SHACLObject
 {%- endif -%}):
-{%- if class.comment %}
-    {{ '"' }}{{ '"' }}{{ '"' }}
-    {%- for l in class.comment.split("\n") %}
-    {{ l.rstrip() }}
-    {%- endfor %}
-    {{ '"' }}{{ '"' }}{{ '"' }}
+{%- if class.comment %}{{ pymacros.class_docstring(class.comment) }}
 {% endif %}
     TYPE: ClassVar[str] = "{{ class._id }}"
     {%- if context.compact_iri(class._id) != class._id %}
@@ -459,13 +455,7 @@ class {{ varname(*class.clsname) }}(
         {%- endif %}
         {%- for prop in class.properties %}
         {%- set is_list, has_ref, is_enum = prop_shape(prop) %}
-        {%- if is_enum %}
-        {%- set ptype = "str" %}
-        {%- elif has_ref %}
-        {%- set ptype = "Union[str, '" ~ varname(*classes.get(prop.class_id).clsname) ~ "']" %}
-        {%- else %}
-        {%- set ptype = DATATYPE_PYTHON_TYPES[prop.datatype] %}
-        {%- endif %}
+        {%- set ptype = prop_element_pytype(prop, classes) %}
         {%- if is_list %}
         {{ varname(prop.varname) }}: Optional[Iterable[{{ ptype }}]] = None,
         {%- else %}
@@ -484,13 +474,7 @@ class {{ varname(*class.clsname) }}(
     {%- endif %}
     {%- for prop in class.properties %}
         {%- set is_list, has_ref, is_enum = prop_shape(prop) %}
-        {%- if is_enum %}
-        {%- set ptype = "str" %}
-        {%- elif has_ref %}
-        {%- set ptype = "Union[str, '" ~ varname(*classes.get(prop.class_id).clsname) ~ "']" %}
-        {%- else %}
-        {%- set ptype = DATATYPE_PYTHON_TYPES[prop.datatype] %}
-        {%- endif %}
+        {%- set ptype = prop_element_pytype(prop, classes) %}
         {%- if is_list %}
     @property
     def {{ varname(prop.varname) }}(self) -> ListProxy[{{ ptype }}]: ...

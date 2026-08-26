@@ -8,7 +8,7 @@
 | src/shacl2code/\_\_main\_\_.py      |        4 |        0 |     100% |           |
 | src/shacl2code/context.py           |      161 |        0 |     100% |           |
 | src/shacl2code/lang/\_\_init\_\_.py |        8 |        0 |     100% |           |
-| src/shacl2code/lang/common.py       |       94 |        0 |     100% |           |
+| src/shacl2code/lang/common.py       |       97 |        0 |     100% |           |
 | src/shacl2code/lang/cpp.py          |       64 |        0 |     100% |           |
 | src/shacl2code/lang/golang.py       |      128 |        0 |     100% |           |
 | src/shacl2code/lang/jinja.py        |       12 |        0 |     100% |           |
@@ -21,7 +21,7 @@
 | src/shacl2code/urlcontext.py        |       14 |        0 |     100% |           |
 | src/shacl2code/util.py              |       15 |        0 |     100% |           |
 | src/shacl2code/version.py           |        1 |        0 |     100% |           |
-|                           **TOTAL** | **1030** |    **0** | **100%** |           |
+|                           **TOTAL** | **1033** |    **0** | **100%** |           |
 
 
 ## Setup coverage badge

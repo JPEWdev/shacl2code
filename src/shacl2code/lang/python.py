@@ -75,6 +75,19 @@ def varname(*name):
     return name
 
 
+def prop_element_pytype(prop, classes):
+    """Python type of a single element of prop, ignoring container shape.
+
+    Object-reference properties resolve to ``Union[str, 'ClassName']``, since
+    they may be set from either an id string or the referenced object.
+    """
+    if prop.enum_values:
+        return "str"
+    if prop.class_id:
+        return "Union[str, '" + varname(*classes.get(prop.class_id).clsname) + "']"
+    return DATATYPE_PYTHON_TYPES[prop.datatype]
+
+
 @language("python")
 class PythonRender(JinjaTemplateRender):
     """Render Python Language Bindings."""
@@ -144,6 +157,7 @@ class PythonRender(JinjaTemplateRender):
     def get_extra_env(self):
         return {
             "varname": varname,
+            "prop_element_pytype": prop_element_pytype,
             "DATATYPE_CLASSES": DATATYPE_CLASSES,
             "DATATYPE_PYTHON_TYPES": DATATYPE_PYTHON_TYPES,
         }

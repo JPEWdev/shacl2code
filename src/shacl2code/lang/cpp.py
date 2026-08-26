@@ -37,10 +37,6 @@ def parent_cpp_classes(cls, classes):
     return parents
 
 
-def prop_is_list(prop):
-    return prop.max_count is None or prop.max_count != 1
-
-
 def id_str(s):
     return re.sub(r"[^a-zA-Z0-9_]", "_", s)
 
@@ -182,7 +178,6 @@ class CppRender(JinjaTemplateRender):
     def get_extra_env(self):
         return {
             "varname": varname,
-            "prop_is_list": prop_is_list,
             "parent_cpp_classes": parent_cpp_classes,
             "macro_prefix": self.macro_prefix,
             "api_def_begin": comment_wrap(textwrap.dedent(f"""\

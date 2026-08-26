@@ -22,6 +22,11 @@ from ..version import VERSION
 THIS_DIR = Path(__file__).parent
 
 
+def prop_is_list(prop):
+    """Whether a property's max_count allows more than one value."""
+    return prop.max_count is None or prop.max_count != 1
+
+
 class OutputFile(object):
     def __init__(self, path):
         self.path = path
@@ -148,6 +153,7 @@ class JinjaTemplateRender(object):
             "get_all_derived": get_all_derived,
             "get_all_named_individuals": get_all_named_individuals,
             "include_file": include_file,
+            "prop_is_list": prop_is_list,
             **self.get_extra_env(),
         }
 

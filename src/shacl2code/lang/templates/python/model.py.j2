@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-#
+# {%- import "_macros.j2" as pymacros %}
 # {{ disclaimer }}
 #
 # SPDX-License-Identifier: {{ spdx_license }}
@@ -3042,12 +3042,7 @@ class {{ varname(*class.clsname) }}(
 {%- else -%}
     SHACLObject
 {%- endif -%}):
-{%- if class.comment %}
-    {{ '"' }}{{ '"' }}{{ '"' }}
-    {%- for l in class.comment.split("\n") %}
-    {{ l.rstrip() }}
-    {%- endfor %}
-    {{ '"' }}{{ '"' }}{{ '"' }}
+{%- if class.comment %}{{ pymacros.class_docstring(class.comment) }}
 {% endif %}
     TYPE: ClassVar[str] = "{{ class._id }}"
     {%- if context.compact_iri(class._id) != class._id %}
@@ -3080,7 +3075,7 @@ class {{ varname(*class.clsname) }}(
     {%- if class.properties %}
     PROPERTIES: ClassVar[List[ClassProp]] = [
     {%- for prop in class.properties %}
-        {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
+        {%- set is_list = prop_is_list(prop) %}
         {%- if prop.comment %}
         {%- for l in prop.comment.split("\n") %}
         #{{ (" " + l).rstrip() }}

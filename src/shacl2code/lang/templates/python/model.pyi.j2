@@ -1,5 +1,5 @@
 # {{ disclaimer }}
-#
+# {%- import "_macros.j2" as pymacros %}
 # SPDX-License-Identifier: {{ spdx_license }}
 """Generated stub for the generated Python bindings."""
 
@@ -412,12 +412,7 @@ class {{ varname(*class.clsname) }}(
 {%- else -%}
     SHACLObject
 {%- endif -%}):
-{%- if class.comment %}
-    {{ '"' }}{{ '"' }}{{ '"' }}
-    {%- for l in class.comment.split("\n") %}
-    {{ l.rstrip() }}
-    {%- endfor %}
-    {{ '"' }}{{ '"' }}{{ '"' }}
+{%- if class.comment %}{{ pymacros.class_docstring(class.comment) }}
 {% endif %}
     TYPE: ClassVar[str] = "{{ class._id }}"
     {%- if context.compact_iri(class._id) != class._id %}
@@ -458,14 +453,8 @@ class {{ varname(*class.clsname) }}(
         {{ class.id_property }}: Optional[str] = None,
         {%- endif %}
         {%- for prop in class.properties %}
-        {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
-        {%- if prop.enum_values %}
-        {%- set ptype = "str" %}
-        {%- elif prop.class_id %}
-        {%- set ptype = "Union[str, '" ~ varname(*classes.get(prop.class_id).clsname) ~ "']" %}
-        {%- else %}
-        {%- set ptype = DATATYPE_PYTHON_TYPES[prop.datatype] %}
-        {%- endif %}
+        {%- set is_list = prop_is_list(prop) %}
+        {%- set ptype = prop_element_pytype(prop, classes) %}
         {%- if is_list %}
         {{ varname(prop.varname) }}: Optional[Iterable[{{ ptype }}]] = None,
         {%- else %}
@@ -480,14 +469,8 @@ class {{ varname(*class.clsname) }}(
     {{ class.id_property }}: Optional[str]
     {%- endif %}
     {%- for prop in class.properties %}
-        {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
-        {%- if prop.enum_values %}
-        {%- set ptype = "str" %}
-        {%- elif prop.class_id %}
-        {%- set ptype = "Union[str, '" ~ varname(*classes.get(prop.class_id).clsname) ~ "']" %}
-        {%- else %}
-        {%- set ptype = DATATYPE_PYTHON_TYPES[prop.datatype] %}
-        {%- endif %}
+        {%- set is_list = prop_is_list(prop) %}
+        {%- set ptype = prop_element_pytype(prop, classes) %}
         {%- if is_list %}
     @property
     def {{ varname(prop.varname) }}(self) -> ListProxy[{{ ptype }}]: ...

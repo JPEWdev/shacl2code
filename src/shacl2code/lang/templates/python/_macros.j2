@@ -1,0 +1,13 @@
+# SPDX-FileContributor: Arthit Suriyawongkul
+# SPDX-FileCopyrightText: 2026 Joshua Watt
+# SPDX-FileType: SOURCE
+# SPDX-License-Identifier: MIT
+#
+# Shared Jinja macros for the Python templates.
+{% macro class_docstring(comment) %}
+    {{ '"' }}{{ '"' }}{{ '"' }}
+    {%- for l in comment.split("\n") %}
+    {{ l.rstrip() }}
+    {%- endfor %}
+    {{ '"' }}{{ '"' }}{{ '"' }}
+{%- endmacro %}

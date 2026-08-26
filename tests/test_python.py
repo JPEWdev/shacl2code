@@ -2907,4 +2907,3 @@ bibo:status <http://purl.org/ontology/bibo/status/draft> .
             ), f"Failed for case {idx}: {annotations}"
         finally:
             sys.path.remove(str(tmp_path))
-

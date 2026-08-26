@@ -118,6 +118,28 @@ def protocols_use_datetime(classes: Iterable[Class]) -> bool:
     return False
 
 
+def protocols_extra_imports(classes: Iterable[Class]) -> str:
+    """Conditionally-needed stdlib imports for protocols.py.j2.
+
+    Rendered as a single ``{{ }}`` expression (not a ``{% if %}`` block) so
+    black can parse the .j2 source as Python. The blank lines black then
+    requires around that expression separate these imports from the ones
+    above by more than flake8-import-order allows within one group, so each
+    line silences that deliberate exception. Always returns a non-blank
+    line (a comment when there's nothing to import) so the surrounding
+    black-mandated blank-line groups above and below never merge into one
+    run long enough to trip flake8's too-many-blank-lines check.
+    """
+    lines = []
+    if protocols_use_datetime(classes):
+        lines.append("from datetime import datetime  # noqa: E402, I100, I202")
+    if any(cls.named_individuals for cls in classes):
+        lines.append("from typing import ClassVar, Dict  # noqa: E402, I100, I202")
+    if not lines:
+        lines.append("# No extra imports needed for this model.")
+    return "\n".join(lines)
+
+
 @language("python")
 class PythonRender(JinjaTemplateRender):
     """Render Python Language Bindings."""
@@ -203,6 +225,7 @@ class PythonRender(JinjaTemplateRender):
             "prop_shape": prop_shape,
             "prop_element_pytype": prop_element_pytype,
             "protocols_use_datetime": protocols_use_datetime,
+            "protocols_extra_imports": protocols_extra_imports,
             "DATATYPE_CLASSES": DATATYPE_CLASSES,
             "DATATYPE_PYTHON_TYPES": DATATYPE_PYTHON_TYPES,
         }

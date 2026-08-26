@@ -330,3 +330,39 @@ status using the following order of precedence (1 = the highest priority):
 [pytest]: https://www.pytest.org
 [pytest-cov]: https://pytest-cov.readthedocs.io/en/latest/
 [semver]: https://semver.org/
+
+### Version-agnostic Protocol types (Python)
+
+By default, code written against one generated Python module can't accept
+objects from another generated module, even if the two were generated from
+compatible versions of the same model.
+
+Passing `--include-protocols yes` to the Python generator adds a
+`protocols.py` module with a [`typing.Protocol`][typing-protocol] for every
+class in the model. A Protocol accepts an object from *any* generated module
+whose version is compatible with the one the Protocol came from, so you can
+write functions and classes that work across model versions instead of
+being tied to one:
+
+```shell
+shacl2code generate -i model.jsonld python --include-protocols yes -o out
+```
+
+```python
+from out import protocols
+
+def describe(obj: protocols.MyClass) -> str:
+    return f"{obj.get_type()}: {obj.my_property}"
+```
+
+`describe()` accepts a `MyClass` instance from `out`, or from any other
+generated module whose `MyClass` is compatible with `out`'s.
+
+A couple of things to keep in mind:
+
+- Object-reference properties are typed `Any` on a Protocol; read those
+  through the concrete module when you need a precise type.
+- Protocols are for type annotations only -- construct objects using a
+  concrete generated module, not a Protocol.
+
+[typing-protocol]: https://docs.python.org/3/library/typing.html#typing.Protocol

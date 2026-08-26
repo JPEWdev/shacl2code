@@ -100,13 +100,19 @@ def python_model(tmp_path_factory, model_context_url):
     yield tmp_directory, module_name
 
 
+def _env_with_pythonpath(*paths: Path) -> "dict[str, str]":
+    """A copy of the current environment with `paths` appended to PYTHONPATH."""
+    env = os.environ.copy()
+    env["PYTHONPATH"] = os.pathsep.join(
+        env.get("PYTHONPATH", "").split(os.pathsep) + [str(p) for p in paths]
+    )
+    return env
+
+
 @pytest.fixture
 def python_model_env(python_model):
     module_path, module_name = python_model
-    env = os.environ.copy()
-    env["PYTHONPATH"] = os.pathsep.join(
-        env.get("PYTHONPATH", "").split(os.pathsep) + [str(module_path)]
-    )
+    env = _env_with_pythonpath(module_path)
     return env, module_name
 
 
@@ -2973,6 +2979,8 @@ bibo:status <http://purl.org/ontology/bibo/status/draft> .
 # ---------------------------------------------------------------------------
 
 TEST_V2_MODEL = THIS_DIR / "data" / "model" / "test-v2.ttl"
+TEST_V3_MODEL = THIS_DIR / "data" / "model" / "test-v3.ttl"
+TEST_V4_MODEL = THIS_DIR / "data" / "model" / "test-v4.ttl"
 NO_DATETIME_MODEL = DATA_DIR / "no-datetime.ttl"
 
 
@@ -3021,21 +3029,33 @@ class TestProtocolsUseDatetime:
             protocols_use_datetime([bad_class])
 
 
-@pytest.fixture(scope="module")
-def python_model_v1_protocols(
-    tmp_path_factory: pytest.TempPathFactory, model_context_url: str
+def _generate_protocols_fixture(
+    tmp_path_factory: pytest.TempPathFactory,
+    model_context_url: str,
+    model_path: Path,
+    version: str,
 ) -> Tuple[Path, str]:
-    """v1 model generated with --include-protocols yes."""
-    tmp_directory = tmp_path_factory.mktemp("protocols_v1")
-    module_name = "pymodel_v1"
+    """Generate a --include-protocols yes module for one version fixture."""
+    tmp_directory = tmp_path_factory.mktemp(f"protocols_{version}")
+    module_name = f"pymodel_{version}"
     output_dir = tmp_directory / module_name
     shacl2code_generate(
-        ["--input", TEST_MODEL, "--context", model_context_url],
+        ["--input", model_path, "--context", model_context_url],
         ["--include-protocols", "yes"],
         output_dir,
     )
     (output_dir / "py.typed").touch()
     return tmp_directory, module_name
+
+
+@pytest.fixture(scope="module")
+def python_model_v1_protocols(
+    tmp_path_factory: pytest.TempPathFactory, model_context_url: str
+) -> Tuple[Path, str]:
+    """v1 model generated with --include-protocols yes."""
+    return _generate_protocols_fixture(
+        tmp_path_factory, model_context_url, TEST_MODEL, "v1"
+    )
 
 
 @pytest.fixture(scope="module")
@@ -3043,16 +3063,29 @@ def python_model_v2_protocols(
     tmp_path_factory: pytest.TempPathFactory, model_context_url: str
 ) -> Tuple[Path, str]:
     """v2 model (backward-compatible extension) generated with --include-protocols yes."""
-    tmp_directory = tmp_path_factory.mktemp("protocols_v2")
-    module_name = "pymodel_v2"
-    output_dir = tmp_directory / module_name
-    shacl2code_generate(
-        ["--input", TEST_V2_MODEL, "--context", model_context_url],
-        ["--include-protocols", "yes"],
-        output_dir,
+    return _generate_protocols_fixture(
+        tmp_path_factory, model_context_url, TEST_V2_MODEL, "v2"
     )
-    (output_dir / "py.typed").touch()
-    return tmp_directory, module_name
+
+
+@pytest.fixture(scope="module")
+def python_model_v3_protocols(
+    tmp_path_factory: pytest.TempPathFactory, model_context_url: str
+) -> Tuple[Path, str]:
+    """v3 model (backward-compatible extension of v2) with --include-protocols yes."""
+    return _generate_protocols_fixture(
+        tmp_path_factory, model_context_url, TEST_V3_MODEL, "v3"
+    )
+
+
+@pytest.fixture(scope="module")
+def python_model_v4_protocols(
+    tmp_path_factory: pytest.TempPathFactory, model_context_url: str
+) -> Tuple[Path, str]:
+    """v4 model (backward-compatible extension of v3) with --include-protocols yes."""
+    return _generate_protocols_fixture(
+        tmp_path_factory, model_context_url, TEST_V4_MODEL, "v4"
+    )
 
 
 class TestProtocolOutput:
@@ -3061,15 +3094,10 @@ class TestProtocolOutput:
     """
 
     def test_protocols_file_generated(
-        self, tmp_path: Path, model_context_url: str
+        self, python_model_v1_protocols: Tuple[Path, str]
     ) -> None:
-        output_dir = tmp_path / "pymodel"
-        shacl2code_generate(
-            ["--input", TEST_MODEL, "--context", model_context_url],
-            ["--include-protocols", "yes"],
-            output_dir,
-        )
-        assert (output_dir / "protocols.py").exists()
+        output_path, module_name = python_model_v1_protocols
+        assert (output_path / module_name / "protocols.py").exists()
 
     def test_protocols_file_not_generated_by_default(
         self, tmp_path: Path, model_context_url: str
@@ -3083,22 +3111,16 @@ class TestProtocolOutput:
         assert not (output_dir / "protocols.py").exists()
 
     def test_dir_includes_lazy_names(
-        self, tmp_path: Path, model_context_url: str
+        self, python_model_v1_protocols: Tuple[Path, str]
     ) -> None:
         """
         __dir__() must expose model classes, "protocols", and "main" for
         dir()/tab-completion even though they are loaded lazily via
         __getattr__ (PEP 562).
         """
-        module_name = "pymodel_dir_check"
-        output_dir = tmp_path / module_name
-        shacl2code_generate(
-            ["--input", TEST_MODEL, "--context", model_context_url],
-            ["--include-protocols", "yes"],
-            output_dir,
-        )
+        output_path, module_name = python_model_v1_protocols
 
-        sys.path.insert(0, str(tmp_path))
+        sys.path.insert(0, str(output_path))
         try:
             pkg = importlib.import_module(module_name)
             names = dir(pkg)
@@ -3115,46 +3137,40 @@ class TestProtocolOutput:
             assert "SHACLObjectProtocol" in proto_names
             assert "test_class" in proto_names
         finally:
-            sys.path.remove(str(tmp_path))
+            sys.path.remove(str(output_path))
             for m in list(sys.modules):
                 if m == module_name or m.startswith(module_name + "."):
                     del sys.modules[m]
 
-    def test_mypy(self, tmp_path: Path, model_context_url: str) -> None:
-        output_dir = tmp_path / "pymodel"
-        shacl2code_generate(
-            ["--input", TEST_MODEL, "--context", model_context_url],
-            ["--include-protocols", "yes"],
-            output_dir,
-        )
-        (output_dir / "py.typed").touch()
-        subprocess.run(["mypy", output_dir], encoding="utf-8", check=True)
-
-    def test_flake8(self, tmp_path: Path, model_context_url: str) -> None:
-        output_dir = tmp_path / "pymodel"
-        shacl2code_generate(
-            ["--input", TEST_MODEL, "--context", model_context_url],
-            ["--include-protocols", "yes"],
-            output_dir,
-        )
+    def test_mypy(self, python_model_v1_protocols: Tuple[Path, str]) -> None:
+        output_path, module_name = python_model_v1_protocols
         subprocess.run(
-            ["flake8", "--config", TOP_DIR / ".flake8", output_dir / "protocols.py"],
+            ["mypy", output_path / module_name], encoding="utf-8", check=True
+        )
+
+    def test_flake8(self, python_model_v1_protocols: Tuple[Path, str]) -> None:
+        output_path, module_name = python_model_v1_protocols
+        subprocess.run(
+            [
+                "flake8",
+                "--config",
+                TOP_DIR / ".flake8",
+                output_path / module_name / "protocols.py",
+            ],
             encoding="utf-8",
             check=True,
         )
 
-    def test_flake8_all_files(self, tmp_path: Path, model_context_url: str) -> None:
+    def test_flake8_all_files(
+        self, python_model_v1_protocols: Tuple[Path, str]
+    ) -> None:
         """
         flake8 over the whole output directory with --include-protocols yes,
         not just protocols.py -- catches issues in the conditional protocols
         import inside __init__.py that a protocols.py-only check would miss.
         """
-        output_dir = tmp_path / "pymodel"
-        shacl2code_generate(
-            ["--input", TEST_MODEL, "--context", model_context_url],
-            ["--include-protocols", "yes"],
-            output_dir,
-        )
+        output_path, module_name = python_model_v1_protocols
+        output_dir = output_path / module_name
         subprocess.run(
             ["flake8", "--config", TOP_DIR / ".flake8"] + list(output_dir.iterdir()),
             encoding="utf-8",
@@ -3208,8 +3224,7 @@ class TestProtocolConformance:
         Verifies scalar read/write, object-ref typed read, Any-setter write.
         """
         module_path, module_name = python_model_v1_protocols
-        env = os.environ.copy()
-        env["PYTHONPATH"] = str(module_path)
+        env = _env_with_pythonpath(module_path)
 
         script = tmp_path / "conformance.py"
         script.write_text(textwrap.dedent(f"""\
@@ -3260,8 +3275,7 @@ class TestProtocolConformance:
         base protocols with no test catching it.
         """
         module_path, module_name = python_model_v1_protocols
-        env = os.environ.copy()
-        env["PYTHONPATH"] = str(module_path)
+        env = _env_with_pythonpath(module_path)
 
         script = tmp_path / "base_conformance.py"
         script.write_text(textwrap.dedent(f"""\
@@ -3303,8 +3317,7 @@ class TestProtocolConformance:
         satisfying each other's protocol.
         """
         module_path, module_name = python_model_v1_protocols
-        env = os.environ.copy()
-        env["PYTHONPATH"] = str(module_path)
+        env = _env_with_pythonpath(module_path)
 
         # test_another_class has no own properties in v1, making it structurally
         # identical to test_class. Without the discriminator both would satisfy
@@ -3330,52 +3343,69 @@ class TestProtocolConformance:
 
 class TestProtocolCrossVersion:
     """
-    Cross-version: v2 concrete classes must satisfy v1-generated Protocols,
-    and the discriminator still prevents wrong-type assignments across versions.
+    Cross-version: newer concrete classes must satisfy older-generated
+    Protocols, and the discriminator still prevents wrong-type assignments
+    across versions.
+
+    Pairs cover chain-to-baseline (vN vs v1) plus adjacent (vN vs vN-1), so
+    each new version is checked both against the original baseline and
+    against the version it was directly derived from.
     """
 
+    @pytest.mark.parametrize(
+        "older_fixture,newer_fixture",
+        [
+            ("python_model_v1_protocols", "python_model_v2_protocols"),
+            ("python_model_v1_protocols", "python_model_v3_protocols"),
+            ("python_model_v2_protocols", "python_model_v3_protocols"),
+            ("python_model_v1_protocols", "python_model_v4_protocols"),
+            ("python_model_v3_protocols", "python_model_v4_protocols"),
+        ],
+    )
     def test_cross_version_mypy(
         self,
-        python_model_v1_protocols: Tuple[Path, str],
-        python_model_v2_protocols: Tuple[Path, str],
+        older_fixture: str,
+        newer_fixture: str,
+        request: pytest.FixtureRequest,
         tmp_path: Path,
     ) -> None:
         """
-        v2.test_class() satisfies v1.protocols.test_class (backward-compat).
-        v2.another_class() does NOT satisfy v1.protocols.test_class (discriminator).
+        newer.test_class() satisfies older.protocols.test_class (backward-compat).
+        newer.another_class() does NOT satisfy older.protocols.test_class
+        (discriminator).
         """
-        v1_path, v1_name = python_model_v1_protocols
-        v2_path, v2_name = python_model_v2_protocols
-        env = os.environ.copy()
-        env["PYTHONPATH"] = os.pathsep.join([str(v1_path), str(v2_path)])
+        older_path, older_name = request.getfixturevalue(older_fixture)
+        newer_path, newer_name = request.getfixturevalue(newer_fixture)
+        env = _env_with_pythonpath(older_path, newer_path)
 
         script = tmp_path / "cross_version.py"
         script.write_text(textwrap.dedent(f"""\
             from typing import Any, Optional
-            import {v1_name}, {v2_name}
-            from {v1_name} import protocols as v1p
+            import {older_name}, {newer_name}
+            from {older_name} import protocols as op
 
-            # v2 concrete satisfies v1 Protocol (additive-only minor version).
-            a: v1p.test_class = {v2_name}.test_class()
-            b: v1p.parent_class = {v2_name}.parent_class()
+            # newer concrete satisfies older Protocol (additive-only versions).
+            a: op.test_class = {newer_name}.test_class()
+            b: op.parent_class = {newer_name}.parent_class()
 
-            # Scalar read through v1 protocol on v2 object.
-            def get_scalar(o: v1p.test_class) -> Optional[str]:
+            # Scalar read through older protocol on newer object.
+            def get_scalar(o: op.test_class) -> Optional[str]:
                 result: Optional[str] = o.test_class_string_scalar_prop
                 return result
 
             get_scalar(a)
 
-            # Object-ref typed read through v1 protocol on v2 object.
-            def get_ref(o: v1p.test_class) -> Any:
+            # Object-ref typed read through older protocol on newer object.
+            def get_ref(o: op.test_class) -> Any:
                 return o.test_class_class_prop
 
-            # Any-setter write through v1 protocol on v2 object.
-            def set_ref(o: v1p.test_class, v: {v2_name}.test_class) -> None:
+            # Any-setter write through older protocol on newer object.
+            def set_ref(o: op.test_class, v: {newer_name}.test_class) -> None:
                 o.test_class_class_prop = v
 
-            # Discriminator: v2.another_class must NOT satisfy v1.protocols.test_class.
-            bad: v1p.test_class = {v2_name}.test_another_class()  # type: ignore[assignment]
+            # Discriminator: newer.another_class must NOT satisfy
+            # older.protocols.test_class.
+            bad: op.test_class = {newer_name}.test_another_class()  # type: ignore[assignment]
         """))
 
         subprocess.run(
@@ -3388,10 +3418,10 @@ class TestProtocolCrossVersion:
         # Confirm the discriminator actually works (without the ignore).
         script2 = tmp_path / "cross_version_bad.py"
         script2.write_text(textwrap.dedent(f"""\
-            import {v1_name}, {v2_name}
-            from {v1_name} import protocols as v1p
+            import {older_name}, {newer_name}
+            from {older_name} import protocols as op
 
-            bad: v1p.test_class = {v2_name}.test_another_class()
+            bad: op.test_class = {newer_name}.test_another_class()
         """))
         result = subprocess.run(
             ["mypy", "--strict", str(script2)],
@@ -3400,7 +3430,7 @@ class TestProtocolCrossVersion:
             capture_output=True,
         )
         assert result.returncode != 0, (
-            "Expected mypy to reject v2.another_class as v1.protocols.test_class "
+            "Expected mypy to reject newer.another_class as older.protocols.test_class "
             "across versions"
         )
 

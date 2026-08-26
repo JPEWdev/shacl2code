@@ -1,6 +1,5 @@
-{%- import "_macros.j2" as pymacros -%}
 # {{ disclaimer }}
-#
+# {%- import "_macros.j2" as pymacros %}
 # SPDX-License-Identifier: {{ spdx_license }}
 """Version-agnostic Protocol types, one per generated class.
 
@@ -19,13 +18,9 @@ for annotations.
 
 from __future__ import annotations
 
-{% if protocols_use_datetime(classes) -%}
-from datetime import datetime
-{% endif -%}
 from typing import Any, Iterable, Iterator, Optional, Protocol, Set, Tuple
-{%- if classes | selectattr("named_individuals") | list | length > 0 %}
-from typing import ClassVar, Dict
-{%- endif %}
+
+{{protocols_extra_imports(classes)}}
 
 
 class SHACLObjectProtocol(Protocol):

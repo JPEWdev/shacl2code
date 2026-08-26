@@ -1,11 +1,9 @@
-{#
-Copyright (c) 2026 Joshua Watt
-
-SPDX-License-Identifier: MIT
-
-Shared Jinja macros for the Python model.py, model.pyi and protocols.py
-templates.
-#}
+# Copyright (c) 2026 Joshua Watt
+#
+# SPDX-License-Identifier: MIT
+#
+# Shared Jinja macros for the Python model.py, model.pyi and protocols.py
+# templates.
 {% macro class_docstring(comment) %}
     {{ '"' }}{{ '"' }}{{ '"' }}
     {%- for l in comment.split("\n") %}

@@ -1,6 +1,5 @@
-{%- import "_macros.j2" as pymacros -%}
 #! /usr/bin/env python3
-#
+# {%- import "_macros.j2" as pymacros %}
 # {{ disclaimer }}
 #
 # SPDX-License-Identifier: {{ spdx_license }}
@@ -3011,7 +3010,7 @@ CONTEXT_URLS: List[str] = [
 ]
 
 # ONTOLOGIES
-{%- for o in ontologies %}
+{% for o in ontologies %}
 {%- if o.comment %}
 {{ '"' }}{{ '"' }}{{ '"' }}
 {%- for l in o.comment.split("\n") %}

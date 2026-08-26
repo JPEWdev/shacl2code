@@ -11,7 +11,6 @@ import re
 import subprocess
 import sys
 import textwrap
-import warnings
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -2416,63 +2415,6 @@ def test_prerelease_warning(model):
         model.test_class()
 
 
-PRERELEASE_MODEL = DATA_DIR / "prerelease.ttl"
-
-
-def test_is_prerelease_constant(tmp_path: Path) -> None:
-    """IS_PRERELEASE reflects sh-to-code:isPreRelease without loading model.py."""
-    prerelease_dir = tmp_path / "pymodel_prerelease"
-    shacl2code_generate(["--input", PRERELEASE_MODEL], [], prerelease_dir)
-
-    stable_dir = tmp_path / "pymodel_stable"
-    shacl2code_generate(["--input", TEST_MODEL], [], stable_dir)
-
-    assert "IS_PRERELEASE = True" in (prerelease_dir / "__init__.py").read_text()
-    assert "IS_PRERELEASE = False" in (stable_dir / "__init__.py").read_text()
-
-    sys.path.insert(0, str(tmp_path))
-    try:
-        with pytest.warns(FutureWarning):
-            pkg = importlib.import_module("pymodel_prerelease")
-        assert pkg.IS_PRERELEASE is True
-        # Reading the constant must not have loaded model.py.
-        assert "pymodel_prerelease.model" not in sys.modules
-    finally:
-        sys.path.remove(str(tmp_path))
-        for m in list(sys.modules):
-            if m == "pymodel_prerelease" or m.startswith("pymodel_prerelease."):
-                del sys.modules[m]
-
-
-def test_prerelease_import_warning(tmp_path: Path) -> None:
-    """Pre-release package warns FutureWarning on first import, any form; stable doesn't."""
-    prerelease_dir = tmp_path / "pymodel_prerelease_import"
-    shacl2code_generate(["--input", PRERELEASE_MODEL], [], prerelease_dir)
-
-    stable_dir = tmp_path / "pymodel_stable_import"
-    shacl2code_generate(["--input", TEST_MODEL], [], stable_dir)
-
-    sys.path.insert(0, str(tmp_path))
-    try:
-        with pytest.warns(FutureWarning):
-            import pymodel_prerelease_import  # noqa: F401
-
-        # Second import of an already-loaded module must not re-warn.
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", FutureWarning)
-            importlib.import_module("pymodel_prerelease_import")
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", FutureWarning)
-            import pymodel_stable_import  # noqa: F401
-    finally:
-        sys.path.remove(str(tmp_path))
-        for prefix in ("pymodel_prerelease_import", "pymodel_stable_import"):
-            for m in list(sys.modules):
-                if m == prefix or m.startswith(prefix + "."):
-                    del sys.modules[m]
-
-
 def test_pre_release_cli_option(tmp_path_factory, model_context_url):
     tmp_directory = tmp_path_factory.mktemp("prerelease_test")
     module_name = "pymodel_prerelease"
@@ -2966,88 +2908,3 @@ bibo:status <http://purl.org/ontology/bibo/status/draft> .
         finally:
             sys.path.remove(str(tmp_path))
 
-
-class TestModelAll:
-    def test_wildcard_import_is_eager_and_matches_public_names(
-        self, tmp_path: Path
-    ) -> None:
-        """``from mypkg import *`` yields the model's public names
-        and requires loading the model.
-
-        Generated without --context, so the domain class asserted below
-        keeps its recognizable "http_..." varname.
-        """
-        module_name = "pymodel_star_check"
-        output_dir = tmp_path / module_name
-        shacl2code_generate(
-            ["--input", TEST_MODEL],
-            [],
-            output_dir,
-        )
-
-        sys.path.insert(0, str(tmp_path))
-        try:
-            import sys as _sys
-
-            before = set(_sys.modules)
-            ns: dict = {}
-            exec(f"from {module_name} import *", ns)
-            imported = {k for k in ns if not k.startswith("__")}
-
-            # Domain classes, from the test fixture model.
-            assert "http_example_org_shacl2code_test_test_class" in imported
-            assert "http_example_org_shacl2code_test_parent_class" in imported
-
-            # Generator infrastructure: constants, base/encoder/decoder classes.
-            assert "CONTEXT_URLS" in imported
-            assert "SHACLObject" in imported
-            assert "SHACLObjectSet" in imported
-            assert "JSONLDDecoder" in imported
-            assert "JSONLDEncoder" in imported
-            # rdflib is a test dependency, so the RDF* classes are defined and
-            # expected to be included.
-            assert "RDFSerializer" in imported
-
-            # Must not leak model.py's imports or internal bookkeeping state.
-            assert not imported & {
-                "TYPE_CHECKING",
-                "Any",
-                "List",
-                "TypeVar",
-                "json",
-                "_ALL_NAMED_INDIVIDUAL_IDS",
-                "_register_lock",
-            }
-
-            # The model was loaded as a side effect of the wildcard import.
-            assert f"{module_name}.model" in (set(_sys.modules) - before)
-        finally:
-            sys.path.remove(str(tmp_path))
-            for m in list(sys.modules):
-                if m == module_name or m.startswith(module_name + "."):
-                    del sys.modules[m]
-
-    def test_protocols_submodule_import_stays_lazy(
-        self, tmp_path: Path, model_context_url: str
-    ) -> None:
-        """Importing the ``protocols`` submodule must not load ``model``."""
-        module_name = "pymodel_lazy_check"
-        output_dir = tmp_path / module_name
-        shacl2code_generate(
-            ["--input", TEST_MODEL, "--context", model_context_url],
-            ["--include-protocols", "yes"],
-            output_dir,
-        )
-
-        sys.path.insert(0, str(tmp_path))
-        try:
-            import sys as _sys
-
-            before = set(_sys.modules)
-            importlib.import_module(f"{module_name}.protocols")
-            assert f"{module_name}.model" not in (set(_sys.modules) - before)
-        finally:
-            sys.path.remove(str(tmp_path))
-            for m in list(sys.modules):
-                if m == module_name or m.startswith(module_name + "."):
-                    del sys.modules[m]

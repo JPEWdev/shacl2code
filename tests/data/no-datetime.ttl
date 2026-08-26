@@ -4,9 +4,10 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-# A minimal model with no datetime-typed property. Used to guard against
-# protocols.py.j2 emitting an unconditional `from datetime import datetime`
-# that would be an unused import (flake8 F401) for models like this one.
+# A minimal model with no datetime-typed property.
+# Used to verify that protocols.py.j2 omits `from datetime import datetime`
+# for models like this one, instead of emitting it unconditionally and
+# leaving an unused import (flake8 F401).
 
 <no-datetime-class> a rdfs:Class, sh:NodeShape, owl:Class ;
     rdfs:comment "A class with only a string property, no datetime types" ;

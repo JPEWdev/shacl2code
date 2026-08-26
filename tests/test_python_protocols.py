@@ -526,8 +526,6 @@ class TestProtocolCrossVersion:
         )
 
 
-
-
 def test_prerelease_with_protocols(tmp_path: Path) -> None:
     """
     --include-protocols and a pre-release model don't interact: the

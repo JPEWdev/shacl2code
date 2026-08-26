@@ -2323,11 +2323,6 @@ def test_object_prop_set_coercion(model):
     assert c.test_class_class_prop is embedded_obj  # check if same object
 
 
-# ---------------------------------------------------------------------------
-# Test IDE support
-# ---------------------------------------------------------------------------
-
-
 def test_introspection(model):
     """
     Tests that defined properties on a class are discoverable
@@ -2391,21 +2386,11 @@ def test_version(model):
     assert model.VERSION == convert_version_string(MODEL_VERSION)
 
 
-# ---------------------------------------------------------------------------
-# Ontology metadata tests
-# ---------------------------------------------------------------------------
-
-
 def test_ontology(model):
     classes = list(model.SHACLObject.CLASSES.values())
     assert classes
     for c in classes:
         assert c.ONTOLOGY is not None
-
-
-# ---------------------------------------------------------------------------
-# Pre-release metadata tests
-# ---------------------------------------------------------------------------
 
 
 def test_prerelease_warning(model):

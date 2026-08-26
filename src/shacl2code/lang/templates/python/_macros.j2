@@ -2,8 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 #
-# Shared Jinja macros for the Python model.py, model.pyi and protocols.py
-# templates.
+# Shared Jinja macros for the Python templates.
 {% macro class_docstring(comment) %}
     {{ '"' }}{{ '"' }}{{ '"' }}
     {%- for l in comment.split("\n") %}

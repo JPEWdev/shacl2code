@@ -93,16 +93,16 @@ class JinjaTemplateRender(object):
         class ObjectList(object):
             def __init__(self, objs):
                 self.__objs = objs
-                self.__by_id = {}
+                self.__objs_by_id = {}
                 for o in objs:
-                    self.__by_id.setdefault(o._id, o)
+                    self.__objs_by_id.setdefault(o._id, o)
 
             def __iter__(self):
                 return iter(self.__objs)
 
             def get(self, _id):
                 try:
-                    return self.__by_id[_id]
+                    return self.__objs_by_id[_id]
                 except KeyError:
                     raise KeyError(f"Object with ID {_id} not found") from None
 

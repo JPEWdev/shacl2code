@@ -76,7 +76,7 @@ class {{ varname(*class.clsname) }}(
 , Protocol):
 {%- if class.comment %}{{ pymacros.class_docstring(class.comment) }}{% endif %}
 
-    def _protocol_{{ varname(class._id) }}(self) -> None: ...
+    def _protocol_{{ protocol_discriminator_name(class) }}(self) -> None: ...
     {%- if class.id_property %}
     {{ class.id_property }}: Optional[str]
     {%- endif %}

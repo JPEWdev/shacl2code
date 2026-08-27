@@ -3075,14 +3075,14 @@ class {{ varname(*class.clsname) }}(
 
     # Discriminator keyed by IRI, not the --context-compacted class name, so
     # it matches across generations with different --context flags.
-    def _protocol_{{ varname(class._id) }}(self) -> None:
+    def _protocol_{{ protocol_discriminator_name(class) }}(self) -> None:
         pass
     {%- endif %}
 
     {%- if class.properties %}
     PROPERTIES: ClassVar[List[ClassProp]] = [
     {%- for prop in class.properties %}
-        {%- set is_list = prop_is_list(prop) %}
+        {%- set is_list, has_ref, is_enum = prop_shape(prop) %}
         {%- if prop.comment %}
         {%- for l in prop.comment.split("\n") %}
         #{{ (" " + l).rstrip() }}
@@ -3092,13 +3092,13 @@ class {{ varname(*class.clsname) }}(
             "{{ varname(prop.varname) }}",
             lambda:
             {% if is_list -%}ListProp({% endif %}
-            {%- if prop.enum_values -%}
+            {%- if is_enum -%}
                 EnumProp((
                 {%- for value in prop.enum_values %}
                     ("{{ value }}", "{{ context.compact_vocab(value, prop.path) }}"),
                 {%- endfor %}
                 ))
-            {%- elif prop.class_id -%}
+            {%- elif has_ref -%}
                 {%- set ctx = [] %}
                 {%- for value in get_all_named_individuals(classes.get(prop.class_id)) %}
                     {%- if context.compact_vocab(value, prop.path) != value %}

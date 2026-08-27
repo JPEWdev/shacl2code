@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 """Python language binding renderer"""
 
+import hashlib
 import keyword
 import re
 from pathlib import Path
@@ -103,19 +104,29 @@ def prop_element_pytype(prop, classes):
 
 
 def protocols_use_datetime(classes: Iterable[Class]) -> bool:
-    """Whether any class has a plain datetime-typed scalar property."""
+    """Whether any class has a datetime-typed scalar or list property."""
     for cls in classes:
         for prop in cls.properties:
-            is_list, has_ref, is_enum = prop_shape(prop)
-            is_scalar = not (is_list or has_ref or is_enum)
-            if not is_scalar:
+            _, has_ref, is_enum = prop_shape(prop)
+            if has_ref or is_enum:
                 continue
-            if prop.datatype not in DATATYPE_PYTHON_TYPES:
-                # Same error as model.py.j2's abort()
-                raise TemplateRuntimeError("Unknown data type " + prop.datatype)
-            if DATATYPE_PYTHON_TYPES[prop.datatype] == "datetime":
+            if prop_element_pytype(prop, classes) == "datetime":
                 return True
     return False
+
+
+def protocol_discriminator_name(cls: Class) -> str:
+    """Stable, collision-resistant name for cls's Protocol discriminator method.
+
+    Keyed by the class IRI (not the --context-compacted class name), so it
+    matches across generations with different --context flags. varname()
+    alone can sanitize two distinct IRIs to the same string (e.g. IRIs that
+    differ only in punctuation runs both collapsing to "_"), so a short hash
+    of the raw IRI is appended to disambiguate while staying stable across
+    regenerations of the same class.
+    """
+    digest = hashlib.sha256(cls._id.encode("utf-8")).hexdigest()[:8]
+    return varname(cls._id, digest)
 
 
 def protocols_extra_imports(classes: Iterable[Class]) -> str:
@@ -224,8 +235,8 @@ class PythonRender(JinjaTemplateRender):
             "varname": varname,
             "prop_element_pytype": prop_element_pytype,
             "prop_shape": prop_shape,
+            "protocol_discriminator_name": protocol_discriminator_name,
             "protocols_extra_imports": protocols_extra_imports,
-            "protocols_use_datetime": protocols_use_datetime,
             "DATATYPE_CLASSES": DATATYPE_CLASSES,
             "DATATYPE_PYTHON_TYPES": DATATYPE_PYTHON_TYPES,
         }

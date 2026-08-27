@@ -55,11 +55,6 @@ def shacl2code_generate(args, python_args, outfile):
     return p
 
 
-@pytest.fixture(scope="module")
-def model_context_url(model_server):
-    yield model_server + "/test-context.json"
-
-
 def _env_with_pythonpath(*paths: Path) -> "dict[str, str]":
     """A copy of the current environment with `paths` appended to PYTHONPATH."""
     env = os.environ.copy()
@@ -122,7 +117,7 @@ class TestProtocolsUseDatetime:
 
 def _generate_protocols_fixture(
     tmp_path_factory: pytest.TempPathFactory,
-    model_context_url: str,
+    test_context_url: str,
     model_path: Path,
     version: str,
 ) -> Tuple[Path, str]:
@@ -131,7 +126,7 @@ def _generate_protocols_fixture(
     module_name = f"pymodel_{version}"
     output_dir = tmp_directory / module_name
     shacl2code_generate(
-        ["--input", model_path, "--context", model_context_url],
+        ["--input", model_path, "--context", test_context_url],
         ["--include-protocols", "yes"],
         output_dir,
     )
@@ -141,42 +136,54 @@ def _generate_protocols_fixture(
 
 @pytest.fixture(scope="module")
 def python_model_v1_protocols(
-    tmp_path_factory: pytest.TempPathFactory, model_context_url: str
+    tmp_path_factory: pytest.TempPathFactory, test_context_url: str
 ) -> Tuple[Path, str]:
     """v1 model generated with --include-protocols yes."""
     return _generate_protocols_fixture(
-        tmp_path_factory, model_context_url, TEST_MODEL, "v1"
+        tmp_path_factory, test_context_url, TEST_MODEL, "v1"
     )
 
 
 @pytest.fixture(scope="module")
 def python_model_v2_protocols(
-    tmp_path_factory: pytest.TempPathFactory, model_context_url: str
+    tmp_path_factory: pytest.TempPathFactory, test_context_url: str
 ) -> Tuple[Path, str]:
     """v2 model (backward-compatible extension) generated with --include-protocols yes."""
     return _generate_protocols_fixture(
-        tmp_path_factory, model_context_url, TEST_V2_MODEL, "v2"
+        tmp_path_factory, test_context_url, TEST_V2_MODEL, "v2"
     )
 
 
 @pytest.fixture(scope="module")
 def python_model_v3_protocols(
-    tmp_path_factory: pytest.TempPathFactory, model_context_url: str
+    tmp_path_factory: pytest.TempPathFactory, test_context_url: str
 ) -> Tuple[Path, str]:
     """v3 model (backward-compatible extension of v2) with --include-protocols yes."""
     return _generate_protocols_fixture(
-        tmp_path_factory, model_context_url, TEST_V3_MODEL, "v3"
+        tmp_path_factory, test_context_url, TEST_V3_MODEL, "v3"
     )
 
 
 @pytest.fixture(scope="module")
 def python_model_v4_protocols(
-    tmp_path_factory: pytest.TempPathFactory, model_context_url: str
+    tmp_path_factory: pytest.TempPathFactory, test_context_url: str
 ) -> Tuple[Path, str]:
     """v4 model (backward-compatible extension of v3) with --include-protocols yes."""
     return _generate_protocols_fixture(
-        tmp_path_factory, model_context_url, TEST_V4_MODEL, "v4"
+        tmp_path_factory, test_context_url, TEST_V4_MODEL, "v4"
     )
+
+
+@pytest.fixture(scope="module")
+def python_model_no_datetime(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """--include-protocols yes generated from a model with no datetime property."""
+    output_dir = tmp_path_factory.mktemp("no_datetime") / "pymodel"
+    shacl2code_generate(
+        ["--input", NO_DATETIME_MODEL],
+        ["--include-protocols", "yes"],
+        output_dir,
+    )
+    return output_dir
 
 
 class TestProtocolOutput:
@@ -191,11 +198,11 @@ class TestProtocolOutput:
         assert (output_path / module_name / "protocols.py").exists()
 
     def test_protocols_file_not_generated_by_default(
-        self, tmp_path: Path, model_context_url: str
+        self, tmp_path: Path, test_context_url: str
     ) -> None:
         output_dir = tmp_path / "pymodel"
         shacl2code_generate(
-            ["--input", TEST_MODEL, "--context", model_context_url],
+            ["--input", TEST_MODEL, "--context", test_context_url],
             [],
             output_dir,
         )
@@ -239,19 +246,6 @@ class TestProtocolOutput:
             ["mypy", output_path / module_name], encoding="utf-8", check=True
         )
 
-    def test_flake8(self, python_model_v1_protocols: Tuple[Path, str]) -> None:
-        output_path, module_name = python_model_v1_protocols
-        subprocess.run(
-            [
-                "flake8",
-                "--config",
-                TOP_DIR / ".flake8",
-                output_path / module_name / "protocols.py",
-            ],
-            encoding="utf-8",
-            check=True,
-        )
-
     def test_flake8_all_files(
         self, python_model_v1_protocols: Tuple[Path, str]
     ) -> None:
@@ -268,37 +262,34 @@ class TestProtocolOutput:
             check=True,
         )
 
-    def test_flake8_no_datetime_properties(self, tmp_path: Path) -> None:
+    def test_flake8_no_datetime_properties(
+        self, python_model_no_datetime: Path
+    ) -> None:
         """
         protocols.py must not unconditionally import `datetime`. A model with
         no datetime-typed property must not produce an unused import (F401).
         """
-        output_dir = tmp_path / "pymodel"
-        shacl2code_generate(
-            ["--input", NO_DATETIME_MODEL],
-            ["--include-protocols", "yes"],
-            output_dir,
+        assert (
+            "import datetime"
+            not in (python_model_no_datetime / "protocols.py").read_text()
         )
-        assert "import datetime" not in (output_dir / "protocols.py").read_text()
         subprocess.run(
-            ["flake8", "--config", TOP_DIR / ".flake8", output_dir / "protocols.py"],
+            [
+                "flake8",
+                "--config",
+                TOP_DIR / ".flake8",
+                python_model_no_datetime / "protocols.py",
+            ],
             encoding="utf-8",
             check=True,
         )
 
-    def test_mypy_no_datetime_properties(self, tmp_path: Path) -> None:
+    def test_mypy_no_datetime_properties(self, python_model_no_datetime: Path) -> None:
         """
         The generated package must still type-check when protocols.py omits
         the `datetime` import.
         """
-        output_dir = tmp_path / "pymodel"
-        shacl2code_generate(
-            ["--input", NO_DATETIME_MODEL],
-            ["--include-protocols", "yes"],
-            output_dir,
-        )
-        (output_dir / "py.typed").touch()
-        subprocess.run(["mypy", output_dir], encoding="utf-8", check=True)
+        subprocess.run(["mypy", python_model_no_datetime], encoding="utf-8", check=True)
 
 
 class TestProtocolConformance:

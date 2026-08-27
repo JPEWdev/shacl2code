@@ -8,8 +8,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
-
 THIS_FILE = Path(__file__)
 THIS_DIR = THIS_FILE.parent
 
@@ -39,11 +37,6 @@ def shacl2code_generate(args, python_args, outfile):
     # Add a py.typed file for type checking
     (outfile / "py.typed").touch()
     return p
-
-
-@pytest.fixture(scope="module")
-def model_context_url(model_server):
-    yield model_server + "/test-context.json"
 
 
 class TestModelAll:
@@ -107,13 +100,13 @@ class TestModelAll:
                     del sys.modules[m]
 
     def test_protocols_submodule_import_stays_lazy(
-        self, tmp_path: Path, model_context_url: str
+        self, tmp_path: Path, test_context_url: str
     ) -> None:
         """Importing the ``protocols`` submodule must not load ``model``."""
         module_name = "pymodel_lazy_check"
         output_dir = tmp_path / module_name
         shacl2code_generate(
-            ["--input", TEST_MODEL, "--context", model_context_url],
+            ["--input", TEST_MODEL, "--context", test_context_url],
             ["--include-protocols", "yes"],
             output_dir,
         )

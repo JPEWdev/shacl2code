@@ -222,10 +222,10 @@ class PythonRender(JinjaTemplateRender):
     def get_extra_env(self):
         return {
             "varname": varname,
-            "prop_shape": prop_shape,
             "prop_element_pytype": prop_element_pytype,
-            "protocols_use_datetime": protocols_use_datetime,
+            "prop_shape": prop_shape,
             "protocols_extra_imports": protocols_extra_imports,
+            "protocols_use_datetime": protocols_use_datetime,
             "DATATYPE_CLASSES": DATATYPE_CLASSES,
             "DATATYPE_PYTHON_TYPES": DATATYPE_PYTHON_TYPES,
         }

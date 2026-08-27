@@ -339,7 +339,7 @@ compatible versions of the same model.
 
 Passing `--include-protocols yes` to the Python generator adds a
 `protocols.py` module with a [`typing.Protocol`][typing-protocol] for every
-class in the model. A Protocol accepts an object from *any* generated module
+class in the model. A Protocol accepts an object from _any_ generated module
 whose version is compatible with the one the Protocol came from, so you can
 write functions and classes that work across model versions instead of
 being tied to one:

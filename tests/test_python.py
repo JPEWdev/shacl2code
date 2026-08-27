@@ -2425,6 +2425,9 @@ def test_pre_release_cli_option(tmp_path_factory, model_context_url):
         assert m.SHACL2CODE_TEST.is_prerelease is True
     finally:
         sys.path.remove(str(tmp_directory))
+        for mod in list(sys.modules):
+            if mod == module_name or mod.startswith(module_name + "."):
+                del sys.modules[mod]
 
 
 def test_no_pre_release_cli_option(tmp_path, model_context_url):

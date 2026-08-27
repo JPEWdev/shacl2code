@@ -3082,7 +3082,7 @@ class {{ varname(*class.clsname) }}(
     {%- if class.properties %}
     PROPERTIES: ClassVar[List[ClassProp]] = [
     {%- for prop in class.properties %}
-        {%- set is_list = prop.max_count is none or prop.max_count != 1 %}
+        {%- set is_list = prop_is_list(prop) %}
         {%- if prop.comment %}
         {%- for l in prop.comment.split("\n") %}
         #{{ (" " + l).rstrip() }}

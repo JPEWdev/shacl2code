@@ -3073,9 +3073,10 @@ class {{ varname(*class.clsname) }}(
     {%- endif %}
     {%- if include_protocols %}
 
-    # Discriminator keyed by IRI, not the --context-compacted class name, so
-    # it matches across generations with different --context flags.
-    def _protocol_{{ protocol_discriminator_name(class) }}(self) -> None:
+    # Discriminator keyed by --include-protocols's chosen key (IRI or
+    # --context-compacted class name), not the class's own Python name, so
+    # it matches across generations sharing that key.
+    def _protocol_{{ protocol_discriminator_name(class, protocol_discriminator_key) }}(self) -> None:
         pass
     {%- endif %}
 

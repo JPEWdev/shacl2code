@@ -7,10 +7,12 @@ Satisfied by the corresponding concrete class of any model version
 backward-compatible with the baseline these Protocols were generated from.
 Use them to write functions and classes that work across model versions.
 
-Scalar and list-of-scalar properties are typed precisely. Object-reference
-properties are typed ``Any``: structural typing can't resolve the circular
-reference to the sibling protocol type they'd otherwise return. Read them
-through the concrete version type when a typed value is needed.
+Scalar and list-of-scalar properties are typed precisely for reads and
+writes. Object-reference properties are typed precisely for reads (as the
+referenced class's own Protocol) but accept anything on write: each
+generated module version has its own distinct concrete class for the
+referenced type, so no single settable type could equal that concrete
+attribute's type across every version.
 
 Construct objects with a concrete version module; use these Protocols only
 for annotations.
@@ -76,7 +78,10 @@ class {{ varname(*class.clsname) }}(
 , Protocol):
 {%- if class.comment %}{{ pymacros.class_docstring(class.comment) }}{% endif %}
 
-    def _protocol_{{ protocol_discriminator_name(class) }}(self) -> None: ...
+    # Discriminator keyed by --include-protocols's chosen key (IRI or
+    # --context-compacted class name), not the class's own Python name, so
+    # it matches across generations sharing that key.
+    def _protocol_{{ protocol_discriminator_name(class, protocol_discriminator_key) }}(self) -> None: ...
     {%- if class.id_property %}
     {{ class.id_property }}: Optional[str]
     {%- endif %}
@@ -87,16 +92,16 @@ class {{ varname(*class.clsname) }}(
     {%- endfor %}
     {%- endif %}
     {%- for prop in class.properties %}
-        {%- set is_list, has_ref, is_enum = prop_shape(prop) %}
-        {%- if not has_ref %}
-            {%- set ptype = prop_element_pytype(prop, classes) %}
-        {%- endif %}
+        {%- set is_list, has_ref, _ = prop_shape(prop) %}
+        {%- set ptype = prop_element_pytype(prop, classes) %}
+        {%- set rtype = "Iterable[" ~ ptype ~ "]" if is_list else "Optional[" ~ ptype ~ "]" %}
         {%- if has_ref %}
-    {{ varname(prop.varname) }}: Any
-        {%- elif is_list %}
-    {{ varname(prop.varname) }}: Iterable[{{ ptype }}]
+    @property
+    def {{ varname(prop.varname) }}(self) -> {{ rtype }}: ...
+    @{{ varname(prop.varname) }}.setter
+    def {{ varname(prop.varname) }}(self, value: Any) -> None: ...
         {%- else %}
-    {{ varname(prop.varname) }}: Optional[{{ ptype }}]
+    {{ varname(prop.varname) }}: {{ rtype }}
         {%- endif %}
     {%- endfor %}
 {% endfor %}

@@ -115,16 +115,37 @@ def protocols_use_datetime(classes: Iterable[Class]) -> bool:
     return False
 
 
-def protocol_discriminator_name(cls: Class) -> str:
+def protocols_use_object_refs(classes: Iterable[Class]) -> bool:
+    """Whether any class has an object-reference-typed scalar or list property."""
+    for cls in classes:
+        for prop in cls.properties:
+            _, has_ref, _ = prop_shape(prop)
+            if has_ref:
+                return True
+    return False
+
+
+def protocol_discriminator_name(cls: Class, key: str) -> str:
     """Stable, collision-resistant name for cls's Protocol discriminator method.
 
-    Keyed by the class IRI (not the --context-compacted class name), so it
-    matches across generations with different --context flags. varname()
+    key="iri": keyed by the class's raw IRI, so it matches across
+    generations of the SAME model with different --context flags. varname()
     alone can sanitize two distinct IRIs to the same string (e.g. IRIs that
     differ only in punctuation runs both collapsing to "_"), so a short hash
     of the raw IRI is appended to disambiguate while staying stable across
     regenerations of the same class.
+
+    key="compact-name": keyed by the --context-compacted class name
+    instead -- the exact same name already used for the class itself, so
+    any collision here would already be a duplicate Python class
+    definition, independent of this function. Matches across different
+    VERSIONS of an ontology that keeps its compact term names stable even
+    as the underlying IRIs change (e.g. SPDX, which embeds its own spec
+    version in every class IRI). Only safe when every generation being
+    compared shares a canonical context.
     """
+    if key == "compact-name":
+        return varname(*cls.clsname)
     digest = hashlib.sha256(cls._id.encode("utf-8")).hexdigest()[:8]
     return varname(cls._id, digest)
 
@@ -146,6 +167,8 @@ def protocols_extra_imports(classes: Iterable[Class]) -> str:
         lines.append("from datetime import datetime  # noqa: E402, I100, I202")
     if any(cls.named_individuals for cls in classes):
         lines.append("from typing import ClassVar, Dict  # noqa: E402, I100, I202")
+    if protocols_use_object_refs(classes):
+        lines.append("from typing import Union  # noqa: E402, I100, I202")
     if not lines:
         lines.append("# No extra imports needed for this model.")
     return "\n".join(lines)
@@ -167,7 +190,8 @@ class PythonRender(JinjaTemplateRender):
         super().__init__(args)
         self.__output = args.output
         self.__include_main = args.include_main == "yes"
-        self.__include_protocols = args.include_protocols == "yes"
+        self.__protocol_discriminator_key = args.include_protocols
+        self.__include_protocols = args.include_protocols != "no"
         self.__use_slots = args.use_slots
         self.__version_str = args.version
         if args.version:
@@ -192,11 +216,19 @@ class PythonRender(JinjaTemplateRender):
         )
         parser.add_argument(
             "--include-protocols",
-            choices=("yes", "no"),
+            choices=("no", "iri", "compact-name"),
             default="no",
             help=(
                 "Include a protocols.py module with version-agnostic Protocol "
-                "types for every class. Default is '%(default)s'"
+                "types for every class. 'iri' keys each class's cross-version "
+                "discriminator by its full IRI: stable across regenerations of "
+                "the same model with different --context files, but differs if "
+                "the ontology embeds its own version in class IRIs (e.g. SPDX). "
+                "'compact-name' keys it by the --context-compacted class name "
+                "instead: stable across ontology versions that keep the same "
+                "compact term names (e.g. SPDX), but only safe when every "
+                "generation being compared shares a canonical context. "
+                "Default is '%(default)s'"
             ),
         )
         parser.add_argument(
@@ -251,6 +283,7 @@ class PythonRender(JinjaTemplateRender):
         return {
             "include_main": self.__include_main,
             "include_protocols": self.__include_protocols,
+            "protocol_discriminator_key": self.__protocol_discriminator_key,
             "use_slots": use_slots,
             "version": self.__version,
             "version_str": self.__version_str,

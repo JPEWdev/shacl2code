@@ -107,7 +107,7 @@ class TestModelAll:
         output_dir = tmp_path / module_name
         shacl2code_generate(
             ["--input", TEST_MODEL, "--context", test_context_url],
-            ["--include-protocols", "yes"],
+            ["--include-protocols", "iri"],
             output_dir,
         )
 

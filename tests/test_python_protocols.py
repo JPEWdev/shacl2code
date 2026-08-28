@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import importlib
+import json
 import os
 import subprocess
 import sys
@@ -17,7 +18,7 @@ import pytest
 
 import rdflib
 
-from shacl2code.lang.python import protocols_use_datetime
+from shacl2code.lang.python import protocols_use_datetime, protocols_use_object_refs
 from shacl2code.model import Class, Model, Property
 from shacl2code.urlcontext import UrlContext
 
@@ -115,19 +116,58 @@ class TestProtocolsUseDatetime:
             protocols_use_datetime([bad_class])
 
 
+class TestProtocolsUseObjectRefs:
+    """
+    Direct, in-process unit tests for protocols_use_object_refs(). Exercises
+    both branches without going through code generation, so coverage doesn't
+    depend on incidental property ordering in a generated model.
+    """
+
+    def test_true_when_object_ref_property_present(self) -> None:
+        """TEST_MODEL has sh:class-typed scalar and list properties."""
+        assert protocols_use_object_refs(_load_classes(TEST_MODEL)) is True
+
+    def test_false_when_no_object_ref_property(self) -> None:
+        """NO_DATETIME_MODEL has only a plain string property."""
+        assert protocols_use_object_refs(_load_classes(NO_DATETIME_MODEL)) is False
+
+    def test_false_for_enum_property(self) -> None:
+        """
+        An enum property also carries prop.class_id (pointing at the enum
+        type), but prop_shape() excludes it from has_ref -- confirms
+        protocols_use_object_refs() doesn't mistake an enum for an
+        object-reference.
+        """
+        enum_prop = Property(
+            path="http://example.org/color",
+            varname="color",
+            class_id="http://example.org/Color",
+            enum_values=["red", "green"],
+            max_count=1,
+        )
+        enum_only_class = Class(
+            _id="http://example.org/EnumOnlyClass",
+            clsname="EnumOnlyClass",
+            parent_ids=[],
+            derived_ids=[],
+            properties=[enum_prop],
+        )
+        assert protocols_use_object_refs([enum_only_class]) is False
+
+
 def _generate_protocols_fixture(
     tmp_path_factory: pytest.TempPathFactory,
     test_context_url: str,
     model_path: Path,
     version: str,
 ) -> Tuple[Path, str]:
-    """Generate a --include-protocols yes module for one version fixture."""
+    """Generate a --include-protocols iri module for one version fixture."""
     tmp_directory = tmp_path_factory.mktemp(f"protocols_{version}")
     module_name = f"pymodel_{version}"
     output_dir = tmp_directory / module_name
     shacl2code_generate(
         ["--input", model_path, "--context", test_context_url],
-        ["--include-protocols", "yes"],
+        ["--include-protocols", "iri"],
         output_dir,
     )
     (output_dir / "py.typed").touch()
@@ -138,7 +178,7 @@ def _generate_protocols_fixture(
 def python_model_v1_protocols(
     tmp_path_factory: pytest.TempPathFactory, test_context_url: str
 ) -> Tuple[Path, str]:
-    """v1 model generated with --include-protocols yes."""
+    """v1 model generated with --include-protocols iri."""
     return _generate_protocols_fixture(
         tmp_path_factory, test_context_url, TEST_MODEL, "v1"
     )
@@ -148,7 +188,7 @@ def python_model_v1_protocols(
 def python_model_v2_protocols(
     tmp_path_factory: pytest.TempPathFactory, test_context_url: str
 ) -> Tuple[Path, str]:
-    """v2 model (backward-compatible extension) generated with --include-protocols yes."""
+    """v2 model (backward-compatible extension) generated with --include-protocols iri."""
     return _generate_protocols_fixture(
         tmp_path_factory, test_context_url, TEST_V2_MODEL, "v2"
     )
@@ -158,7 +198,7 @@ def python_model_v2_protocols(
 def python_model_v3_protocols(
     tmp_path_factory: pytest.TempPathFactory, test_context_url: str
 ) -> Tuple[Path, str]:
-    """v3 model (backward-compatible extension of v2) with --include-protocols yes."""
+    """v3 model (backward-compatible extension of v2) with --include-protocols iri."""
     return _generate_protocols_fixture(
         tmp_path_factory, test_context_url, TEST_V3_MODEL, "v3"
     )
@@ -168,7 +208,7 @@ def python_model_v3_protocols(
 def python_model_v4_protocols(
     tmp_path_factory: pytest.TempPathFactory, test_context_url: str
 ) -> Tuple[Path, str]:
-    """v4 model (backward-compatible extension of v3) with --include-protocols yes."""
+    """v4 model (backward-compatible extension of v3) with --include-protocols iri."""
     return _generate_protocols_fixture(
         tmp_path_factory, test_context_url, TEST_V4_MODEL, "v4"
     )
@@ -176,11 +216,11 @@ def python_model_v4_protocols(
 
 @pytest.fixture(scope="module")
 def python_model_no_datetime(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    """--include-protocols yes generated from a model with no datetime property."""
+    """--include-protocols iri generated from a model with no datetime property."""
     output_dir = tmp_path_factory.mktemp("no_datetime") / "pymodel"
     shacl2code_generate(
         ["--input", NO_DATETIME_MODEL],
-        ["--include-protocols", "yes"],
+        ["--include-protocols", "iri"],
         output_dir,
     )
     return output_dir
@@ -250,7 +290,7 @@ class TestProtocolOutput:
         self, python_model_v1_protocols: Tuple[Path, str]
     ) -> None:
         """
-        flake8 over the whole output directory with --include-protocols yes,
+        flake8 over the whole output directory with --include-protocols iri,
         not just protocols.py -- catches issues in the conditional protocols
         import inside __init__.py that a protocols.py-only check would miss.
         """
@@ -266,13 +306,13 @@ class TestProtocolOutput:
         self, python_model_no_datetime: Path
     ) -> None:
         """
-        protocols.py must not unconditionally import `datetime`. A model with
-        no datetime-typed property must not produce an unused import (F401).
+        protocols.py must not unconditionally import `datetime` or `Union`.
+        A model with no datetime-typed and no object-reference property must
+        not produce an unused import (F401).
         """
-        assert (
-            "import datetime"
-            not in (python_model_no_datetime / "protocols.py").read_text()
-        )
+        protocols_src = (python_model_no_datetime / "protocols.py").read_text()
+        assert "import datetime" not in protocols_src
+        assert "Union" not in protocols_src
         subprocess.run(
             [
                 "flake8",
@@ -310,7 +350,7 @@ class TestProtocolConformance:
 
         script = tmp_path / "conformance.py"
         script.write_text(textwrap.dedent(f"""\
-            from typing import Any, Optional
+            from typing import Any, Iterable, Optional, Union
             import {module_name}
             from {module_name} import protocols
 
@@ -322,9 +362,14 @@ class TestProtocolConformance:
             def set_scalar(o: protocols.test_class, v: Optional[str]) -> None:
                 o.test_class_string_scalar_prop = v
 
-            # Object-ref Any read + Any-setter write through protocol.
-            def get_ref(o: protocols.test_class) -> Any:
+            # Object-ref typed read + Any-setter write through protocol.
+            def get_ref(o: protocols.test_class) -> Optional[Union[str, protocols.test_class]]:
                 return o.test_class_class_prop
+
+            def get_ref_list(
+                o: protocols.test_class,
+            ) -> Iterable[Union[str, protocols.test_class]]:
+                return o.test_class_class_list_prop
 
             def set_ref(o: protocols.test_class, v: {module_name}.test_class) -> None:
                 o.test_class_class_prop = v
@@ -462,7 +507,7 @@ class TestProtocolCrossVersion:
 
         script = tmp_path / "cross_version.py"
         script.write_text(textwrap.dedent(f"""\
-            from typing import Any, Optional
+            from typing import Iterable, Optional, Union
             import {older_name}, {newer_name}
             from {older_name} import protocols as op
 
@@ -477,9 +522,16 @@ class TestProtocolCrossVersion:
 
             get_scalar(a)
 
-            # Object-ref typed read through older protocol on newer object.
-            def get_ref(o: op.test_class) -> Any:
+            # Object-ref typed read through older protocol on newer object:
+            # newer's own class_prop (typed with newer's own concrete class)
+            # still satisfies older's precisely-typed Protocol getter.
+            def get_ref(o: op.test_class) -> Optional[Union[str, op.test_class]]:
                 return o.test_class_class_prop
+
+            def get_ref_list(
+                o: op.test_class,
+            ) -> Iterable[Union[str, op.test_class]]:
+                return o.test_class_class_list_prop
 
             # Any-setter write through older protocol on newer object.
             def set_ref(o: op.test_class, v: {newer_name}.test_class) -> None:
@@ -526,7 +578,7 @@ def test_prerelease_with_protocols(tmp_path: Path) -> None:
     output_dir = tmp_path / "pymodel_prerelease_protocols"
     shacl2code_generate(
         ["--input", PRERELEASE_MODEL],
-        ["--include-protocols", "yes"],
+        ["--include-protocols", "iri"],
         output_dir,
     )
     assert "IS_PRERELEASE = True" in (output_dir / "__init__.py").read_text()
@@ -544,3 +596,132 @@ def test_prerelease_with_protocols(tmp_path: Path) -> None:
                 "pymodel_prerelease_protocols."
             ):
                 del sys.modules[m]
+
+
+def _write_versioned_book_model(directory: Path, version: str) -> Tuple[Path, Path]:
+    """A single-class toy model whose class IRI embeds `version`, mirroring
+    SPDX's own practice of putting its spec version in every term IRI (e.g.
+    https://spdx.org/rdf/3.0.1/terms/Core/CreationInfo vs .../3.1/terms/...).
+    The compact term names ("Book", "title") stay the same across versions --
+    only the context's target IRIs change -- mirroring SPDX's own context
+    files (verified directly against spdx.org's 3.0.1 and 3.1 contexts).
+    """
+    base = f"http://example.org/toy/{version}"
+    ttl = directory / f"book-{version}.ttl"
+    ttl.write_text(f"""\
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<{base}/Book> a rdfs:Class, sh:NodeShape, owl:Class ;
+    sh:property [
+        sh:datatype xsd:string ;
+        sh:path <{base}/Book/title> ;
+        sh:maxCount 1
+    ] .
+""")
+    context = directory / f"book-{version}-context.json"
+    context.write_text(
+        json.dumps(
+            {
+                "@context": {
+                    "Book": f"{base}/Book",
+                    "title": {"@id": f"{base}/Book/title"},
+                }
+            }
+        )
+    )
+    return ttl, context
+
+
+class TestProtocolDiscriminatorKey:
+    """
+    --include-protocols's discriminator key choice ("iri" vs
+    "compact-name"), exercised against a toy model whose class IRI embeds a
+    version segment -- the pattern SPDX itself uses. Existing fixtures
+    (test.ttl/test-v2..v4.ttl) keep class IRIs stable across versions, so
+    they can't exercise this.
+    """
+
+    @pytest.mark.parametrize(
+        ("key", "expect_success"),
+        [
+            pytest.param(
+                "compact-name",
+                True,
+                id="compact-name-survives",
+            ),
+            pytest.param(
+                "iri",
+                False,
+                id="iri-breaks",
+            ),
+        ],
+    )
+    def test_discriminator_key_vs_versioned_class_iris(
+        self, tmp_path: Path, key: str, expect_success: bool
+    ) -> None:
+        """
+        'compact-name' keys the discriminator by the --context-compacted
+        class name, which this toy model (like SPDX) keeps stable across
+        versions even though the underlying class IRI changes -- so a newer
+        Book still satisfies an older Book Protocol. 'iri' keys it by the
+        class's full IRI, which this toy model changes between versions, so
+        a newer Book does NOT satisfy an older Book Protocol -- proving the
+        'compact-name' fix is real, not a no-op.
+        """
+        v1_ttl, v1_ctx = _write_versioned_book_model(tmp_path, "1.0.0")
+        v2_ttl, v2_ctx = _write_versioned_book_model(tmp_path, "2.0.0")
+
+        v1_dir = tmp_path / "book_v1"
+        shacl2code_generate(
+            [
+                "--input",
+                v1_ttl,
+                "--context-url",
+                v1_ctx,
+                "http://example.org/toy/1.0.0/context.json",
+            ],
+            ["--include-protocols", key],
+            v1_dir,
+        )
+        v2_dir = tmp_path / "book_v2"
+        shacl2code_generate(
+            [
+                "--input",
+                v2_ttl,
+                "--context-url",
+                v2_ctx,
+                "http://example.org/toy/2.0.0/context.json",
+            ],
+            ["--include-protocols", key],
+            v2_dir,
+        )
+
+        env = _env_with_pythonpath(v1_dir, v2_dir)
+        script = tmp_path / "cross_version.py"
+        script.write_text(textwrap.dedent("""\
+            import book_v1, book_v2
+            from book_v1 import protocols as p1
+
+            b: p1.Book = book_v2.Book()
+        """))
+        if expect_success:
+            subprocess.run(
+                ["mypy", "--strict", str(script)],
+                encoding="utf-8",
+                env=env,
+                check=True,
+            )
+        else:
+            result = subprocess.run(
+                ["mypy", "--strict", str(script)],
+                encoding="utf-8",
+                env=env,
+                capture_output=True,
+            )
+            assert result.returncode != 0, (
+                "Expected mypy to reject book_v2.Book as book_v1.protocols.Book "
+                f"under the {key!r} discriminator key (versioned class IRIs)"
+            )

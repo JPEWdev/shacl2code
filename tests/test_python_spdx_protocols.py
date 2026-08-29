@@ -298,7 +298,8 @@ class TestSpdxCrossVersionProtocols:
 
         script = tmp_path / "cross_version_accept_core.py"
         script.write_text(
-            textwrap.dedent(f"""\
+            textwrap.dedent(
+                f"""\
             from typing import Any, Iterable, Optional, Union
             import {v301_name}
             import {v31dev_name}
@@ -358,7 +359,8 @@ class TestSpdxCrossVersionProtocols:
             relationship_targets(newer_rel)
             tag_tool(newer_tool, "hello from 3.1-dev")
             set_creator(newer_ci, newer_agent)
-        """)
+        """
+            )
         )
 
         _assert_typechecks_and_runs(script, env)
@@ -382,7 +384,8 @@ class TestSpdxCrossVersionProtocols:
 
         script = tmp_path / "cross_version_accept_enums.py"
         script.write_text(
-            textwrap.dedent(f"""\
+            textwrap.dedent(
+                f"""\
             from typing import Optional, Union
             import {v301_name}
             import {v31dev_name}
@@ -442,7 +445,8 @@ class TestSpdxCrossVersionProtocols:
             license_or_id(
                 {v31dev_name}.expandedlicensing_IndividualLicensingInfo.NoneLicense
             )
-        """)
+        """
+            )
         )
 
         _assert_typechecks_and_runs(script, env)
@@ -471,7 +475,8 @@ class TestSpdxCrossVersionProtocols:
 
         script = tmp_path / "future_proof.py"
         script.write_text(
-            textwrap.dedent(f"""\
+            textwrap.dedent(
+                f"""\
             from typing import Optional
             import {v301_name}
             import {v31dev_name}
@@ -484,7 +489,8 @@ class TestSpdxCrossVersionProtocols:
 
             hw = {v31dev_name}.hardware_PhysicalHardware(name="future-proof-hw")
             artifact_summary(hw)
-        """)
+        """
+            )
         )
 
         _assert_typechecks_and_runs(script, env)
@@ -497,7 +503,8 @@ class TestSpdxCrossVersionProtocols:
 
         script = tmp_path / "cross_version_reject.py"
         script.write_text(
-            textwrap.dedent(f"""\
+            textwrap.dedent(
+                f"""\
             import {module_name}
             from {module_name} import protocols as p1
 
@@ -508,7 +515,8 @@ class TestSpdxCrossVersionProtocols:
             # -- must be rejected.
             bad = {module_name}.CreationInfo()
             summarize_element(bad)
-        """)
+        """
+            )
         )
 
         r = subprocess.run(

@@ -5,4 +5,4 @@
 # SPDX-License-Identifier: MIT
 """Package version"""
 
-VERSION = "1.3.0"
+VERSION = "1.3.1"

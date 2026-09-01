@@ -4,12 +4,75 @@
 #
 # SPDX-License-Identifier: {{ spdx_license }}
 
-from .model import *  # noqa: F401, F403
+from __future__ import annotations
+
+import importlib
+import warnings
+from types import ModuleType
+from typing import Any, Callable, Dict, List, TYPE_CHECKING, TypeVar
+
+if TYPE_CHECKING:
+    from .model import *  # noqa: F401, F403
+
+# True if any ontology behind this model is pre-release.
+IS_PRERELEASE = {{ontologies | selectattr("is_prerelease") | list | length > 0}}
+
+if IS_PRERELEASE:
+    # Fires once on first import, regardless of import form.
+    warnings.warn(
+        f"{__name__!r} is a pre-release model version and may change without notice.",
+        FutureWarning,
+    )
 
 # fmt: off
 """Format Guard{{ '"' }}{{ '"' }}{{ '"' }}
-{%- if include_main %}
-from .cmd import main  # noqa: F401, I100, I202
+{%- if include_protocols %}
+if TYPE_CHECKING:
+    from . import protocols  # noqa: F401, I100, I202
 {%- endif %}
+
+
+_LAZY_SUBMODULES: Dict[str, Callable[[], Any]] = {
+{%- if include_protocols %}
+    "protocols": lambda: importlib.import_module(f"{__name__}.protocols"),
+{%- endif %}
+{%- if include_main %}
+    "main": lambda: importlib.import_module(f"{__name__}.cmd").main,
+{%- endif %}
+}
+
+
+def __getattr__(name: str) -> Any:
+    # PEP 562 lazy access: each branch imports only what it needs.
+    if name == "__all__":
+        # Only "import *" needs this; it must load the model to compute it.
+        mod = importlib.import_module(f"{__name__}.model")
+        return sorted(
+            n
+            for n, o in vars(mod).items()
+            if not n.startswith("_")
+            and n != "TYPE_CHECKING"  # imported flag, not model content
+            and not isinstance(o, (TypeVar, ModuleType))
+            and (
+                getattr(o, "__module__", None) == mod.__name__
+                or getattr(o, "__module__", None) is None  # plain constants
+            )
+        )
+    if name in _LAZY_SUBMODULES:
+        return _LAZY_SUBMODULES[name]()
+    mod = importlib.import_module(f"{__name__}.model")
+    try:
+        return getattr(mod, name)
+    except AttributeError:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__() -> List[str]:
+    # Opt-in: model loads only when dir() is actually called.
+    mod = importlib.import_module(f"{__name__}.model")
+    names = set(globals()) | set(dir(mod)) | set(_LAZY_SUBMODULES)
+    return sorted(names)
+
+
 {{ '"' }}{{ '"' }}{{ '"' }}Format Guard"""
-# fmt on
+# fmt: on

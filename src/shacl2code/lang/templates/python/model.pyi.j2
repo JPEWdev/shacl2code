@@ -464,6 +464,12 @@ class {{ varname(*class.clsname) }}(
         {%- endif %}
         **kwargs: Any
     ) -> None: ...
+    {%- if include_protocols %}
+    # Discriminator keyed by --include-protocols's chosen key (IRI or
+    # --context-compacted class name), not the class's own Python name, so
+    # it matches across generations sharing that key.
+    def _protocol_{{ protocol_discriminator_name(class, protocol_discriminator_key) }}(self) -> None: ...
+    {%- endif %}
 
     {%- if class.id_property %}
     {{ class.id_property }}: Optional[str]

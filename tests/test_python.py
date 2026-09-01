@@ -87,13 +87,19 @@ def python_model(tmp_path_factory, test_context_url):
     yield tmp_directory, module_name
 
 
+def _env_with_pythonpath(*paths: Path) -> "dict[str, str]":
+    """A copy of the current environment with `paths` appended to PYTHONPATH."""
+    env = os.environ.copy()
+    env["PYTHONPATH"] = os.pathsep.join(
+        env.get("PYTHONPATH", "").split(os.pathsep) + [str(p) for p in paths]
+    )
+    return env
+
+
 @pytest.fixture
 def python_model_env(python_model):
     module_path, module_name = python_model
-    env = os.environ.copy()
-    env["PYTHONPATH"] = os.pathsep.join(
-        env.get("PYTHONPATH", "").split(os.pathsep) + [str(module_path)]
-    )
+    env = _env_with_pythonpath(module_path)
     return env, module_name
 
 

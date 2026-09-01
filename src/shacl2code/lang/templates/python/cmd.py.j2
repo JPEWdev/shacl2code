@@ -4,23 +4,26 @@
 #
 # SPDX-License-Identifier: {{ spdx_license }}
 
+from __future__ import annotations
+
 import argparse
 from pathlib import Path
-from typing import Any, Iterable, List
+from typing import Any, Iterable, List, TYPE_CHECKING
 
-from .model import (
-    JSONLDDeserializer,
-    JSONLDSerializer,
-    ListProxy,
-    SHACLObject,
-    SHACLObjectSet,
-)
+if TYPE_CHECKING:
+    from .model import SHACLObject
+
+# NOTE: .model is imported inside each function below, not here, because
+# __init__.py can import this module just to fetch "main" (e.g. dir()),
+# without calling it -- that must not force the model to load.
 
 
 def print_tree(objects: Iterable[SHACLObject], all_fields: bool = False) -> None:
     """
     Print object tree
     """
+    from .model import ListProxy, SHACLObject
+
     seen = set()
 
     def callback(value: Any, path: List[str]) -> bool:
@@ -52,6 +55,12 @@ def print_tree(objects: Iterable[SHACLObject], all_fields: bool = False) -> None
 
 
 def main() -> int:
+    from .model import (
+        JSONLDDeserializer,
+        JSONLDSerializer,
+        SHACLObjectSet,
+    )
+
     parser = argparse.ArgumentParser(description="Python SHACL model test")
     parser.add_argument("infile", type=Path, help="Input file")
     parser.add_argument("--print", action="store_true", help="Print object tree")

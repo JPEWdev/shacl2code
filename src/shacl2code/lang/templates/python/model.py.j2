@@ -899,7 +899,7 @@ class SHACLObjectMeta(type):
         SHACLObject.CLASSES[key] = c
 
 
-register_lock = threading.Lock()
+_register_lock = threading.Lock()
 _ALL_NAMED_INDIVIDUAL_IDS: Set[str] = set()
 T_SHACLObject = TypeVar("T_SHACLObject", bound="SHACLObject")
 
@@ -1002,7 +1002,7 @@ class SHACLObject(metaclass=SHACLObjectMeta):
         if self.ONTOLOGY:
             _warn_ontology(self.ONTOLOGY)
 
-        with register_lock:
+        with _register_lock:
             cls = self.__class__
             if cls._NEEDS_REG:
                 for p in cls._OBJ_PY_PROPS.values():
@@ -3010,7 +3010,7 @@ CONTEXT_URLS: List[str] = [
 ]
 
 # ONTOLOGIES
-{%- for o in ontologies %}
+{% for o in ontologies %}
 {%- if o.comment %}
 {{ '"' }}{{ '"' }}{{ '"' }}
 {%- for l in o.comment.split("\n") %}
@@ -3071,11 +3071,19 @@ class {{ varname(*class.clsname) }}(
         {%- endfor %}
     }
     {%- endif %}
+    {%- if include_protocols %}
+
+    # Discriminator keyed by --include-protocols's chosen key (IRI or
+    # --context-compacted class name), not the class's own Python name, so
+    # it matches across generations sharing that key.
+    def _protocol_{{ protocol_discriminator_name(class, protocol_discriminator_key) }}(self) -> None:
+        pass
+    {%- endif %}
 
     {%- if class.properties %}
     PROPERTIES: ClassVar[List[ClassProp]] = [
     {%- for prop in class.properties %}
-        {%- set is_list = prop_is_list(prop) %}
+        {%- set is_list, has_ref, is_enum = prop_shape(prop) %}
         {%- if prop.comment %}
         {%- for l in prop.comment.split("\n") %}
         #{{ (" " + l).rstrip() }}
@@ -3085,13 +3093,13 @@ class {{ varname(*class.clsname) }}(
             "{{ varname(prop.varname) }}",
             lambda:
             {% if is_list -%}ListProp({% endif %}
-            {%- if prop.enum_values -%}
+            {%- if is_enum -%}
                 EnumProp((
                 {%- for value in prop.enum_values %}
                     ("{{ value }}", "{{ context.compact_vocab(value, prop.path) }}"),
                 {%- endfor %}
                 ))
-            {%- elif prop.class_id -%}
+            {%- elif has_ref -%}
                 {%- set ctx = [] %}
                 {%- for value in get_all_named_individuals(classes.get(prop.class_id)) %}
                     {%- if context.compact_vocab(value, prop.path) != value %}

@@ -1,5 +1,5 @@
 {
-    "@context": "https://spdx.github.io/spdx-3-model/context.json",
+    "@context": "@CONTEXT_URL@",
     "@graph": [
         {
             "@id": "http://serialize.example.com/test",

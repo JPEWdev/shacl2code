@@ -40,6 +40,10 @@ TEST_TZ = timezone(timedelta(hours=-2), name="TST")
 
 MODEL_VERSION = "1.0.0.alpha"
 
+VALIDATION_ERROR = object()
+
+ENCODE_ERROR = object()
+
 
 def shacl2code_generate(args, python_args, outfile):
     p = subprocess.run(
@@ -219,6 +223,36 @@ class TestCheckType:
             ["mypy"] + [f for f in output_dir.iterdir() if f.suffix == ".py"],
             encoding="utf-8",
             check=True,
+        )
+
+    def test_stubtest(self, tmp_path, args, python_args):
+        """
+        Mypy stub checks to ensure pyi stubs are in sync with py code
+        """
+        output_dir = tmp_path / "pymodel"
+        shacl2code_generate(args, python_args, output_dir)
+
+        pythonpath = os.environ.get("PYTHONPATH")
+        if pythonpath:
+            pythonpath = os.pathsep.join(str(tmp_path), pythonpath)
+        else:
+            pythonpath = str(tmp_path)
+
+        env = os.environ.copy()
+        env["PYTHONPATH"] = pythonpath
+
+        subprocess.run(
+            [
+                "stubtest",
+                "pymodel",
+                "--allow",
+                DATA_DIR / "stubtest" / "allow.txt",
+                "--ignore-unused-allowlist",
+                "--ignore-missing-stub",
+            ],
+            encoding="utf-8",
+            check=True,
+            env=env,
         )
 
     def test_pyrefly(self, tmp_path, args, python_args):
@@ -476,60 +510,7 @@ def test_jsonschema_validation(roundtrip, test_jsonschema):
     jsonschema.validate(data, schema=test_jsonschema)
 
 
-# TODO: Make python bindings pass the other JSON validation tests
-@pytest.mark.parametrize(
-    "passes,data",
-    [
-        pytest.param(
-            True,
-            {
-                "@context": jsonvalidation.CONTEXT,
-                "@graph": [
-                    {
-                        "@type": "test-class",
-                    },
-                ],
-                "signatures": [],
-            },
-            id="JSS Signature",
-        ),
-        pytest.param(
-            False,
-            {
-                "@context": jsonvalidation.CONTEXT,
-                "@graph": [
-                    {
-                        "@type": "test-class",
-                    },
-                ],
-                "unknown": {},
-            },
-            id="Unknown top level property with @graph",
-        ),
-        pytest.param(
-            True,
-            {
-                "@context": jsonvalidation.CONTEXT,
-                "@type": "test-class",
-                "signatures": [],
-            },
-            id="Inline with signature",
-        ),
-        pytest.param(
-            False,
-            {
-                "@context": jsonvalidation.CONTEXT,
-                "@graph": [
-                    {
-                        "@type": "test-class",
-                    },
-                ],
-                "signatures": "string",
-            },
-            id="Signature with wrong type",
-        ),
-    ],
-)
+@jsonvalidation.validation_tests()
 def test_json_validation(passes, data, tmp_path, test_context_url, model_script):
     jsonvalidation.replace_context(data, test_context_url)
 
@@ -571,22 +552,42 @@ def test_links(filename, name, expect_tag, model, tmp_path, test_context_url):
 
 
 @pytest.mark.parametrize(
-    "filename,expect",
+    "filename,expect,match",
     [
-        ("bad-object-type-inline.json", TypeError),
-        ("bad-object-type-ref-before.json", TypeError),
-        ("bad-object-type-ref-after.json", TypeError),
+        pytest.param(
+            "bad-object-type-inline.json",
+            VALIDATION_ERROR,
+            "Type test-class is not valid where",
+            id="Bad object type for property (inline)",
+        ),
+        pytest.param(
+            "bad-object-type-ref-before.json",
+            VALIDATION_ERROR,
+            "Value must be one of type: link_class, str. Got test_class",
+            id="Bad object type for property (linked by ID before)",
+        ),
+        pytest.param(
+            "bad-object-type-ref-after.json",
+            VALIDATION_ERROR,
+            "Value must be one of type: link_class, str. Got test_class",
+            id="Bad object type for property (linked by ID after)",
+        ),
     ],
 )
-def test_deserialize(model, filename, expect):
+def test_deserialize(filename, expect, match, model, test_context_url):
     objset = model.SHACLObjectSet()
     deserializer = model.JSONLDDeserializer()
     with (DATA_DIR / "python" / filename).open("r") as f:
-        if issubclass(expect, Exception):
-            with pytest.raises(expect):
-                deserializer.read(f, objset)
-        else:
-            deserializer.read(f, objset)
+        d = json.loads(f.read().replace("@CONTEXT_URL@", test_context_url))
+
+    if expect is VALIDATION_ERROR:
+        expect = model.ValidationError
+
+    if issubclass(expect, Exception):
+        with pytest.raises(expect, match=match):
+            deserializer.deserialize_data(d, objset)
+    else:
+        deserializer.deserialize_data(d, objset)
 
 
 def test_node_kind_blank(model, test_context_url):
@@ -599,7 +600,7 @@ def test_node_kind_blank(model, test_context_url):
 
     ref = model.node_kind_blank()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(model.ValidationError):
         ref._id = "http://example.com/name"
 
     # Blank node assignment is fine but not preserved when serializing
@@ -683,11 +684,11 @@ def test_node_kind_iri(model, test_context_url, cls):
 
     ref = getattr(model, cls)()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(model.ValidationError):
         ref._id = "_:blank"
 
     # serializing without an ID is not allowed
-    with pytest.raises(ValueError):
+    with pytest.raises(model.EncodeError):
         s.serialize_data(model.SHACLObjectSet([ref]))
 
     # Inlining not allowed
@@ -860,26 +861,26 @@ SAME_AS_VALUE = object()
 
 def type_tests(name, *typ):
     tests = [
-        (name, None, TypeError),
-        (name, [], TypeError),
-        (name, object(), TypeError),
-        (name, lambda model: sum, TypeError),
+        (name, None, VALIDATION_ERROR),
+        (name, [], VALIDATION_ERROR),
+        (name, object(), VALIDATION_ERROR),
+        (name, lambda model: sum, VALIDATION_ERROR),
     ]
     if bool not in typ and int not in typ:
-        tests.append((name, True, TypeError))
-        tests.append((name, False, TypeError))
+        tests.append((name, True, VALIDATION_ERROR))
+        tests.append((name, False, VALIDATION_ERROR))
 
     if int not in typ:
-        tests.append((name, 1, TypeError))
+        tests.append((name, 1, VALIDATION_ERROR))
 
     if float not in typ:
-        tests.append((name, 1.0, TypeError))
+        tests.append((name, 1.0, VALIDATION_ERROR))
 
     if datetime not in typ:
-        tests.append((name, datetime(2024, 3, 11, 0, 0, 0), TypeError)),
+        tests.append((name, datetime(2024, 3, 11, 0, 0, 0), VALIDATION_ERROR)),
 
     if str not in typ:
-        tests.append((name, "foo", TypeError))
+        tests.append((name, "foo", VALIDATION_ERROR))
 
     return tests
 
@@ -888,14 +889,14 @@ def type_tests(name, *typ):
     "prop,value,expect",
     [
         # positive integer
-        ("test_class_positive_integer_prop", -1, ValueError),
-        ("test_class_positive_integer_prop", 0, ValueError),
+        ("test_class_positive_integer_prop", -1, VALIDATION_ERROR),
+        ("test_class_positive_integer_prop", 0, VALIDATION_ERROR),
         ("test_class_positive_integer_prop", 1, 1),
-        ("test_class_positive_integer_prop", False, ValueError),
+        ("test_class_positive_integer_prop", False, VALIDATION_ERROR),
         ("test_class_positive_integer_prop", True, 1),
         *type_tests("test_class_positive_integer_prop", int),
         # non-negative integer
-        ("test_class_nonnegative_integer_prop", -1, ValueError),
+        ("test_class_nonnegative_integer_prop", -1, VALIDATION_ERROR),
         ("test_class_nonnegative_integer_prop", 0, 0),
         ("test_class_nonnegative_integer_prop", 1, 1),
         ("test_class_nonnegative_integer_prop", False, 0),
@@ -1048,7 +1049,7 @@ def type_tests(name, *typ):
             "http://example.org/shacl2code-test/enumType/foo",
             "http://example.org/shacl2code-test/enumType/foo",
         ),
-        ("test_class_enum_prop", "foo", ValueError),
+        ("test_class_enum_prop", "foo", VALIDATION_ERROR),
         *type_tests("test_class_enum_prop", str),
         # Object
         ("test_class_class_prop", lambda model: model.test_class(), SAME_AS_VALUE),
@@ -1057,8 +1058,12 @@ def type_tests(name, *typ):
             lambda model: model.test_derived_class(),
             SAME_AS_VALUE,
         ),
-        ("test_class_class_prop", lambda model: model.test_another_class(), TypeError),
-        ("test_class_class_prop", lambda model: model.parent_class(), TypeError),
+        (
+            "test_class_class_prop",
+            lambda model: model.test_another_class(),
+            VALIDATION_ERROR,
+        ),
+        ("test_class_class_prop", lambda model: model.parent_class(), VALIDATION_ERROR),
         ("test_class_class_prop", lambda model: model.test_class.named, SAME_AS_VALUE),
         ("test_class_class_prop", "_:blanknode", "_:blanknode"),
         (
@@ -1071,9 +1076,9 @@ def type_tests(name, *typ):
         ("test_class_regex", "foo1", "foo1"),
         ("test_class_regex", "foo2", "foo2"),
         ("test_class_regex", "foo2a", "foo2a"),
-        ("test_class_regex", "bar", ValueError),
-        ("test_class_regex", "fooa", ValueError),
-        ("test_class_regex", "afoo1", ValueError),
+        ("test_class_regex", "bar", VALIDATION_ERROR),
+        ("test_class_regex", "fooa", VALIDATION_ERROR),
+        ("test_class_regex", "afoo1", VALIDATION_ERROR),
         *type_tests("test_class_regex", str),
         # Pattern validated dateTime
         (
@@ -1084,23 +1089,23 @@ def type_tests(name, *typ):
         (
             "test_class_regex_datetime",
             datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone(-timedelta(hours=6))),
-            ValueError,
+            VALIDATION_ERROR,
         ),
         (
             "test_class_regex_datetime",
             datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone.utc),
-            ValueError,
+            VALIDATION_ERROR,
         ),
         (
             "test_class_regex_datetime",
             datetime(2024, 3, 11, 0, 0, 0),
-            ValueError,
+            VALIDATION_ERROR,
         ),
         # Pattern validated dateTimeStamp
         (
             "test_class_regex_datetimestamp",
             datetime(2024, 3, 11, 0, 0, 0, tzinfo=timezone(-timedelta(hours=6))),
-            ValueError,
+            VALIDATION_ERROR,
         ),
         (
             "test_class_regex_datetimestamp",
@@ -1134,6 +1139,9 @@ def test_scalar_prop_validation(model, test_timezone, prop, value, expect):
     for cls in model.test_class, model.test_derived_class:
         c = cls()
 
+        if expect is VALIDATION_ERROR:
+            expect = model.ValidationError
+
         if isinstance(expect, type) and issubclass(expect, Exception):
             with pytest.raises(expect):
                 setattr(c, prop, value)
@@ -1164,34 +1172,34 @@ def test_derived_property(model):
 def list_type_tests(name, *typ):
     tests = [
         # Non list types
-        (name, 1, TypeError),
-        (name, 1.0, TypeError),
-        (name, True, TypeError),
-        (name, "foo", TypeError),
-        (name, datetime(2024, 3, 11, 0, 0, 0), TypeError),
-        (name, object(), TypeError),
-        (name, [object()], TypeError),
-        (name, lambda model: sum, TypeError),
-        (name, [sum], TypeError),
+        (name, 1, VALIDATION_ERROR),
+        (name, 1.0, VALIDATION_ERROR),
+        (name, True, VALIDATION_ERROR),
+        (name, "foo", VALIDATION_ERROR),
+        (name, datetime(2024, 3, 11, 0, 0, 0), VALIDATION_ERROR),
+        (name, object(), VALIDATION_ERROR),
+        (name, [object()], VALIDATION_ERROR),
+        (name, lambda model: sum, VALIDATION_ERROR),
+        (name, [sum], VALIDATION_ERROR),
         # Empty list is always allowed
         (name, [], []),
     ]
 
     if bool not in typ and int not in typ:
-        tests.append((name, [True], TypeError))
-        tests.append((name, [False], TypeError))
+        tests.append((name, [True], VALIDATION_ERROR))
+        tests.append((name, [False], VALIDATION_ERROR))
 
     if int not in typ:
-        tests.append((name, [1], TypeError))
+        tests.append((name, [1], VALIDATION_ERROR))
 
     if float not in typ:
-        tests.append((name, [1.0], TypeError))
+        tests.append((name, [1.0], VALIDATION_ERROR))
 
     if datetime not in typ:
-        tests.append((name, [datetime(2024, 3, 11, 0, 0, 0)], TypeError)),
+        tests.append((name, [datetime(2024, 3, 11, 0, 0, 0)], VALIDATION_ERROR)),
 
     if str not in typ:
-        tests.append((name, ["foo"], TypeError))
+        tests.append((name, ["foo"], VALIDATION_ERROR))
 
     return tests
 
@@ -1278,7 +1286,7 @@ def list_type_tests(name, *typ):
                 "http://example.org/shacl2code-test/enumType/foo",
                 "foo",
             ],
-            ValueError,
+            VALIDATION_ERROR,
         ),
         *list_type_tests("test_class_enum_list_prop", str),
         # Object
@@ -1296,12 +1304,12 @@ def list_type_tests(name, *typ):
         (
             "test_class_class_list_prop",
             lambda model: [model.test_another_class()],
-            TypeError,
+            VALIDATION_ERROR,
         ),
         (
             "test_class_class_list_prop",
             lambda model: [model.parent_class()],
-            TypeError,
+            VALIDATION_ERROR,
         ),
         *list_type_tests("test_class_class_list_prop", str),
         # Pattern validated
@@ -1318,9 +1326,9 @@ def list_type_tests(name, *typ):
                 "foo2a",
             ],
         ),
-        ("test_class_regex_list", ["bar"], ValueError),
-        ("test_class_regex_list", ["fooa"], ValueError),
-        ("test_class_regex_list", ["afoo1"], ValueError),
+        ("test_class_regex_list", ["bar"], VALIDATION_ERROR),
+        ("test_class_regex_list", ["fooa"], VALIDATION_ERROR),
+        ("test_class_regex_list", ["afoo1"], VALIDATION_ERROR),
         *list_type_tests("test_class_regex_list", str),
         # TODO Add more list tests
     ],
@@ -1337,6 +1345,9 @@ def test_list_prop_validation(model, prop, value, expect):
     kwargs = {prop: value}
     for cls in model.test_class, model.test_derived_class:
         c = cls()
+
+        if expect is VALIDATION_ERROR:
+            expect = model.ValidationError
 
         if isinstance(expect, type) and issubclass(expect, Exception):
             with pytest.raises(expect):
@@ -1385,36 +1396,39 @@ def test_list_prop_validation(model, prop, value, expect):
 @timetests.datetime_decode_tests()
 def test_datetime_from_string(model, value, expect):
     p = model.DateTimeProp()
+    path = model.DataPath()
 
     if expect is None:
-        with pytest.raises(ValueError):
-            p.from_string(value)
+        with pytest.raises(model.ValidationError):
+            p.from_string(path, value)
     else:
-        v = p.from_string(value)
+        v = p.from_string(path, value)
         assert v == expect
 
 
 @timetests.datetimestamp_decode_tests()
 def test_datetimestamp_from_string(model, value, expect):
     p = model.DateTimeStampProp()
+    path = model.DataPath()
 
     if expect is None:
-        with pytest.raises(ValueError):
-            p.from_string(value)
+        with pytest.raises(model.ValidationError):
+            p.from_string(path, value)
     else:
-        v = p.from_string(value)
+        v = p.from_string(path, value)
         assert v == expect
 
 
 @timetests.datetime_encode_tests()
 def test_datetime_to_string(model, value, expect):
     p = model.DateTimeProp()
+    path = model.DataPath()
 
     if expect is None:
-        with pytest.raises(expect):
-            p.to_string(value)
+        with pytest.raises(model.ValidationError):
+            p.to_string(path, value)
     else:
-        v = p.to_string(value)
+        v = p.to_string(path, value)
         assert v == expect
         assert re.match(
             model.DateTimeProp.REGEX, v
@@ -1497,7 +1511,7 @@ def test_extensible_prop(model, test_context_url, prop, serkey, value, expect):
             "http://example.org/shacl2code-test/extensible-test-prop",
             object(),
             SAME_AS_VALUE,
-            TypeError,
+            ENCODE_ERROR,
             None,
         ),
         (
@@ -1511,7 +1525,7 @@ def test_extensible_prop(model, test_context_url, prop, serkey, value, expect):
             "http://example.org/shacl2code-test/extensible-test-prop",
             [object()],
             SAME_AS_VALUE,
-            TypeError,
+            ENCODE_ERROR,
             None,
         ),
     ],
@@ -1541,6 +1555,11 @@ def test_extensible_iri(
         s = model.JSONLDSerializer()
         objset = model.SHACLObjectSet()
         objset.add(e)
+
+        if ser_data is VALIDATION_ERROR:
+            ser_data = model.ValidationError
+        elif ser_data is ENCODE_ERROR:
+            ser_data = model.EncodeError
 
         if isinstance(ser_data, type) and issubclass(ser_data, Exception):
             with pytest.raises(ser_data):
@@ -1607,7 +1626,7 @@ def test_extensible_deserialize(model, test_context_url):
     assert obj.get_type() == TEST_TYPE
     assert obj.get_compact_type() is None
 
-    with pytest.raises(KeyError):
+    with pytest.raises(model.DecodeError):
         deserialize_extension(
             {
                 "@type": TEST_TYPE,
@@ -1616,7 +1635,7 @@ def test_extensible_deserialize(model, test_context_url):
             }
         )
 
-    with pytest.raises(KeyError):
+    with pytest.raises(model.DecodeError):
         deserialize_extension(
             {
                 "@type": TEST_TYPE,
@@ -1697,28 +1716,28 @@ def test_mandatory_properties(model, tmp_path):
     c = base_obj()
     del c.test_class_required_string_scalar_prop
     with outfile.open("wb") as f:
-        with pytest.raises(ValueError):
+        with pytest.raises(model.ValidationError):
             s.write(model.SHACLObjectSet([c]), f)
 
     # Array that is deleted
     c = base_obj()
     del c.test_class_required_string_list_prop
     with outfile.open("wb") as f:
-        with pytest.raises(ValueError):
+        with pytest.raises(model.ValidationError):
             s.write(model.SHACLObjectSet([c]), f)
 
     # Array initialized to empty list
     c = base_obj()
     c.test_class_required_string_list_prop = []
     with outfile.open("wb") as f:
-        with pytest.raises(ValueError):
+        with pytest.raises(model.ValidationError):
             s.write(model.SHACLObjectSet([c]), f)
 
     # Array with too many items
     c = base_obj()
     c.test_class_required_string_list_prop.append("too many")
     with outfile.open("wb") as f:
-        with pytest.raises(ValueError):
+        with pytest.raises(model.ValidationError):
             s.write(model.SHACLObjectSet([c]), f)
 
 
@@ -1974,7 +1993,7 @@ def test_required_abstract_class_property(model, tmp_path):
 
     # Attempting to serialize without assigning the property should fail
     with outfile.open("wb") as f:
-        with pytest.raises(ValueError):
+        with pytest.raises(model.ValidationError):
             s.write(objset, f, indent=4)
 
     # Assigning a concrete class should succeed and allow serialization

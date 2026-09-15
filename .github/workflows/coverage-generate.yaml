@@ -3,9 +3,18 @@ name: Generate coverage
 
 on:
   pull_request:
+    # Skip docs and edits to other workflows; later patterns override earlier.
+    paths: &trigger-paths
+      - "**"
+      - "!**/*.md"
+      - "!LICENSE"
+      - "!.github/ISSUE_TEMPLATE/**"
+      - "!.github/workflows/**"
+      - ".github/workflows/coverage-generate.yaml"
   push:
     branches:
       - "main"
+    paths: *trigger-paths
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
@@ -38,9 +47,11 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
+          cache: npm
+          cache-dependency-path: scripts/package-lock.json
       - name: Install dependencies
         run: |
-          sudo apt install -y build-essential cppcheck doxygen graphviz
+          sudo apt install -y build-essential ccache cppcheck doxygen graphviz
           npm install -g jsonld-cli
           npm --prefix scripts ci
       - name: Install Go static analysis tools
@@ -50,6 +61,10 @@ jobs:
       - name: Install Rust static analysis tools
         run: |
           rustup component add clippy
+      - name: Configure ccache
+        uses: hendrikmuhs/ccache-action@f09c25b45002a07be2955cbe52e8cee55643f89d # v1.2.24
+        with:
+          key: ${{ github.job }}
       - name: Install package
         run: |
           pip install --upgrade pip

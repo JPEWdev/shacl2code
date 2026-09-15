@@ -97,7 +97,7 @@ shacl2code generate \
     --input model-draft.ttl \
     --context-url context-draft.jsonld https://example.com/context.jsonld \
     jsonschema \
-   --output schema.json
+    --output schema.json
 ```
 
 ## Developing

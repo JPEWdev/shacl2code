@@ -1,0 +1,19 @@
+@base <http://example.org/reserved#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# A minimal model with no datetime-typed property.
+# Used to verify that protocols.py.j2 omits `from datetime import datetime`
+# for models like this one, instead of emitting it unconditionally and
+# leaving an unused import (flake8 F401).
+
+<no-datetime-class> a rdfs:Class, sh:NodeShape, owl:Class ;
+    rdfs:comment "A class with only a string property, no datetime types" ;
+    sh:property [
+        sh:datatype xsd:string ;
+        sh:path <prop/name> ;
+        sh:maxCount 1
+    ]
+    .

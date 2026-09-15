@@ -3,12 +3,17 @@
 # SPDX-License-Identifier: MIT
 """Python language binding renderer"""
 
+import hashlib
 import keyword
 import re
 from pathlib import Path
+from typing import Iterable
 
-from .common import JinjaTemplateRender
+from jinja2 import TemplateRuntimeError
+
+from .common import JinjaTemplateRender, prop_is_list
 from .lang import TEMPLATE_DIR, language
+from ..model import Class
 from ..util import convert_version_string
 
 DATATYPE_CLASSES = {
@@ -60,6 +65,16 @@ SHACLOBJECT_RESERVED_WORDS = {
 }
 
 
+# __init__.py.j2's own top-level names. Only class/ontology names become
+# real top-level package attributes and can collide with these; properties
+# (instance attributes) never can, so keep this separate from
+# SHACLOBJECT_RESERVED_WORDS.
+PACKAGE_RESERVED_WORDS = {
+    "IS_PRERELEASE",
+    "TYPE_CHECKING",
+}
+
+
 def varname(*name):
     """Make a valid Python variable name."""
     name = "_".join(name)
@@ -75,6 +90,32 @@ def varname(*name):
     return name
 
 
+def class_pyname(cls: Class) -> str:
+    """Python name for cls. Use at every reference site (definition, base
+    class lists, property types), not just the definition, for consistency."""
+    name = varname(*cls.clsname)
+    while name in PACKAGE_RESERVED_WORDS:
+        name = name + "_"
+    return name
+
+
+def ontology_constname(name: str) -> str:
+    """Python constant name for an Ontology: varname(), upper-cased, then
+    checked against PACKAGE_RESERVED_WORDS (post-upper(), since upper() can
+    itself create a collision varname() didn't see)."""
+    result = varname(name).upper()
+    while result in PACKAGE_RESERVED_WORDS:
+        result = result + "_"
+    return result
+
+
+def prop_shape(prop):
+    """Classify a property's container shape: (is_list, has_ref, is_enum)."""
+    is_enum = bool(prop.enum_values)
+    has_ref = bool(prop.class_id) and not is_enum
+    return prop_is_list(prop), has_ref, is_enum
+
+
 def prop_element_pytype(prop, classes):
     """Python type of a single element of prop, ignoring container shape.
 
@@ -84,8 +125,82 @@ def prop_element_pytype(prop, classes):
     if prop.enum_values:
         return "str"
     if prop.class_id:
-        return "Union[str, '" + varname(*classes.get(prop.class_id).clsname) + "']"
+        return "Union[str, '" + class_pyname(classes.get(prop.class_id)) + "']"
+    if prop.datatype not in DATATYPE_PYTHON_TYPES:
+        # Same error as model.py.j2's abort()
+        raise TemplateRuntimeError("Unknown data type " + prop.datatype)
     return DATATYPE_PYTHON_TYPES[prop.datatype]
+
+
+def protocols_use_datetime(classes: Iterable[Class]) -> bool:
+    """Whether any class has a datetime-typed scalar or list property."""
+    for cls in classes:
+        for prop in cls.properties:
+            _, has_ref, is_enum = prop_shape(prop)
+            if has_ref or is_enum:
+                continue
+            if prop_element_pytype(prop, classes) == "datetime":
+                return True
+    return False
+
+
+def protocols_use_object_refs(classes: Iterable[Class]) -> bool:
+    """Whether any class has an object-reference-typed scalar or list property."""
+    for cls in classes:
+        for prop in cls.properties:
+            _, has_ref, _ = prop_shape(prop)
+            if has_ref:
+                return True
+    return False
+
+
+def protocol_discriminator_name(cls: Class, key: str) -> str:
+    """Stable, collision-resistant name for cls's Protocol discriminator method.
+
+    key="iri": keyed by the class's raw IRI, so it matches across
+    generations of the SAME model with different --context flags. varname()
+    alone can sanitize two distinct IRIs to the same string (e.g. IRIs that
+    differ only in punctuation runs both collapsing to "_"), so a short hash
+    of the raw IRI is appended to disambiguate while staying stable across
+    regenerations of the same class.
+
+    key="compact-name": keyed by the --context-compacted class name
+    instead -- the exact same name already used for the class itself, so
+    any collision here would already be a duplicate Python class
+    definition, independent of this function. Matches across different
+    VERSIONS of an ontology that keeps its compact term names stable even
+    as the underlying IRIs change (e.g. SPDX, which embeds its own spec
+    version in every class IRI). Only safe when every generation being
+    compared shares a canonical context.
+    """
+    if key == "compact-name":
+        return varname(*cls.clsname)
+    digest = hashlib.sha256(cls._id.encode("utf-8")).hexdigest()[:8]
+    return varname(cls._id, digest)
+
+
+def protocols_extra_imports(classes: Iterable[Class]) -> str:
+    """Conditionally-needed stdlib imports for protocols.py.j2.
+
+    Rendered as a single ``{{ }}`` expression (not a ``{% if %}`` block) so
+    black can parse the .j2 source as Python. The blank lines black then
+    requires around that expression separate these imports from the ones
+    above by more than flake8-import-order allows within one group, so each
+    line silences that deliberate exception. Always returns a non-blank
+    line (a comment when there's nothing to import) so the surrounding
+    black-mandated blank-line groups above and below never merge into one
+    run long enough to trip flake8's too-many-blank-lines check.
+    """
+    lines = []
+    if protocols_use_datetime(classes):
+        lines.append("from datetime import datetime  # noqa: E402, I100, I202")
+    if any(cls.named_individuals for cls in classes):
+        lines.append("from typing import ClassVar, Dict  # noqa: E402, I100, I202")
+    if protocols_use_object_refs(classes):
+        lines.append("from typing import Union  # noqa: E402, I100, I202")
+    if not lines:
+        lines.append("# No extra imports needed for this model.")
+    return "\n".join(lines)
 
 
 @language("python")
@@ -103,8 +218,10 @@ class PythonRender(JinjaTemplateRender):
     def __init__(self, args):
         super().__init__(args)
         self.__output = args.output
-        self.__use_slots = args.use_slots
         self.__include_main = args.include_main == "yes"
+        self.__protocol_discriminator_key = args.include_protocols
+        self.__include_protocols = args.include_protocols != "no"
+        self.__use_slots = args.use_slots
         self.__version_str = args.version
         if args.version:
             self.__version = repr(convert_version_string(args.version))
@@ -125,6 +242,23 @@ class PythonRender(JinjaTemplateRender):
             choices=("yes", "no"),
             default="yes",
             help="Generate a main function for the module. Default is '%(default)s'",
+        )
+        parser.add_argument(
+            "--include-protocols",
+            choices=("no", "iri", "compact-name"),
+            default="no",
+            help=(
+                "Include a protocols.py module with version-agnostic Protocol "
+                "types for every class. 'iri' keys each class's cross-version "
+                "discriminator by its full IRI: stable across regenerations of "
+                "the same model with different --context files, but differs if "
+                "the ontology embeds its own version in class IRIs (e.g. SPDX). "
+                "'compact-name' keys it by the --context-compacted class name "
+                "instead: stable across ontology versions that keep the same "
+                "compact term names (e.g. SPDX), but only safe when every "
+                "generation being compared shares a canonical context. "
+                "Default is '%(default)s'"
+            ),
         )
         parser.add_argument(
             "--use-slots",
@@ -155,10 +289,18 @@ class PythonRender(JinjaTemplateRender):
             yield get_file("cmd.pyi")
             yield get_file("__main__.py")
 
+        if self.__include_protocols:
+            yield get_file("protocols.py")
+
     def get_extra_env(self):
         return {
             "varname": varname,
+            "class_pyname": class_pyname,
+            "ontology_constname": ontology_constname,
             "prop_element_pytype": prop_element_pytype,
+            "prop_shape": prop_shape,
+            "protocol_discriminator_name": protocol_discriminator_name,
+            "protocols_extra_imports": protocols_extra_imports,
             "DATATYPE_CLASSES": DATATYPE_CLASSES,
             "DATATYPE_PYTHON_TYPES": DATATYPE_PYTHON_TYPES,
         }
@@ -171,8 +313,10 @@ class PythonRender(JinjaTemplateRender):
         else:
             use_slots = False
         return {
-            "use_slots": use_slots,
             "include_main": self.__include_main,
-            "version_str": self.__version_str,
+            "include_protocols": self.__include_protocols,
+            "protocol_discriminator_key": self.__protocol_discriminator_key,
+            "use_slots": use_slots,
             "version": self.__version,
+            "version_str": self.__version_str,
         }

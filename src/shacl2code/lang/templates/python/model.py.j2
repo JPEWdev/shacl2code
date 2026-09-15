@@ -3233,7 +3233,7 @@ CONTEXT_URLS: List[str] = [
 ]
 
 # ONTOLOGIES
-{%- for o in ontologies %}
+{% for o in ontologies %}
 {%- if o.comment %}
 {{ '"' }}{{ '"' }}{{ '"' }}
 {%- for l in o.comment.split("\n") %}
@@ -3241,7 +3241,7 @@ CONTEXT_URLS: List[str] = [
 {%- endfor %}
 {{ '"' }}{{ '"' }}{{ '"' }}
 {% endif %}
-{{ varname(o.name).upper() }} = Ontology(
+{{ ontology_constname(o.name) }} = Ontology(
     iri="{{ o._id }}",
     is_prerelease={{ o.is_prerelease }},
 {%- if o.version %}
@@ -3252,10 +3252,10 @@ CONTEXT_URLS: List[str] = [
 
 # CLASSES
 {%- for class in classes %}
-class {{ varname(*class.clsname) }}(
+class {{ class_pyname(class) }}(
 {%- if class.parent_ids %}
     {%- for id in class.parent_ids -%}
-        {{- varname(*classes.get(id).clsname) }}{%- if not loop.last or class.is_extensible -%}, {% endif -%}
+        {{- class_pyname(classes.get(id)) }}{%- if not loop.last or class.is_extensible -%}, {% endif -%}
     {%- endfor -%}
     {%- if class.is_extensible -%}
         SHACLExtensibleObject
@@ -3281,7 +3281,7 @@ class {{ varname(*class.clsname) }}(
     {%- if class.deprecated %}
     IS_DEPRECATED: ClassVar[bool] = True
     {%- endif %}
-    ONTOLOGY: ClassVar[Optional[Ontology]] = {% if class.ontology %}{{ varname(class.ontology.name).upper() }}{% else %}None{% endif %}
+    ONTOLOGY: ClassVar[Optional[Ontology]] = {% if class.ontology %}{{ ontology_constname(class.ontology.name) }}{% else %}None{% endif %}
     {%- if class.named_individuals %}
     NAMED_INDIVIDUALS: ClassVar[Dict[str, str]] = {
         {%- for member in class.named_individuals %}
@@ -3294,11 +3294,19 @@ class {{ varname(*class.clsname) }}(
         {%- endfor %}
     }
     {%- endif %}
+    {%- if include_protocols %}
+
+    # Discriminator keyed by --include-protocols's chosen key (IRI or
+    # --context-compacted class name), not the class's own Python name, so
+    # it matches across generations sharing that key.
+    def _protocol_{{ protocol_discriminator_name(class, protocol_discriminator_key) }}(self) -> None:
+        pass
+    {%- endif %}
 
     {%- if class.properties %}
     PROPERTIES: ClassVar[List[ClassProp]] = [
     {%- for prop in class.properties %}
-        {%- set is_list = prop_is_list(prop) %}
+        {%- set is_list, has_ref, is_enum = prop_shape(prop) %}
         {%- if prop.comment %}
         {%- for l in prop.comment.split("\n") %}
         #{{ (" " + l).rstrip() }}
@@ -3308,20 +3316,20 @@ class {{ varname(*class.clsname) }}(
             "{{ varname(prop.varname) }}",
             lambda:
             {% if is_list -%}ListProp({% endif %}
-            {%- if prop.enum_values -%}
+            {%- if is_enum -%}
                 EnumProp((
                 {%- for value in prop.enum_values %}
                     ("{{ value }}", "{{ context.compact_vocab(value, prop.path) }}"),
                 {%- endfor %}
                 ))
-            {%- elif prop.class_id -%}
+            {%- elif has_ref -%}
                 {%- set ctx = [] %}
                 {%- for value in get_all_named_individuals(classes.get(prop.class_id)) %}
                     {%- if context.compact_vocab(value, prop.path) != value %}
                         {{- ctx.append((value, context.compact_vocab(value, prop.path))) or "" }}
                     {%- endif %}
                 {%- endfor -%}
-                ObjectProp({{ varname(*classes.get(prop.class_id).clsname) }}, {% if prop.min_count and not is_list %}True{% else %}False{% endif %}{% if ctx %}, context=(
+                ObjectProp({{ class_pyname(classes.get(prop.class_id)) }}, {% if prop.min_count and not is_list %}True{% else %}False{% endif %}{% if ctx %}, context=(
                 {%- for value, compact in ctx %}
                     ("{{ value }}", "{{ compact }}"),
                 {%- endfor %}

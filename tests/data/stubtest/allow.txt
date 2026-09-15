@@ -1,8 +1,6 @@
-pymodel.CONTEXT_URLS
 pymodel.TYPE_CHECKING
 pymodel.VERSION
 pymodel.VERSION_STRING
-pymodel.model.CONTEXT_URLS
 pymodel.model.ClassProp.__init__
 pymodel.model.Decoder.is_list
 pymodel.model.Decoder.is_object

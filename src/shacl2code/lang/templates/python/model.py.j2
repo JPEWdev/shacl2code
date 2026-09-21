@@ -8,7 +8,6 @@
 from __future__ import annotations
 
 import decimal
-import functools
 import hashlib
 import json
 import re
@@ -33,7 +32,7 @@ from typing import (
     List,
     Optional,
     Set,
-    TYPE_CHECKING,
+    TYPE_CHECKING as _TYPE_CHECKING,
     Tuple,
     Type,
     TypeVar,
@@ -41,6 +40,64 @@ from typing import (
     cast,
     overload,
 )
+
+__all__ = [
+    "AnyURIProp",
+    "BooleanProp",
+    "CONTEXT_URLS",
+    "ClassProp",
+    "DataPath",
+    "DateTimeProp",
+    "DateTimeStampProp",
+    "DecodeError",
+    "DecodeState",
+    "Decoder",
+    "EncodeError",
+    "EncodeState",
+    "Encoder",
+    "EnumProp",
+    "FloatProp",
+    "IRIProp",
+    "IntegerProp",
+    "JSONLDDecoder",
+    "JSONLDDeserializer",
+    "JSONLDEncoder",
+    "JSONLDInlineEncoder",
+    "JSONLDInlineSerializer",
+    "JSONLDSerializer",
+    "ListProp",
+    "ListProxy",
+    "NodeKind",
+    "NonNegativeIntegerProp",
+    "ObjectProp",
+    "Ontology",
+    "PathError",
+    "PositiveIntegerProp",
+    "Property",
+    "SHACLExtensibleObject",
+    "SHACLObject",
+    "SHACLObjectMeta",
+    "SHACLObjectSet",
+    "StringProp",
+    "ValidationError",
+    "check_type",
+    "decode_context",
+    "encode_context",
+    "is_IRI",
+    "is_blank_node",
+{%- if version_str %}
+    "VERSION_STRING",
+{%- endif %}
+{%- if version %}
+    "VERSION",
+{%- endif %}
+{%- for o in ontologies %}
+    "{{ varname(o.name).upper() }}",
+{%- endfor %}
+{%- for class in classes %}
+    "{{ varname(*class.clsname) }}",
+{%- endfor %}
+]
 
 T_PropV = TypeVar("T_PropV")
 
@@ -1021,7 +1078,6 @@ _ALL_NAMED_INDIVIDUAL_IDS: Set[str] = set()
 T_SHACLObject = TypeVar("T_SHACLObject", bound="SHACLObject")
 
 
-@functools.total_ordering
 class SHACLObject(metaclass=SHACLObjectMeta):
     """Base class for all SHACL-defined objects, providing property access, encoding, and decoding."""
 
@@ -1536,6 +1592,15 @@ class SHACLObject(metaclass=SHACLObjectMeta):
 
     def __lt__(self, other: Any) -> bool:
         return SHACLObject._sort_key(self) < SHACLObject._sort_key(other)
+
+    def __le__(self, other: Any) -> bool:
+        return SHACLObject._sort_key(self) <= SHACLObject._sort_key(other)
+
+    def __gt__(self, other: Any) -> bool:
+        return SHACLObject._sort_key(self) > SHACLObject._sort_key(other)
+
+    def __ge__(self, other: Any) -> bool:
+        return SHACLObject._sort_key(self) >= SHACLObject._sort_key(other)
 
 
 class SHACLExtensibleObject(SHACLObject):
@@ -2960,7 +3025,7 @@ try:
     from rdflib.namespace import RDF
     from rdflib.term import IdentifiedNode
 
-    if TYPE_CHECKING:
+    if _TYPE_CHECKING:
         from rdflib import Graph  # noqa: I300
         from rdflib.term import Node
 
@@ -3217,6 +3282,8 @@ try:
             e = RDFEncoder(g)
             state = EncodeState(objset)
             objset.encode(e, state)
+
+    __all__ += ["RDFDecoder", "RDFDeserializer", "RDFEncoder", "RDFSerializer"]
 
 except ImportError:
     pass

@@ -234,21 +234,22 @@ class TestCheckType:
 
         pythonpath = os.environ.get("PYTHONPATH")
         if pythonpath:
-            pythonpath = os.pathsep.join(str(tmp_path), pythonpath)
+            pythonpath = os.pathsep.join([str(tmp_path), pythonpath])
         else:
             pythonpath = str(tmp_path)
 
         env = os.environ.copy()
         env["PYTHONPATH"] = pythonpath
 
+        # No --ignore-missing-stub: a new public symbol must get a stub.
+        # No --ignore-unused-allowlist: a stale allowlist entry must be
+        # removed instead of silently hiding whatever it matches next.
         subprocess.run(
             [
                 "stubtest",
                 "pymodel",
                 "--allow",
                 DATA_DIR / "stubtest" / "allow.txt",
-                "--ignore-unused-allowlist",
-                "--ignore-missing-stub",
             ],
             encoding="utf-8",
             check=True,

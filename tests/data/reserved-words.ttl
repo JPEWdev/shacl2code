@@ -30,5 +30,17 @@
         sh:name "class" ;
         sh:path <prop/class> ;
         sh:maxCount 1
+    ],
+    [
+        sh:datatype xsd:string ;
+        sh:name "ONTOLOGY" ;
+        sh:path <prop/ONTOLOGY> ;
+        sh:maxCount 1
+    ],
+    [
+        sh:datatype xsd:string ;
+        sh:name "CLOSED" ;
+        sh:path <prop/CLOSED> ;
+        sh:maxCount 1
     ]
     .

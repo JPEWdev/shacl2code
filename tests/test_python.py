@@ -2100,11 +2100,18 @@ def test_varname_reserved_words(tmp_path):
 
     # Generated source must contain the renamed names, not the originals
     text = (output_dir / "model.py").read_text()
-    for renamed in ("get_id_", "set_id_", "encode_", "class_"):
+    for renamed in ("get_id_", "set_id_", "encode_", "class_", "ONTOLOGY_", "CLOSED_"):
         assert (
             renamed in text
         ), f"expected renamed property '{renamed}' in generated code"
-    for original in ('"get_id"', '"set_id"', '"encode"', '"class"'):
+    for original in (
+        '"get_id"',
+        '"set_id"',
+        '"encode"',
+        '"class"',
+        '"ONTOLOGY"',
+        '"CLOSED"',
+    ):
         assert (
             f"ClassProp({original}," not in text
         ), f"unrenamed property {original} found as ClassProp pyname"
@@ -2118,11 +2125,22 @@ def test_varname_reserved_words(tmp_path):
         cls = m.SHACLObject.CLASSES["http://example.org/shacl2code-test/test-rw-class"]
 
         # Renamed kwargs must work at construction time
-        obj = cls(get_id_="a", set_id_="b", encode_="c", class_="d")
+        obj = cls(
+            get_id_="a",
+            set_id_="b",
+            encode_="c",
+            class_="d",
+            ONTOLOGY_="e",
+            CLOSED_="f",
+        )
         assert obj.get_id_ == "a"
         assert obj.set_id_ == "b"
         assert obj.encode_ == "c"
         assert obj.class_ == "d"
+        assert obj.ONTOLOGY_ == "e"
+        assert obj.CLOSED_ == "f"
+
+        assert cls.ONTOLOGY is None
 
         # SHACLObject.get_id() must still return the object IRI,
         # not the value of the prop (get_id_)

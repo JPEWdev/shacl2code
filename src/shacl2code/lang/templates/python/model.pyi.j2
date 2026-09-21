@@ -32,6 +32,8 @@ from typing import (
 from rdflib import Graph  # type: ignore[import-not-found]
 from rdflib.term import Node  # type: ignore[import-not-found]
 
+# fmt: off
+"""Format Guard{{ '"' }}{{ '"' }}{{ '"' }}
 __all__ = [
     "AnyURIProp",
     "BooleanProp",
@@ -75,6 +77,8 @@ __all__ = [
     "SHACLObjectMeta",
     "SHACLObjectSet",
     "StringProp",
+    "T_PropV",
+    "T_SHACLObject",
     "ValidationError",
     "check_type",
     "decode_context",
@@ -94,6 +98,8 @@ __all__ = [
     "{{ varname(*class.clsname) }}",
 {%- endfor %}
 ]
+{{ '"' }}{{ '"' }}{{ '"' }}Format Guard"""
+# fmt: on
 
 T_PropV = TypeVar("T_PropV")
 

@@ -1,0 +1,31 @@
+@base <http://example.org/shacl2code-test/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh-to-code: <https://jpewdev.github.io/shacl2code/schema#> .
+
+# A concrete subclass of an extensible class that does not itself set
+# isExtensible, but has its own property. The generated runtime __init__ is
+# always inherited from SHACLExtensibleObject in this case (classes never
+# define their own __init__), so the generated stub must accept "typ" too.
+
+<ext-base-class> a rdfs:Class, sh:NodeShape, owl:Class ;
+    sh-to-code:isExtensible true ;
+    rdfs:comment "An extensible base class" ;
+    sh:property [
+        sh:datatype xsd:string ;
+        sh:path <prop/base-prop> ;
+        sh:maxCount 1
+    ]
+    .
+
+<ext-derived-class> a rdfs:Class, sh:NodeShape, owl:Class ;
+    rdfs:subClassOf <ext-base-class> ;
+    rdfs:comment "A subclass of an extensible class with its own property" ;
+    sh:property [
+        sh:datatype xsd:string ;
+        sh:path <prop/derived-prop> ;
+        sh:maxCount 1
+    ]
+    .

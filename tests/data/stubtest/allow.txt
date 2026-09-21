@@ -1,5 +1,1 @@
 # stubtest allowlist for the generated Python bindings.
-#
-# Empty on purpose. Every entry hides a real mismatch between model.py and
-# model.pyi, so prefer fixing the template. Entries are regular expressions
-# matched against the full symbol name.

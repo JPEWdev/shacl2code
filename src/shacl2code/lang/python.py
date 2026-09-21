@@ -36,6 +36,11 @@ DATATYPE_PYTHON_TYPES = {
 }
 
 
+# Names a generated property would collide with; varname() renames it instead.
+#
+# Gap: class names are unguarded. Under a context they compact to short names,
+# so a class compacting to "Property", "Ontology", "SHACLObjectSet", etc.
+# silently shadows it.
 SHACLOBJECT_RESERVED_WORDS = {
     "AUTO_NAMED_INDIVIDUALS",
     "CLASSES",

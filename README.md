@@ -330,3 +330,60 @@ status using the following order of precedence (1 = the highest priority):
 [pytest]: https://www.pytest.org
 [pytest-cov]: https://pytest-cov.readthedocs.io/en/latest/
 [semver]: https://semver.org/
+
+### Version-agnostic Protocol types (Python)
+
+By default, code written against one generated Python module can't accept
+objects from another generated module, even if the two were generated from
+compatible versions of the same model.
+
+Passing `--include-protocols iri` to the Python generator adds a
+`protocols.py` module with a [`typing.Protocol`][typing-protocol] for every
+class in the model. A Protocol accepts an object from _any_ generated module
+whose version is compatible with the one the Protocol came from, so you can
+write functions and classes that work across model versions instead of
+being tied to one:
+
+```shell
+shacl2code generate -i model.jsonld python --include-protocols iri -o out
+```
+
+```python
+from out import protocols
+
+def describe(obj: protocols.MyClass) -> str:
+    return f"{obj.get_type()}: {obj.my_property}"
+```
+
+`describe()` accepts a `MyClass` instance from `out`, or from any other
+generated module whose `MyClass` is compatible with `out`'s.
+
+Each class's Protocol carries a hidden marker so structurally-identical but
+unrelated classes can't accidentally satisfy each other's Protocol.
+`--include-protocols` chooses how that marker is keyed:
+
+- `iri` (shown above) keys it by the class's full IRI. This stays stable
+  across regenerations of the *same* model with different `--context`
+  files, but not across ontology versions that embed their own version
+  number in every class IRI (e.g. SPDX's
+  `https://spdx.org/rdf/3.0.1/terms/Core/...` vs
+  `https://spdx.org/rdf/3.1/terms/Core/...`) -- a newer version's classes
+  won't satisfy an older version's Protocols.
+- `compact-name` keys it by the `--context`-compacted class name instead
+  (`CreationInfo`, not the full IRI). This is what actually achieves
+  cross-version compatibility for ontologies like SPDX, which keep their
+  compact term names stable release to release even as the underlying IRI
+  changes -- but it's only safe when every generation being compared uses
+  the ontology's canonical context, since a custom context could compact
+  the same class to a different name.
+
+A couple of other things to keep in mind:
+
+- Object-reference properties are typed precisely on a Protocol for reads
+  (as the referenced class's own Protocol), but accept anything on write,
+  since each generated module version has its own distinct concrete class
+  for the referenced type.
+- Protocols are for type annotations only -- construct objects using a
+  concrete generated module, not a Protocol.
+
+[typing-protocol]: https://docs.python.org/3/library/typing.html#typing.Protocol

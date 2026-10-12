@@ -101,6 +101,12 @@ pythonpath = [
     "testfixtures"
 ]
 
+[tool.hatch.build.targets.sdist]
+# Vendored third-party test fixtures carry their own license, separate from
+# this project's MIT license -- exclude them from the published sdist.
+# They stay in the git repo, so they can be used for testing.
+exclude = ["tests/data/spdx/*/*.ttl", "tests/data/spdx/*/*.jsonld"]
+
 [tool.coverage.run]
 relative_files = true
 patch = ["subprocess"]

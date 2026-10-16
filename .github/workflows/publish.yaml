@@ -35,7 +35,7 @@ jobs:
 
       - name: Embed SBOM into the wheel
         id: pitloom
-        uses: bact/pitloom@3c555bf08e8c7f24ff9b4eb5659a5f9d999739f9 # v0.19.0
+        uses: bact/pitloom@d95e9ed331a8463d49ef9cde8032aff5863e1e1e # v0.20.2
         with:
           embed-wheel: "dist/*.whl"
           extras: "content-type"

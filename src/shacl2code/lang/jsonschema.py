@@ -1,6 +1,7 @@
-#
-# Copyright (c) 2024 Joshua Watt
-#
+# SPDX-FileContributor: Joshua Watt
+# SPDX-FileContributor: Arthit Suriyawongkul
+# SPDX-FileCopyrightText: 2024-present Joshua Watt
+# SPDX-FileType: SOURCE
 # SPDX-License-Identifier: MIT
 """JSON Schema renderer"""
 
@@ -29,6 +30,7 @@ class JsonSchemaRender(BasicJinjaRender):
             "schema_title": args.title,
             "schema_id": args.id,
             "allow_elided_lists": args.allow_elided_lists,
+            "use_additional_properties": args.use_additional_properties,
         }
 
     @classmethod
@@ -42,11 +44,40 @@ class JsonSchemaRender(BasicJinjaRender):
             action="store_true",
             help="Allow lists to be elided if they only contain a single element",
         )
+        parser.add_argument(
+            "--use-additional-properties",
+            action="store_true",
+            help=(
+                "Use additionalProperties instead of unevaluatedProperties. "
+                "Flattens inherited property refs into each class definition for "
+                "better compatibility with validators that have poor "
+                "unevaluatedProperties performance."
+            ),
+        )
 
     def get_extra_env(self):
         return {
             "varname": varname,
         }
+
+    def get_extra_model_env(self, classes):
+        def get_all_properties(cls):
+            """Return [(defining_class, prop), ...] for cls and all ancestors, parent-first, no duplicates."""
+            seen = set()
+            result = []
+
+            def collect(c):
+                for parent_id in c.parent_ids:
+                    collect(classes.get(parent_id))
+                for prop in c.properties:
+                    if prop.path not in seen:
+                        seen.add(prop.path)
+                        result.append((c, prop))
+
+            collect(cls)
+            return result
+
+        return {"get_all_properties": get_all_properties}
 
     def get_additional_render_args(self, model):
         return self.__render_args

@@ -35,7 +35,7 @@ jobs:
 
       - name: Embed SBOM into the wheel
         id: pitloom
-        uses: bact/pitloom@68b02e2052902012716c6b888addbaf95d5e1bf5 # v0.17.0
+        uses: bact/pitloom@fd0639031918fde2dbb288f0086bbf5414b948d1 # v0.24.0
         with:
           embed-wheel: "dist/*.whl"
           extras: "content-type"
@@ -68,4 +68,4 @@ jobs:
           spdx3-validate --json "extracted-sbom/${sbom_basename}"
 
       - name: Publish distribution to PyPI
-        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3

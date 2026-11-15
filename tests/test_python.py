@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import ast
 import hashlib
 import importlib
 import json
@@ -11,6 +12,7 @@ import re
 import subprocess
 import sys
 import textwrap
+import types
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -21,6 +23,8 @@ import pyshacl
 import pytest
 
 import rdflib
+
+from shacl2code.lang.python import SHACLOBJECT_RESERVED_WORDS
 
 from testfixtures import jsonvalidation, timetests
 
@@ -234,21 +238,22 @@ class TestCheckType:
 
         pythonpath = os.environ.get("PYTHONPATH")
         if pythonpath:
-            pythonpath = os.pathsep.join(str(tmp_path), pythonpath)
+            pythonpath = os.pathsep.join([str(tmp_path), pythonpath])
         else:
             pythonpath = str(tmp_path)
 
         env = os.environ.copy()
         env["PYTHONPATH"] = pythonpath
 
+        # No --ignore-missing-stub: a new public symbol must get a stub.
+        # No --ignore-unused-allowlist: a stale allowlist entry must be
+        # removed instead of silently hiding whatever it matches next.
         subprocess.run(
             [
                 "stubtest",
                 "pymodel",
                 "--allow",
                 DATA_DIR / "stubtest" / "allow.txt",
-                "--ignore-unused-allowlist",
-                "--ignore-missing-stub",
             ],
             encoding="utf-8",
             check=True,
@@ -2099,11 +2104,18 @@ def test_varname_reserved_words(tmp_path):
 
     # Generated source must contain the renamed names, not the originals
     text = (output_dir / "model.py").read_text()
-    for renamed in ("get_id_", "set_id_", "encode_", "class_"):
+    for renamed in ("get_id_", "set_id_", "encode_", "class_", "ONTOLOGY_", "CLOSED_"):
         assert (
             renamed in text
         ), f"expected renamed property '{renamed}' in generated code"
-    for original in ('"get_id"', '"set_id"', '"encode"', '"class"'):
+    for original in (
+        '"get_id"',
+        '"set_id"',
+        '"encode"',
+        '"class"',
+        '"ONTOLOGY"',
+        '"CLOSED"',
+    ):
         assert (
             f"ClassProp({original}," not in text
         ), f"unrenamed property {original} found as ClassProp pyname"
@@ -2117,11 +2129,22 @@ def test_varname_reserved_words(tmp_path):
         cls = m.SHACLObject.CLASSES["http://example.org/shacl2code-test/test-rw-class"]
 
         # Renamed kwargs must work at construction time
-        obj = cls(get_id_="a", set_id_="b", encode_="c", class_="d")
+        obj = cls(
+            get_id_="a",
+            set_id_="b",
+            encode_="c",
+            class_="d",
+            ONTOLOGY_="e",
+            CLOSED_="f",
+        )
         assert obj.get_id_ == "a"
         assert obj.set_id_ == "b"
         assert obj.encode_ == "c"
         assert obj.class_ == "d"
+        assert obj.ONTOLOGY_ == "e"
+        assert obj.CLOSED_ == "f"
+
+        assert cls.ONTOLOGY is None
 
         # SHACLObject.get_id() must still return the object IRI,
         # not the value of the prop (get_id_)
@@ -2133,6 +2156,88 @@ def test_varname_reserved_words(tmp_path):
         for mod in list(sys.modules):
             if mod == "rwmodel" or mod.startswith("rwmodel."):
                 del sys.modules[mod]
+
+
+def _module_level_defs(path):
+    """Public names defined (not imported) at module level of a .py file."""
+    names = set()
+
+    def walk(body):
+        for n in body:
+            if isinstance(n, (ast.ClassDef, ast.FunctionDef)):
+                names.add(n.name)
+            elif isinstance(n, ast.Assign):
+                names.update(t.id for t in n.targets if isinstance(t, ast.Name))
+            elif isinstance(n, ast.AnnAssign) and isinstance(n.target, ast.Name):
+                names.add(n.target.id)
+            elif isinstance(n, ast.Try):
+                # rdflib classes live in a try/except ImportError block
+                walk(n.body)
+
+    walk(ast.parse(Path(path).read_text()).body)
+    return {n for n in names if not n.startswith("_") and n != "__all__"}
+
+
+def test_model_all_matches_public_symbols(model):
+    """
+    __all__ must list exactly the module's own public symbols, so that
+    `from .model import *` cannot re-export imported names.
+
+    stubtest already checks __all__ against the stub, but not against what
+    the module actually defines.
+    """
+    mm = model.model
+
+    assert len(mm.__all__) == len(set(mm.__all__)), (
+        f"duplicate entries in __all__: "
+        f"{sorted(n for n in mm.__all__ if mm.__all__.count(n) > 1)}"
+    )
+
+    defined = _module_level_defs(mm.__file__)
+    assert set(mm.__all__) == defined, (
+        f"missing from __all__: {sorted(defined - set(mm.__all__))}; "
+        f"in __all__ but not defined: {sorted(set(mm.__all__) - defined)}"
+    )
+
+    # Star-import must expose exactly __all__
+    ns = {}
+    exec(f"from {mm.__name__} import *", ns)  # noqa: S102
+    exported = {n for n in ns if not n.startswith("__")}
+    assert exported == set(mm.__all__)
+    leaked = sorted(n for n in exported if isinstance(ns[n], types.ModuleType))
+    assert not leaked, f"modules leaked by star-import: {leaked}"
+
+
+def test_reserved_words_cover_shaclobject_names(model):
+    """
+    SHACLOBJECT_RESERVED_WORDS must cover every name a generated property
+    could collide with: the attributes emitted into each generated class body,
+    plus those inherited from SHACLObject / SHACLExtensibleObject.
+    """
+    mm = model.model
+
+    emitted = set()
+    for node in ast.parse(Path(mm.__file__).read_text()).body:
+        if not isinstance(node, ast.ClassDef):
+            continue
+        if not any(
+            isinstance(b, ast.Name) and b.id.endswith("SHACLObject") for b in node.bases
+        ):
+            continue
+        for st in node.body:
+            if isinstance(st, ast.AnnAssign) and isinstance(st.target, ast.Name):
+                emitted.add(st.target.id)
+            elif isinstance(st, ast.Assign):
+                emitted |= {t.id for t in st.targets if isinstance(t, ast.Name)}
+
+    inherited = {
+        k for cls in (mm.SHACLObject, mm.SHACLExtensibleObject) for k in dir(cls)
+    }
+    required = {n for n in emitted | inherited if not n.startswith("_")}
+
+    assert required, "found no class-level names to check"
+    missing = sorted(required - SHACLOBJECT_RESERVED_WORDS)
+    assert not missing, f"not in SHACLOBJECT_RESERVED_WORDS: {missing}"
 
 
 def test_extensible_properties(model, test_context_url):

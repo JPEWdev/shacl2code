@@ -1698,6 +1698,40 @@ def test_enum_named_individuals(model):
         assert getattr(model.enumType, name) == value
 
 
+@pytest.mark.parametrize(
+    "checker",
+    [
+        ["mypy"],
+        ["pyright"],
+        ["pyrefly", "check", "-p", "default"],
+    ],
+)
+def test_named_individual_is_class_variable(python_model_env, tmp_path, checker):
+    """
+    A named individual is a class constant; assigning it through an
+    instance fails at runtime, so type checkers must reject it too.
+    """
+    env, module_name = python_model_env
+    script_path = tmp_path / "script.py"
+    script_path.write_text(textwrap.dedent(f"""\
+        import {module_name}
+
+        print({module_name}.test_class.named)
+        o = {module_name}.test_class()
+        o.named = "x"
+        """))
+
+    p = subprocess.run(
+        checker + [str(script_path)],
+        encoding="utf-8",
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    assert p.returncode != 0, p.stdout
+    assert re.search(r"script\.py:5\b", p.stdout), p.stdout
+
+
 def test_mandatory_properties(model, tmp_path):
     """
     Tests that property cardinality (e.g. min count & max count) is checked when

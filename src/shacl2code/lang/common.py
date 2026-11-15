@@ -58,6 +58,9 @@ class JinjaTemplateRender(object):
     def get_extra_env(self):
         return {}
 
+    def get_extra_model_env(self, classes):
+        return {}
+
     def render(self, template, output, *, extra_env=None, render_args=None):
         if extra_env is None:
             extra_env = {}  # pragma: no cover
@@ -155,6 +158,7 @@ class JinjaTemplateRender(object):
             "include_file": include_file,
             "prop_is_list": prop_is_list,
             **self.get_extra_env(),
+            **self.get_extra_model_env(classes),
         }
 
         for output, template, args in self.get_outputs():

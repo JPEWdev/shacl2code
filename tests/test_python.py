@@ -1448,6 +1448,19 @@ def test_list_proxy_sequence(model):
     assert len(lst) == 0
 
 
+def test_list_proxy_slice_assign_from_iterator(model):
+    c = model.test_class()
+    lst = c.test_class_string_list_prop
+    lst.extend(["a", "b", "c"])
+
+    lst[1:] = (s for s in ["x", "y"])
+    assert lst == ["a", "x", "y"]
+
+    with pytest.raises(model.ValidationError):
+        lst[:] = iter(["ok", 1])
+    assert lst == ["a", "x", "y"]
+
+
 @timetests.datetime_decode_tests()
 def test_datetime_from_string(model, value, expect):
     p = model.DateTimeProp()

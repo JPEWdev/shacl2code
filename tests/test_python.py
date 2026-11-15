@@ -1708,8 +1708,9 @@ def test_enum_named_individuals(model):
 )
 def test_named_individual_is_class_variable(python_model_env, tmp_path, checker):
     """
-    A named individual is a class constant; assigning it through an
-    instance fails at runtime, so type checkers must reject it too.
+    The binding stores each named individual as an IRI string on its class.
+    Assigning one through an instance raises at runtime, so type checkers
+    must reject it too.
     """
     env, module_name = python_model_env
     script_path = tmp_path / "script.py"

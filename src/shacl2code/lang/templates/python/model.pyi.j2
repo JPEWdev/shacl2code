@@ -19,6 +19,7 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    MutableSequence,
     Optional,
     Set,
     Tuple,
@@ -319,7 +320,7 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
     ) -> Optional[Union[str, SHACLObject]]: ...
 
 
-class ListProxy(Generic[T_PropV]):
+class ListProxy(MutableSequence[T_PropV]):
     def __init__(
         self, prop: Property[T_PropV], data: Optional[List[T_PropV]] = None
     ) -> None: ...

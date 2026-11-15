@@ -30,6 +30,7 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    MutableSequence,
     Optional,
     Set,
     TYPE_CHECKING as _TYPE_CHECKING,
@@ -623,7 +624,7 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
         return value
 
 
-class ListProxy(Generic[T_PropV]):
+class ListProxy(MutableSequence[T_PropV]):
     """A type-checked, property-aware list wrapper for multi-valued SHACL properties."""
 
     __slots__ = ("_data", "_prop")

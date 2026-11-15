@@ -95,6 +95,17 @@ def prop_element_pytype(prop, classes):
     return DATATYPE_PYTHON_TYPES[prop.datatype]
 
 
+def is_effectively_extensible(cls, classes):
+    """Whether a class or any ancestor is extensible.
+
+    Generated classes inherit __init__, so a subclass of an extensible class
+    accepts ``typ`` even when its own ``is_extensible`` is unset.
+    """
+    return cls.is_extensible or any(
+        is_effectively_extensible(classes.get(pid), classes) for pid in cls.parent_ids
+    )
+
+
 @language("python")
 class PythonRender(JinjaTemplateRender):
     """Render Python Language Bindings."""
@@ -166,6 +177,7 @@ class PythonRender(JinjaTemplateRender):
         return {
             "varname": varname,
             "prop_element_pytype": prop_element_pytype,
+            "is_effectively_extensible": is_effectively_extensible,
             "DATATYPE_CLASSES": DATATYPE_CLASSES,
             "DATATYPE_PYTHON_TYPES": DATATYPE_PYTHON_TYPES,
         }

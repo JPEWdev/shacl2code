@@ -24,7 +24,11 @@ import pytest
 
 import rdflib
 
-from shacl2code.lang.python import SHACLOBJECT_RESERVED_WORDS
+from shacl2code.lang.python import (
+    SHACLOBJECT_RESERVED_WORDS,
+    is_effectively_extensible,
+)
+from shacl2code.model import Class
 
 from testfixtures import jsonvalidation, timetests
 
@@ -70,6 +74,33 @@ def shacl2code_generate(args, python_args, outfile):
     # Add a py.typed file for type checking
     (outfile / "py.typed").touch()
     return p
+
+
+def run_stubtest(tmp_path, module_name):
+    """Run stubtest on the generated package tmp_path/module_name."""
+    pythonpath = os.environ.get("PYTHONPATH")
+    if pythonpath:
+        pythonpath = os.pathsep.join([str(tmp_path), pythonpath])
+    else:
+        pythonpath = str(tmp_path)
+
+    env = os.environ.copy()
+    env["PYTHONPATH"] = pythonpath
+
+    # No --ignore-missing-stub: a new public symbol must get a stub.
+    # No --ignore-unused-allowlist: a stale allowlist entry must be
+    # removed instead of silently hiding whatever it matches next.
+    subprocess.run(
+        [
+            "stubtest",
+            module_name,
+            "--allow",
+            DATA_DIR / "stubtest" / "allow.txt",
+        ],
+        encoding="utf-8",
+        check=True,
+        env=env,
+    )
 
 
 @pytest.fixture(scope="module")
@@ -235,30 +266,7 @@ class TestCheckType:
         """
         output_dir = tmp_path / "pymodel"
         shacl2code_generate(args, python_args, output_dir)
-
-        pythonpath = os.environ.get("PYTHONPATH")
-        if pythonpath:
-            pythonpath = os.pathsep.join([str(tmp_path), pythonpath])
-        else:
-            pythonpath = str(tmp_path)
-
-        env = os.environ.copy()
-        env["PYTHONPATH"] = pythonpath
-
-        # No --ignore-missing-stub: a new public symbol must get a stub.
-        # No --ignore-unused-allowlist: a stale allowlist entry must be
-        # removed instead of silently hiding whatever it matches next.
-        subprocess.run(
-            [
-                "stubtest",
-                "pymodel",
-                "--allow",
-                DATA_DIR / "stubtest" / "allow.txt",
-            ],
-            encoding="utf-8",
-            check=True,
-            env=env,
-        )
+        run_stubtest(tmp_path, "pymodel")
 
     def test_pyrefly(self, tmp_path, args, python_args):
         """
@@ -308,6 +316,49 @@ class TestCheckType:
             encoding="utf-8",
             check=True,
         )
+
+
+EXTENSIBLE_DERIVED_MODEL = DATA_DIR / "extensible-derived.ttl"
+
+
+def test_stubtest_extensible_derived(tmp_path):
+    """A subclass of an extensible class accepts typ in its stub, as at runtime."""
+    output_dir = tmp_path / "extdrvmodel"
+    shacl2code_generate(["--input", EXTENSIBLE_DERIVED_MODEL], [], output_dir)
+    run_stubtest(tmp_path, "extdrvmodel")
+
+
+def _class(_id, parent_ids=(), is_extensible=False):
+    return Class(
+        _id=_id,
+        clsname=[_id],
+        parent_ids=list(parent_ids),
+        derived_ids=[],
+        properties=[],
+        is_extensible=is_extensible,
+    )
+
+
+def test_is_effectively_extensible():
+    """Extensible if the class or any ancestor, through any parent, is."""
+    base = _class("base", is_extensible=True)
+    mid = _class("mid", parent_ids=["base"])
+    leaf = _class("leaf", parent_ids=["mid"])
+    unrelated = _class("unrelated")
+    second = _class("second", parent_ids=["unrelated", "base"])
+    classes = {
+        "base": base,
+        "mid": mid,
+        "leaf": leaf,
+        "unrelated": unrelated,
+        "second": second,
+    }
+
+    assert is_effectively_extensible(base, classes)
+    assert is_effectively_extensible(mid, classes)
+    assert is_effectively_extensible(leaf, classes)
+    assert is_effectively_extensible(second, classes)
+    assert not is_effectively_extensible(unrelated, classes)
 
 
 @pytest.fixture

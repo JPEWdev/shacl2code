@@ -898,7 +898,7 @@ class {{ varname(*class.clsname) }}(
 
     def __init__(
         self,
-        {%- if class.is_extensible %}
+        {%- if is_effectively_extensible(class, classes) %}
         typ: Optional[str] = None,
         {%- endif %}
         {%- if class.id_property or class.properties %}

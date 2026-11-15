@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import ast
+import collections.abc
 import hashlib
 import importlib
 import json
@@ -317,7 +318,7 @@ def python_usage_script(python_model_env, tmp_path):
     script_path = tmp_path / "script.py"
     script_path.write_text(textwrap.dedent(f"""
             #! /usr/bin/env python3
-            from typing import ClassVar, Iterable, List, Union
+            from typing import ClassVar, Iterable, List, MutableSequence, Sequence, Union
             import {module_name}
 
             print({module_name}.enumType.foo)
@@ -345,6 +346,16 @@ def python_usage_script(python_model_env, tmp_path):
 
             def test4(lst: Iterable[{module_name}.SHACLObject]) -> List[{module_name}.SHACLObject]:
                 return sorted(lst)
+
+            def take_seq(s: Sequence[str]) -> int:
+                return len(s)
+
+            def take_mutseq(s: MutableSequence[str]) -> None:
+                s.append("x")
+
+            def test5(o: {module_name}.test_class) -> int:
+                take_mutseq(o.test_class_string_list_prop)
+                return take_seq(o.test_class_string_list_prop)
             """))
 
     # Validate the script runs
@@ -374,7 +385,7 @@ class TestUsageType:
     def test_pyrefly(self, python_usage_script):
         env, script_path = python_usage_script
         subprocess.run(
-            ["pyrefly", "check", script_path],
+            ["pyrefly", "check", "-p", "default", script_path],
             encoding="utf-8",
             env=env,
             check=True,
@@ -1396,6 +1407,58 @@ def test_list_prop_validation(model, prop, value, expect):
 
             c = cls(**kwargs)
             assert getattr(c, prop) == expect
+
+
+def test_list_proxy_sequence(model):
+    c = model.test_class()
+    lst = c.test_class_string_list_prop
+    assert isinstance(lst, collections.abc.Sequence)
+    assert isinstance(lst, collections.abc.MutableSequence)
+    assert not hasattr(lst, "__dict__")
+
+    lst.extend(["a", "b", "c"])
+    lst += ["d"]
+    assert lst == ["a", "b", "c", "d"]
+    assert lst.index("c") == 2
+    assert lst.count("a") == 1
+    assert lst.pop() == "d"
+    assert lst.pop(0) == "a"
+    lst.remove("b")
+    assert lst == ["c"]
+    lst.reverse()
+    lst.clear()
+    assert len(lst) == 0
+
+    # += through the attribute goes via the property setter
+    c.test_class_string_list_prop = ["a"]
+    c.test_class_string_list_prop += ["b", "c"]
+    assert c.test_class_string_list_prop == ["a", "b", "c"]
+    with pytest.raises(model.ValidationError):
+        c.test_class_string_list_prop += [1]
+
+    # Mixin methods validate element types
+    for fn in (
+        lambda: lst.__iadd__([1]),
+        lambda: lst.extend([1]),
+        lambda: lst.insert(0, 1),
+        lambda: lst.append(1),
+    ):
+        with pytest.raises(model.ValidationError):
+            fn()
+    assert len(lst) == 0
+
+
+def test_list_proxy_slice_assign_from_iterator(model):
+    c = model.test_class()
+    lst = c.test_class_string_list_prop
+    lst.extend(["a", "b", "c"])
+
+    lst[1:] = (s for s in ["x", "y"])
+    assert lst == ["a", "x", "y"]
+
+    with pytest.raises(model.ValidationError):
+        lst[:] = iter(["ok", 1])
+    assert lst == ["a", "x", "y"]
 
 
 @timetests.datetime_decode_tests()

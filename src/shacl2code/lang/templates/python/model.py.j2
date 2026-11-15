@@ -30,6 +30,7 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    MutableSequence,
     Optional,
     Set,
     TYPE_CHECKING as _TYPE_CHECKING,
@@ -623,7 +624,7 @@ class ObjectProp(IRIProp[Union[str, "SHACLObject"]]):
         return value
 
 
-class ListProxy(Generic[T_PropV]):
+class ListProxy(MutableSequence[T_PropV]):
     """A type-checked, property-aware list wrapper for multi-valued SHACL properties."""
 
     __slots__ = ("_data", "_prop")
@@ -674,11 +675,11 @@ class ListProxy(Generic[T_PropV]):
     ) -> None:
         path = DataPath()
         if isinstance(key, slice):
-            val_iter = cast(Iterable[T_PropV], value)
-            for idx, v in enumerate(val_iter):
+            values = list(cast(Iterable[T_PropV], value))
+            for idx, v in enumerate(values):
                 with path.push_index(idx) as p:
                     self._prop.validate(p, v)
-            self._data[key] = [self._prop.set(v) for v in val_iter]
+            self._data[key] = [self._prop.set(v) for v in values]
         elif isinstance(key, int):
             self._prop.validate(path, value)
             self._data[key] = self._prop.set(value)

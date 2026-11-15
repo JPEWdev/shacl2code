@@ -5,10 +5,7 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix sh-to-code: <https://jpewdev.github.io/shacl2code/schema#> .
 
-# A concrete subclass of an extensible class that does not itself set
-# isExtensible, but has its own property. The generated runtime __init__ is
-# always inherited from SHACLExtensibleObject in this case (classes never
-# define their own __init__), so the generated stub must accept "typ" too.
+# A subclass of an extensible class that is not itself marked extensible.
 
 <ext-base-class> a rdfs:Class, sh:NodeShape, owl:Class ;
     sh-to-code:isExtensible true ;

@@ -77,14 +77,7 @@ def shacl2code_generate(args, python_args, outfile):
 
 
 def run_stubtest(tmp_path, module_name):
-    """
-    Run mypy stubtest against a generated package the same way
-    TestCheckType.test_stubtest does: empty allowlist, no ignore flags.
-
-    `module_name` must be the name of a generated package directory directly
-    under `tmp_path` (e.g. produced by shacl2code_generate(..., tmp_path /
-    module_name)).
-    """
+    """Run stubtest on the generated package tmp_path/module_name."""
     pythonpath = os.environ.get("PYTHONPATH")
     if pythonpath:
         pythonpath = os.pathsep.join([str(tmp_path), pythonpath])
@@ -329,15 +322,7 @@ EXTENSIBLE_DERIVED_MODEL = DATA_DIR / "extensible-derived.ttl"
 
 
 def test_stubtest_extensible_derived(tmp_path):
-    """
-    Regression test for a concrete subclass of an extensible class that adds
-    its own property but does not itself set isExtensible.
-
-    The runtime never generates a class-specific __init__ (it's always
-    inherited), so such a subclass still accepts "typ" via
-    SHACLExtensibleObject.__init__. The stub must match, which requires
-    walking ancestors rather than checking the class's own is_extensible flag.
-    """
+    """A subclass of an extensible class accepts typ in its stub, as at runtime."""
     output_dir = tmp_path / "extdrvmodel"
     shacl2code_generate(["--input", EXTENSIBLE_DERIVED_MODEL], [], output_dir)
     run_stubtest(tmp_path, "extdrvmodel")
@@ -355,10 +340,7 @@ def _class(_id, parent_ids=(), is_extensible=False):
 
 
 def test_is_effectively_extensible():
-    """
-    A class is effectively extensible if it or any ancestor sets
-    is_extensible, matching the runtime's inherited __init__.
-    """
+    """Extensible if the class or any ancestor, through any parent, is."""
     base = _class("base", is_extensible=True)
     mid = _class("mid", parent_ids=["base"])
     leaf = _class("leaf", parent_ids=["mid"])

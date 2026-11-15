@@ -892,7 +892,7 @@ class {{ varname(*class.clsname) }}(
     #{{ (" " + l).rstrip() }}
     {%- endfor %}
     {%- endif %}
-    {{ varname(member.varname) }}: str
+    {{ varname(member.varname) }}: ClassVar[str]
     {%- endfor %}
     {%- endif %}
 
